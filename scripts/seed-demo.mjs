@@ -5,6 +5,8 @@
 //   cd scripts && npm install
 //   node seed-demo.mjs                # reads ../.env (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_PASSWORD)
 //   DEMO_MODE=true node seed-demo.mjs --reset --i-know-this-wipes   # public demo only, see below
+//   DEMO_MODE=true node seed-demo.mjs --mark-demo-project            # once, on the demo project
+//   node seed-demo.mjs --unmark-demo-project                         # before it becomes production
 //
 // Default mode is idempotent: users/rooms/classes/schedules/enrolments are upserted;
 // bookings and attendance history are only generated when the demo has none yet.
@@ -15,7 +17,10 @@
 // WIPES the project: every Storage object, every row of app data and every auth user
 // that is not a demo account (e.g. visitors' sign-ups). It then re-seeds from scratch
 // with dates relative to today and restores the demo accounts (password, profile).
-// It only runs with --i-know-this-wipes and DEMO_MODE=true in the environment.
+// It only runs with --i-know-this-wipes, DEMO_MODE=true in the environment, AND when
+// the database itself is marked as the demo (public.is_demo_instance(), set with
+// --mark-demo-project). The marker is what stops a forgotten scheduled reset from
+// wiping the project after it has been turned into production.
 
 import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -31,19 +36,22 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, DEMO_PASSWORD, DEMO_MODE } = process.env;
 const RESET = process.argv.includes("--reset");
+const MARK = process.argv.includes("--mark-demo-project");
+const UNMARK = process.argv.includes("--unmark-demo-project");
+const demoModeOn = ["1", "true", "yes"].includes((DEMO_MODE ?? "").trim().toLowerCase());
 if (RESET && !process.argv.includes("--i-know-this-wipes")) {
   console.error("--reset deletes every user, booking and file in the project. Add --i-know-this-wipes to confirm.");
   process.exit(1);
 }
-if (RESET && !["1", "true", "yes"].includes((DEMO_MODE ?? "").trim().toLowerCase())) {
-  console.error("Refusing to --reset: DEMO_MODE is not set. Only the public demo project may be wiped.");
+if ((RESET || MARK) && !demoModeOn) {
+  console.error(`Refusing to ${RESET ? "--reset" : "--mark-demo-project"}: DEMO_MODE is not set. Only the public demo project may be wiped.`);
   process.exit(1);
 }
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (see .env.example).");
   process.exit(1);
 }
-if (!DEMO_PASSWORD || DEMO_PASSWORD.length < 8) {
+if (!MARK && !UNMARK && (!DEMO_PASSWORD || DEMO_PASSWORD.length < 8)) {
   console.error("Set DEMO_PASSWORD (min 8 characters) — the password for every demo account.");
   process.exit(1);
 }
@@ -358,10 +366,30 @@ async function seedAttendance(schedules, today) {
 }
 
 // ---------------------------------------------------------------------------
+// The database must say it is the public demo before anything is deleted.
+async function assertDemoInstance() {
+  const { data, error } = await db.rpc("is_demo_instance");
+  if (error) throw new Error(`cannot read the demo marker (is migration 20261108000900 applied?): ${error.message}`);
+  if (data !== true) {
+    throw new Error("refusing to --reset: this database is not marked as the public demo. "
+      + "Run `node seed-demo.mjs --mark-demo-project` once on the demo project (never on production).");
+  }
+}
+
 async function main() {
+  if (MARK || UNMARK) {
+    await must(db.rpc("set_demo_instance", { p_enabled: MARK }), "set_demo_instance");
+    console.log(MARK
+      ? `✓ ${SUPABASE_URL} is marked as the public demo: --reset may now wipe it.`
+      : `✓ ${SUPABASE_URL} is no longer the public demo: --reset will refuse to run.`);
+    return;
+  }
   console.log(`${RESET ? "Resetting" : "Seeding"} demo data in ${SUPABASE_URL}`);
   const today = await must(db.rpc("studio_today"), "studio_today");
-  if (RESET) await wipe();
+  if (RESET) {
+    await assertDemoInstance();
+    await wipe();
+  }
   const userIds = await upsertUsers();
   const { rooms, classes, schedules } = await upsertCatalogue(userIds);
   await upsertEnrolments(userIds, classes, today);

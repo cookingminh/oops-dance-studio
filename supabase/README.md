@@ -19,6 +19,7 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261108000600_views.sql` | `v_revenue_monthly` (security invoker, staff-only) |
 | `migrations/20261108000700_storage.sql` | buckets `avatars`, `class-images`, `attendance-proofs`, `site-assets` + policies |
 | `migrations/20261108000800_cron_jobs.sql` | pg_cron jobs that generate attendance |
+| `migrations/20261108000900_demo_instance.sql` | marker that lets `seed-demo.mjs --reset` wipe a project (public demo only) |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users. `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
 | `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
@@ -69,7 +70,7 @@ Stop with `supabase stop` (data is kept; `supabase stop --no-backup` wipes it).
 ```sh
 supabase db reset                       # re-apply every migration, then seed.sql
 node scripts/demo-images.mjs --local    # re-upload demo photos (a reset drops Storage metadata)
-supabase test db                        # pgTAP: 5 files, 187 tests
+supabase test db                        # pgTAP: 6 files, 195 tests
 supabase db lint                        # plpgsql / schema errors
 supabase db advisors --level info       # security + performance advisors
 deno test --no-lock --config supabase/functions/admin-users/deno.json supabase/functions/admin-users/   # Edge Function unit tests
@@ -178,6 +179,7 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
    `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and a strong `DEMO_PASSWORD`, then:
    ```sh
    cd scripts && npm install && npm run seed-demo
+   DEMO_MODE=true node seed-demo.mjs --mark-demo-project   # allows the scheduled reset to wipe THIS project
    ```
    The script is idempotent (re-running resets demo passwords and skips existing history). It
    ends by uploading the demo photos (api-contract §11); `npm run demo-images` repeats just that step.
@@ -189,10 +191,38 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
    ```
    It empties every bucket, deletes all app data and every auth user that is not a demo account
    (visitors' sign-ups included), then re-seeds with dates relative to today and restores the demo
-   passwords. Without `--i-know-this-wipes`, or without `DEMO_MODE` set, it refuses to run.
+   passwords. It refuses to run without `--i-know-this-wipes`, without `DEMO_MODE` set, or when the
+   database is not marked as the demo (`public.is_demo_instance()`, step 6).
    GitHub pauses scheduled workflows after 60 days without repository activity; re-enable it in
    the Actions tab if the demo stops resetting.
 
+
+## Turning the demo project into production
+
+The demo project can later become the studio's real one. Do the steps in this order, so the
+scheduled reset can never touch real data:
+
+1. **Stop the reset.** Remove the marker first; from then on `--reset` refuses to run against this
+   database, even if the workflow is still enabled:
+   ```sh
+   node scripts/seed-demo.mjs --unmark-demo-project      # with the project's URL + service role key in .env
+   ```
+   Then disable `.github/workflows/reset-demo.yml` in the Actions tab and delete the repository
+   secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `DEMO_PASSWORD`.
+2. **Edge Function:** `supabase secrets unset DEMO_MODE`, and set `ALLOWED_ORIGINS` to the
+   production domain.
+3. **Remove the demo data.** Dashboard → SQL editor:
+   ```sql
+   truncate public.student_attendance, public.instructor_attendance, public.class_students,
+            public.bookings, public.class_schedules, public.classes, public.rooms restart identity;
+   ```
+   Then empty the four Storage buckets and delete the `@demo.oopsdance.test` users
+   (Authentication → Users). Create the real admin account first (sign up, then
+   `update public.profiles set role = 'admin' where email = '…'` in the SQL editor).
+4. **Auth:** enable "Confirm email", configure custom SMTP, set the Site URL and redirect URLs to the
+   production domain, and rotate the service role key if it was ever shared.
+5. **Frontend:** remove `VITE_DEMO_MODE` and `VITE_DEMO_PASSWORD` from the hosting environment and
+   redeploy. The login page loses its demo buttons and banner.
 
 ## Security notes
 

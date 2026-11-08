@@ -1,4 +1,4 @@
-# Oops Dance Studio — API contract (v1.4)
+# Oops Dance Studio — API contract (v1.5)
 
 The single source of truth for the API between the backend (`supabase/`) and the frontend (`frontend/`): schema, roles, row-level security, RPC functions, the Edge Function, Storage, scheduled jobs, auth and environment.
 - Any change to the backend's behaviour is written back into this file and logged in the Changelog at the bottom.
@@ -338,7 +338,7 @@ The seed creates:
 **Public demo** (`VITE_DEMO_MODE=true` in the frontend, `DEMO_MODE=true` for the function and the reset):
 - The login page has one-click buttons for Admin / Staff / Instructor / Guest that sign in with `VITE_DEMO_PASSWORD` (public on purpose: demo accounts, fake data), and every page shows "Demo data, resets every 6 hours".
 - `@demo.oopsdance.test` accounts cannot change their password or email: the controls are hidden, admins cannot re-email or delete them (UI + `admin-users`, §6).
-- `.github/workflows/reset-demo.yml` runs `scripts/seed-demo.mjs --reset --i-know-this-wipes` every 6 hours: it empties every bucket, deletes all app rows and every non-demo auth user, then re-seeds with dates relative to today and restores the demo passwords. The script refuses `--reset` without that flag or without `DEMO_MODE`.
+- `.github/workflows/reset-demo.yml` runs `scripts/seed-demo.mjs --reset --i-know-this-wipes` every 6 hours: it empties every bucket, deletes all app rows and every non-demo auth user, then re-seeds with dates relative to today and restores the demo passwords. The script refuses `--reset` without that flag, without `DEMO_MODE`, or when the database is not marked as the demo: `public.is_demo_instance()` must be true. The marker is set once on the demo project with `seed-demo.mjs --mark-demo-project` and cleared with `--unmark-demo-project` before the project becomes production. `is_demo_instance()` / `set_demo_instance(p_enabled boolean)` are executable by the service role only.
 
 Demo logins (the local password lives in `supabase/README.md`):
 - `admin@demo.oopsdance.test`
@@ -381,3 +381,4 @@ Demo logins (the local password lives in `supabase/README.md`):
   - §11 demo photos are committed as WebP in `scripts/demo-assets/` (cut-outs keep their transparency); avatars are now `avatars/{id}/avatar.webp`.
   - §6 `admin-users`: `DEMO_MODE` refuses `update`/`delete` on demo accounts (`403 FORBIDDEN: demo account`); CORS allow-list via `ALLOWED_ORIGINS`. The handler moved to `handler.ts` (unit-tested with `deno test`); `index.ts` only serves it.
   - §10/§11 public demo mode (frontend flags, locked demo accounts) and the 6-hourly `seed-demo.mjs --reset`.
+- v1.5 (2026-11-08, release): §11 demo marker (`private.demo_instance`, service-role RPCs `is_demo_instance()` / `set_demo_instance(boolean)`); `--reset` only wipes a database that is marked as the demo.

@@ -2,6 +2,8 @@ name: Reset demo
 
 # Wipes the public demo project (visitors' accounts, bookings, uploads) and re-seeds it
 # with fresh dates. The login page tells visitors it resets every 6 hours.
+# The script also refuses unless the database is marked as the demo
+# (seed-demo.mjs --mark-demo-project), so a project that became production is safe.
 on:
   schedule:
     - cron: "0 */6 * * *"

@@ -75,7 +75,7 @@ flowchart LR
 ```
 
 - **frontend/**: React 18, Vite, Tailwind, NextUI. Components never touch Supabase directly; they call `src/services/*`, which map database errors to stable codes such as `SLOT_TAKEN`. [Frontend README](frontend/README.md)
-- **supabase/**: 8 migrations, 5 pgTAP test files, the `admin-users` Edge Function and a local seed. [Backend README](supabase/README.md)
+- **supabase/**: 9 migrations, 6 pgTAP test files, the `admin-users` Edge Function and a local seed. [Backend README](supabase/README.md)
 - **scripts/**: seeds the hosted demo through the admin API and uploads the demo photos.
 - **docs/architecture/**: the [API contract](docs/architecture/api-contract.md) both halves are built against, and the [mapping](docs/architecture/frontend-mapping.md) of every legacy API call to its replacement.
 
@@ -104,7 +104,7 @@ Two people clicking "Book" at the same moment can't both succeed, whatever the c
 
 | Suite | Count | What it covers |
 |---|---|---|
-| pgTAP (`supabase test db`) | 187 | RLS matrix per role, available slots (Sunday/Monday, merging, opening hours), bookings, attendance generation, admin and stats RPCs, timetable clashes |
+| pgTAP (`supabase test db`) | 195 | RLS matrix per role, available slots (Sunday/Monday, merging, opening hours), bookings, attendance generation, admin and stats RPCs, timetable clashes, the demo-reset guard |
 | Playwright (`frontend/e2e`) | 101 | 93 browser flows across every role, auth and clash cases, plus 8 for the public demo build |
 | Deno (`admin-users`) | 7 | demo-account protection, CORS allow-list, auth errors |
 
