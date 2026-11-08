@@ -147,10 +147,12 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
    supabase login
    supabase link --project-ref <project-ref>
    ```
-2. **Database** — migrations, RLS, RPCs, buckets, storage policies and cron jobs:
+2. **Database** — migrations, RLS, RPCs, buckets, storage policies and cron jobs. Since CLI 3,
+   `db` commands target the **local** stack unless you pass `--remote`:
    ```sh
-   supabase db push --dry-run    # review
-   supabase db push
+   supabase db push --remote --dry-run    # review
+   supabase db push --remote
+   supabase migration list --remote       # local and remote columns should match
    ```
    Do **not** use `--include-seed` on production: `seed.sql` creates demo users with the password above.
 3. **Edge Function**:

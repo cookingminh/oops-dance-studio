@@ -38,12 +38,14 @@ jobs:
         run: |
           test -n "$PROJECT_REF" || { echo "::error::No project ref"; exit 1; }
           supabase link --project-ref "$PROJECT_REF"
+      # CLI 3: `db` commands target the local stack unless --remote is given, and
+      # changes to a hosted project need --yes when nobody can answer the prompt.
       - name: Migrations (dry run)
         if: inputs.dry_run
-        run: supabase db push --dry-run
+        run: supabase db push --remote --dry-run --password "$SUPABASE_DB_PASSWORD"
       - name: Migrations
         if: ${{ !inputs.dry_run }}
-        run: supabase db push
+        run: supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
       - name: Edge Function
         if: ${{ !inputs.dry_run }}
-        run: supabase functions deploy admin-users --project-ref "$PROJECT_REF"
+        run: supabase functions deploy admin-users --yes
