@@ -10,7 +10,7 @@ const LINKS = {
         { href: '/admin/users', label: 'Users Manager' },
         { href: '/admin/rooms', label: 'Rooms Manager' },
         { href: '/admin/bookings', label: 'Bookings Manager' },
-        { href: '/admin/classes', label: 'Classes & Schedules' },
+        { href: '/admin/classes', label: 'Classes' },
         { href: '/admin/students', label: 'Dance Students' },
         { href: '/admin/attendance-records', label: 'Attendance Records' },
     ],

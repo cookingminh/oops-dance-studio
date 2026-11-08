@@ -41,6 +41,20 @@ export function formatDateTime(timestamp) {
     }).format(new Date(timestamp));
 }
 
+// Current hour (0–23) and 'HH:mm' in the studio's timezone, e.g. for greetings and "live now" badges.
+const studioClock = (options) => new Intl.DateTimeFormat('en-GB', { timeZone: STUDIO_TIME_ZONE, hourCycle: 'h23', ...options }).format(new Date());
+export const studioHour = () => Number(studioClock({ hour: '2-digit' }));
+export const studioTimeNow = () => studioClock({ hour: '2-digit', minute: '2-digit' });
+
+// 'Sunday, 8 November' for today in the studio's timezone.
+export const studioDateLabel = () => studioClock({ weekday: 'long', day: 'numeric', month: 'long' });
+
+// timestamptz → 'HH:mm' in the studio's timezone.
+export function formatClock(timestamp) {
+    if (!timestamp) return '';
+    return new Intl.DateTimeFormat('en-GB', { timeZone: STUDIO_TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(timestamp));
+}
+
 const vnd = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 });
 export const formatVnd = (amount) => (amount === null || amount === undefined || amount === '' ? '—' : vnd.format(Number(amount)));
 

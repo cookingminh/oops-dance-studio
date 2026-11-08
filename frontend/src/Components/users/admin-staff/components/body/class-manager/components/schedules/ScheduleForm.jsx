@@ -8,11 +8,12 @@ import { useToast } from '@/ui/feedback/toastContext';
 const withCurrent = (options, value) => (value && !options.includes(value) ? [...options, value].sort() : options);
 
 // Create or edit one weekly session of a class. Weekdays are ISO (1 = Monday … 7 = Sunday).
-const ScheduleForm = ({ schedule, classes, onClose, onSaved }) => {
+// `defaultClassId` preselects the class when adding a session from a class card.
+const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) => {
     const toast = useToast();
     const isNew = !schedule;
     const [form, setForm] = useState({
-        classId: schedule ? String(schedule.class_id) : '',
+        classId: schedule ? String(schedule.class_id) : defaultClassId ? String(defaultClassId) : '',
         dayOfWeek: schedule ? String(schedule.day_of_week) : '',
         startTime: formatTime(schedule?.start_time),
         endTime: formatTime(schedule?.end_time),
@@ -87,10 +88,10 @@ const ScheduleForm = ({ schedule, classes, onClose, onSaved }) => {
                     </Select>
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="danger" variant="light" onPress={onClose} isDisabled={saving}>
+                    <Button variant="light" onPress={onClose} isDisabled={saving}>
                         Close
                     </Button>
-                    <Button color="primary" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
+                    <Button color="danger" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
                         {isNew ? 'Add Schedule' : 'Update Schedule'}
                     </Button>
                 </ModalFooter>

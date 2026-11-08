@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem, Textarea, Avatar } from '@nextui-org/react';
+import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem, Avatar } from '@nextui-org/react';
 import { createClass, updateClass } from '@/services/classes';
 import { avatarUrl } from '@/services/storage';
 import { useToast } from '@/ui/feedback/toastContext';
@@ -15,7 +15,6 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
         instructorId: classRow?.instructor_id ?? '',
         roomId: classRow?.room_id ? String(classRow.room_id) : '',
         price: classRow ? String(classRow.price) : '',
-        lesson: classRow?.lesson ?? '',
     });
     const [image, setImage] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -30,7 +29,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
             const fields = { ...form, roomId: form.roomId ? Number(form.roomId) : null };
             if (isNew) {
                 await createClass(fields, image);
-                toast.success('Class added. Add its schedule in the Schedule section.');
+                toast.success('Class added. Add its weekly sessions and this month’s lesson next.');
             } else {
                 await updateClass(classRow.id, fields);
                 toast.success('Class updated.');
@@ -90,14 +89,13 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
                         isInvalid={priceInvalid}
                         errorMessage={priceInvalid ? 'Enter a price of 0 or more.' : undefined}
                     />
-                    <Textarea label="Lesson" value={form.lesson} onValueChange={set('lesson')} />
                     {isNew && <ImagePicker label="Upload Class Image (optional)" onChange={setImage} isDisabled={saving} />}
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="danger" variant="light" onPress={onClose} isDisabled={saving}>
+                    <Button variant="light" onPress={onClose} isDisabled={saving}>
                         Close
                     </Button>
-                    <Button color="primary" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
+                    <Button color="danger" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
                         {isNew ? 'Add Class' : 'Update Class'}
                     </Button>
                 </ModalFooter>

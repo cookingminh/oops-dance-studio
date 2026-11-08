@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Tooltip } from '@nextui-org/react';
+import { LuUsers } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useAsync } from '@/hooks/useAsync';
 import { deleteUser, listProfiles } from '@/services/users';
@@ -13,6 +14,7 @@ import { EditIcon } from '../../../../../../Table/EditIcon';
 import { DeleteIcon } from '../../../../../../Table/DeleteIcon';
 import EditUserForm from './EditUserForm';
 import AddUserForm from './AddUserForm';
+import SectionCard from '../../../common/SectionCard';
 
 const INITIAL_VISIBLE_COLUMNS = ['username', 'name', 'contact_number', 'dob', 'role', 'actions'];
 
@@ -72,10 +74,12 @@ const AllUsers = () => {
     }));
 
     return (
-        <div className="allUserList sectionContainer">
-            <div className="header">
-                <h2>All Users</h2>
-            </div>
+        <SectionCard
+            className="allUserList"
+            icon={LuUsers}
+            title="All users"
+            subtitle="Everyone with an account. A person’s role decides which pages they can open."
+        >
             <AsyncState state={profiles} isEmpty={false}>
                 <TableTemplate
                     ariaLabel="Users"
@@ -105,7 +109,7 @@ const AllUsers = () => {
                     }}
                 />
             )}
-        </div>
+        </SectionCard>
     );
 };
 

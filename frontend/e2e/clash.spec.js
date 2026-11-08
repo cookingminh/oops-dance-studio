@@ -31,8 +31,8 @@ test('finds an upcoming booking in a room that has classes', async () => {
 
 test('schedule form explains a clash with a booking', async () => {
     await page.goto('/admin/classes');
-    await expect(page.getByRole('grid', { name: 'Class schedules' })).toBeVisible();
-    await page.getByRole('button', { name: 'Add New' }).nth(1).click();
+    await expect(page.getByRole('list', { name: 'Weekly timetable' })).toBeVisible();
+    await page.getByRole('button', { name: 'Add session' }).click();
     await pickOption(page, dialog, 'Class', target.className);
     await pickOption(page, dialog, 'Day of the Week', target.weekday);
     await pickOption(page, dialog, 'Start Time', target.start);
@@ -68,7 +68,7 @@ test('books the other room at a class time (temporary booking)', async () => {
 test('class form explains why it cannot move to that room', async () => {
     await page.goto('/admin/classes');
     await page.locator('.classListDiv').getByPlaceholder('Search...').fill(move.cls.name);
-    const row = page.locator('.classListDiv').getByRole('row').filter({ hasText: move.cls.name }).first();
+    const row = page.locator('.classCard').filter({ hasText: move.cls.name }).first();
     await row.getByRole('button', { name: /Actions for/ }).click();
     await page.waitForTimeout(500); // menu open animation
     await page.getByText('Edit class information', { exact: true }).click();

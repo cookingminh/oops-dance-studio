@@ -1,12 +1,5 @@
-import './bookingsManager.scss'
-import BookingList from './components/booking-list/BookingList'
+import BookingList from './components/booking-list/BookingList';
 
-const Bookings = () => {
-    return (
-        <div className='adminBookings'>
-            <BookingList />
-        </div>
-    )
-}
+const Bookings = () => <BookingList />;
 
-export default Bookings
+export default Bookings;

@@ -1,0 +1,872 @@
+// Admin dashboard (/admin). Tokens (--ad-*) come from admin.scss.
+
+.adminShell .dashboardGrid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.5rem;
+
+    > .welcomeHero {
+        grid-column: span 7;
+    }
+
+    > .statsBlock {
+        grid-column: span 5;
+    }
+
+    > .dashPanels {
+        grid-column: span 12;
+    }
+}
+
+// Four equal panels (2 × 2). Each shows a short preview sized to fit; the footer link leads to
+// the page with everything.
+.adminShell .dashPanels {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: 31rem;
+    gap: 1.5rem;
+
+    > .adminCard {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .cardBody {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+
+        // Loading / empty / error states sit in the middle of the panel.
+        > div:only-child:not([class]),
+        > p:only-child,
+        > [role='alert'] {
+            margin: auto;
+        }
+    }
+
+    .roomTiles {
+        flex: 1;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .roomTile {
+        aspect-ratio: auto;
+        height: 100%;
+        min-height: 12rem;
+    }
+}
+
+// Welcome hero ====================>
+
+.adminShell .welcomeHero {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-end;
+    min-height: 300px;
+    border-radius: var(--ad-radius-lg);
+    background: linear-gradient(135deg, hsl(0, 62%, 30%), hsl(345, 55%, 20%));
+    color: #fff;
+    box-shadow: 0 26px 50px -30px hsla(0, 66%, 25%, .8);
+
+    // The clip has the studio name burnt into its middle; show only the top band (ceiling lights).
+    .heroVideo {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        z-index: -3;
+        width: auto;
+        min-width: 100%;
+        height: 250%;
+        max-width: none;
+        object-fit: cover;
+        object-position: top;
+        transform: translateX(-50%);
+    }
+
+    .heroOverlay {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        background:
+            linear-gradient(100deg, hsla(0, 72%, 16%, .95) 0%, hsla(352, 62%, 24%, .8) 45%, hsla(352, 50%, 20%, .25) 100%),
+            linear-gradient(to top, hsla(0, 70%, 12%, .55), transparent 60%);
+    }
+
+    // A soft red glow that drifts behind the text.
+    &::after {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        width: 360px;
+        height: 360px;
+        left: -120px;
+        bottom: -200px;
+        border-radius: 50%;
+        background: radial-gradient(circle, hsla(355, 90%, 60%, .45), transparent 70%);
+    }
+
+    .heroContent {
+        max-width: 640px;
+        padding: 2rem 2.25rem 2.1rem;
+    }
+
+    .heroEyebrow {
+        display: inline-flex;
+        align-items: center;
+        padding: .35rem .85rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .14);
+        border: 1px solid hsla(0, 0%, 100%, .18);
+        backdrop-filter: blur(6px);
+        font-size: .86rem;
+        font-weight: 500;
+        letter-spacing: .02em;
+    }
+
+    h2 {
+        margin-top: 1rem;
+        font-family: var(--ad-display);
+        font-size: clamp(2rem, 2.7vw, 2.75rem);
+        font-weight: 700;
+        line-height: 1.05;
+        color: #fff;
+    }
+
+    p {
+        max-width: 46ch;
+        margin-top: .55rem;
+        font-size: 1.08rem;
+        line-height: 1.5;
+        color: hsla(0, 0%, 100%, .84);
+    }
+
+    .heroActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem;
+        margin-top: 1.5rem;
+    }
+
+    .heroBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        height: 2.8rem;
+        padding: 0 1.15rem;
+        border: 1px solid hsla(0, 0%, 100%, .24);
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .12);
+        backdrop-filter: blur(6px);
+        color: #fff;
+        font-size: .96rem;
+        font-weight: 600;
+        transition: transform .3s var(--ad-ease), background-color .25s ease;
+
+        svg {
+            font-size: 1.05rem;
+        }
+
+        &:hover {
+            transform: translateY(-2px);
+            background: hsla(0, 0%, 100%, .22);
+        }
+
+        &.isPrimary {
+            border-color: #fff;
+            background: #fff;
+            color: var(--ad-primary);
+
+            &:hover {
+                background: hsl(0, 30%, 97%);
+            }
+        }
+    }
+}
+
+// Studio stats ====================>
+
+.adminShell .statsBlock {
+    display: flex;
+    flex-direction: column;
+    gap: .85rem;
+    min-width: 0;
+
+    .blockHeader {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding: 0 .25rem;
+
+        h2 {
+            font-family: var(--ad-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        span {
+            font-size: .9rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .studioStats {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+}
+
+.adminShell .statCard {
+    --tone: var(--ad-primary);
+    --tone-soft: var(--ad-primary-soft);
+
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: .3rem;
+    min-width: 0;
+    padding: 1.1rem 1.2rem 1.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+    box-shadow: var(--ad-shadow);
+    transition: transform .35s var(--ad-ease), box-shadow .35s var(--ad-ease);
+
+    &::after {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        right: -40px;
+        bottom: -48px;
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: var(--tone-soft);
+        transition: transform .6s var(--ad-ease);
+    }
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--ad-shadow-hover);
+
+        &::after {
+            transform: scale(1.35);
+        }
+    }
+
+    .statTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: auto;
+        padding-bottom: .7rem;
+    }
+
+    .statIcon {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 12px;
+        background: var(--tone-soft);
+        color: var(--tone);
+        font-size: 1.25rem;
+    }
+
+    .statLink {
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        color: var(--ad-subtle);
+        font-size: 1.1rem;
+        transition: background-color .2s ease, color .2s ease, transform .3s var(--ad-ease);
+
+        &:hover {
+            background: var(--tone-soft);
+            color: var(--tone);
+            transform: rotate(45deg);
+        }
+    }
+
+    .statValue {
+        font-family: var(--ad-display);
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.05;
+        white-space: nowrap;
+        color: var(--ad-text);
+    }
+
+    .statLabel {
+        font-size: .92rem;
+        font-weight: 500;
+        color: var(--ad-muted);
+    }
+
+    &.tone-rose {
+        --tone: hsl(0, 66%, 45%);
+        --tone-soft: hsl(0, 85%, 95.5%);
+    }
+
+    &.tone-violet {
+        --tone: hsl(262, 52%, 50%);
+        --tone-soft: hsl(262, 80%, 96%);
+    }
+
+    &.tone-amber {
+        --tone: hsl(30, 88%, 40%);
+        --tone-soft: hsl(40, 95%, 92%);
+    }
+
+    &.tone-emerald {
+        --tone: hsl(158, 64%, 30%);
+        --tone-soft: hsl(150, 60%, 93%);
+    }
+}
+
+// Placeholder while dashboard_stats loads; its "…" stays in the DOM but is not visible.
+.adminShell .statSkeleton {
+    display: inline-block;
+    width: 6rem;
+    height: 1.8rem;
+    border-radius: 8px;
+    color: transparent;
+    vertical-align: middle;
+    background: linear-gradient(90deg, var(--ad-surface-2) 0%, hsl(20, 14%, 90%) 50%, var(--ad-surface-2) 100%);
+    background-size: 200% 100%;
+}
+
+// Today's classes timeline ====================>
+
+.adminShell .timeline {
+    display: grid;
+    gap: .55rem;
+}
+
+.adminShell .timelineItem {
+    display: grid;
+    grid-template-columns: 3.3rem 1.1rem minmax(0, 1fr);
+    gap: .7rem;
+
+    .timelineTime {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        padding-top: .8rem;
+        line-height: 1.15;
+
+        strong {
+            font-family: var(--ad-display);
+            font-size: 1.08rem;
+            font-weight: 700;
+        }
+
+        span {
+            font-size: .8rem;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .timelineRail {
+        position: relative;
+        display: flex;
+        justify-content: center;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: -.55rem;
+            width: 2px;
+            border-radius: 2px;
+            background: var(--ad-border);
+        }
+    }
+
+    &:first-child .timelineRail::before {
+        top: 1.2rem;
+    }
+
+    &:last-child .timelineRail::before {
+        bottom: calc(100% - 1.2rem);
+    }
+
+    .timelineDot {
+        position: relative;
+        z-index: 1;
+        width: .85rem;
+        height: .85rem;
+        margin-top: .95rem;
+        border: 2px solid var(--ad-subtle);
+        border-radius: 50%;
+        background: var(--ad-surface);
+        transition: transform .3s var(--ad-ease);
+    }
+
+    .timelineBody {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        min-width: 0;
+        padding: .6rem .9rem;
+        border: 1px solid transparent;
+        border-radius: 16px;
+        background: var(--ad-surface-2);
+        transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease, transform .35s var(--ad-ease);
+    }
+
+    &:hover {
+        .timelineBody {
+            border-color: var(--ad-border);
+            background: var(--ad-surface);
+            box-shadow: var(--ad-shadow);
+            transform: translateX(4px);
+        }
+
+        .timelineDot {
+            transform: scale(1.25);
+        }
+    }
+
+    .timelineThumb {
+        width: 2.6rem;
+        height: 2.6rem;
+        flex-shrink: 0;
+        object-fit: cover;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+    }
+
+    .timelineInfo {
+        flex: 1;
+        min-width: 0;
+
+        strong,
+        span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        strong {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        span {
+            font-size: .88rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .timelineLink {
+        flex-shrink: 0;
+        font-size: .85rem;
+        font-weight: 500;
+        color: var(--ad-subtle);
+
+        &:hover {
+            color: var(--ad-primary);
+            text-decoration: underline;
+        }
+    }
+
+    &.is-done {
+        .timelineDot {
+            border-color: var(--ad-subtle);
+            background: var(--ad-subtle);
+        }
+
+        .timelineTime strong,
+        .timelineInfo strong {
+            color: var(--ad-muted);
+        }
+    }
+
+    &.is-live {
+        .timelineDot {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary);
+            box-shadow: 0 0 0 5px var(--ad-primary-soft);
+        }
+
+        .timelineTime strong {
+            color: var(--ad-primary);
+        }
+
+        .timelineBody {
+            border-color: var(--ad-primary-tint);
+            background: var(--ad-primary-soft);
+        }
+    }
+}
+
+.adminShell .liveBadge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: .45rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: var(--ad-primary);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+
+    .livePulse {
+        width: .5rem;
+        height: .5rem;
+        border-radius: 50%;
+        background: #fff;
+    }
+}
+
+// Booking requests ====================>
+
+.adminShell .requestList {
+    display: grid;
+    gap: .55rem;
+}
+
+.adminShell .requestItem {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem .7rem .6rem .8rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    transition: border-color .25s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+    }
+
+    .requestInfo {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .requestHead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .5rem;
+
+        strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .98rem;
+            font-weight: 600;
+        }
+    }
+
+    .requestAmount {
+        flex-shrink: 0;
+        font-family: var(--ad-display);
+        font-size: .98rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+
+    .requestWhen {
+        display: block;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .86rem;
+        color: var(--ad-muted);
+    }
+
+    .requestActions {
+        display: flex;
+        gap: .35rem;
+    }
+}
+
+// Rooms ====================>
+
+.adminShell .roomTiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1rem;
+}
+
+.adminShell .roomTile {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: block;
+    aspect-ratio: 16 / 10;
+    border-radius: 18px;
+    color: #fff;
+
+    img {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .7s var(--ad-ease);
+    }
+
+    .roomTileShade {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(to top, hsla(0, 0%, 0%, .72), hsla(0, 0%, 0%, 0) 62%);
+    }
+
+    .roomTileText {
+        position: absolute;
+        left: 1rem;
+        right: 1rem;
+        bottom: .9rem;
+
+        strong {
+            display: block;
+            font-family: var(--ad-display);
+            font-size: 1.35rem;
+            font-weight: 700;
+            line-height: 1.15;
+        }
+
+        small {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .78rem;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            opacity: .85;
+        }
+    }
+
+    .roomTilePrice {
+        position: absolute;
+        top: .75rem;
+        right: .75rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .92);
+        color: var(--ad-text);
+        font-size: .84rem;
+        font-weight: 600;
+        transition: transform .35s var(--ad-ease);
+    }
+
+    &:hover {
+        img {
+            transform: scale(1.07);
+        }
+
+        .roomTilePrice {
+            transform: translateY(-2px);
+        }
+    }
+}
+
+// Recent activity ====================>
+
+.adminShell .activityFeed {
+    display: grid;
+    gap: .2rem;
+}
+
+.adminShell .activityItem {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .5rem .55rem;
+    border-radius: 14px;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-surface-2);
+    }
+
+    .activityAvatar {
+        position: relative;
+        flex-shrink: 0;
+    }
+
+    .activityBadge {
+        position: absolute;
+        right: -4px;
+        bottom: -4px;
+        display: grid;
+        place-items: center;
+        width: 1.2rem;
+        height: 1.2rem;
+        border: 2px solid var(--ad-surface);
+        border-radius: 50%;
+        color: #fff;
+        font-size: .62rem;
+
+        &.isIn {
+            background: hsl(152, 60%, 38%);
+        }
+
+        &.isOut {
+            background: hsl(240, 4%, 56%);
+        }
+    }
+
+    .activityText {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        line-height: 1.35;
+
+        > span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .95rem;
+            color: var(--ad-muted);
+
+            strong {
+                font-weight: 600;
+                color: var(--ad-text);
+            }
+        }
+
+        time {
+            font-size: .8rem;
+            color: var(--ad-subtle);
+        }
+    }
+}
+
+// Motion (only when the visitor hasn't asked for reduced motion) ====================>
+
+@keyframes adShimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes adPulse {
+    0% {
+        box-shadow: 0 0 0 0 hsla(0, 0%, 100%, .7);
+    }
+
+    70% {
+        box-shadow: 0 0 0 7px hsla(0, 0%, 100%, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 hsla(0, 0%, 100%, 0);
+    }
+}
+
+@keyframes adDrift {
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(140px, -40px);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .adminShell .statSkeleton {
+        animation: adShimmer 1.3s linear infinite;
+    }
+
+    .adminShell .liveBadge .livePulse {
+        animation: adPulse 1.8s ease-out infinite;
+    }
+
+    .adminShell .welcomeHero::after {
+        animation: adDrift 14s ease-in-out infinite;
+    }
+}
+
+// Responsive ====================>
+
+@media screen and (max-width: 1420px) {
+    .adminShell .dashboardGrid {
+        > .welcomeHero,
+        > .statsBlock {
+            grid-column: span 12;
+        }
+    }
+
+    .adminShell .statsBlock .studioStats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .adminShell .welcomeHero {
+        min-height: 260px;
+    }
+}
+
+@media screen and (max-width: 1180px) {
+    .adminShell .dashboardGrid > * {
+        grid-column: span 12 !important;
+    }
+
+    .adminShell .dashPanels {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: auto;
+
+        .cardBody {
+            overflow: visible;
+        }
+
+        .roomTile {
+            aspect-ratio: 16 / 10;
+            height: auto;
+        }
+    }
+}
+
+@media screen and (max-width: 760px) {
+    .adminShell .statsBlock .studioStats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .adminShell .statCard .statValue {
+        font-size: 1.6rem;
+    }
+
+    .adminShell .welcomeHero .heroContent {
+        padding: 1.5rem 1.4rem 1.6rem;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .adminShell .timelineItem {
+        grid-template-columns: 2.9rem .9rem minmax(0, 1fr);
+        gap: .5rem;
+
+        .timelineThumb {
+            display: none;
+        }
+    }
+
+    .adminShell .welcomeHero .heroBtn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+}

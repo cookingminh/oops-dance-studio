@@ -8,16 +8,17 @@ const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, created_at,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
-    schedules:class_schedules(id, day_of_week, start_time, end_time)`;
+    schedules:class_schedules(id, day_of_week, start_time, end_time),
+    lessons:class_lessons(id, month, title)`;
 const STUDENTS_SELECT = `students:class_students(joined_at,
     student:profiles!student_id(${PERSON}, contact_number, date_of_birth))`;
 
-const CLASS_FIELDS = ({ name, instructorId, roomId, price, lesson }) => ({
+// `lesson` is not written here: it mirrors the latest row of class_lessons (see setClassLesson).
+const CLASS_FIELDS = ({ name, instructorId, roomId, price }) => ({
     name: name.trim(),
     instructor_id: instructorId,
     room_id: roomId || null,
     price: Number(price),
-    lesson: lesson?.trim() || null,
 });
 
 // Public homepage data (anon allowed): includes instructor name/avatar without exposing profiles.
@@ -93,4 +94,22 @@ export async function addStudent(classId, studentId) {
 
 export async function removeStudent(classId, studentId) {
     unwrap(await supabase.from('class_students').delete().eq('class_id', classId).eq('student_id', studentId));
+}
+
+// ---- Monthly lessons ------------------------------------------------------------
+// One piece (song) per class and month; `month` is 'yyyy-MM-01'. Saving the same month again
+// renames it. classes.lesson follows the latest month automatically (database trigger).
+
+export async function setClassLesson({ classId, month, title }) {
+    return unwrap(
+        await supabase
+            .from('class_lessons')
+            .upsert({ class_id: classId, month, title: title.trim() }, { onConflict: 'class_id,month' })
+            .select('id, month, title')
+            .single()
+    );
+}
+
+export async function deleteClassLesson(id) {
+    unwrap(await supabase.from('class_lessons').delete().eq('id', id));
 }

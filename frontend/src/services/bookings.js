@@ -54,6 +54,19 @@ export async function listBookings() {
     );
 }
 
+// Staff dashboard: upcoming requests still waiting for a decision (soonest first) and how many there are.
+export async function listPendingBookings({ from, limit = 5 }) {
+    const response = await supabase
+        .from('bookings')
+        .select(BOOKING_SELECT, { count: 'exact' })
+        .eq('status', 'pending')
+        .gte('date', from)
+        .order('date')
+        .order('start_time')
+        .limit(limit);
+    return { rows: unwrap(response), total: response.count ?? 0 };
+}
+
 const money = (value) => (value === '' || value === null || value === undefined ? null : Number(value));
 
 function toRow(fields) {

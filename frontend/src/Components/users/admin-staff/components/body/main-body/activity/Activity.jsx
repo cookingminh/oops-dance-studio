@@ -1,55 +1,60 @@
-import { useNavigate } from 'react-router-dom';
 import { Avatar } from '@nextui-org/react';
-import { BsArrowRightShort } from 'react-icons/bs';
+import { LuActivity, LuLogIn, LuLogOut } from 'react-icons/lu';
 import { formatDistanceToNow } from 'date-fns';
 import { useAsync } from '@/hooks/useAsync';
 import { listRecentCheckins } from '@/services/attendance';
 import { avatarUrl } from '@/services/storage';
 import AsyncState from '@/ui/feedback/AsyncState';
-import './activity.scss';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
+import SectionCard, { CardFooterLink } from '../../../common/SectionCard';
 
 // Latest instructor check-ins / check-outs.
 const Activity = () => {
-    const navigate = useNavigate();
-    const recent = useAsync(() => listRecentCheckins(6), []);
+    const recent = useAsync(() => listRecentCheckins(5), []);
 
     return (
-        <div className="activitySection">
-            <div className="heading flex">
-                <h1>Recent Activity</h1>
-                <button type="button" className="btn flex" onClick={() => navigate('/admin/attendance-records')}>
-                    See All <BsArrowRightShort className="icon" />
-                </button>
-            </div>
-
+        <SectionCard
+            className="activityCard"
+            icon={LuActivity}
+            title="Recent Activity"
+            subtitle="Instructor check-ins and check-outs"
+            footer={<CardFooterLink to="/admin/attendance-records">See all attendance records</CardFooterLink>}
+        >
             <AsyncState state={recent} emptyText="No check-ins yet.">
                 {(list) => (
-                    <div className="secContainer grid">
+                    <ul className="activityFeed">
                         {list.map((row) => {
                             const name = row.instructor?.full_name || row.instructor?.username || 'Instructor';
                             const checkedOut = Boolean(row.checkout_at);
                             const at = row.checkout_at ?? row.checkin_at;
+                            const Icon = checkedOut ? LuLogOut : LuLogIn;
                             return (
-                                <div className="singleUser flex" key={row.id}>
-                                    <Avatar {...AVATAR_DEFAULTS}
-                                        src={avatarUrl(row.instructor?.avatar_path, row.instructor?.updated_at) ?? undefined}
-                                        name={name}
-                                    />
-                                    <div className="userDetails">
-                                        <span className="name">{name}</span>
-                                        <small>
-                                            {checkedOut ? 'checked out of' : 'checked in to'} {row.class?.name}
-                                        </small>
+                                <li className="activityItem" key={row.id}>
+                                    <span className="activityAvatar">
+                                        <Avatar
+                                            {...AVATAR_DEFAULTS}
+                                            size="sm"
+                                            src={avatarUrl(row.instructor?.avatar_path, row.instructor?.updated_at) ?? undefined}
+                                            name={name}
+                                        />
+                                        <span className={`activityBadge ${checkedOut ? 'isOut' : 'isIn'}`} aria-hidden="true">
+                                            <Icon />
+                                        </span>
+                                    </span>
+                                    <div className="activityText">
+                                        <span>
+                                            <strong>{name}</strong> {checkedOut ? 'checked out of' : 'checked in to'}{' '}
+                                            <strong>{row.class?.name}</strong>
+                                        </span>
+                                        <time dateTime={at}>{formatDistanceToNow(new Date(at), { addSuffix: true })}</time>
                                     </div>
-                                    <div className="duration">{formatDistanceToNow(new Date(at), { addSuffix: true })}</div>
-                                </div>
+                                </li>
                             );
                         })}
-                    </div>
+                    </ul>
                 )}
             </AsyncState>
-        </div>
+        </SectionCard>
     );
 };
 

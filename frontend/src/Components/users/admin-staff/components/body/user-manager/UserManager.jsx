@@ -1,11 +1,5 @@
-import AllUsers from './components/AllUsers'
+import AllUsers from './components/AllUsers';
 
-const UserManager = () => {
-    return (
-        <div>
-            <AllUsers />
-        </div>
-    )
-}
+const UserManager = () => <AllUsers />;
 
-export default UserManager
+export default UserManager;

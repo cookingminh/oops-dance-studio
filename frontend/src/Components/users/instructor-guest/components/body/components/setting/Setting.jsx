@@ -1,11 +1,7 @@
-import { useState } from 'react';
 import { Card, CardFooter, Image, Button, Input, Avatar } from '@nextui-org/react';
 import { useAuth } from '@/auth/useAuth';
-import { changePassword } from '@/services/auth';
 import { isLockedDemoAccount } from '@/lib/demo';
-import { updateProfile } from '@/services/users';
-import { BUCKETS, removeFiles, uploadAvatar } from '@/services/storage';
-import { useToast } from '@/ui/feedback/toastContext';
+import { MIN_PASSWORD_LENGTH, useAvatarUpload, usePasswordChange, useProfileForm } from '@/hooks/useAccountSettings';
 import DateField from '@/ui/DateField';
 import ImagePicker from '@/ui/ImagePicker';
 import './setting.scss';
@@ -13,82 +9,21 @@ import studio_img from '@/assets/images/studio.webp';
 import video from '@/assets/video/dashboard.mp4';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 
-const MIN_PASSWORD_LENGTH = 8;
-const EMPTY_PASSWORDS = { current: '', next: '', confirm: '' };
-
 const Setting = () => {
-    const { user, refreshProfile } = useAuth();
-    const toast = useToast();
+    const { user } = useAuth();
     const name = user.full_name || user.username;
     const lockedDemo = isLockedDemoAccount(user.email);
 
-    // ---- Profile ----------------------------------------------------------
-    const [profile, setProfile] = useState({
-        username: user.username ?? '',
-        full_name: user.full_name ?? '',
-        contact_number: user.contact_number ?? '',
-        date_of_birth: user.date_of_birth ?? '',
-    });
-    const [savingProfile, setSavingProfile] = useState(false);
-    const setField = (field) => (value) => setProfile((prev) => ({ ...prev, [field]: value }));
-
-    const handleSaveProfile = async () => {
-        setSavingProfile(true);
-        try {
-            await updateProfile(user.id, profile);
-            await refreshProfile();
-            toast.success('Profile updated.');
-        } catch (error) {
-            toast.error(error.code === 'DUPLICATE' ? 'That username is already taken.' : error);
-        } finally {
-            setSavingProfile(false);
-        }
-    };
-
-    // ---- Avatar -----------------------------------------------------------
-    const [avatar, setAvatar] = useState(null);
-    const [pickerKey, setPickerKey] = useState(0);
-    const [savingAvatar, setSavingAvatar] = useState(false);
-
-    const handleChangeAvatar = async () => {
-        setSavingAvatar(true);
-        try {
-            const path = await uploadAvatar(user.id, avatar);
-            await updateProfile(user.id, { avatar_path: path });
-            // A different extension means a different object; drop the old one.
-            if (user.avatar_path && user.avatar_path !== path) await removeFiles(BUCKETS.avatars, [user.avatar_path]);
-            await refreshProfile();
-            setAvatar(null);
-            setPickerKey((key) => key + 1);
-            toast.success('Profile picture updated.');
-        } catch (error) {
-            toast.error(error);
-        } finally {
-            setSavingAvatar(false);
-        }
-    };
-
-    // ---- Password ---------------------------------------------------------
-    const [passwords, setPasswords] = useState(EMPTY_PASSWORDS);
-    const [savingPassword, setSavingPassword] = useState(false);
-    const setPassword = (field) => (value) => setPasswords((prev) => ({ ...prev, [field]: value }));
-    const tooShort = passwords.next.length > 0 && passwords.next.length < MIN_PASSWORD_LENGTH;
-    const mismatch = passwords.confirm.length > 0 && passwords.confirm !== passwords.next;
-
-    const handleSubmitPassword = async (event) => {
-        event.preventDefault();
-        if (tooShort || mismatch) return;
-        setSavingPassword(true);
-        try {
-            await changePassword(user.email, passwords.current, passwords.next);
-            setPasswords(EMPTY_PASSWORDS);
-            toast.success('Password changed.');
-        } catch (error) {
-            toast.error(error);
-        } finally {
-            setSavingPassword(false);
-        }
-    };
+    const { profile, setField, save: handleSaveProfile, saving: savingProfile } = useProfileForm();
+    const { file: avatar, setFile: setAvatar, pickerKey, save: handleChangeAvatar, saving: savingAvatar } = useAvatarUpload();
+    const {
+        passwords,
+        setPassword,
+        tooShort,
+        mismatch,
+        submit: handleSubmitPassword,
+        saving: savingPassword,
+    } = usePasswordChange();
 
     return (
         <div className="settings-user flex flex-col gap-4">

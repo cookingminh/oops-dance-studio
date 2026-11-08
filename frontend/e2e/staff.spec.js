@@ -71,7 +71,7 @@ test('updates a room', async () => {
 test('creates a booking for a guest (create_booking with p_guest_id)', async () => {
     await page.goto('/admin/bookings');
     await expect(page.getByRole('grid', { name: 'Bookings' })).toBeVisible();
-    await page.getByRole('button', { name: 'Add New' }).click();
+    await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[1]));
     await page.getByRole('option').first().click();
     await pickOption(page, dialog, 'Room', roomB.name);
@@ -83,7 +83,7 @@ test('creates a booking for a guest (create_booking with p_guest_id)', async () 
 });
 
 test('an overlapping booking shows the SLOT_TAKEN message', async () => {
-    await page.getByRole('button', { name: 'Add New' }).click();
+    await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[2]));
     await page.getByRole('option').first().click();
     await pickOption(page, dialog, 'Room', roomB.name);
@@ -121,8 +121,8 @@ test('deletes the booking', async () => {
 
 test('creates a class with an image (classes insert + class-images upload)', async () => {
     await page.goto('/admin/classes');
-    await expect(page.getByRole('grid', { name: 'Classes' })).toBeVisible();
-    await page.getByRole('button', { name: 'Add New' }).first().click();
+    await expect(page.locator('.classCard').first()).toBeVisible();
+    await page.getByRole('button', { name: 'New class' }).click();
     await dialog.getByLabel('Class Name').fill(CLASS_NAME);
     await pickOption(page, dialog, 'Instructor', instructors[0].full_name);
     await dialog.getByLabel('Price (VND)').fill('500000');
@@ -132,11 +132,11 @@ test('creates a class with an image (classes insert + class-images upload)', asy
     await expectToast(page, 'Class added.');
 });
 
-const classRow = () => page.locator('.classListDiv').getByRole('row').filter({ hasText: CLASS_NAME });
+const classRow = () => page.locator('.classCard').filter({ hasText: CLASS_NAME });
 
 test('adds a schedule to the class (ISO weekday)', async () => {
     await page.goto('/admin/classes');
-    await page.getByRole('button', { name: 'Add New' }).nth(1).click();
+    await page.getByRole('button', { name: 'Add session' }).click();
     await pickOption(page, dialog, 'Class', CLASS_NAME);
     await pickOption(page, dialog, 'Day of the Week', 'Tuesday');
     await pickOption(page, dialog, 'Start Time', '08:00');
@@ -144,10 +144,10 @@ test('adds a schedule to the class (ISO weekday)', async () => {
     await dialog.getByRole('button', { name: 'Add Schedule' }).click();
     await expectToast(page, 'Schedule added.');
     await page.locator('.classListDiv').getByPlaceholder('Search...').fill('E2E');
-    await expect(classRow().getByText(/Tuesday 08:00/)).toBeVisible();
+    await expect(classRow().getByText(/Tue\s*08:00/)).toBeVisible();
 });
 
-test('the class row shows the uploaded image', async () => {
+test('the class card shows the uploaded image', async () => {
     await expect(classRow().locator('img').first()).toBeVisible();
 });
 
@@ -157,6 +157,21 @@ test('replaces the class image', async () => {
     await dialog.locator('input[type=file]').setInputFiles(PROOF);
     await dialog.getByRole('button', { name: 'Change Image' }).click();
     await expectToast(page, 'Class image updated.');
+});
+
+test('a new class asks for this month\'s lesson', async () => {
+    await expect(classRow().getByText(/No lesson for/)).toBeVisible();
+});
+
+test('sets this month\'s lesson (class_lessons upsert → classes.lesson)', async () => {
+    await classRow().getByRole('button', { name: /No lesson for/ }).click();
+    await dialog.getByLabel('Lesson').fill('Super Shy — NewJeans');
+    await dialog.getByRole('button', { name: 'Save lesson' }).click();
+    await expectToast(page, 'Lesson saved');
+    await expect(classRow().getByText('Super Shy — NewJeans')).toBeVisible();
+    const jwt = (await token('staff@demo.oopsdance.test')).jwt;
+    const res = await rest(jwt, `classes?select=lesson&name=eq.${encodeURIComponent(CLASS_NAME)}`);
+    expect(res.data).toEqual([{ lesson: 'Super Shy — NewJeans' }]);
 });
 
 test('generates today\'s student attendance from the UI', async () => {
@@ -191,7 +206,7 @@ test('deletes the class (cascade + image removed)', async () => {
 test('generates this week\'s instructor attendance from the UI', async () => {
     await page.goto('/admin/attendance-records');
     await expect(page.getByRole('grid', { name: 'Instructor attendance' })).toBeVisible();
-    await page.getByRole('button', { name: 'Create', exact: true }).click();
+    await page.getByRole('button', { name: /Create this week/ }).click();
     await expectToast(page, /records for this week|already exist/);
 });
 

@@ -1,217 +1,215 @@
 import { useState } from 'react';
-import {
-    Button,
-    DropdownTrigger,
-    Dropdown,
-    DropdownMenu,
-    DropdownItem,
-    Modal,
-    ModalContent,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    Textarea,
-    Select,
-    SelectItem,
-} from '@nextui-org/react';
-import { useAsync } from '@/hooks/useAsync';
-import {
-    INSTRUCTOR_ATTENDANCE_STATUSES,
-    generateInstructorAttendance,
-    listInstructorAttendance,
-    updateInstructorAttendance,
-} from '@/services/attendance';
-import { listInstructors } from '@/services/users';
+import { Input, Pagination, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Chip, User } from '@nextui-org/react';
+import { LuClipboardCheck, LuSearch } from 'react-icons/lu';
+import { addDays, format, parseISO, startOfWeek } from 'date-fns';
+import { INSTRUCTOR_ATTENDANCE_STATUSES } from '@/services/attendance';
 import { avatarUrl } from '@/services/storage';
-import { formatDateTime } from '@/lib/format';
-import { useToast } from '@/ui/feedback/toastContext';
+import { formatClock, toIsoDate } from '@/lib/format';
+import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import AsyncState from '@/ui/feedback/AsyncState';
-import TableTemplate from '../../../../../../Table/TableTemplate';
-import { VerticalDotsIcon } from '../../../../../../Table/VerticalDotsIcon';
+import { statusColorMap } from '../../../../../../Table/utils';
+import SectionCard from '../../../common/SectionCard';
+import Segmented from '../../../common/Segmented';
+import StatusSelect from '../../../common/StatusSelect';
+import { STATUS_COLORS } from '../../../common/chartTheme';
+import { sessionTimes } from '../../../../tasks/staffTasks';
+import { AttendanceMenu, NoteButton, ProofThumb } from './AttendanceParts';
 
-const INITIAL_VISIBLE_COLUMNS = ['date', 'user', 'class_name', 'checkin_time', 'checkin_proof', 'checkout_time', 'checkout_proof', 'status', 'details', 'actions'];
-
-const columns = [
-    { name: 'Date', uid: 'date', allowsSorting: true },
-    { name: 'Instructor', uid: 'user', allowsSorting: true },
-    { name: 'Class Name', uid: 'class_name', allowsSorting: true },
-    { name: 'Room', uid: 'room' },
-    { name: 'Check-in', uid: 'checkin_time' },
-    { name: 'Check-in Proof', uid: 'checkin_proof' },
-    { name: 'Check-out', uid: 'checkout_time' },
-    { name: 'Check-out Proof', uid: 'checkout_proof' },
-    { name: 'Status', uid: 'status', allowsSorting: true },
-    { name: 'Details', uid: 'details' },
-    { name: 'Actions', uid: 'actions' },
+const PAGE_SIZE = 10;
+const SCOPES = [
+    { key: 'week', label: 'This week' },
+    { key: 'month', label: 'This month' },
+    { key: 'all', label: 'All dates' },
+];
+const STATUS_LABEL = (status) => (status === 'in_progress' ? 'In progress' : status[0].toUpperCase() + status.slice(1));
+const STATUS_DOT = { ...STATUS_COLORS, in_progress: '#2a78d6', waiting: '#eda100' };
+const COLUMNS = [
+    { key: 'date', label: 'Date' },
+    { key: 'instructor', label: 'Instructor' },
+    { key: 'class', label: 'Class' },
+    { key: 'checkin', label: 'Check-in' },
+    { key: 'checkout', label: 'Check-out' },
+    { key: 'status', label: 'Status' },
+    { key: 'actions', label: 'Actions' },
 ];
 
-const statusOptions = INSTRUCTOR_ATTENDANCE_STATUSES.map((status) => ({ uid: status, name: status.replace('_', ' ') }));
+function inScope(date, scope, today) {
+    if (scope === 'all' || !today) return true;
+    if (scope === 'month') return date.slice(0, 7) === today.slice(0, 7);
+    const monday = startOfWeek(parseISO(today), { weekStartsOn: 1 });
+    return date >= toIsoDate(monday) && date <= toIsoDate(addDays(monday, 6));
+}
 
-const AttendanceList = () => {
-    const toast = useToast();
-    const records = useAsync(() => listInstructorAttendance({ withProofs: true }), []);
-    const instructors = useAsync(listInstructors, []);
-    const [dialog, setDialog] = useState(null); // { type: 'details' | 'instructor', record }
-    const [draft, setDraft] = useState('');
-    const [busy, setBusy] = useState(false);
+// Every instructor session, newest first, filtered by period, instructor and status.
+const AttendanceList = ({ state, today, actions }) => {
+    const [scope, setScope] = useState('week');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [instructorId, setInstructorId] = useState('all');
+    const [query, setQuery] = useState('');
+    const [page, setPage] = useState(1);
 
-    const save = async (record, fields, message) => {
-        setBusy(true);
-        try {
-            await updateInstructorAttendance(record.id, fields);
-            toast.success(message);
-            setDialog(null);
-            records.reload();
-        } catch (error) {
-            toast.error(error);
-        } finally {
-            setBusy(false);
+    const filterSetter = (setter) => (value) => {
+        setter(value);
+        setPage(1);
+    };
+
+    const rows = state.data ?? [];
+    const instructors = [...new Map(rows.map((row) => [row.instructor_id, row.instructor])).entries()]
+        .map(([id, person]) => ({ id, name: person?.full_name || person?.username || 'Instructor' }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    const term = query.trim().toLowerCase();
+    const base = rows.filter((row) => {
+        if (!inScope(row.date, scope, today)) return false;
+        if (instructorId !== 'all' && row.instructor_id !== instructorId) return false;
+        if (!term) return true;
+        return [row.date, row.instructor?.full_name, row.instructor?.username, row.instructor?.email, row.class?.name, row.room?.name, row.details]
+            .some((value) => String(value ?? '').toLowerCase().includes(term));
+    });
+    const statusCounts = new Map();
+    for (const row of base) statusCounts.set(row.status, (statusCounts.get(row.status) ?? 0) + 1);
+    const visible = base
+        .filter((row) => statusFilter === 'all' || row.status === statusFilter)
+        .sort((a, b) => b.date.localeCompare(a.date) || sessionTimes(b.class, b.date).start.localeCompare(sessionTimes(a.class, a.date).start));
+
+    const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+    const currentPage = Math.min(page, pages);
+    const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const statusOptions = [
+        { key: 'all', label: 'Any status', count: base.length },
+        ...INSTRUCTOR_ATTENDANCE_STATUSES.filter((status) => statusCounts.get(status) || status === statusFilter).map((status) => ({
+            key: status,
+            label: STATUS_LABEL(status),
+            count: statusCounts.get(status) ?? 0,
+            color: STATUS_DOT[status],
+        })),
+    ];
+
+    const renderCell = (row, key) => {
+        switch (key) {
+            case 'date': {
+                const { start, end } = sessionTimes(row.class, row.date);
+                return (
+                    <div className="stackCell">
+                        <strong>
+                            {format(parseISO(row.date), 'EEE d MMM')}
+                            {row.date === today && <span className="todayTag">Today</span>}
+                        </strong>
+                        <span>{start && `${start} – ${end}`}</span>
+                    </div>
+                );
+            }
+            case 'instructor': {
+                const name = row.instructor?.full_name || row.instructor?.username || 'Instructor';
+                return (
+                    <User
+                        avatarProps={{ ...AVATAR_DEFAULTS, size: 'sm', src: avatarUrl(row.instructor?.avatar_path, row.instructor?.updated_at) ?? undefined, name }}
+                        name={name}
+                        description={row.instructor?.email}
+                    />
+                );
+            }
+            case 'class':
+                return (
+                    <div className="stackCell">
+                        <strong>{row.class?.name}</strong>
+                        <span>{row.room?.name}</span>
+                    </div>
+                );
+            case 'checkin':
+            case 'checkout': {
+                const at = key === 'checkin' ? row.checkin_at : row.checkout_at;
+                const proof = key === 'checkin' ? row.checkin_proof_url : row.checkout_proof_url;
+                return (
+                    <div className="proofCell">
+                        <ProofThumb url={proof} label={key === 'checkin' ? 'Check-in proof' : 'Check-out proof'} onView={actions.viewProof} />
+                        <span className={at ? undefined : 'isMuted'}>{at ? formatClock(at) : '—'}</span>
+                    </div>
+                );
+            }
+            case 'status':
+                return (
+                    <Chip className="capitalize" color={statusColorMap[row.status] ?? 'default'} size="sm" variant="flat">
+                        {row.status.replace('_', ' ')}
+                    </Chip>
+                );
+            case 'actions':
+                return (
+                    <div className="rowActions">
+                        {row.details ? <NoteButton record={row} /> : <span className="actionSlot" aria-hidden="true" />}
+                        <AttendanceMenu record={row} actions={actions} />
+                    </div>
+                );
+            default:
+                return null;
         }
     };
 
-    const handleGenerate = async () => {
-        setBusy(true);
-        try {
-            const created = await generateInstructorAttendance();
-            toast.success(created > 0 ? `Created ${created} records for this week.` : 'This week’s records already exist.');
-            records.reload();
-        } catch (error) {
-            toast.error(error);
-        } finally {
-            setBusy(false);
-        }
-    };
-
-    const openDialog = (type, record) => {
-        setDraft(type === 'details' ? record.details ?? '' : record.instructor_id);
-        setDialog({ type, record });
-    };
-
-    const renderActions = (item) => {
-        const { record } = item;
-        const actions = [];
-        if (record.status !== 'completed') {
-            actions.push(
-                <DropdownItem key="approve" onPress={() => save(record, { status: 'completed' }, 'Marked as completed.')}>
-                    Approve (completed)
-                </DropdownItem>
-            );
-        }
-        if (record.status !== 'cancelled') {
-            actions.push(
-                <DropdownItem
-                    key="cancel"
-                    className="text-danger"
-                    color="danger"
-                    onPress={() => window.confirm('Cancel this session?') && save(record, { status: 'cancelled' }, 'Session cancelled.')}
-                >
-                    Cancel
-                </DropdownItem>
-            );
-        }
-        actions.push(<DropdownItem key="details" onPress={() => openDialog('details', record)}>Add details</DropdownItem>);
-        if (record.status === 'pending') {
-            actions.push(<DropdownItem key="instructor" onPress={() => openDialog('instructor', record)}>Change instructor</DropdownItem>);
-        }
-        return (
-            <Dropdown>
-                <DropdownTrigger>
-                    <Button isIconOnly size="sm" variant="light" aria-label="Attendance actions">
-                        <VerticalDotsIcon className="text-default-300" />
-                    </Button>
-                </DropdownTrigger>
-                <DropdownMenu aria-label="Attendance actions">{actions}</DropdownMenu>
-            </Dropdown>
-        );
-    };
-
-    const rows = (records.data ?? []).map((record) => ({
-        id: record.id,
-        record,
-        date: record.date,
-        username: record.instructor?.full_name || record.instructor?.username,
-        name: record.instructor?.full_name || record.instructor?.username,
-        email: record.instructor?.email,
-        user_avatar: avatarUrl(record.instructor?.avatar_path, record.instructor?.updated_at),
-        class_name: record.class?.name,
-        room: record.room?.name ?? '',
-        checkin_time: formatDateTime(record.checkin_at),
-        checkout_time: formatDateTime(record.checkout_at),
-        checkin_proof: record.checkin_proof_url,
-        checkout_proof: record.checkout_proof_url,
-        status: record.status,
-        details: record.details ?? '',
-    }));
+    const from = visible.length ? (currentPage - 1) * PAGE_SIZE + 1 : 0;
+    const to = Math.min(currentPage * PAGE_SIZE, visible.length);
 
     return (
-        <div className="attendanceAdmin flex">
-            <div className="flex flex-col gap-4 sectionContainer">
-                <div className="header flex flex-col gap-4">
-                    <h1 className="text-3xl font-bold">All Records</h1>
-                    <div className="flex gap-4 items-center font-semibold">
-                        <h1>Create this week’s attendance records</h1>
-                        <Button onPress={handleGenerate} isLoading={busy && !dialog}>Create</Button>
-                    </div>
-                </div>
-
-                <div className="tableDiv">
-                    <AsyncState state={records} isEmpty={false}>
-                        <TableTemplate
-                            ariaLabel="Instructor attendance"
-                            columns={columns}
-                            data={rows}
-                            statusOptions={statusOptions}
-                            initialVisibleColumns={INITIAL_VISIBLE_COLUMNS}
-                            renderActions={renderActions}
-                        />
-                    </AsyncState>
+        <SectionCard
+            className="bookingsCard"
+            icon={LuClipboardCheck}
+            title="All sessions"
+            subtitle={state.data ? `${visible.length} session${visible.length === 1 ? '' : 's'} · check-in and check-out with proof photos` : 'Loading sessions…'}
+            actions={
+                <Input
+                    isClearable
+                    aria-label="Search sessions"
+                    placeholder="Search..."
+                    className="bookingSearch"
+                    startContent={<LuSearch className="text-default-400" aria-hidden="true" />}
+                    value={query}
+                    onValueChange={filterSetter(setQuery)}
+                    onClear={() => filterSetter(setQuery)('')}
+                />
+            }
+        >
+            <div className="bookingToolbar">
+                <Select
+                    aria-label="Instructor"
+                    className="instructorPicker"
+                    classNames={{ trigger: 'statusSelectTrigger', popoverContent: 'adminPortal' }}
+                    selectedKeys={[instructorId]}
+                    disallowEmptySelection
+                    onChange={(event) => filterSetter(setInstructorId)(event.target.value || 'all')}
+                    items={[{ id: 'all', name: 'All instructors' }, ...instructors]}
+                >
+                    {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
+                </Select>
+                <div className="toolbarGroup">
+                    <StatusSelect options={statusOptions} value={statusFilter} onChange={filterSetter(setStatusFilter)} />
+                    <Segmented label="Period" options={SCOPES} value={scope} onChange={filterSetter(setScope)} />
                 </div>
             </div>
 
-            <Modal isOpen={dialog?.type === 'details'} onOpenChange={(open) => !open && setDialog(null)}>
-                <ModalContent>
-                    <ModalHeader>Add Details</ModalHeader>
-                    <ModalBody>
-                        <Textarea label="Details" placeholder="Enter details" value={draft} onValueChange={setDraft} />
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="light" onPress={() => setDialog(null)}>Close</Button>
-                        <Button color="primary" isLoading={busy} onPress={() => save(dialog.record, { details: draft }, 'Details saved.')}>
-                            Save Details
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
-
-            <Modal isOpen={dialog?.type === 'instructor'} onOpenChange={(open) => !open && setDialog(null)}>
-                <ModalContent>
-                    <ModalHeader>Change Instructor</ModalHeader>
-                    <ModalBody>
-                        <Select
-                            label="New Instructor"
-                            placeholder="Select new instructor"
-                            selectedKeys={draft ? [draft] : []}
-                            onChange={(event) => setDraft(event.target.value)}
-                        >
-                            {(instructors.data ?? []).map((person) => (
-                                <SelectItem key={person.id}>{person.full_name || person.username}</SelectItem>
-                            ))}
-                        </Select>
-                    </ModalBody>
-                    <ModalFooter>
-                        <Button variant="light" onPress={() => setDialog(null)}>Close</Button>
-                        <Button
-                            color="primary"
-                            isLoading={busy}
-                            isDisabled={!draft || draft === dialog?.record.instructor_id}
-                            onPress={() => save(dialog.record, { instructorId: draft }, 'Instructor changed.')}
-                        >
-                            Change Instructor
-                        </Button>
-                    </ModalFooter>
-                </ModalContent>
-            </Modal>
-        </div>
+            <AsyncState state={state} isEmpty={false}>
+                <div className="tableScroll">
+                    <Table aria-label="Instructor attendance" removeWrapper className="bookingTable">
+                        <TableHeader columns={COLUMNS}>
+                            {(column) => (
+                                <TableColumn key={column.key} align={column.key === 'actions' ? 'end' : 'start'}>
+                                    {column.label}
+                                </TableColumn>
+                            )}
+                        </TableHeader>
+                        <TableBody items={pageRows} emptyContent={<div className="tableEmpty">No sessions match these filters.</div>}>
+                            {(row) => <TableRow key={row.id}>{(key) => <TableCell>{renderCell(row, key)}</TableCell>}</TableRow>}
+                        </TableBody>
+                    </Table>
+                </div>
+                {visible.length > 0 && (
+                    <div className="tableFooter">
+                        <span>
+                            {from}–{to} of {visible.length}
+                        </span>
+                        {pages > 1 && <Pagination isCompact showControls color="danger" page={currentPage} total={pages} onChange={setPage} />}
+                    </div>
+                )}
+            </AsyncState>
+        </SectionCard>
     );
 };
 

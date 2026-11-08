@@ -1,81 +1,94 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Image } from '@nextui-org/react';
-import { MdDashboard } from 'react-icons/md';
-import { FaDoorClosed, FaDoorOpen, FaUserGroup } from 'react-icons/fa6';
-import { AiOutlinePieChart } from 'react-icons/ai';
-import { BsQuestionCircle } from 'react-icons/bs';
-import { SiBytedance } from 'react-icons/si';
-import { FaCalendarCheck } from 'react-icons/fa';
+import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { LuHelpCircle, LuLogOut, LuX } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
 import LogoutButton from '../../../../Logout/LogoutButton';
-import './sidebar.scss';
-import logo from '@/assets/images/logo.webp';
+import { ADMIN_NAV, findAdminPage } from '../../adminPages';
+import { useStaffTasks } from '../../tasks/staffTasks';
+import logoMark from '@/assets/images/logo-mark.webp';
 
-const QUICK_MENU = [
-    { to: '/admin', label: 'Dashboard', icon: MdDashboard, end: true },
-    { to: '/admin/rooms', label: 'Rooms', icon: FaDoorOpen },
-    { to: '/admin/bookings', label: 'Bookings', icon: FaDoorClosed },
-    { to: '/admin/classes', label: 'Classes & Schedules', icon: SiBytedance },
-    { to: '/admin/students', label: 'Students Manager', icon: SiBytedance },
-    { to: '/admin/attendance-records', label: 'Instructor Attendance Records', icon: FaCalendarCheck },
-];
-
-const SETTINGS_MENU = [
-    { to: '/admin/users', label: 'Users', icon: FaUserGroup, adminOnly: true },
-    { to: '/admin/charts', label: 'Charts', icon: AiOutlinePieChart },
-];
-
-const MenuList = ({ items }) => (
-    <ul className="menuLists grid">
-        {items.map(({ to, label, icon: Icon, end }) => (
-            <li key={to} className="listItem">
-                <NavLink to={to} end={end} className="menuLink flex">
-                    <Icon className="icon" />
-                    <span className="smallText">{label}</span>
-                </NavLink>
-            </li>
-        ))}
-    </ul>
-);
-
-const SideBar = () => {
-    const navigate = useNavigate();
+// On wide screens the sidebar is always shown; below 1024px it slides in as a drawer (`open`).
+const SideBar = ({ open, onClose }) => {
     const { role } = useAuth();
-    const settings = SETTINGS_MENU.filter((item) => !item.adminOnly || role === ROLES.admin);
+    const current = findAdminPage(useLocation().pathname);
+    const badges = useStaffTasks().data?.counts ?? {};
+    const sections = ADMIN_NAV.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.adminOnly || role === ROLES.admin),
+    }));
 
     return (
-        <div className="sideBar grid">
-            <div onClick={() => navigate('/home')} className="logoDiv flex justify-center items-center cursor-pointer">
-                <Image className="min-w-16 md:min-w-20" isBlurred src={logo} alt="Oops! Dance Studio" />
-                <h2>Oops! Dance Studio</h2>
-            </div>
-
-            <div className="menuDiv">
-                <h3 className="divTitle">QUICK MENU</h3>
-                <MenuList items={QUICK_MENU} />
-            </div>
-
-            <div className="settingsDiv">
-                <h3 className="divTitle">SETTING</h3>
-                <MenuList items={settings} />
-            </div>
-
-            <div className="logOutBtn flex">
-                <LogoutButton />
-            </div>
-
-            <div className="sideBarCard">
-                <BsQuestionCircle className="icon" />
-                <div className="cardContent">
-                    <div className="circle1"></div>
-                    <div className="circle2"></div>
-                    <h3>Help Center</h3>
-                    <p>Having any trouble in Oops! Dance Studio, please contact us.</p>
-                    <a className="btn" href="mailto:oopsdancestudio@gmail.com">Contact</a>
+        <>
+            <div className={`adminBackdrop${open ? ' isOpen' : ''}`} onClick={onClose} aria-hidden="true" />
+            <aside className={`sideBar adminSidebar${open ? ' isOpen' : ''}`} aria-label="Admin menu">
+                <div className="sidebarBrand">
+                    <Link to="/home" className="brandLink" title="Go to the homepage">
+                        <span className="brandMark">
+                            <img src={logoMark} alt="" />
+                        </span>
+                        <span className="brandText">
+                            <strong>Oops! Dance</strong>
+                            <small>{role === ROLES.admin ? 'Admin' : 'Staff'} workspace</small>
+                        </span>
+                    </Link>
+                    <button type="button" className="iconButton sidebarClose" onClick={onClose} aria-label="Close menu">
+                        <LuX />
+                    </button>
                 </div>
-            </div>
-        </div>
+
+                <nav className="sidebarNav">
+                    {sections.map((section) => (
+                        <div className="navGroup" key={section.group}>
+                            <span className="navGroupLabel">{section.group}</span>
+                            <ul>
+                                {section.items.map(({ to, label, icon: Icon }) => {
+                                    const isActive = current.to === to;
+                                    return (
+                                        <li key={to}>
+                                            <Link
+                                                to={to}
+                                                className={`navItem${isActive ? ' active' : ''}`}
+                                                aria-current={isActive ? 'page' : undefined}
+                                            >
+                                                {isActive && (
+                                                    <motion.span
+                                                        layoutId="adminNavActive"
+                                                        className="navActiveBg"
+                                                        transition={{ type: 'spring', stiffness: 480, damping: 38 }}
+                                                    />
+                                                )}
+                                                <Icon className="navIcon" aria-hidden="true" />
+                                                <span className="navLabel">{label}</span>
+                                                {badges[to] > 0 && (
+                                                    <span className="navBadge" aria-label={`${badges[to]} to do`}>
+                                                        {badges[to] > 99 ? '99+' : badges[to]}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    ))}
+                </nav>
+
+                <div className="sidebarFooter">
+                    <a className="helpCard" href="mailto:oopsdancestudio@gmail.com">
+                        <LuHelpCircle className="helpIcon" aria-hidden="true" />
+                        <span>
+                            <strong>Need a hand?</strong>
+                            <small>Email the studio team</small>
+                        </span>
+                    </a>
+                    <LogoutButton className="logoutBtn">
+                        <LuLogOut aria-hidden="true" />
+                        <span>Log Out</span>
+                    </LogoutButton>
+                </div>
+            </aside>
+        </>
     );
 };
 

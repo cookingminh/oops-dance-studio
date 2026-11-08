@@ -1,53 +1,58 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { format, parseISO } from 'date-fns';
+import { LuWallet } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { revenueMonthly } from '@/services/stats';
 import { formatVnd } from '@/lib/format';
 import AsyncState from '@/ui/feedback/AsyncState';
+import SectionCard from '../../../common/SectionCard';
+import { SERIES, barDataset, barOptions } from '../../../common/chartTheme';
+import { ChartTable, ViewToggle } from '../../../common/ChartViews';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-const PALETTE = ['54, 162, 235', '255, 159, 64', '75, 192, 192', '153, 102, 255', '255, 99, 132'];
+const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
+const formatTick = (value) => `${compact.format(value)} ₫`;
 
 // Real income per month, stacked by room (approved + completed bookings, from v_revenue_monthly).
 const RevenueChart = () => {
     const revenue = useAsync(revenueMonthly, []);
+    const [view, setView] = useState('chart');
     const rows = revenue.data ?? [];
 
     const months = [...new Set(rows.map((row) => row.month))].sort();
-    const rooms = [...new Map(rows.map((row) => [row.room_id, row.room_name])).entries()];
+    // Rooms keep their slot (by id) whichever months are shown.
+    const rooms = [...new Map(rows.map((row) => [row.room_id, row.room_name])).entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric: true }));
     const chartData = {
-        labels: months.map((month) => format(parseISO(month), 'MM/yyyy')),
-        datasets: rooms.map(([roomId, roomName], index) => ({
-            label: roomName,
-            data: months.map((month) => {
-                const row = rows.find((r) => r.month === month && r.room_id === roomId);
-                return row ? Number(row.real_income_sum ?? 0) : 0;
-            }),
-            backgroundColor: `rgba(${PALETTE[index % PALETTE.length]}, 0.6)`,
-            borderColor: `rgba(${PALETTE[index % PALETTE.length]}, 1)`,
-            borderWidth: 1,
-        })),
+        labels: months.map((month) => format(parseISO(month), 'MMM yyyy')),
+        datasets: rooms.map(([roomId, roomName], index) =>
+            barDataset(
+                roomName,
+                months.map((month) => Number(rows.find((r) => r.month === month && r.room_id === roomId)?.real_income_sum ?? 0)),
+                SERIES[index],
+                { stacked: true }
+            )
+        ),
     };
+    const total = rows.reduce((sum, row) => sum + Number(row.real_income_sum ?? 0), 0);
 
     return (
-        <div className="sectionContainer flex flex-col gap-4">
-            <h2 className="text-3xl font-bold">Monthly Revenue</h2>
+        <SectionCard
+            className="chartCard isWide"
+            icon={LuWallet}
+            title="Monthly Revenue"
+            subtitle={rows.length ? `Real income by room · ${formatVnd(total)} in total` : 'Real income by room'}
+            actions={<ViewToggle view={view} onChange={setView} label="Monthly revenue" />}
+        >
             <AsyncState state={revenue} emptyText="No approved or completed bookings yet.">
-                <Bar
-                    data={chartData}
-                    options={{
-                        responsive: true,
-                        plugins: {
-                            title: { display: true, text: 'Real income by room (VND)' },
-                            tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatVnd(ctx.parsed.y)}` } },
-                        },
-                        scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { callback: (v) => formatVnd(v) } } },
-                    }}
-                />
+                {view === 'table' ? (
+                    <ChartTable data={chartData} rowHeader="Month" format={formatVnd} />
+                ) : (
+                    <div className="chartCanvas">
+                        <Bar data={chartData} options={barOptions({ stacked: true, formatTick, formatValue: formatVnd })} />
+                    </div>
+                )}
             </AsyncState>
-        </div>
+        </SectionCard>
     );
 };
 

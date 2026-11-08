@@ -1,63 +1,76 @@
 import { useState } from 'react';
-import { Card, CardHeader, CardBody, Image, Button } from '@nextui-org/react';
+import { motion } from 'framer-motion';
+import { Button } from '@nextui-org/react';
+import { LuDoorOpen, LuImage, LuPencil } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { listRooms } from '@/services/rooms';
 import { formatVnd } from '@/lib/format';
 import { roomImageUrls } from '@/services/storage';
 import AsyncState from '@/ui/feedback/AsyncState';
-import { EditIcon } from '../../../../../../Table/EditIcon';
+import SectionCard from '../../../common/SectionCard';
+import { fadeUp, stagger } from '../../../common/motion';
 import EditForm from './EditForm';
 import studioPhoto from '@/assets/images/studio.webp';
+
+// "80 m² · gương 2 mặt · loa JBL" → ['80 m²', 'gương 2 mặt', 'loa JBL']
+const featuresOf = (size) => (size ?? '').split('·').map((part) => part.trim()).filter(Boolean);
 
 const RoomDetails = () => {
     const rooms = useAsync(listRooms, []);
     const [editing, setEditing] = useState(null);
 
     return (
-        <div className="flex flex-col justify-center gap-6 sectionContainer">
-            <div className="header flex justify-center font-bold">
-                <h2 className="text-4xl">Room Details</h2>
-            </div>
-
+        <SectionCard
+            icon={LuDoorOpen}
+            title="Room details"
+            subtitle="Sizes, features and the hourly price guests see when they book."
+        >
             <AsyncState state={rooms} emptyText="No rooms yet.">
                 {(list) => (
-                    <div className="roomCards flex justify-center gap-6">
-                        {list.map((room) => (
-                            <div key={room.id} className="singleCard max-w-2xl">
-                                <Card className="py-4 shadow-lg max-w-2xl bg-gray-700 text-white">
-                                    <CardHeader className="pb-0 pt-2 px-4 flex-col items-center relative">
-                                        <div className="flex flex-col text-center">
-                                            <h4 className="font-bold text-large text-white">{room.name}</h4>
-                                            {room.size && <p className="text-tiny uppercase font-bold text-gray-300">{room.size}</p>}
-                                            <small className="text-gray-400">{formatVnd(room.price)} per hour</small>
+                    <motion.div className="roomGrid" variants={stagger} initial="hidden" animate="show">
+                        {list.map((room) => {
+                            const photos = roomImageUrls(room);
+                            const features = featuresOf(room.size);
+                            return (
+                                <motion.article key={room.id} variants={fadeUp} className="roomCard">
+                                    <div className="roomCardMedia">
+                                        <img src={photos[0] ?? studioPhoto} alt={room.name} />
+                                        {photos.length > 1 && (
+                                            <span className="photoCount">
+                                                <LuImage aria-hidden="true" /> {photos.length} photos
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="roomCardBody">
+                                        <div className="roomCardHead">
+                                            <h3>{room.name}</h3>
+                                            <Button
+                                                isIconOnly
+                                                size="sm"
+                                                variant="flat"
+                                                radius="full"
+                                                aria-label={`Edit ${room.name}`}
+                                                onPress={() => setEditing(room)}
+                                            >
+                                                <LuPencil />
+                                            </Button>
                                         </div>
-                                        <Button
-                                            isIconOnly
-                                            aria-label={`Edit ${room.name}`}
-                                            className="text-default-900/60 data-[hover]:bg-gray-100 bg-gray-300 absolute top-0 right-3"
-                                            radius="full"
-                                            variant="light"
-                                            onPress={() => setEditing(room)}
-                                        >
-                                            <EditIcon />
-                                        </Button>
-                                    </CardHeader>
-                                    <CardBody className="overflow-visible py-2">
-                                        <div className="flex justify-center">
-                                            <Image
-                                                isZoomed
-                                                isBlurred
-                                                alt={room.name}
-                                                className="object-cover rounded-xl"
-                                                src={roomImageUrls(room)[0] ?? studioPhoto}
-                                                width={800}
-                                            />
+                                        {features.length > 0 && (
+                                            <ul className="roomFeatures">
+                                                {features.map((feature) => (
+                                                    <li key={feature}>{feature}</li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                        <div className="roomPrice">
+                                            <strong>{formatVnd(room.price)}</strong>
+                                            <span>per hour</span>
                                         </div>
-                                    </CardBody>
-                                </Card>
-                            </div>
-                        ))}
-                    </div>
+                                    </div>
+                                </motion.article>
+                            );
+                        })}
+                    </motion.div>
                 )}
             </AsyncState>
 
@@ -71,7 +84,7 @@ const RoomDetails = () => {
                     }}
                 />
             )}
-        </div>
+        </SectionCard>
     );
 };
 

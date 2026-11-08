@@ -4,7 +4,7 @@ import { prepareImage } from '@/lib/image';
 
 // Picks an image and prepares it for upload (HEIC → JPEG, resized, ≤ 5 MB).
 // Calls onChange(File) with the prepared file, or onChange(null) if it can't be used.
-const ImagePicker = ({ label = 'Upload Image', onChange, isDisabled, capture }) => {
+const ImagePicker = ({ label = 'Upload Image', onChange, isDisabled, capture, color = 'primary', startContent }) => {
     const inputRef = useRef(null);
     const [fileName, setFileName] = useState('');
     const [preparing, setPreparing] = useState(false);
@@ -31,7 +31,7 @@ const ImagePicker = ({ label = 'Upload Image', onChange, isDisabled, capture }) 
 
     return (
         <div className="flex flex-col gap-2 mb-2">
-            <Button color="primary" variant="flat" onPress={() => inputRef.current?.click()} isLoading={preparing} isDisabled={isDisabled}>
+            <Button color={color} variant="flat" startContent={preparing ? undefined : startContent} onPress={() => inputRef.current?.click()} isLoading={preparing} isDisabled={isDisabled}>
                 {preparing ? 'Preparing image…' : label}
             </Button>
             <input ref={inputRef} type="file" accept="image/*,.heic,.heif" capture={capture} hidden onChange={handleChange} />

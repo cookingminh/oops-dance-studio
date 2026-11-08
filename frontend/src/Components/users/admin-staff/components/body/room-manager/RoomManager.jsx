@@ -1,12 +1,5 @@
-import './RoomManager.scss'
 import RoomDetails from './components/RoomDetails';
 
-const Rooms = () => {
-    return (
-        <div className='roomManager'>
-            <RoomDetails />
-        </div>
-    )
-}
+const Rooms = () => <RoomDetails />;
 
-export default Rooms
+export default Rooms;

@@ -33,10 +33,10 @@ const ChangeClassImageForm = ({ classRow, onClose, onSaved }) => {
                     <ImagePicker label="Choose New Image" onChange={setImage} isDisabled={saving} />
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="danger" variant="light" onPress={onClose} isDisabled={saving}>
+                    <Button variant="light" onPress={onClose} isDisabled={saving}>
                         Close
                     </Button>
-                    <Button color="primary" onPress={handleSubmit} isLoading={saving} isDisabled={!image}>
+                    <Button color="danger" onPress={handleSubmit} isLoading={saving} isDisabled={!image}>
                         Change Image
                     </Button>
                 </ModalFooter>

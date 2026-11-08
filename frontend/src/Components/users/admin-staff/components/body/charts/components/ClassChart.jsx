@@ -1,45 +1,43 @@
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
+import { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
+import { LuGraduationCap } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { classEnrolment } from '@/services/stats';
 import AsyncState from '@/ui/feedback/AsyncState';
+import SectionCard from '../../../common/SectionCard';
+import { SERIES, barDataset, barOptions } from '../../../common/chartTheme';
+import { ChartTable, ViewToggle } from '../../../common/ChartViews';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-
-// Current number of enrolled students per class.
+// Current number of enrolled students per class (one series: the title names it, no legend).
 const ClassChart = () => {
     const classes = useAsync(classEnrolment, []);
+    const [view, setView] = useState('chart');
     const list = classes.data ?? [];
 
     const chartData = {
         labels: list.map((item) => item.name),
-        datasets: [
-            {
-                label: 'Number of Students',
-                data: list.map((item) => item.students),
-                backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                borderColor: 'rgba(75, 192, 192, 1)',
-                borderWidth: 1,
-            },
-        ],
+        datasets: [barDataset('Students', list.map((item) => item.students), SERIES[0])],
     };
+    const total = list.reduce((sum, item) => sum + item.students, 0);
 
     return (
-        <div className="class-chart sectionContainer flex flex-col gap-4">
-            <h2 className="text-3xl font-bold">Class Enrollment</h2>
+        <SectionCard
+            className="chartCard"
+            icon={LuGraduationCap}
+            title="Class enrolment"
+            subtitle={`${total} enrolment${total === 1 ? '' : 's'} across ${list.length} class${list.length === 1 ? '' : 'es'}`}
+            actions={<ViewToggle view={view} onChange={setView} label="Class enrolment" />}
+        >
             <AsyncState state={classes} emptyText="No classes yet.">
-                <div style={{ height: '500px' }}>
-                    <Bar
-                        data={chartData}
-                        options={{
-                            scales: { y: { beginAtZero: true, ticks: { callback: (v) => (Number.isInteger(v) ? v : null) } } },
-                            responsive: true,
-                            maintainAspectRatio: false,
-                        }}
-                    />
-                </div>
+                {view === 'table' ? (
+                    <ChartTable data={chartData} rowHeader="Class" />
+                ) : (
+                    <div className="chartCanvas">
+                        <Bar data={chartData} options={barOptions({ legend: false })} />
+                    </div>
+                )}
             </AsyncState>
-        </div>
+        </SectionCard>
     );
 };
 

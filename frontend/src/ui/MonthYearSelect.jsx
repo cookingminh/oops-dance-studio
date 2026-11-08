@@ -1,13 +1,13 @@
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 // Month (1–12) and year selects used by the charts.
-const MonthYearSelect = ({ month, year, onChange, years = 5 }) => {
+const MonthYearSelect = ({ month, year, onChange, years = 5, className = 'flex gap-4 mb-4 justify-center', selectClassName = 'p-2 border rounded' }) => {
     const currentYear = new Date().getFullYear();
     return (
-        <div className="flex gap-4 mb-4 justify-center">
+        <div className={className}>
             <select
                 aria-label="Month"
-                className="p-2 border rounded"
+                className={selectClassName}
                 value={month}
                 onChange={(event) => onChange({ month: Number(event.target.value), year })}
             >
@@ -17,7 +17,7 @@ const MonthYearSelect = ({ month, year, onChange, years = 5 }) => {
             </select>
             <select
                 aria-label="Year"
-                className="p-2 border rounded"
+                className={selectClassName}
                 value={year}
                 onChange={(event) => onChange({ month, year: Number(event.target.value) })}
             >

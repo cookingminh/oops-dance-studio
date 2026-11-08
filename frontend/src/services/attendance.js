@@ -60,6 +60,19 @@ export async function listInstructorAttendance({ from, to, date, withProofs = fa
     return withProofs ? withProofUrls(rows) : rows;
 }
 
+// Sessions up to `until` that are still open (not completed or cancelled): today's not-yet-finished
+// sessions and past ones nobody settled. Oldest first.
+export async function listOpenInstructorAttendance({ until }) {
+    return unwrap(
+        await supabase
+            .from('instructor_attendance')
+            .select(`${INSTRUCTOR_ATTENDANCE_SELECT}, instructor:profiles!instructor_id(${PERSON})`)
+            .in('status', ['pending', 'waiting', 'in_progress'])
+            .lte('date', until)
+            .order('date')
+    );
+}
+
 export async function listRecentCheckins(limit = 6) {
     return unwrap(
         await supabase
@@ -93,10 +106,24 @@ export async function listStudentAttendance({ date }) {
             .from('student_attendance')
             .select(`id, class_id, student_id, date, status, details,
                 student:profiles!student_id(${PERSON}, contact_number, date_of_birth),
-                class:classes!class_id(id, name, image_path)`)
+                class:classes!class_id(id, name, image_path, room_id,
+                    instructor:profiles!instructor_id(${PERSON}),
+                    room:rooms!room_id(id, name),
+                    schedules:class_schedules(id, day_of_week, start_time, end_time))`)
             .eq('date', date)
             .order('class_id')
     );
+}
+
+// Staff: every roll-call row of one class up to `until` (newest first), for its attendance history.
+export async function listClassAttendanceHistory(classId, { until } = {}) {
+    let query = supabase
+        .from('student_attendance')
+        .select('id, date, status, student_id')
+        .eq('class_id', classId)
+        .order('date', { ascending: false });
+    if (until) query = query.lte('date', until);
+    return unwrap(await query);
 }
 
 export async function setStudentAttendanceStatus(id, status) {
