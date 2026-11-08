@@ -10,9 +10,9 @@ import { homePathFor } from '@/auth/roles';
 import { useToast } from '@/ui/feedback/toastContext';
 import { Loading } from '@/ui/feedback/AsyncState';
 import AuthInput from '../Login/AuthInput';
+import AuthLayout from '../Login/AuthLayout';
 
 import loginImg from '@/assets/images/studio.webp';
-import logo from '@/assets/images/logo.webp';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -126,7 +126,7 @@ const ResetPassword = () => {
                     icon={MdMarkEmailRead}
                     type="email"
                     autoComplete="email"
-                    placeholder="Enter your account email"
+                    placeholder="you@example.com"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
@@ -135,28 +135,21 @@ const ResetPassword = () => {
                     <span>{submitting ? 'Sending…' : 'Send reset link'}</span>
                     <AiOutlineSwapRight className="icon" />
                 </button>
-                <span className="forgotPassword">
-                    Remembered it? <Link to="/login">Back to login</Link>
-                </span>
             </form>
         );
     };
 
+    const askingForEmail = !(recovering && loading) && !settingNewPassword && !sent;
+
     return (
-        <div className="loginPage flex">
-            <div className="container flex">
-                <div className="videoDiv">
-                    <img src={loginImg} alt="Oops! Dance Studio room" />
-                </div>
-                <div className="formDiv flex">
-                    <div className="headerDiv">
-                        <Link to="/home"><img src={logo} className="logo" alt="Oops! Dance Studio" /></Link>
-                        <h3>{settingNewPassword ? 'Choose a new password' : 'Reset your password'}</h3>
-                    </div>
-                    {renderBody()}
-                </div>
-            </div>
-        </div>
+        <AuthLayout
+            media={<img src={loginImg} alt="" />}
+            title={settingNewPassword ? 'Choose a new password' : 'Reset your password'}
+            subtitle={askingForEmail && 'Enter your account email and we’ll send you a link to reset it.'}
+            footer={askingForEmail && <>Remembered it? <Link to="/login">Back to login</Link></>}
+        >
+            {renderBody()}
+        </AuthLayout>
     );
 };
 
