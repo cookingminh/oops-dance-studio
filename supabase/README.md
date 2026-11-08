@@ -20,8 +20,9 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261108000700_storage.sql` | buckets `avatars`, `class-images`, `attendance-proofs`, `site-assets` + policies |
 | `migrations/20261108000800_cron_jobs.sql` | pg_cron jobs that generate attendance |
 | `migrations/20261108000900_demo_instance.sql` | marker that lets `seed-demo.mjs --reset` wipe a project (public demo only) |
+| `migrations/20261109000100_class_lessons.sql` | `class_lessons` (the piece each class learns per month) + trigger that mirrors the latest title into `classes.lesson` |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users. `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
-| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes) |
+| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
 | `../scripts/demo-images.mjs` | uploads demo photos to Storage (instructor avatars, class photo, room photos) and sets `avatar_path` / `image_path` / `image_paths` |
 | `../scripts/demo-assets/` | the demo photos, WebP (instructor cut-outs keep their transparency) |

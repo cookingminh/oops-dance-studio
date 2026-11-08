@@ -105,23 +105,28 @@ const ROOMS = [
 // Ami teaches every day; no two classes overlap in a room.
 const CLASSES = [
   { name: "K-pop Cover Cơ Bản", instructor: "instructor@demo.oopsdance.test", room: "Phòng A", price: 900000,
-    lesson: "Học vũ đạo các bài K-pop hot, phù hợp người mới bắt đầu. Mỗi tháng hoàn thành 1 bài.",
     schedules: [[1, "18:00", "19:30"], [3, "18:00", "19:30"], [5, "18:00", "19:30"]] },
   { name: "K-pop Cover Nâng Cao", instructor: "instructor@demo.oopsdance.test", room: "Phòng B", price: 1200000,
-    lesson: "Cover nguyên bài với đội hình và biểu cảm sân khấu, quay clip cuối tháng.",
     schedules: [[2, "19:00", "20:30"], [4, "19:00", "20:30"], [6, "09:00", "10:30"], [7, "09:00", "10:30"]] },
   { name: "Hip-hop Foundation", instructor: "instructor2@demo.oopsdance.test", room: "Phòng A", price: 1000000,
-    lesson: "Groove, bounce, rock và các bước cơ bản của hip-hop, cập nhật các trend mới.",
     schedules: [[2, "18:00", "19:30"], [4, "18:00", "19:30"], [6, "15:00", "16:30"]] },
   { name: "Breaking Kids", instructor: "instructor5@demo.oopsdance.test", room: "Phòng B", price: 800000,
-    lesson: "Lớp breakdance cho thiếu nhi 7–12 tuổi: toprock, footwork, freeze.",
     schedules: [[1, "17:00", "18:00"], [3, "17:00", "18:00"], [7, "16:00", "17:00"]] },
   { name: "Contemporary & Jazz", instructor: "instructor3@demo.oopsdance.test", room: "Phòng A", price: 1100000,
-    lesson: "Kỹ thuật contemporary kết hợp jazz, chú trọng cảm xúc và đường nét.",
     schedules: [[1, "19:30", "21:00"], [3, "19:30", "21:00"], [6, "10:00", "11:30"]] },
   { name: "Choreography Sáng Tạo", instructor: "instructor4@demo.oopsdance.test", room: "Phòng B", price: 1200000,
-    lesson: "Tự biên đạo theo nhóm, khai thác kỹ thuật và ý tưởng mới, trình diễn cuối khoá.",
     schedules: [[5, "18:00", "19:30"], [6, "13:00", "14:30"]] },
+];
+
+// Monthly lessons: [class, months ago, title]. Every class has last month's piece; Hip-hop
+// Foundation and Breaking Kids have none for this month yet ("needs this month's lesson").
+const LESSONS = [
+  ["K-pop Cover Cơ Bản", 1, "Cupid — FIFTY FIFTY"], ["K-pop Cover Cơ Bản", 0, "Super Shy — NewJeans"],
+  ["K-pop Cover Nâng Cao", 1, "Seven — Jung Kook"], ["K-pop Cover Nâng Cao", 0, "Magnetic — ILLIT"],
+  ["Hip-hop Foundation", 1, "HUMBLE. — Kendrick Lamar"],
+  ["Breaking Kids", 1, "Jump Around — House of Pain"],
+  ["Contemporary & Jazz", 1, "Someone You Loved — Lewis Capaldi"], ["Contemporary & Jazz", 0, "lovely — Billie Eilish & Khalid"],
+  ["Choreography Sáng Tạo", 1, "Levitating — Dua Lipa"], ["Choreography Sáng Tạo", 0, "Dynamite — BTS"],
 ];
 
 const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets"];
@@ -129,7 +134,7 @@ const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets"];
 // every DELETE, hence "<column> is not null".
 const APP_TABLES = [
   ["student_attendance", "id"], ["instructor_attendance", "id"], ["class_students", "class_id"],
-  ["bookings", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"],
+  ["bookings", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"],
 ];
 
 const BOOKING_SLOTS = [["08:00", "10:00"], ["09:30", "11:30"], ["13:00", "15:00"],
@@ -223,22 +228,34 @@ async function upsertUsers() {
   return ids;
 }
 
-async function upsertCatalogue(userIds) {
+// 'yyyy-MM-01' of the month `monthsAgo` months before `isoDate`.
+function monthStart(isoDate, monthsAgo) {
+  const [y, m] = isoDate.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 - monthsAgo, 1));
+  return d.toISOString().slice(0, 10);
+}
+
+async function upsertCatalogue(userIds, today) {
   const rooms = await must(db.from("rooms").upsert(ROOMS, { onConflict: "name" }).select("id, name, price"), "rooms");
   const roomByName = Object.fromEntries(rooms.map((r) => [r.name, r]));
 
   const classes = await must(db.from("classes").upsert(CLASSES.map((c) => ({
     name: c.name, instructor_id: userIds[c.instructor], room_id: roomByName[c.room].id,
-    price: c.price, lesson: c.lesson,
+    price: c.price,
   })), { onConflict: "name" }).select("id, name, room_id"), "classes");
   const classByName = Object.fromEntries(classes.map((c) => [c.name, c]));
+
+  // A trigger copies each class's latest lesson title into classes.lesson.
+  await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title]) =>
+    ({ class_id: classByName[name].id, month: monthStart(today, monthsAgo), title })),
+    { onConflict: "class_id,month" }), "class_lessons");
 
   const schedules = CLASSES.flatMap((c) => c.schedules.map(([day_of_week, start_time, end_time]) =>
     ({ class_id: classByName[c.name].id, day_of_week, start_time, end_time })));
   await must(db.from("class_schedules").upsert(schedules,
     { onConflict: "class_id,day_of_week,start_time" }), "class_schedules");
 
-  console.log(`✓ ${rooms.length} rooms, ${classes.length} classes, ${schedules.length} schedules`);
+  console.log(`✓ ${rooms.length} rooms, ${classes.length} classes, ${schedules.length} schedules, ${LESSONS.length} lessons`);
   return { rooms, classes, schedules };
 }
 
@@ -391,7 +408,7 @@ async function main() {
     await wipe();
   }
   const userIds = await upsertUsers();
-  const { rooms, classes, schedules } = await upsertCatalogue(userIds);
+  const { rooms, classes, schedules } = await upsertCatalogue(userIds, today);
   await upsertEnrolments(userIds, classes, today);
   await seedBookings(userIds, rooms, classes, schedules, today);
   await seedAttendance(schedules, today);
