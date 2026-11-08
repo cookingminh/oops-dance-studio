@@ -1,0 +1,202 @@
+:root {
+    --PrimaryColor: hsl(0, 66%, 43%);
+    --SecondaryColor: hsl(180, 17%, 95%);
+    --paleGreen: hsl(93, 75%, 76%);
+    --colorOne: hsl(15, 74%, 70%);
+    --colorTwo: hsl(28, 100%, 82%);
+    --HoverColor: #d83f3f;
+    --whiteColor: hsl(0, 0%, 100%);
+    --blackColor: hsl(0, 0%, 12%);
+    --textColor: hsl(240, 1%, 48%);
+    --borderColor: hsl(0, 0%, 83%);
+    --whiteColorDeam: hsl(0, 0%, 93%);
+    --greyBg: hwb(0 96% 4%);
+    --greyText: rgb(145, 145, 145);
+    --inputColor: hsl(330, 12%, 97%);
+    --boxShadow: box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
+    --transition: .4s ease-in-out;
+    --bgColor: hsla(113, 11%, 85%, 0.533);
+    --inputColor: hsl(330, 12%, 97%);
+
+
+    //font and typograpghy
+    --biggestFontSize: 2.5rem;
+    --h1FontSize: 1.5rem;
+    --h2FontSize: 1.25rem;
+    --h3FontSize: 1rem;
+    --normalFontSize: .938rem;
+    --smallFontSize: .813rem;
+    --smallestFontSize: .75rem;
+}
+
+.adminBookings {
+    .heading {
+        color: var(--PrimaryColor);
+        overflow: hidden;
+    }
+
+    .nextBooking {
+        .secContainer {
+            margin: 1rem 0;
+            gap: 2rem;
+            overflow: hidden;
+            justify-content: center;
+            grid-template-columns: repeat(2, 1fr);
+
+
+            .singleItem {
+                align-items: center;
+                border-radius: 10px;
+                padding: 1rem;
+                background: var(--greyBg);
+                gap: 1rem;
+
+                .imgCard {
+                    background-color: var(--cardColor);
+                    padding: 1rem;
+                    border-radius: 10px;
+                    flex-direction: column;
+
+
+                    h3 {
+                        font-size: var(--h3FontSize);
+                        font-weight: 550;
+                        color: var(--whiteColor);
+                        padding: 1rem 0;
+                    }
+
+                    &:hover {
+                        background: var(--PrimaryColor);
+                        box-shadow: 0 2px 2px var(--inputColor);
+                        cursor: pointer;
+
+                        h3 {
+                            color: var(--whiteColor);
+                        }
+                    }
+
+                    img {
+                        border-radius: 10px;
+                        top: 2rem;
+                        max-width: 180px;
+                        box-shadow: var(--boxShadow);
+                    }
+
+                }
+
+                .details {
+                    flex-direction: column;
+                    gap: 2rem;
+
+                    h3 {
+                        font-size: var(--h3FontSize);
+                        font-weight: 550;
+                    }
+                }
+
+            }
+        }
+
+    }
+
+    .bookingList {
+        flex-direction: column;
+        overflow: hidden;
+        gap: 2rem;
+
+        .heading {
+            background-color: var(--whiteColor);
+            color: var(--PrimaryColor);
+            border: 3px solid var(--PrimaryColor);
+            padding: 1rem;
+            border-top-right-radius: 1.5rem;
+            border-top-left-radius: 1.5rem;
+        }
+
+        .filterDiv {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: var(--PrimaryColor);
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+
+            label {
+                font-weight: bold;
+                margin-right: 10px;
+                color: var(--whiteColor);
+            }
+
+            select,
+            input {
+                padding: 8px 12px;
+                margin-right: 10px;
+                border: none;
+                border-radius: 4px;
+                outline: none;
+                font-size: 14px;
+                font-weight: 500;
+                background-color: var(--whiteColor);
+                transition: border-color 0.3s ease;
+
+                &:focus {
+                    border-color: var(--focusBorderColor);
+                }
+            }
+
+            input {
+                flex: 1;
+            }
+        }
+
+        .tableDiv {
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow: hidden;
+            z-index: 1;
+
+            table {
+                text-align: center;
+                border: 2px solid var(--blackColor);
+
+                td,
+                th {
+                    border: 2px solid var(--blackColor);
+                    padding: .5rem;
+                }
+
+                thead {
+                    background: var(--PrimaryColor);
+                    color: white;
+
+                    th {
+                        &:not(:nth-last-child(-n+2)) {
+                            &:hover {
+                                background: var(--cardColor);
+                                cursor: pointer;
+                            }
+                        }
+                    }
+                }
+
+                tbody {
+                    color: var(--blackColor);
+                }
+            }
+
+            .btn {
+                font-size: var(--h2FontSize);
+                font-weight: 500;
+            }
+
+            .icon {
+                :hover {
+                    color: var(--PrimaryColor);
+                }
+            }
+        }
+
+
+    }
+}

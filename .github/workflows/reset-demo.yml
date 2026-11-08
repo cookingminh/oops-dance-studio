@@ -1,0 +1,48 @@
+name: Reset demo
+
+# Wipes the public demo project (visitors' accounts, bookings, uploads) and re-seeds it
+# with fresh dates. The login page tells visitors it resets every 6 hours.
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reset-demo
+  cancel-in-progress: false
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      DEMO_PASSWORD: ${{ secrets.DEMO_PASSWORD }}
+      DEMO_MODE: "true"
+    steps:
+      - name: Check the demo secrets
+        id: config
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ] || [ -z "$DEMO_PASSWORD" ]; then
+            echo "::notice::SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / DEMO_PASSWORD are not set; nothing to reset."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.config.outputs.skip != 'true'
+        uses: actions/checkout@v7
+      - if: steps.config.outputs.skip != 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+      - if: steps.config.outputs.skip != 'true'
+        working-directory: scripts
+        run: npm ci
+      - if: steps.config.outputs.skip != 'true'
+        name: Wipe and re-seed
+        working-directory: scripts
+        run: node seed-demo.mjs --reset --i-know-this-wipes

@@ -1,0 +1,32 @@
+# Secrets: only .env.example files are committed
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Old media from the pre-monorepo folders; never committed (demo images live in scripts/demo-assets/)
+legacy-assets/
+
+# Supabase CLI local state
+supabase/.branches
+supabase/.temp
+supabase/.env
+supabase/signing_keys.json
+
+# Playwright output
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/e2e/.cache/
+
+# Node / build / OS
+node_modules/
+dist/
+.vercel
+.DS_Store
+*.log
+
+# Deno lockfiles from local `deno test` runs (the edge runtime resolves deno.json itself)
+supabase/functions/**/deno.lock

@@ -1,0 +1,16 @@
+.mainBody {
+
+    .bottom {
+        margin-top: 2rem;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+}
+
+//MEDIA QUERIES ====================>
+
+@media screen and (max-width: 900px) {
+    .bottom {
+        flex-direction: column;
+    }
+}

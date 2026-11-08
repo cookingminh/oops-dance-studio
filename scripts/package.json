@@ -1,0 +1,17 @@
+{
+  "name": "oops-dance-scripts",
+  "private": true,
+  "type": "module",
+  "description": "Backend maintenance scripts (service-role key; never ship to the frontend)",
+  "scripts": {
+    "seed-demo": "node seed-demo.mjs",
+    "demo-images": "node demo-images.mjs",
+    "demo-images:local": "node demo-images.mjs --local"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  }
+}

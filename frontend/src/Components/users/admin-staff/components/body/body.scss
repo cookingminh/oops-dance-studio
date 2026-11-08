@@ -1,0 +1,59 @@
+:root {
+    --PrimaryColor: hsl(0, 66%, 43%);
+    --SecondaryColor: hsl(180, 17%, 95%);
+    --paleGreen: hsl(93, 75%, 76%);
+    --colorOne: hsl(15, 74%, 70%);
+    --colorTwo: hsl(28, 100%, 82%);
+    --HoverColor: #d83f3f;
+    --whiteColor: hsl(0, 0%, 100%);
+    --blackColor: hsl(0, 0%, 12%);
+    --textColor: hsl(240, 1%, 48%);
+    --borderColor: hsl(0, 0%, 83%);
+    --whiteColorDeam: hsl(0, 0%, 93%);
+    --greyBg: hwb(0 96% 4%);
+    --greyText: rgb(145, 145, 145);
+    --inputColor: hsl(330, 12%, 97%);
+    --boxShadow: box-shadow: rgba(0, 0, 0, 0.1) 0px 10px 15px -3px, rgba(0, 0, 0, 0.05) 0px 4px 6px -2px;
+    --transition: .4s ease-in-out;
+    --bgColor: hsla(113, 11%, 85%, 0.533);
+    --inputColor: hsl(330, 12%, 97%);
+
+
+    //font and typograpghy
+    --biggestFontSize: 2.5rem;
+    --h1FontSize: 1.5rem;
+    --h2FontSize: 1.25rem;
+    --h3FontSize: 1rem;
+    --normalFontSize: .938rem;
+    --smallFontSize: .813rem;
+    --smallestFontSize: .75rem;
+}
+
+.mainContentAdmin {
+    width: 82%;
+    height: 100%;
+    padding: 2rem;
+    overflow: auto;
+
+    .sectionContainer {
+        margin-bottom: 2rem;
+        background-color: var(--whiteColor);
+        padding: 2rem;
+        border-radius: 2rem;
+        box-shadow: 1px 1px 3px 1px var(--greyText);
+        overflow: hidden;
+
+        // .heading {
+        //     width: fit-content;
+        //     margin: auto;
+        //     background-color: var(--whiteColor);
+        //     color: var(--PrimaryColor);
+        //     border: 3px solid var(--PrimaryColor);
+        //     padding: 1rem;
+        //     border-top-right-radius: 1.5rem;
+        //     border-top-left-radius: 1.5rem;
+        //     font-size: 2rem;
+        //     font-weight: 700;
+        // }
+    }
+}

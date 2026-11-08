@@ -1,0 +1,119 @@
+import { supabase } from '@/lib/supabase';
+import { unwrap } from './errors';
+import { signProofUrls, uploadProof } from './storage';
+
+const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
+const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, date, checkin_at, checkout_at, status,
+    checkin_proof_path, checkout_proof_path, details,
+    class:classes!class_id(id, name, image_path, schedules:class_schedules(id, day_of_week, start_time, end_time)),
+    room:rooms!room_id(id, name)`;
+
+export const INSTRUCTOR_ATTENDANCE_STATUSES = ['pending', 'waiting', 'in_progress', 'completed', 'cancelled'];
+export const STUDENT_ATTENDANCE_STATUSES = ['pending', 'absent', 'attend'];
+
+// Adds checkin_proof_url / checkout_proof_url (signed, 1 h) to each row.
+async function withProofUrls(rows) {
+    const urls = await signProofUrls(rows.flatMap((row) => [row.checkin_proof_path, row.checkout_proof_path]));
+    return rows.map((row) => ({
+        ...row,
+        checkin_proof_url: urls[row.checkin_proof_path] ?? null,
+        checkout_proof_url: urls[row.checkout_proof_path] ?? null,
+    }));
+}
+
+// ---- Instructor -----------------------------------------------------------
+
+export async function listMyInstructorAttendance(instructorId, { date, withProofs = false } = {}) {
+    let query = supabase
+        .from('instructor_attendance')
+        .select(INSTRUCTOR_ATTENDANCE_SELECT)
+        .eq('instructor_id', instructorId)
+        .order('date', { ascending: false });
+    if (date) query = query.eq('date', date);
+    const rows = unwrap(await query);
+    return withProofs ? withProofUrls(rows) : rows;
+}
+
+// Uploads the proof photo first; the RPC checks it exists and sets the time server-side.
+export async function checkIn(attendance, proofFile) {
+    const path = await uploadProof(attendance.instructor_id, attendance.id, 'checkin', proofFile);
+    return unwrap(await supabase.rpc('instructor_check_in', { p_attendance_id: attendance.id, p_proof_path: path }));
+}
+
+export async function checkOut(attendance, proofFile) {
+    const path = await uploadProof(attendance.instructor_id, attendance.id, 'checkout', proofFile);
+    return unwrap(await supabase.rpc('instructor_check_out', { p_attendance_id: attendance.id, p_proof_path: path }));
+}
+
+// ---- Staff ----------------------------------------------------------------
+
+// `from` inclusive, `to` exclusive ('yyyy-MM-dd').
+export async function listInstructorAttendance({ from, to, date, withProofs = false } = {}) {
+    let query = supabase
+        .from('instructor_attendance')
+        .select(`${INSTRUCTOR_ATTENDANCE_SELECT}, instructor:profiles!instructor_id(${PERSON})`)
+        .order('date', { ascending: false });
+    if (date) query = query.eq('date', date);
+    if (from) query = query.gte('date', from);
+    if (to) query = query.lt('date', to);
+    const rows = unwrap(await query);
+    return withProofs ? withProofUrls(rows) : rows;
+}
+
+export async function listRecentCheckins(limit = 6) {
+    return unwrap(
+        await supabase
+            .from('instructor_attendance')
+            .select(`id, status, checkin_at, checkout_at, class:classes!class_id(id, name),
+                instructor:profiles!instructor_id(${PERSON})`)
+            .not('checkin_at', 'is', null)
+            .order('checkin_at', { ascending: false })
+            .limit(limit)
+    );
+}
+
+export async function updateInstructorAttendance(id, fields) {
+    const patch = {};
+    if ('status' in fields) patch.status = fields.status;
+    if ('details' in fields) patch.details = fields.details?.trim() || null;
+    if ('instructorId' in fields) patch.instructor_id = fields.instructorId;
+    return unwrap(await supabase.from('instructor_attendance').update(patch).eq('id', id).select('id').single());
+}
+
+// Creates this week's rows; returns how many were created (0 = already generated).
+export async function generateInstructorAttendance() {
+    return unwrap(await supabase.rpc('generate_instructor_attendance'));
+}
+
+// ---- Student attendance ---------------------------------------------------
+
+export async function listStudentAttendance({ date }) {
+    return unwrap(
+        await supabase
+            .from('student_attendance')
+            .select(`id, class_id, student_id, date, status, details,
+                student:profiles!student_id(${PERSON}, contact_number, date_of_birth),
+                class:classes!class_id(id, name, image_path)`)
+            .eq('date', date)
+            .order('class_id')
+    );
+}
+
+export async function setStudentAttendanceStatus(id, status) {
+    return unwrap(await supabase.from('student_attendance').update({ status }).eq('id', id).select('id, status').single());
+}
+
+// Creates today's rows; returns how many were created.
+export async function generateStudentAttendance() {
+    return unwrap(await supabase.rpc('generate_student_attendance'));
+}
+
+export async function listMyStudentAttendance(studentId) {
+    return unwrap(
+        await supabase
+            .from('student_attendance')
+            .select('id, date, status, details, class:classes!class_id(id, name, image_path)')
+            .eq('student_id', studentId)
+            .order('date', { ascending: false })
+    );
+}
