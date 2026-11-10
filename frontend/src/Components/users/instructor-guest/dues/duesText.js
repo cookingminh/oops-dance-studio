@@ -59,10 +59,13 @@ export function duesText(item, { t, tn, formatDate }) {
         amount,
     };
     if (item.kind === 'deposit') {
+        const pending = booking.status === 'pending';
         return {
             title: t('Deposit for {room} on {date}', vars),
-            detail: t('{time} · {amount} to hold the room', vars),
-            nudge: t('Your booking of {room} on {date} is approved. Pay the {amount} deposit to hold the room.', vars),
+            detail: pending ? t('{time} · {amount}, then the studio confirms', vars) : t('{time} · {amount} to hold the room', vars),
+            nudge: pending
+                ? t('Pay the {amount} deposit for {room} on {date} and the studio confirms your booking.', vars)
+                : t('Your booking of {room} on {date} is approved. Pay the {amount} deposit to hold the room.', vars),
             action: pay,
         };
     }

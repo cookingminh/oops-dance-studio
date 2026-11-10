@@ -14,7 +14,7 @@ import { arrangeTuition, needsAnswer, songOf } from '../components/body/pages/tu
 // Rules, so nobody is nagged for nothing:
 //   tuition   an unpaid course running now or finished: late after its due date, 'soon' within SOON_DAYS
 //   renewal   the next course, unpaid: asks for an answer (none yet) or the money (said "continue")
-//   deposit   an approved booking still waiting for its deposit (pending ones wait for the studio first)
+//   deposit   a booking ahead still waiting for its deposit (a pending one is confirmed once it arrives)
 //   room      a booking whose day has passed with money still owed
 
 export const SOON_DAYS = 3;
@@ -68,14 +68,14 @@ export function tuitionDues(tuition) {
 export function bookingDues(bookings, today) {
     const items = [];
     for (const booking of bookings ?? []) {
-        if (!['approved', 'completed'].includes(booking.status)) continue;
+        if (!['pending', 'approved', 'completed'].includes(booking.status)) continue;
         const due = bookingDue(booking);
         if (!due.amount) continue;
         const past = booking.date < today;
         if (due.kind === 'deposit' && !past) {
             const days = daysUntil(booking.date, today);
             items.push({ id: `deposit-${booking.id}`, kind: 'deposit', tone: days <= SOON_DAYS ? 'soon' : 'due', days, amount: due.amount, to: DUES_PAGES.bookings, booking });
-        } else if (past) {
+        } else if (past && booking.status !== 'pending') {
             items.push({ id: `room-${booking.id}`, kind: 'room', tone: 'late', days: daysUntil(booking.date, today), amount: due.amount, to: DUES_PAGES.bookings, booking });
         }
     }

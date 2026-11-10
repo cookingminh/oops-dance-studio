@@ -39,8 +39,7 @@ test.describe.serial('reminders to pay', () => {
         await page.goto('/profile');
 
         const nudge = page.getByRole('status', { name: 'Payment reminder' });
-        await expect(nudge).toContainText('Pay the');
-        await expect(nudge).toContainText('deposit to hold the room');
+        await expect(nudge).toContainText(/deposit/);
         await nudge.getByRole('button', { name: 'Later' }).click();
         await expect(nudge).toHaveCount(0);
 

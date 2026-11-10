@@ -27,6 +27,9 @@ export default {
     'the room': 'phòng',
     'Deposit for {room} on {date}': 'Đặt cọc {room} ngày {date}',
     '{time} · {amount} to hold the room': '{time} · cọc {amount} để giữ phòng',
+    '{time} · {amount}, then the studio confirms': '{time} · cọc {amount} để studio xác nhận',
+    'Pay the {amount} deposit for {room} on {date} and the studio confirms your booking.':
+        'Đặt cọc {amount} cho {room} ngày {date} để studio xác nhận lượt đặt của bạn nhé.',
     '{room} on {date} isn’t fully paid': '{room} ngày {date} chưa trả đủ',
     '{time} · {amount} left': '{time} · còn {amount}',
 

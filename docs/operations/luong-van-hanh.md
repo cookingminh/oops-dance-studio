@@ -309,8 +309,8 @@ Ai đăng nhập vào `/profile` mà còn khoản cần đóng sẽ được nh�
   thân thiện, nút **Đóng …** (mở QR) và **Để sau** (hôm đó không hiện lại). Không hiện ở trang Học phí / Phòng đã đặt.
 
 Những khoản được nhắc: học phí khoá đang học (hoặc đã xong) chưa đóng; khoá tiếp theo chưa trả lời (*Học tiếp
-không?*) hoặc đã chọn học tiếp nhưng chưa đóng; tiền cọc của lượt đặt phòng **đã duyệt** (lượt đang chờ duyệt thì
-chưa nhắc); tiền phòng còn thiếu sau ngày đã đặt. Giáo viên chỉ được nhắc tiền phòng.
+không?*) hoặc đã chọn học tiếp nhưng chưa đóng; tiền cọc của lượt đặt phòng sắp tới (lượt chờ duyệt: cọc xong
+studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Giáo viên chỉ được nhắc tiền phòng.
 
 ---
 
