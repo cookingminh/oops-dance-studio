@@ -82,6 +82,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `bookings-calendar.spec.js` | the bookings calendar: class sessions behind, a free-slot click prefills a booking, pending style and chip, dialog actions, month / list |
 | `attendance.spec.js` | the one Attendance page: today, review queue and badge, roll call and session actions in the modal, calendar / list, deep link |
 | `activity.spec.js` | the admin's Activity log: day groups, collapsed bursts, filters in the URL, a staff action shows up, staff have no access |
+| `dues.spec.js` | reminders to pay: an approved booking waiting for its deposit shows in the guest's bell (QR one tap away), as a menu badge and once a day as a reminder ("Later" = not again today); nothing owed says so |
 | `promos.spec.js` | routine promos: staff reminder, the instructor uploads a clip from the overview nudge, students watch it in their class and on the renewal question, /classes "Coming next", staff swap it for a YouTube Short (old files deleted) and remove it, other instructors can't |
 | `booking-payments.spec.js` | booking QR / transfer content with its code, sandbox payment, still-to-pay vs deposit, cash and refunds, price change with a reason, receipt, the new add-booking form, inbox assign to a booking |
 

@@ -298,6 +298,22 @@ bài sắp bắt đầu mà chưa có promo, học viên trễ học phí, chuy�
 
 ---
 
+### Nhắc học viên / khách đóng tiền
+
+Ai đăng nhập vào `/profile` mà còn khoản cần đóng sẽ được nhắc ở ba chỗ:
+
+- **Chuông thông báo** trên thanh trên cùng: liệt kê từng khoản (quá hạn → sắp đến hạn → sắp tới), mỗi khoản có nút
+  **Đóng …** mở ngay mã QR chuyển khoản. Bấm vào dòng thì sang trang Học phí / Phòng đã đặt.
+- **Số đỏ trên menu** *Học phí* và *Phòng đã đặt*.
+- **Lời nhắc nhẹ** ở góc màn hình, **mỗi ngày một lần**, khi có khoản quá hạn hoặc đến hạn trong 3 ngày: một câu
+  thân thiện, nút **Đóng …** (mở QR) và **Để sau** (hôm đó không hiện lại). Không hiện ở trang Học phí / Phòng đã đặt.
+
+Những khoản được nhắc: học phí khoá đang học (hoặc đã xong) chưa đóng; khoá tiếp theo chưa trả lời (*Học tiếp
+không?*) hoặc đã chọn học tiếp nhưng chưa đóng; tiền cọc của lượt đặt phòng **đã duyệt** (lượt đang chờ duyệt thì
+chưa nhắc); tiền phòng còn thiếu sau ngày đã đặt. Giáo viên chỉ được nhắc tiền phòng.
+
+---
+
 ## 12. Nhật ký hoạt động (admin — *Activity*)
 
 Ai làm gì, lúc nào. Mỗi thao tác của một người được ghi lại **tự động** (trigger trong database), nên không cần làm
