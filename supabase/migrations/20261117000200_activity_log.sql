@@ -520,11 +520,9 @@ begin
   end if;
   delete from public.activity_log where true; -- (PostgREST's safeupdate wants a WHERE)
 
-  create temp table seed_activity (like public.activity_log including defaults) on commit drop;
-  alter table seed_activity drop column id;
-
+  -- Each part below writes straight into the log; names, roles and empty facts are tidied at the end.
   -- Instructors check in and out of their sessions (last 8 days).
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select x.at, a.instructor_id, 'sessions', x.action, 'instructor_attendance', a.id::text, a.class_id, a.instructor_id, c.name,
          jsonb_build_object('date', a.date, 'start', private.session_start(a.class_id, a.date, a.start_time),
                             'instructor', private.person_name(a.instructor_id))
@@ -534,7 +532,7 @@ begin
    where a.date >= v_today - 8 and x.at is not null and x.at <= v_now;
 
   -- Cancelled sessions: staff, the evening before.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select least(((a.date - 1) + time '20:15') at time zone v_tz, v_now), v_staff, 'sessions', 'cancelled', 'instructor_attendance',
          a.id::text, a.class_id, a.instructor_id, c.name,
          jsonb_build_object('date', a.date, 'start', private.session_start(a.class_id, a.date, a.start_time),
@@ -543,7 +541,7 @@ begin
    where a.status = 'cancelled' and a.date between v_today - 8 and v_today + 2;
 
   -- Roll calls: marked by the class's instructor right after class (one class in four by staff).
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select least(((sa.date + coalesce(ia.end_time, sl.end_time, time '20:00')) at time zone v_tz)
                + interval '6 minutes' + (abs(hashtext(sa.id::text)) % 50) * interval '1 second', v_now),
          case when abs(hashtext(sa.class_id::text || sa.date::text)) % 4 = 0 then v_staff else c.instructor_id end,
@@ -559,7 +557,7 @@ begin
      and coalesce(ia.status, 'completed') <> 'cancelled';
 
   -- Bookings: guests ask, staff answer a few hours later.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, subject_id, label, meta)
   select least(x.at, v_now), x.actor, 'bookings', x.action, 'bookings', b.id::text, b.guest_id,
          coalesce(private.person_name(b.guest_id), ''),
          jsonb_build_object('room', rm.name, 'date', b.date, 'start', b.start_time, 'end', b.end_time, 'status', b.status)
@@ -574,7 +572,7 @@ begin
    where b.date between v_today - 8 and v_today + 14 and x.action is not null and q.asked <= v_now;
 
   -- Tuition received: cash by staff, transfers by the bank.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select i.paid_at, case when i.method = 'cash' then v_staff end, 'tuition', 'paid', 'tuition_invoices', i.id::text,
          i.class_id, i.student_id, i.student_name,
          jsonb_build_object('class', i.class_name, 'course', i.lesson_title, 'amount', i.amount, 'paid', i.paid_amount,
@@ -583,7 +581,7 @@ begin
    where i.paid_at between v_now - interval '12 days' and v_now and i.paid_amount > 0;
 
   -- Waived and cancelled invoices.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select least(i.updated_at, v_now) - (abs(hashtext(i.id::text)) % 72) * interval '1 hour',
          case when i.status = 'waived' then v_admin when i.void_reason in ('switched', 'removed') then v_staff end,
          'tuition', case when i.status = 'waived' then 'waived' else 'cancelled' end, 'tuition_invoices', i.id::text,
@@ -594,7 +592,7 @@ begin
      and i.updated_at >= v_now - interval '10 days';
 
   -- Renewal answers from students.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select least(((i.due_date - 2 - abs(hashtext(i.id::text)) % 3) + time '21:00') at time zone v_tz, v_now - interval '2 hours'),
          i.student_id, 'tuition', 'renewal', 'tuition_invoices', i.id::text, i.class_id, i.student_id, i.student_name,
          jsonb_build_object('class', i.class_name, 'course', i.lesson_title, 'renewal', i.renewal)
@@ -603,7 +601,7 @@ begin
    where i.renewal is not null and l.starts_on > v_today and i.switched_from is null;
 
   -- Class switches, enrolments and routines planned by staff.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, subject_id, label, meta)
   select v_now - interval '2 days 3 hours', v_staff, 'students', 'leaving', 'class_students', cs.class_id || ':' || cs.student_id,
          cs.class_id, cs.student_id, private.person_name(cs.student_id),
          jsonb_build_object('class', private.class_name(cs.class_id), 'joined_at', cs.joined_at, 'leaves_after', cs.leaves_after)
@@ -620,7 +618,7 @@ begin
     from public.class_lessons l where l.starts_on > v_today;
 
   -- Costs added this month.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, class_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, class_id, label, meta)
   select least((e.spent_on + time '20:30') at time zone v_tz, v_now), coalesce(e.created_by, v_admin), 'expenses', 'created', 'expenses',
          e.id::text, e.class_id, e.description,
          jsonb_build_object('category', e.category, 'amount', e.amount, 'spent_on', e.spent_on, 'vendor', e.vendor,
@@ -629,20 +627,19 @@ begin
    where e.spent_on >= v_today - 10 and e.spent_on <= v_today and e.recurring_id is null;
 
   -- Last month's payslips: finalized and paid by the admin.
-  insert into seed_activity (at, actor_id, area, action, entity, entity_id, subject_id, label, meta)
+  insert into public.activity_log (at, actor_id, area, action, entity, entity_id, subject_id, label, meta)
   select x.at, v_admin, 'payroll', x.action, 'payslips', s.profile_id || ':' || s.month, s.profile_id,
          coalesce(private.person_name(s.profile_id), ''), jsonb_build_object('month', s.month, 'total', s.total)
     from public.payslips s
     cross join lateral (values ('payslip_finalized', s.finalized_at), ('payslip_paid', s.paid_at)) x(action, at)
    where x.at is not null and x.at between v_now - interval '12 days' and v_now;
 
-  insert into public.activity_log (at, actor_id, actor_name, actor_role, area, action, entity, entity_id, class_id, subject_id, label, meta)
-  select s.at, s.actor_id, private.person_name(s.actor_id), p.role, s.area, s.action, s.entity, s.entity_id, s.class_id,
-         s.subject_id, coalesce(s.label, ''), nullif(jsonb_strip_nulls(s.meta), '{}'::jsonb)
-    from seed_activity s
-    left join public.profiles p on p.id = s.actor_id
-   where s.at <= v_now and s.at >= v_now - interval '14 days'
-   order by s.at;
+  delete from public.activity_log where at > v_now or at < v_now - interval '14 days';
+  update public.activity_log a
+     set actor_name = private.person_name(a.actor_id),
+         actor_role = (select p.role from public.profiles p where p.id = a.actor_id),
+         meta = nullif(jsonb_strip_nulls(a.meta), '{}'::jsonb)
+   where true;
 
   return (select count(*) from public.activity_log);
 end;
