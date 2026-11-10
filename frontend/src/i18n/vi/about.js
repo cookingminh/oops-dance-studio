@@ -27,18 +27,18 @@ export default {
     'Our story': 'Câu chuyện',
     'It started with a borrowed room and one speaker': 'Bắt đầu từ một căn phòng đi mượn và một chiếc loa',
     'Oops! Crew began in 2017 as a handful of university friends who couldn’t stop dancing. We rehearsed in whatever room we could borrow, filmed K-pop covers at weekends and posted them mostly for each other.':
-        'Oops! Crew ra đời năm 2017 từ một nhóm bạn đại học mê nhảy không dứt ra được. Chúng mình tập ở bất cứ căn phòng nào mượn được, cuối tuần quay cover K-pop và đăng lên chủ yếu để… xem cho nhau.',
+        'Oops! Crew ra đời năm 2017 từ một nhóm bạn đại học nhảy hoài không chán. Chúng mình tập ở bất cứ căn phòng nào mượn được, cuối tuần quay cover K-pop và đăng lên chủ yếu để… xem cho nhau.',
     'The name? It’s what we said most at those first rehearsals. We kept it as a reminder that missed steps are part of dancing, and that nobody gets a routine right the first time.':
-        'Còn cái tên? Đó là câu chúng mình thốt ra nhiều nhất trong những buổi tập đầu tiên. Chúng mình giữ nó để luôn nhớ rằng nhảy hụt nhịp cũng là một phần của nhảy, và chẳng ai thuộc bài ngay từ lần đầu.',
+        'Còn cái tên? Đó là câu cả nhóm thốt lên nhiều nhất trong những buổi tập đầu tiên. Chúng mình giữ nó để nhớ rằng sai bước là chuyện bình thường khi nhảy, và chẳng ai nhảy đúng bài ngay từ lần đầu.',
     'People kept asking where they could learn our routines, so we started teaching: in rented rooms around Hanoi, online when the city went quiet, and from 2021 in a place of our own, Oops! Dance Studio at 25 Trung Phụng.':
-        'Mọi người cứ hỏi học những bài này ở đâu, thế là chúng mình bắt đầu dạy: ở các phòng thuê khắp Hà Nội, rồi dạy online khi thành phố tạm lặng, và từ năm 2021 là ở chính ngôi nhà của mình, Oops! Dance Studio, 25 Trung Phụng.',
-    'We still perform as a crew, and every instructor at the studio is a crew member. At the end of every course each class films its routine together, just like we filmed our very first cover.': 'Chúng mình vẫn biểu diễn cùng nhau như một crew, và mọi giáo viên ở studio đều là thành viên của crew. Cuối mỗi khoá, từng lớp lại cùng quay bài nhảy của mình, y như cách chúng mình quay bản cover đầu tiên.',
+        'Mọi người cứ hỏi học bài của nhóm ở đâu, thế là chúng mình bắt đầu dạy: ở các phòng thuê khắp Hà Nội, dạy online trong những ngày giãn cách, và từ năm 2021 là ở chính ngôi nhà của mình, Oops! Dance Studio, 25 Trung Phụng.',
+    'We still perform as a crew, and every instructor at the studio is a crew member. At the end of every course each class films its routine together, just like we filmed our very first cover.': 'Chúng mình vẫn biểu diễn cùng nhau, và giáo viên nào ở studio cũng là thành viên của crew. Cuối mỗi khoá, từng lớp lại cùng quay bài nhảy của mình, y như cách chúng mình quay bản cover đầu tiên.',
     'We never set out to open a school. We just wanted more people to dance with.':
-        'Chúng mình chưa từng định mở một ngôi trường. Chỉ là muốn có thêm thật nhiều người để cùng nhảy.',
+        'Chúng mình chưa bao giờ định mở trường dạy nhảy. Chỉ là muốn có thêm thật nhiều người cùng nhảy thôi.',
     'The founding members': 'Các thành viên sáng lập',
     'A full class in white outfits on the studio floor': 'Cả lớp trong trang phục trắng trên sàn tập',
     'Shoot day at Oops! Dance Studio.': 'Ngày quay tại Oops! Dance Studio.',
-    'At a glance': 'Tóm tắt nhanh',
+    'At a glance': 'Thông tin nhanh',
     Founded: 'Thành lập',
     Styles: 'Thể loại',
     'Every course': 'Mỗi khoá',
@@ -80,14 +80,14 @@ export default {
     'An empty studio room with the lights on': 'Phòng tập trống, đèn vẫn sáng',
     'A home of our own': 'Ngôi nhà của riêng mình',
     'Oops! Dance Studio opens at 25 Trung Phụng with one mirrored room and our first regular weekly classes.':
-        'Oops! Dance Studio khai trương tại 25 Trung Phụng với một phòng gương và những lớp học cố định hằng tuần đầu tiên.',
+        'Oops! Dance Studio khai trương tại 25 Trung Phụng với một phòng tập gương và những lớp cố định hằng tuần đầu tiên.',
     'A bright studio room with the Oops! Crew logo wall': 'Phòng tập sáng sủa với bức tường logo Oops! Crew',
     'Shoot day is born': 'Ngày quay ra đời',
-    'Every class starts filming its routine together at the end of each course. It quickly becomes everyone’s favourite day.': 'Cuối mỗi khoá, từng lớp bắt đầu cùng nhau quay bài nhảy. Chẳng mấy chốc đó đã thành ngày được mong chờ nhất.',
+    'Every class starts filming its routine together at the end of each course. It quickly becomes everyone’s favourite day.': 'Từ đây, cuối mỗi khoá cả lớp lại cùng quay bài nhảy. Chẳng mấy chốc, đó đã thành ngày ai cũng mong chờ nhất.',
     'A class in matching jerseys posing after their shoot': 'Một lớp mặc áo đấu đồng phục tạo dáng sau buổi quay',
     'More room to move': 'Thêm chỗ để bung xoã',
     'A second studio room opens, along with hip-hop, breaking and a class just for kids.':
-        'Phòng tập thứ hai ra đời, cùng các lớp hip-hop, breaking và một lớp dành riêng cho các bạn nhỏ.',
+        'Mở thêm phòng tập thứ hai, cùng các lớp hip-hop, breaking và một lớp dành riêng cho các bạn nhỏ.',
     'A long studio room with floor-to-ceiling windows': 'Phòng tập dài với cửa kính kịch trần',
     'Our first showcase': 'Showcase đầu tiên',
     'More than a hundred students share one stage at the first Oops! student showcase.':
@@ -98,7 +98,7 @@ export default {
         'Học viên giờ đã có thể đặt phòng tập và theo dõi lớp học online, bất cứ lúc nào trong ngày.',
     'A daylight studio room ready for practice': 'Phòng tập ngập ánh sáng, sẵn sàng cho buổi luyện tập',
     'Where we are today': 'Chúng mình của hôm nay',
-    'A new song every course, a weekly timetable full of classes, and the same crew teaching the routines they perform.': 'Mỗi khoá một bài mới, lịch học kín lớp mỗi tuần, và vẫn là crew ấy dạy chính những bài họ biểu diễn.',
+    'A new song every course, a weekly timetable full of classes, and the same crew teaching the routines they perform.': 'Mỗi khoá một bài mới, lịch học kín lớp mỗi tuần, và vẫn là crew ấy dạy chính những bài mình biểu diễn.',
     'Dancers in grey and white outfits posing with arms crossed': 'Các vũ công áo xám trắng khoanh tay tạo dáng',
 
     // 03 · Proud moments
@@ -143,19 +143,19 @@ export default {
 
     // 05 · Beliefs
     'What we believe': 'Điều chúng mình tin',
-    'Let every step set you free.': 'Để mỗi bước nhảy giúp bạn tự do.',
-    'Dance to express, not to impress.': 'Nhảy để thể hiện, không phải để gây ấn tượng.',
-    'Express, don’t impress': 'Thể hiện, đừng cố gây ấn tượng',
+    'Let every step set you free.': 'Mỗi bước nhảy là một lần tự do.',
+    'Dance to express, not to impress.': 'Nhảy để thể hiện, không phải để phô diễn.',
+    'Express, don’t impress': 'Thể hiện, đừng phô diễn',
     'Dance is a way of saying something. How you feel on the floor matters more to us than how perfect it looks.':
-        'Nhảy là một cách để nói điều gì đó. Với chúng mình, cảm xúc của bạn trên sàn tập quan trọng hơn việc nhảy hoàn hảo đến đâu.',
-    'Oops is part of it': 'Oops! cũng là một phần',
+        'Nhảy là một cách để nói lên điều mình muốn nói. Với chúng mình, cảm xúc của bạn trên sàn tập quan trọng hơn việc nhảy có hoàn hảo hay không.',
+    'Oops is part of it': 'Oops! cũng là một phần của nhảy',
     'Missed a step? So did we. It’s in our name. Laugh it off and go again.':
-        'Hụt một nhịp? Chúng mình cũng vậy, nó nằm ngay trong cái tên mà. Cười một cái rồi nhảy lại thôi.',
+        'Lỡ sai một bước? Chúng mình cũng thế, có hẳn trong tên luôn mà. Cười xoà rồi nhảy lại thôi.',
     'Everyone starts at step one': 'Ai cũng bắt đầu từ bước đầu tiên',
     'Every move is broken down and every question is welcome. Beginners are the reason we teach.':
-        'Mỗi động tác đều được chia nhỏ, câu hỏi nào cũng được chào đón. Người mới chính là lý do chúng mình đi dạy.',
-    'Crew over ego': 'Tập thể trên cái tôi',
-    'We learn together, cheer each other on and end every course as one group, on camera.': 'Chúng mình học cùng nhau, cổ vũ nhau và khép lại mỗi khoá như một tập thể, trước ống kính.',
+        'Động tác nào cũng được chia nhỏ, có gì chưa hiểu cứ hỏi. Người mới chính là lý do chúng mình đi dạy.',
+    'Crew over ego': 'Đồng đội trước, cái tôi sau',
+    'We learn together, cheer each other on and end every course as one group, on camera.': 'Chúng mình học cùng nhau, cổ vũ nhau và khép lại mỗi khoá bằng một video chung của cả lớp.',
     // 06 · Gallery
     'Inside the studio': 'Bên trong studio',
     'Where every routine comes together': 'Nơi mọi bài nhảy thành hình',
@@ -167,12 +167,12 @@ export default {
     'A wide studio room with mirrors': 'Phòng tập rộng với gương lớn',
     'Mirrors on every wall': 'Gương phủ kín tường',
     'A studio room lit in red': 'Phòng tập ngập ánh đèn đỏ',
-    'Lights down for shoot day': 'Tắt đèn, vào ngày quay',
+    'Lights down for shoot day': 'Hạ đèn cho ngày quay',
 
     // Closing call to action
     'Come dance with us': 'Đến nhảy cùng chúng mình',
     'Pick any class on the timetable and try it on us. No experience needed: bring comfy shoes, water and a friend if you like.':
-        'Chọn bất kỳ lớp nào trên lịch học và học thử miễn phí. Không cần kinh nghiệm: chỉ cần giày thoải mái, chai nước, và rủ thêm bạn nếu muốn.',
+        'Chọn một lớp bất kỳ trên lịch học và học thử miễn phí. Không cần biết nhảy trước: chỉ cần mang giày thoải mái, một chai nước, và rủ thêm bạn nếu muốn.',
     'Find your free class': 'Chọn buổi học thử',
     'Floor 7, 25 Trung Phụng, Đống Đa, Hà Nội': 'Tầng 7, số 25 Trung Phụng, Đống Đa, Hà Nội',
     'Follow the crew': 'Theo dõi crew',

@@ -18,14 +18,14 @@ export default {
     'Pick a username': 'Chọn tên đăng nhập',
 
     // Details form
-    'Your students see your name and photo on their classes.': 'Học viên thấy tên và ảnh của bạn ở lớp họ học.',
-    'Your instructors see your name and photo in class.': 'Giáo viên thấy tên và ảnh của bạn trong lớp.',
-    'How the studio reaches you.': 'Cách studio liên lạc với bạn.',
-    'That username is free': 'Tên đăng nhập này còn trống',
+    'Your students see your name and photo on their classes.': 'Học viên sẽ thấy tên và ảnh của bạn trong lớp của họ.',
+    'Your instructors see your name and photo in class.': 'Giáo viên sẽ thấy tên và ảnh của bạn trong lớp.',
+    'How the studio reaches you.': 'Để studio liên lạc với bạn.',
+    'That username is free': 'Tên đăng nhập này dùng được',
     'Please enter your name.': 'Vui lòng nhập họ tên.',
     'Please choose a username.': 'Vui lòng chọn tên đăng nhập.',
     'Enter a valid phone number.': 'Vui lòng nhập số điện thoại hợp lệ.',
-    'Your birthday can’t be in the future.': 'Ngày sinh không thể ở tương lai.',
+    'Your birthday can’t be in the future.': 'Ngày sinh không được sau hôm nay.',
     'Please check the year.': 'Bạn kiểm tra lại năm sinh nhé.',
 
     // Save bar
