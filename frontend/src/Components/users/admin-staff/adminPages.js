@@ -42,7 +42,7 @@ export const ADMIN_NAV = [
     {
         group: 'Finance',
         items: [
-            { to: '/admin/tuition', label: 'Tuition', icon: LuReceipt, description: 'Who has paid for each course, renewals and bank transfers.' },
+            { to: '/admin/tuition', label: 'Tuition', icon: LuReceipt, description: 'What to collect across the classes, bank transfers and each class’s tuition.' },
             { to: '/admin/expenses', label: 'Expenses', icon: LuBanknote, description: 'Rent, the monthly shoot, costumes and every other cost.' },
             { to: '/admin/payroll', label: 'Payroll', icon: LuWallet, adminOnly: true, description: 'Pay instructors per session and staff their monthly salary.' },
             { to: '/admin/reports', label: 'Reports', icon: LuLineChart, adminOnly: true, description: 'Monthly revenue, costs, profit and student retention.' },

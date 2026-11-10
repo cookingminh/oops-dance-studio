@@ -156,6 +156,11 @@ export async function reopenInvoice(id) {
     return unwrap(await supabase.rpc('tuition_reopen', { p_invoice: id }));
 }
 
+// A note on its own ("Promised to pay cash at the weekend"); '' clears it. Any invoice (staff).
+export async function setInvoiceNote(id, note) {
+    return unwrap(await supabase.rpc('tuition_set_note', { p_invoice: id, p_note: note ?? '' }));
+}
+
 // A discount or a pro-rated first month (unpaid invoices only).
 export async function setInvoiceAmount(id, amount, note = null) {
     return unwrap(await supabase.rpc('tuition_set_amount', { p_invoice: id, p_amount: amount, p_note: note }));
@@ -202,11 +207,13 @@ export async function switchClass(studentId, fromClassId, toClassId, note = null
 // ---- Bank transfers (staff inbox) -----------------------------------------------------------
 
 // { id, provider, provider_ref, amount, content, received_at, status: 'matched' | 'unmatched' | 'ignored',
-//   invoice_id, note, invoice: { id, student_name, class_name, month, payment_code } | null }
+//   invoice_id, note, invoice: { id, student_name, class_name, month, payment_code } | null,
+//   booking_id, booking: { id, date, start_time, end_time, payment_code, room, guest } | null } — a transfer
+//   pays an invoice or a room booking (services/bookingPayments.js).
 export async function listTransfers({ status = null, limit = 100 } = {}) {
     let query = supabase
         .from('bank_transfers')
-        .select('id, provider, provider_ref, amount, content, received_at, status, invoice_id, note, invoice:tuition_invoices!invoice_id(id, student_id, student_name, class_name, month, payment_code)')
+        .select('id, provider, provider_ref, amount, content, received_at, status, invoice_id, booking_id, note, invoice:tuition_invoices!invoice_id(id, student_id, student_name, class_name, month, payment_code), booking:bookings!booking_id(id, date, start_time, end_time, payment_code, room:rooms!room_id(id, name), guest:profiles!guest_id(id, full_name, username))')
         .order('received_at', { ascending: false })
         .limit(limit);
     if (status) query = query.eq('status', status);

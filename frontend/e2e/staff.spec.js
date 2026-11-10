@@ -86,7 +86,13 @@ test('creates a booking for a guest (create_booking with p_guest_id)', async () 
     await pickOption(page, dialog, 'Start', '20:30');
     await pickOption(page, dialog, 'End', '21:30');
     await dialog.getByRole('button', { name: 'Add Booking' }).click();
-    await expectToast(page, 'Booking added.');
+    // The server sets the payment code; nothing taken yet → the new booking opens on its QR code.
+    await expectToast(page, 'created · code OOPS');
+    await expect(page.locator('.bkPayModal')).toBeVisible();
+    while (await page.getByRole('dialog').count()) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(250);
+    }
 });
 
 test('an overlapping booking shows the SLOT_TAKEN message', async () => {
@@ -119,6 +125,8 @@ test('a booking created by staff is approved', async () => {
 
 test('marks the booking completed via the quick action', async () => {
     await bookingAction('Mark completed');
+    // Nothing was paid: completing asks first; "Complete anyway" leaves it owed.
+    await page.locator('.bdCompleteDialog').getByRole('button', { name: 'Complete anyway' }).click();
     await expectToast(page, 'is now completed');
 });
 

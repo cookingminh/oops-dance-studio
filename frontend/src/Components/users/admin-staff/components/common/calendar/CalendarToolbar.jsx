@@ -11,8 +11,8 @@ function weekTitle(date, intl) {
     return typeof format.formatRange === 'function' ? format.formatRange(monday, sunday) : `${format.format(monday)} – ${format.format(sunday)}`;
 }
 
-// Title, ‹ Today ›, Week | Month and the page's own controls on the right.
-const CalendarToolbar = ({ view, date, onStep, onToday, onViewChange, extra, isToday }) => {
+// Title, ‹ Today › (unless `navigation` is false), Week | Month and the page's own controls on the right.
+const CalendarToolbar = ({ view, date, onStep, onToday, onViewChange, extra, isToday, navigation = true }) => {
     const { t, intl, formatDate } = useI18n();
     const isMonth = view === 'month';
     return (
@@ -20,17 +20,19 @@ const CalendarToolbar = ({ view, date, onStep, onToday, onViewChange, extra, isT
             <h3 className="calTitle" aria-live="polite">
                 {isMonth ? formatDate(date, 'monthYear') : weekTitle(date, intl)}
             </h3>
-            <div className="calNav">
-                <Button isIconOnly size="sm" variant="flat" aria-label={t(isMonth ? 'Previous month' : 'Previous week')} onPress={() => onStep(-1)}>
-                    <LuChevronLeft aria-hidden="true" />
-                </Button>
-                <Button size="sm" variant="flat" className="calTodayBtn" isDisabled={isToday} onPress={onToday}>
-                    {t('Today')}
-                </Button>
-                <Button isIconOnly size="sm" variant="flat" aria-label={t(isMonth ? 'Next month' : 'Next week')} onPress={() => onStep(1)}>
-                    <LuChevronRight aria-hidden="true" />
-                </Button>
-            </div>
+            {navigation && (
+                <div className="calNav">
+                    <Button isIconOnly size="sm" variant="flat" aria-label={t(isMonth ? 'Previous month' : 'Previous week')} onPress={() => onStep(-1)}>
+                        <LuChevronLeft aria-hidden="true" />
+                    </Button>
+                    <Button size="sm" variant="flat" className="calTodayBtn" isDisabled={isToday} onPress={onToday}>
+                        {t('Today')}
+                    </Button>
+                    <Button isIconOnly size="sm" variant="flat" aria-label={t(isMonth ? 'Next month' : 'Next week')} onPress={() => onStep(1)}>
+                        <LuChevronRight aria-hidden="true" />
+                    </Button>
+                </div>
+            )}
             <div className="calToolbarEnd">
                 {extra}
                 {onViewChange && (

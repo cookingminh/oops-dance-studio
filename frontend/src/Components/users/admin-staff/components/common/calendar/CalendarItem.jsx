@@ -55,11 +55,26 @@ export const ItemBlock = ({ item, column, columns, range, onSelect }) => {
     );
 };
 
-// Month cell chip: dot, start time, title.
-export const ItemChip = ({ item, onSelect }) => {
+// Month cell chip: dot, start time, title. `detailed`: start–end, the title (two lines at most),
+// the subtitle and the badge, one under the other.
+export const ItemChip = ({ item, onSelect, detailed = false }) => {
     const { t, formatDate } = useI18n();
+    const style = { '--cal-accent': item.color ?? NEUTRAL };
+    const label = itemLabel(item, { t, formatDate });
+    if (detailed) {
+        return (
+            <Shell item={item} onSelect={onSelect} className={classesOf(item, 'calChip isDetailed')} style={style} label={label}>
+                <span className="calChipTime">
+                    {item.start}–{item.end}
+                </span>
+                <span className="calChipTitle">{item.title}</span>
+                {item.subtitle && <span className="calChipSub">{item.subtitle}</span>}
+                {item.badge && <span className="calBadge">{item.badge}</span>}
+            </Shell>
+        );
+    }
     return (
-        <Shell item={item} onSelect={onSelect} className={classesOf(item, 'calChip')} style={{ '--cal-accent': item.color ?? NEUTRAL }} label={itemLabel(item, { t, formatDate })}>
+        <Shell item={item} onSelect={onSelect} className={classesOf(item, 'calChip')} style={style} label={label}>
             <span className="calDot" aria-hidden="true" />
             <span className="calChipTime">{item.start}</span>
             <span className="calChipTitle">{item.title}</span>

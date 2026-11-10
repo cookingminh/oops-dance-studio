@@ -146,7 +146,7 @@ const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, ac
                                     ...(QUICK_ACTIONS[booking.status] ?? []).map(([status, label]) => (
                                         <DropdownItem key={status} onPress={() => setStatus(booking.id, status)}>{t(label)}</DropdownItem>
                                     )),
-                                    <DropdownItem key="edit" onPress={() => onEdit(booking)}>{t('Edit booking & payments')}</DropdownItem>,
+                                    <DropdownItem key="edit" onPress={() => onEdit(booking)}>{t('Edit booking')}</DropdownItem>,
                                     <DropdownItem key="delete" className="text-danger" color="danger" onPress={() => remove(booking.id)}>
                                         {t('Delete booking')}
                                     </DropdownItem>,

@@ -24,6 +24,9 @@ const DATE_STYLES = {
 
 // Dev aid: Vietnamese lookups that found no translation (window.__i18nMissing in the console).
 const missing = import.meta.env?.DEV && typeof window !== 'undefined' ? (window.__i18nMissing ??= new Set()) : null;
+// Text that is already Vietnamese (a message translated once and passed on, e.g. to a toast) isn't missing.
+let translatedTexts = null;
+const isTranslated = (text) => (translatedTexts ??= new Set(Object.values(VI))).has(text);
 
 const fill = (text, vars) => (vars ? text.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? String(vars[name]) : match)) : text);
 
@@ -37,7 +40,7 @@ export function createI18n(lang, setLang = () => {}) {
     const t = (key, vars) => {
         if (!dict || key == null) return fill(String(key ?? ''), vars);
         const found = dict[key];
-        if (found === undefined && missing) missing.add(key);
+        if (found === undefined && missing && !isTranslated(key)) missing.add(key);
         return fill(found ?? key, vars);
     };
 

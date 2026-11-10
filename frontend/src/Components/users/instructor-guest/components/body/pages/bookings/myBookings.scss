@@ -1,0 +1,46 @@
+// My bookings: where each booking's money stands, and its pay / receipt / cancel buttons.
+
+.adminShell .payState {
+    justify-self: start;
+    margin-top: .2rem;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: hsl(20, 12%, 93%);
+    color: var(--ad-muted);
+    font-size: .74rem !important;
+    font-weight: 700;
+
+    &.tone-good {
+        background: hsl(150, 60%, 93%);
+        color: hsl(156, 64%, 30%) !important;
+    }
+
+    &.tone-due {
+        background: hsl(40, 95%, 91%);
+        color: hsl(30, 90%, 34%) !important;
+    }
+
+    &.tone-late {
+        background: hsl(0, 85%, 95%);
+        color: hsl(0, 70%, 44%) !important;
+    }
+}
+
+.adminShell .myBookingActions {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .35rem;
+
+    svg {
+        font-size: 1rem;
+        color: currentColor;
+    }
+}
+
+.adminShell .payLeft {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ad-primary) !important;
+}

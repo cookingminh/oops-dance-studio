@@ -1,0 +1,259 @@
+// A room booking's receipt (BookingReceipt.jsx): a sheet of paper on screen, and the only thing that
+// prints (the rest of the page and the dialog chrome are hidden).
+
+.bkReceiptModal {
+    border-radius: 22px;
+    background: var(--ad-surface-2, hsl(20, 14%, 95.5%));
+
+    .bkReceiptBody {
+        padding: 1.25rem 1.25rem .5rem;
+    }
+
+    .bkReceiptActions {
+        padding: .5rem 1.25rem 1rem;
+    }
+}
+
+.bkReceipt {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.75rem 1.75rem 1.5rem;
+    border: 1px solid var(--ad-border, hsl(20, 10%, 91%));
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 30px -18px hsla(20, 30%, 20%, .35);
+    color: hsl(0, 0%, 12%);
+    font-size: .9rem;
+    line-height: 1.45;
+
+    h2,
+    h3 {
+        margin: 0;
+    }
+
+    .bkMono {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        letter-spacing: .03em;
+    }
+
+    .bkCap {
+        display: inline-block;
+
+        &::first-letter {
+            text-transform: uppercase;
+        }
+    }
+}
+
+.bkReceiptHead {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid hsl(0, 66%, 43%);
+
+    > div {
+        display: grid;
+        gap: .1rem;
+        color: hsl(240, 4%, 40%);
+        font-size: .82rem;
+    }
+
+    .bkStudio {
+        font-family: var(--ad-display, inherit);
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: hsl(0, 66%, 43%);
+    }
+
+    .bkReceiptTitle {
+        justify-items: end;
+        text-align: right;
+
+        h2 {
+            font-family: var(--ad-display, inherit);
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: hsl(0, 0%, 12%);
+        }
+    }
+}
+
+.bkReceiptParties {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    > div {
+        display: grid;
+        align-content: start;
+        gap: .1rem;
+    }
+
+    h3 {
+        margin-bottom: .2rem;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: hsl(240, 4%, 50%);
+    }
+
+    strong {
+        font-size: 1rem;
+    }
+
+    span {
+        color: hsl(240, 4%, 36%);
+    }
+}
+
+.bkReceiptLines {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: .5rem 0;
+        border-bottom: 1px solid hsl(20, 10%, 91%);
+        text-align: left;
+        vertical-align: top;
+    }
+
+    thead th {
+        padding-top: 0;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: hsl(240, 4%, 50%);
+    }
+
+    th:last-child,
+    td:last-child {
+        padding-left: 1rem;
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    small {
+        display: block;
+        color: hsl(240, 4%, 46%);
+        font-size: .78rem;
+        overflow-wrap: anywhere;
+    }
+
+    .isTotal th,
+    .isTotal td {
+        font-weight: 700;
+    }
+
+    .isInfo td {
+        color: hsl(240, 4%, 36%);
+    }
+
+    .isGroup th {
+        padding-top: 1rem;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: hsl(240, 4%, 50%);
+        text-align: left;
+    }
+
+    .isBalance th,
+    .isBalance td {
+        border-bottom: 0;
+        font-size: 1.05rem;
+    }
+
+    .isBalance.isDue td {
+        color: hsl(0, 66%, 43%);
+    }
+
+    .bkNone {
+        color: hsl(240, 4%, 50%);
+        text-align: left !important;
+    }
+}
+
+.bkReceiptFoot {
+    display: grid;
+    gap: .3rem;
+    padding-top: .75rem;
+    border-top: 1px dashed hsl(20, 10%, 85%);
+    font-size: .84rem;
+    color: hsl(240, 4%, 36%);
+
+    p {
+        margin: 0;
+        font-size: .84rem;
+        line-height: 1.5;
+    }
+
+    .bkThanks {
+        margin-top: .35rem;
+        font-weight: 700;
+        color: hsl(0, 66%, 43%);
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .bkReceipt {
+        padding: 1.25rem 1rem;
+    }
+
+    .bkReceiptParties {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+// Print only the receipt, on plain paper.
+@page {
+    margin: 14mm;
+}
+
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+
+    .bkReceipt,
+    .bkReceipt * {
+        visibility: visible !important;
+    }
+
+    .bkReceipt {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 0;
+        font-size: 11pt;
+    }
+
+    html,
+    body {
+        overflow: visible !important;
+        background: #fff !important;
+    }
+}
+
+// A changed price and a refund on the receipt.
+.bkReceiptLines {
+    .bkChange td {
+        color: hsl(0, 66%, 43%);
+    }
+
+    .isRefund td:last-child {
+        color: hsl(0, 66%, 43%);
+    }
+}

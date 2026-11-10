@@ -141,6 +141,11 @@ export default {
     'Set {month}’s lesson for {count} classes': 'Đặt bài {month} cho {count} lớp',
     '{count} booking request to review': '{count} yêu cầu đặt phòng cần duyệt',
     '{count} booking requests to review': '{count} yêu cầu đặt phòng cần duyệt',
+    '{guest} still owes for their booking': '{guest} còn nợ tiền lượt đặt phòng',
+    '{count} past booking still owes money': '{count} lượt đặt đã qua còn nợ tiền',
+    '{count} past bookings still owe money': '{count} lượt đặt đã qua còn nợ tiền',
+    '{amount} left · {room} on {date}': 'Còn {amount} · {room} ngày {date}',
+    '{amount} left to collect': 'Còn {amount} chưa thu',
     'Upcoming bookings waiting for approval': 'Các lượt đặt phòng sắp tới đang chờ duyệt',
 
     // Session states (sessionPhase)

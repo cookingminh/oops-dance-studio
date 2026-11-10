@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Button, Input, Switch } from '@nextui-org/react';
-import { LuInfo, LuQrCode, LuSave, LuSettings2 } from 'react-icons/lu';
+import { LuInfo, LuQrCode, LuSave } from 'react-icons/lu';
 import { updateTuitionSettings, vietQrUrl } from '@/services/tuition';
 import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
-import SectionCard from '../../common/SectionCard';
 import AutoPayments from './AutoPayments';
 
 // invoice_day / due_day are left over from monthly tuition and no longer used: not shown.
@@ -36,9 +35,9 @@ function useDebounced(value, ms = 600) {
     return settled;
 }
 
-// Admin only: the bank account on every QR code (with a live preview), the course renewal rules,
-// how to connect automatic payments, and the daily check on demand.
-const TuitionSettings = ({ settings, sandbox, onSaved, onRunCycle, running }) => {
+// Admin only (in a drawer of the tuition page): the bank account on every QR code (with a live
+// preview), the course renewal rules and how to connect automatic payments.
+const TuitionSettings = ({ settings, sandbox, onSaved }) => {
     const { t, tn } = useI18n();
     const toast = useToast();
     const [form, setForm] = useState(() => toForm(settings));
@@ -89,24 +88,36 @@ const TuitionSettings = ({ settings, sandbox, onSaved, onRunCycle, running }) =>
     );
 
     return (
-        <SectionCard
-            id="tuition-settings"
-            className="tuSettingsCard"
-            icon={LuSettings2}
-            title={t('Payment settings')}
-            subtitle={t('Only admins see this. The bank account is on every QR code students scan.')}
-        >
-            <form className="tuSettingsGrid" onSubmit={save} noValidate>
-                <div className="tuSettingsForm">
-                    <h3>{t('Bank account')}</h3>
-                    <div className="tuFieldPair">
-                        {field('bank_code', t('Bank code'), { placeholder: '970436 / VCB', description: t('The bank’s BIN or short name.'), errorMessage: t('2–20 letters or digits.') })}
-                        {field('bank_name', t('Bank name'), { placeholder: 'Vietcombank' })}
+        <>
+            <form className="tuSettings" onSubmit={save} noValidate>
+                <section className="tuSettingsBlock" aria-labelledby="tu-bank-title">
+                    <h3 id="tu-bank-title">{t('Bank account')}</h3>
+                    <p className="tuFinePrint">{t('Only admins see this. The bank account is on every QR code students scan.')}</p>
+                    <div className="tuBankGrid">
+                        <div className="tuSettingsFields">
+                            <div className="tuFieldPair">
+                                {field('bank_code', t('Bank code'), { placeholder: '970436 / VCB', description: t('The bank’s BIN or short name.'), errorMessage: t('2–20 letters or digits.') })}
+                                {field('bank_name', t('Bank name'), { placeholder: 'Vietcombank' })}
+                            </div>
+                            {field('account_no', t('Account number'), { inputMode: 'numeric', errorMessage: t('4–30 letters or digits.') })}
+                            {field('account_name', t('Account name'), { placeholder: 'NGUYEN VAN A', description: t('As the bank writes it, without accents.') })}
+                        </div>
+                        <figure className="tuQrPreview">
+                            <div className={`tuQrBox${qr && previewValid ? '' : ' isEmpty'}`}>
+                                {qr && previewValid ? <img key={qr} src={qr} alt={t('Preview of the QR code students scan')} /> : <LuQrCode aria-hidden="true" />}
+                                {sandbox && <span className="tuDemoRibbon">{t('Demo — don’t transfer real money')}</span>}
+                            </div>
+                            <figcaption>
+                                {qr && previewValid
+                                    ? t('Live preview: {amount} with the code {code} in the transfer content.', { amount: formatVnd(SAMPLE.amount), code: SAMPLE.payment_code })
+                                    : t('Enter the bank code and account number to see the QR code.')}
+                            </figcaption>
+                        </figure>
                     </div>
-                    {field('account_no', t('Account number'), { inputMode: 'numeric', errorMessage: t('4–30 letters or digits.') })}
-                    {field('account_name', t('Account name'), { placeholder: 'NGUYEN VAN A', description: t('As the bank writes it, without accents.') })}
+                </section>
 
-                    <h3>{t('Courses and renewal')}</h3>
+                <section className="tuSettingsBlock" aria-labelledby="tu-rules-title">
+                    <h3 id="tu-rules-title">{t('Courses and renewal')}</h3>
                     <div className="tuFieldPair">
                         {field('renewal_open_sessions', t('Open the renewal with sessions left'), {
                             type: 'number',
@@ -143,29 +154,18 @@ const TuitionSettings = ({ settings, sandbox, onSaved, onRunCycle, running }) =>
                             </span>
                         </p>
                     )}
-                    <div className="tuSettingsSave">
-                        {changed.length > 0 && <span>{t('Unsaved changes')}</span>}
-                        <Button type="submit" color="danger" isLoading={saving} isDisabled={!changed.length || invalid.length > 0} startContent={saving ? null : <LuSave aria-hidden="true" />}>
-                            {t('Save settings')}
-                        </Button>
-                    </div>
-                </div>
+                </section>
 
-                <figure className="tuQrPreview">
-                    <div className={`tuQrBox${qr && previewValid ? '' : ' isEmpty'}`}>
-                        {qr && previewValid ? <img key={qr} src={qr} alt={t('Preview of the QR code students scan')} /> : <LuQrCode aria-hidden="true" />}
-                        {sandbox && <span className="tuDemoRibbon">{t('Demo — don’t transfer real money')}</span>}
-                    </div>
-                    <figcaption>
-                        {qr && previewValid
-                            ? t('Live preview: {amount} with the code {code} in the transfer content.', { amount: formatVnd(SAMPLE.amount), code: SAMPLE.payment_code })
-                            : t('Enter the bank code and account number to see the QR code.')}
-                    </figcaption>
-                </figure>
+                <div className="tuSettingsSave">
+                    {changed.length > 0 && <span>{t('Unsaved changes')}</span>}
+                    <Button type="submit" color="danger" isLoading={saving} isDisabled={!changed.length || invalid.length > 0} startContent={saving ? null : <LuSave aria-hidden="true" />}>
+                        {t('Save settings')}
+                    </Button>
+                </div>
             </form>
 
-            <AutoPayments settings={settings} onRunCycle={onRunCycle} running={running} />
-        </SectionCard>
+            <AutoPayments />
+        </>
     );
 };
 

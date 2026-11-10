@@ -1,0 +1,238 @@
+// The class page's Tuition tab: the next course in plain words, the answers, and the course picker.
+// Tokens --ad-* come from admin.scss (.adminShell, and .adminPortal on the picker's popover).
+
+$green: hsl(152, 60%, 30%);
+$green-soft: hsl(150, 60%, 93%);
+$amber: hsl(30, 85%, 32%);
+$amber-soft: hsl(40, 95%, 92%);
+$blue: hsl(217, 70%, 42%);
+$blue-soft: hsl(217, 85%, 95%);
+
+// Next course ==================================================================
+
+.adminShell .hubRenewal .cardBody {
+    display: grid;
+    gap: 1rem;
+}
+
+.adminShell .hubNextSentence {
+    max-width: 62rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ad-muted);
+
+    strong {
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .hubNextEmpty {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem 1.5rem;
+
+    .hubNextSentence {
+        flex: 1 1 24rem;
+    }
+}
+
+// Continue · Stop · No answer yet
+.adminShell .hubAnswerCounts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .7rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        padding: .75rem .95rem;
+        border-radius: 16px;
+        background: var(--ad-surface-2);
+        font-weight: 600;
+
+        svg {
+            flex-shrink: 0;
+            font-size: 1.05rem;
+        }
+
+        strong {
+            margin-left: auto;
+            font-family: var(--ad-display);
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        &.is-yes {
+            background: $green-soft;
+            color: $green;
+        }
+
+        &.is-no {
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+
+        &.is-none {
+            background: $amber-soft;
+            color: $amber;
+        }
+    }
+}
+
+.adminShell .hubAnswerGroup {
+    display: grid;
+    gap: .55rem;
+
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-size: .95rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+
+    &.is-yes h3 svg {
+        color: $green;
+    }
+
+    &.is-no h3 svg {
+        color: var(--ad-primary);
+    }
+
+    &.is-none h3 svg {
+        color: $amber;
+    }
+}
+
+// Course picker =================================================================
+
+.adminShell .hubCourseBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 1.5rem;
+    margin-bottom: 1rem;
+
+    .hubCoursePicker {
+        flex: 1 1 22rem;
+        max-width: 34rem;
+    }
+
+    .hubCourseHead {
+        flex: 1 1 26rem;
+        margin: 0;
+    }
+}
+
+.adminShell .hubCourseTrigger {
+    height: auto;
+    min-height: 3.6rem;
+    padding-top: .45rem;
+    padding-bottom: .45rem;
+}
+
+:is(.adminShell, .adminPortal) .hubCourseOption {
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+:is(.adminShell, .adminPortal) .hubCourseOptionText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+    text-align: left;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .94rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+:is(.adminShell, .adminPortal) .hubCourseOptionMeta {
+    flex-shrink: 0;
+    display: grid;
+    justify-items: end;
+    gap: .2rem;
+}
+
+:is(.adminShell, .adminPortal) .hubCourseCount {
+    font-size: .74rem;
+    color: var(--ad-subtle);
+    white-space: nowrap;
+}
+
+// Current / Up next / Finished / Stopped: words plus a tint, never colour alone.
+:is(.adminShell, .adminPortal) .hubCourseChip {
+    padding: .12rem .55rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    color: hsl(240, 4%, 46%);
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.tone-good {
+        background: $green-soft;
+        color: $green;
+    }
+
+    &.tone-live {
+        background: $blue-soft;
+        color: $blue;
+    }
+}
+
+.adminPortal .hubCourseListbox li {
+    padding-top: .5rem;
+    padding-bottom: .5rem;
+}
+
+// Phones ========================================================================
+
+@media screen and (max-width: 760px) {
+    .adminShell .hubAnswerCounts {
+        gap: .4rem;
+
+        li {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: .3rem;
+            padding: .6rem .7rem;
+            font-size: .82rem;
+
+            strong {
+                margin-left: 0;
+            }
+        }
+    }
+
+    .adminShell .hubCourseBar .hubCoursePicker {
+        max-width: none;
+    }
+
+    .adminShell .hubNextSentence {
+        font-size: .94rem;
+    }
+}

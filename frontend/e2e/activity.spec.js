@@ -127,7 +127,7 @@ test('a booking staff approve (REST) shows at the top, with what changed', async
     await expect(changed.getByRole('row', { name: /Status/ })).toContainText('Approved');
     await expect(drawer.locator('.alogHistory li.isCurrent')).toContainText('approved');
     // The calendar opens on that booking's week.
-    await expect(drawer.getByRole('link', { name: 'Open in Bookings' })).toHaveAttribute('href', `/admin/bookings?date=${booking.date}`);
+    await expect(drawer.getByRole('link', { name: 'Open in Bookings' })).toHaveAttribute('href', `/admin/bookings?booking=${booking.id}&date=${booking.date}`);
     await drawer.getByRole('button', { name: 'Close' }).click();
     await expect(drawer).toHaveCount(0);
 });

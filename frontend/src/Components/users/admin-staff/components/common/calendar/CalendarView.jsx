@@ -26,6 +26,11 @@ import './calendar.scss';
 // onSlotClick(date, 'HH:mm', { lane, end? }): a click on a free slot, or a press-and-drag over several
 // (week view, mouse / pen; touch taps). `end` comes only with a dragged range longer than one slot;
 // `lane` is the lane's id (undefined without lanes). The phone agenda's "+" passes a null time.
+// Also off by default, for a calendar of one fixed period (e.g. a payslip's month):
+// `fixed` hides ‹ Today ›, and month cells list every item with a plain day number (no week to
+// open); `detailedChips` makes month chips show start–end, the title on up to two lines, the
+// subtitle and the badge; `initialDay` ('yyyy-MM-dd') is the day phones list under the month until
+// one is tapped (default: today in that month, else the 1st).
 const CalendarView = ({
     view = 'week',
     onViewChange,
@@ -42,6 +47,9 @@ const CalendarView = ({
     label,
     slotLabel,
     lanes,
+    fixed = false,
+    detailedChips = false,
+    initialDay,
     className = '',
 }) => {
     const { t, formatDate } = useI18n();
@@ -67,10 +75,11 @@ const CalendarView = ({
         onViewChange?.('week');
     };
 
-    // Phones, month view: the tapped day's list under the grid (today, or the 1st of the month).
+    // Phones, month view: the tapped day's list under the grid (`initialDay`, today, or the 1st of the month).
     const [pickedDay, setPickedDay] = useState(null);
     const monthKey = toIso(current).slice(0, 7);
-    const picked = pickedDay?.startsWith(monthKey) ? pickedDay : todayIso.startsWith(monthKey) ? todayIso : `${monthKey}-01`;
+    const inMonth = (iso) => Boolean(iso?.startsWith(monthKey));
+    const picked = [pickedDay, initialDay, todayIso].find(inMonth) ?? `${monthKey}-01`;
 
     const isMonth = view === 'month';
     const showsToday = todayIso >= range.from && todayIso <= range.until && (!isMonth || todayIso.startsWith(monthKey));
@@ -89,6 +98,8 @@ const CalendarView = ({
                     compact={isPhone}
                     picked={picked}
                     onPick={setPickedDay}
+                    fixed={fixed}
+                    detailed={detailedChips}
                 />
                 {isPhone && (
                     <section className="calPicked" aria-label={formatDate(picked, 'long')}>
@@ -144,6 +155,7 @@ const CalendarView = ({
                 onViewChange={onViewChange}
                 extra={toolbarExtra}
                 isToday={showsToday}
+                navigation={!fixed}
             />
             <div className="calFrame">
                 {loading && <span className="calProgress" aria-hidden="true" />}

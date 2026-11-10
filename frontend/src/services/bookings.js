@@ -90,15 +90,28 @@ function toRow(fields) {
     return row;
 }
 
-// Staff booking on behalf of a guest: create_booking validates it and sets the amounts, then any
-// status / payment values the staff entered are applied on top.
-export async function createBookingForGuest(fields) {
-    const created = await createBooking(fields);
-    const extra = { status: fields.status, depositStatus: fields.depositStatus };
-    for (const column of ['deposit', 'full_payment', 'real_income', 'bank_transfer', 'cash']) {
-        if (fields[column] !== '' && fields[column] !== null && fields[column] !== undefined) extra[column] = fields[column];
-    }
-    return updateBooking(created.id, extra);
+// Staff book for a guest in one go (booking_staff_create): the booking — approved, or 'pending' to hold it —
+// priced from the room (its payment code is set by the server), another agreed `price` with its required
+// `priceNote` if given, and money taken now: `paid` (the deposit, the full price or any amount) by `method`
+// ('cash' | 'transfer' seen by hand) with an optional `paymentNote`. Nothing taken → the guest pays later by
+// QR (services/bookingPayments.js). → the booking.
+export async function staffCreateBooking({ guestId, roomId, date, startTime, endTime, details, status = 'approved', price = null, priceNote = null, paid = 0, method = 'cash', paymentNote = null }) {
+    return unwrap(
+        await supabase.rpc('booking_staff_create', {
+            p_guest: guestId,
+            p_room: roomId,
+            p_date: date,
+            p_start: startTime,
+            p_end: endTime,
+            p_details: details?.trim() || null,
+            p_status: status,
+            p_price: price,
+            p_price_note: priceNote,
+            p_paid: paid,
+            p_method: method,
+            p_payment_note: paymentNote,
+        })
+    );
 }
 
 export async function updateBooking(id, fields) {

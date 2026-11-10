@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
+import { LuLandmark, LuSettings2 } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
@@ -8,13 +9,12 @@ import {
     getTuitionSettings,
     ignoreTransfer,
     isPaymentSandbox,
-    listInvoices,
     listTransfers,
     markPaid,
-    openCourse,
     reopenInvoice,
     runCycle,
     setInvoiceAmount,
+    setInvoiceNote,
     setRenewal,
     simulateTransfer,
     undoPayment,
@@ -22,33 +22,41 @@ import {
 } from '@/services/tuition';
 import { loadTuitionBoard } from '@/services/tuitionStaff';
 import { listEnrolments } from '@/services/classSwitch';
+import { assignTransferToBooking, unassignBookingTransfer } from '@/services/bookingPayments';
 import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useStaffTasks } from '../../../tasks/staffTasks';
-import { downloadCsv, monthOf, summarize, withCourses } from './tuitionModel';
-import TuitionOverview from './TuitionOverview';
-import RenewalTracker from './RenewalTracker';
-import TransferInbox from './TransferInbox';
-import InvoiceList from './InvoiceList';
+import SwitchClassDialog from '../../common/switch-class/SwitchClassDialog';
+import { classBoard, monthOf, moneyOf, peopleOn, runningInvoices, todoLists, withCourses } from './tuitionModel';
+import TuitionStrip from './TuitionStrip';
+import SearchResults from './SearchResults';
+import TodoCard from './TodoCard';
+import ClassBoard from './ClassBoard';
+import SideDrawer from './SideDrawer';
+import { TransferHistory } from './TransferInbox';
 import TuitionSettings from './TuitionSettings';
+import ExportDialog from './ExportDialog';
 import PaymentDialog from './PaymentDialog';
 import AdjustDialog from './AdjustDialog';
 import PaymentCodeDialog from './PaymentCodeDialog';
 import AssignDialog from './AssignDialog';
-import SwitchClassDialog from '../../common/switch-class/SwitchClassDialog';
+import NoteDialog from './NoteDialog';
+import BookingAssignDialog from './BookingAssignDialog';
 import './tuition.scss';
 
-const SECTIONS = { overdue: 'tuition-invoices', transfers: 'tuition-transfers', renewal: 'tuition-renewal' };
+// Where the to-do bell's links land (?show=…); the to-do card when that group is empty.
+const SECTIONS = { overdue: 'tuition-late', transfers: 'tuition-transfers', renewal: 'tuition-classes' };
 
-// /admin/tuition (staff + admin): the page the desk uses every day to collect tuition, per course
-// (khoá). The invoices on show — the courses running now (and finished ones still owed), the next
-// courses (renewals) or the courses starting in a month — with their money; each class's renewal;
-// the bank-transfer inbox; every invoice with its actions; and (admins) the bank account and rules.
+// /admin/tuition (staff + admin): studio-wide money work only. A one-line summary of the running
+// courses with the search and a ⋯ menu (export, the daily check, payment settings for admins); "To do"
+// across every class (late, bank transfers to sort, due soon); and "By class", which sends each class
+// to its own Tuition tab (its invoices course by course, every student's renewal answer).
 const Tuition = () => {
     const { t } = useI18n();
     const toast = useToast();
     const { role } = useAuth();
+    const isAdmin = role === ROLES.admin;
     const { refresh: refreshTasks } = useStaffTasks();
     const location = useLocation();
     const [params] = useSearchParams();
@@ -57,64 +65,45 @@ const Tuition = () => {
     const settings = useAsync(getTuitionSettings, []);
     const sandbox = useAsync(() => isPaymentSandbox().catch(() => false), []);
     const board = useAsync(loadTuitionBoard, []);
-    const today = board.data?.today ?? null;
-    const thisMonth = today ? monthOf(today) : null;
-
-    const [view, setView] = useState('running'); // 'running' | 'next' | 'month'
-    const [picked, setPicked] = useState(null); // 'yyyy-MM-01' of the month view; null = this month
-    const month = picked ?? thisMonth;
-    const monthly = useAsync(() => (view === 'month' && month ? listInvoices(month) : Promise.resolve(undefined)), [view, month]);
     const transfers = useAsync(() => listTransfers({ limit: 80 }), []);
     // Who is in which class now, from when and until when ("classId:studentId" → place).
     const enrolments = useAsync(() => listEnrolments().catch(() => new Map()), []);
+    const today = board.data?.today ?? null;
+    const openAt = settings.data?.renewal_open_sessions ?? 2;
 
-    const [filter, setFilter] = useState(show === 'overdue' ? 'overdue' : 'all');
     const [query, setQuery] = useState(() => params.get('q') ?? ''); // ?q= from a person's panel
     const [busyId, setBusyId] = useState(null);
     const [dialog, setDialog] = useState(null); // { kind, invoice?, transfer? }
+    const [drawer, setDrawer] = useState(null); // 'history' | 'settings'
 
     // Every invoice with its course's progress (phase, sessions held, last session).
     const progressById = useMemo(() => new Map((board.data?.progress ?? []).map((row) => [row.lesson_id, row])), [board.data]);
-    const boardRows = useMemo(() => (board.data ? withCourses(board.data.invoices, progressById, today) : []), [board.data, progressById, today]);
-    const monthRows = useMemo(() => (monthly.data ? withCourses(monthly.data, progressById, today) : undefined), [monthly.data, progressById, today]);
-    const sets = useMemo(
-        () => ({
-            running: boardRows.filter((invoice) => invoice.course.phase === 'current' || (invoice.course.phase === 'done' && invoice.status === 'unpaid')),
-            next: boardRows.filter((invoice) => invoice.course.phase === 'planned'),
-        }),
-        [boardRows],
+    const rows = useMemo(() => (board.data ? withCourses(board.data.invoices, progressById, today) : []), [board.data, progressById, today]);
+    const running = useMemo(() => runningInvoices(rows), [rows]);
+    const lists = useMemo(() => (today ? todoLists(rows, today) : { late: [], soon: [] }), [rows, today]);
+    const unpaid = useMemo(() => rows.filter((invoice) => invoice.status === 'unpaid'), [rows]);
+    const waiting = useMemo(() => (transfers.data ?? []).filter((transfer) => transfer.status === 'unmatched'), [transfers.data]);
+    const classes = useMemo(
+        () => (board.data ? classBoard(board.data.classes, board.data.progress, rows, today, openAt, { openFirst: show === 'renewal' }) : []),
+        [board.data, rows, today, openAt, show],
     );
-    const rows = view === 'month' ? monthRows : board.data ? sets[view] : undefined;
-    const listState = view === 'month' ? { ...monthly, data: monthRows } : { ...board, data: rows };
-    const unpaid = useMemo(() => boardRows.filter((invoice) => invoice.status === 'unpaid'), [boardRows]);
-    const summary = useMemo(() => summarize(rows ?? [], today), [rows, today]);
+    const searching = query.trim().length > 0;
 
-    // From a to-do (?show=overdue|transfers|renewal): pick the right view and scroll to it.
-    // location.key changes on every visit, so clicking the same to-do twice still works.
+    // From a to-do (?show=overdue|transfers|renewal): scroll to that group. location.key changes on
+    // every visit, so clicking the same to-do twice still works.
     const ready = Boolean(today);
     useEffect(() => {
         if (!show || !ready) return undefined;
-        if (show === 'overdue') {
-            setView('running');
-            setFilter('overdue');
-        }
         const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const timer = setTimeout(() => document.getElementById(SECTIONS[show])?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' }), 450);
+        const timer = setTimeout(() => {
+            const target = document.getElementById(SECTIONS[show]) ?? document.getElementById('tuition-todo');
+            target?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+        }, 450);
         return () => clearTimeout(timer);
     }, [show, ready, location.key]);
 
-    const pickView = (value) => {
-        setView(value);
-        setFilter('all');
-    };
-    const pickMonth = (value) => {
-        setPicked(value === thisMonth ? null : value);
-        setFilter('all');
-    };
-
     const refreshAll = () => {
         board.reload();
-        if (view === 'month') monthly.reload();
         transfers.reload();
         enrolments.reload();
         refreshTasks();
@@ -141,18 +130,18 @@ const Tuition = () => {
 
     const answer = (invoice, decision) => {
         const vars = { name: invoice.student_name, cls: invoice.class_name, course: courseOf(invoice) };
-        const running = invoice.course?.phase !== 'planned';
+        const runningNow = invoice.course?.phase !== 'planned';
         // Stopping the running course takes them out of the class today: ask first.
-        if (decision === 'stop' && running && !window.confirm(t('{name} stops {cls} now and leaves the class today. Continue?', vars))) return;
+        if (decision === 'stop' && runningNow && !window.confirm(t('{name} stops {cls} now and leaves the class today. Continue?', vars))) return;
         run(invoice.id, () => setRenewal(invoice.id, decision),
             decision === 'continue'
                 ? t('{name} continues with {course} in {cls}.', vars)
-                : running
+                : runningNow
                     ? t('{name} stops {cls} now.', vars)
                     : t('{name} stops {cls} after the current course.', vars));
     };
 
-    // Row menu and buttons.
+    // Row buttons and menu.
     const onAction = (kind, invoice) => {
         switch (kind) {
             case 'pay':
@@ -160,6 +149,7 @@ const Tuition = () => {
             case 'switch':
             case 'amount':
             case 'waive':
+            case 'note':
                 setDialog({ kind, invoice });
                 break;
             case 'undo':
@@ -177,19 +167,19 @@ const Tuition = () => {
         }
     };
 
-    // Bills every member of the class for its next course now, whatever the timing.
-    const openRenewal = (course, cls) => {
-        const vars = { title: course.title, cls: cls.name };
-        if (!window.confirm(t('Open the renewal of “{title}” now? Every student in {cls} gets its invoice and can pay or answer straight away.', vars))) return;
-        run(`open-${course.lesson_id}`, () => openCourse(course.lesson_id), (count) =>
-            count
-                ? (count === 1 ? t('Renewal open: {count} student billed for “{title}”.', { ...vars, count }) : t('Renewal open: {count} students billed for “{title}”.', { ...vars, count }))
-                : t('Renewal open for “{title}”. Every member already has an invoice.', vars));
-    };
-
     const assign = (transfer, invoice) =>
         run(`transfer-${transfer.id}`, () => assignTransfer(transfer.id, invoice.id), t('{amount} assigned to {name}.', { amount: formatVnd(transfer.amount), name: invoice.student_name }))
             .then((done) => done && setDialog(null));
+
+    // A room booking's transfer: put an inbox transfer on it, or take one back off it.
+    const assignBooking = (transfer, booking) =>
+        run(`transfer-${transfer.id}`, () => assignTransferToBooking(transfer.id, booking.id), t('{amount} assigned to booking #{id}.', { amount: formatVnd(transfer.amount), id: booking.id }))
+            .then((done) => done && setDialog(null));
+
+    const takeBack = (transfer) => {
+        if (!window.confirm(t('Take {amount} back off booking #{id}? The transfer goes back to the inbox.', { amount: formatVnd(transfer.amount), id: transfer.booking.id }))) return;
+        run(`transfer-${transfer.id}`, () => unassignBookingTransfer(transfer.id), t('Transfer taken back. It is in the inbox again.'));
+    };
 
     const runDailyCheck = () => {
         if (!window.confirm(t('Run today’s check now? It bills members who have no invoice for their running course, opens the next course’s renewal when it is time, cancels invoices that are unpaid and unanswered after their due date, and takes those students out of their class. It also runs by itself every night.'))) return;
@@ -200,64 +190,77 @@ const Tuition = () => {
         }));
     };
 
-    const exportName = view === 'month' ? (month ?? '').slice(0, 7) : `${view}-${today}`;
-    const isAdmin = role === ROLES.admin;
+    const onMenu = (key) => {
+        if (key === 'export') setDialog({ kind: 'export' });
+        else if (key === 'check') runDailyCheck();
+        else if (key === 'settings') setDrawer('settings');
+    };
+
     const close = () => setDialog(null);
+    const rowProps = { today, enrolments: enrolments.data, busyId, onAction };
 
     return (
         <>
-            <TuitionOverview
-                view={view}
-                month={month}
-                thisMonth={thisMonth}
-                summary={summary}
-                loading={listState.loading}
-                onView={pickView}
-                onPickMonth={pickMonth}
-                onExport={() => downloadCsv(rows ?? [], exportName, today, t)}
-            />
-
-            <div className="tuDuo">
-                <TransferInbox
-                    state={transfers}
-                    unpaid={unpaid}
-                    invoices={boardRows}
-                    busyId={busyId}
-                    onAssign={assign}
-                    onFind={(transfer) => setDialog({ kind: 'assign', transfer })}
-                    onIgnore={(transfer, note) => run(`transfer-${transfer.id}`, () => ignoreTransfer(transfer.id, true, note.trim() || null), t('Transfer set aside.'))}
-                    onRestore={(transfer) => run(`transfer-${transfer.id}`, () => ignoreTransfer(transfer.id, false), t('Transfer is back in the inbox.'))}
-                />
-                <RenewalTracker
-                    state={board}
-                    invoices={sets.next}
-                    settings={settings.data}
-                    today={today}
-                    busyId={busyId}
-                    onOpen={openRenewal}
-                    onAnswer={answer}
-                />
-            </div>
-
-            <InvoiceList
-                view={view}
-                month={month}
-                today={today}
-                state={listState}
-                enrolments={enrolments.data}
-                counts={summary.counts}
-                filter={filter}
-                onFilter={setFilter}
+            <TuitionStrip
+                money={moneyOf(running)}
+                latePeople={peopleOn(lists.late)}
+                loading={board.loading && !board.data}
                 query={query}
                 onQuery={setQuery}
-                busyId={busyId}
-                onAction={onAction}
+                isAdmin={isAdmin}
+                busy={busyId === 'cycle'}
+                onMenu={onMenu}
             />
 
-            {isAdmin && settings.data && (
-                <TuitionSettings settings={settings.data} sandbox={sandbox.data} onSaved={settings.reload} onRunCycle={runDailyCheck} running={busyId === 'cycle'} />
+            {searching && board.data && (
+                <SearchResults query={query} invoices={rows} progressById={progressById} onClear={() => setQuery('')} {...rowProps} />
             )}
 
+            <TodoCard
+                state={board}
+                lists={lists}
+                invoices={rows}
+                transfers={waiting}
+                onHistory={() => setDrawer('history')}
+                transferProps={{
+                    unpaid,
+                    busyId,
+                    onAssign: assign,
+                    onFind: (transfer) => setDialog({ kind: 'assign', transfer }),
+                    onFindBooking: (transfer) => setDialog({ kind: 'assignBooking', transfer }),
+                    onIgnore: (transfer, note) => run(`transfer-${transfer.id}`, () => ignoreTransfer(transfer.id, true, note.trim() || null), t('Transfer set aside.')),
+                }}
+                {...rowProps}
+            />
+
+            <ClassBoard state={board} entries={classes} openAt={openAt} asking={show === 'renewal'} />
+
+            {drawer === 'history' && (
+                <SideDrawer id="tuition-history" icon={LuLandmark} title={t('Transfer history')} subtitle={t('Bank transfers already matched or set aside.')} onClose={() => setDrawer(null)}>
+                    <TransferHistory
+                        state={transfers}
+                        invoices={rows}
+                        busyId={busyId}
+                        onTakeBack={takeBack}
+                        onRestore={(transfer) => run(`transfer-${transfer.id}`, () => ignoreTransfer(transfer.id, false), t('Transfer is back in the inbox.'))}
+                    />
+                </SideDrawer>
+            )}
+            {drawer === 'settings' && isAdmin && settings.data && (
+                <SideDrawer id="tuition-settings" icon={LuSettings2} title={t('Payment settings')} subtitle={t('The bank account, the renewal rules and automatic payments.')} wide onClose={() => setDrawer(null)}>
+                    <TuitionSettings settings={settings.data} sandbox={sandbox.data} onSaved={settings.reload} />
+                </SideDrawer>
+            )}
+
+            {dialog?.kind === 'export' && today && (
+                <ExportDialog
+                    sets={{ running, next: rows.filter((invoice) => invoice.course.phase === 'planned') }}
+                    thisMonth={monthOf(today)}
+                    today={today}
+                    progressById={progressById}
+                    onClose={close}
+                />
+            )}
             {dialog?.kind === 'pay' && (
                 <PaymentDialog
                     invoice={dialog.invoice}
@@ -275,6 +278,13 @@ const Tuition = () => {
                             ? run(dialog.invoice.id, () => waiveInvoice(dialog.invoice.id, note), t('{course} waived for {name}.', { course: courseOf(dialog.invoice), name: dialog.invoice.student_name }))
                             : run(dialog.invoice.id, () => setInvoiceAmount(dialog.invoice.id, amount, note), t('Amount changed to {amount}.', { amount: formatVnd(amount) }))
                     }
+                />
+            )}
+            {dialog?.kind === 'note' && (
+                <NoteDialog
+                    invoice={dialog.invoice}
+                    onClose={close}
+                    onSubmit={(note) => run(dialog.invoice.id, () => setInvoiceNote(dialog.invoice.id, note), note ? t('Note saved.') : t('Note removed.'))}
                 />
             )}
             {dialog?.kind === 'code' && (
@@ -304,6 +314,14 @@ const Tuition = () => {
             )}
             {dialog?.kind === 'assign' && (
                 <AssignDialog transfer={dialog.transfer} unpaid={unpaid} busy={busyId === `transfer-${dialog.transfer.id}`} onClose={close} onAssign={assign} />
+            )}
+            {dialog?.kind === 'assignBooking' && (
+                <BookingAssignDialog
+                    transfer={dialog.transfer}
+                    busy={busyId === `transfer-${dialog.transfer.id}`}
+                    onClose={close}
+                    onAssign={(booking) => assignBooking(dialog.transfer, booking)}
+                />
             )}
         </>
     );

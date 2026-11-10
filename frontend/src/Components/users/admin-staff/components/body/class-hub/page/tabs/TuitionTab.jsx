@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LuReceipt } from 'react-icons/lu';
+import { Button } from '@nextui-org/react';
+import { LuCalendarPlus, LuReceipt, LuRepeat } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import {
     getTuitionSettings,
@@ -9,6 +10,7 @@ import {
     openCourse,
     reopenInvoice,
     setInvoiceAmount,
+    setInvoiceNote,
     setRenewal,
     simulateTransfer,
     undoPayment,
@@ -19,32 +21,35 @@ import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard from '../../../../common/SectionCard';
-import Segmented from '../../../../common/Segmented';
 import { stagger } from '../../../../common/motion';
 import SwitchClassDialog from '../../../../common/switch-class/SwitchClassDialog';
 import InvoiceRow from '../../../tuition/InvoiceRow';
 import PaymentDialog from '../../../tuition/PaymentDialog';
 import AdjustDialog from '../../../tuition/AdjustDialog';
 import PaymentCodeDialog from '../../../tuition/PaymentCodeDialog';
+import NoteDialog from '../../../tuition/NoteDialog';
 import { withCourses } from '../../../tuition/tuitionModel';
 import { routineNow } from '../../hubModel';
 import { useClassInvoices } from '../useClassActivity';
-import { groupByCourse } from '../tuition/courseModel';
+import { defaultCourseKey, groupByCourse } from '../tuition/courseModel';
 import CourseHead from '../tuition/CourseHead';
+import CoursePicker from '../tuition/CoursePicker';
 import RenewalPanel from '../tuition/RenewalPanel';
 import '../../../tuition/tuition.scss';
+import '../tuition/hubTuition.scss';
 
-// Tuition: this class's invoices course by course (a course = a routine), with the same row actions
-// as /admin/tuition, and the next course's renewal. A thin view over the tuition services.
+// Tuition: the next course's renewal in plain words (who continues, stops or hasn't answered), then
+// this class's invoices course by course (a course = a routine; pick one in the dropdown, kept in the
+// URL as ?course=<lesson id>), with the same row actions as /admin/tuition. A thin view over the
+// tuition services.
 const TuitionTab = ({ ctx }) => {
-    const { cls, today, progress, version, changed } = ctx;
+    const { cls, today, progress, version, changed, params, setTab } = ctx;
     const { t, tn } = useI18n();
     const toast = useToast();
     const [local, setLocal] = useState(0);
     const invoices = useClassInvoices(cls.id, `${version}-${local}`);
     const settings = useAsync(getTuitionSettings, []);
     const sandbox = useAsync(() => isPaymentSandbox().catch(() => false), []);
-    const [picked, setPicked] = useState(null); // course key; null = the running one
     const [busyId, setBusyId] = useState(null);
     const [dialog, setDialog] = useState(null); // { kind, invoice }
 
@@ -52,9 +57,10 @@ const TuitionTab = ({ ctx }) => {
     const rows = withCourses(invoices.data ?? [], new Map(progress.map((row) => [row.lesson_id, row])), today);
     const groups = groupByCourse(progress, rows, today);
     const { current, planned } = routineNow(progress);
-    const defaultKey = String((current ?? planned)?.lesson_id ?? groups[0]?.key ?? '');
-    const selected = groups.find((group) => group.key === (picked ?? defaultKey)) ?? groups[0];
-    const next = current && planned ? groups.find((group) => group.key === String(planned.lesson_id)) : null;
+    const asked = params?.get('course');
+    const selected = groups.find((group) => group.key === asked) ?? groups.find((group) => group.key === defaultCourseKey(groups));
+    const next = planned && (current || !(cls.starts_on && cls.starts_on > today)) ? groups.find((group) => group.key === String(planned.lesson_id)) : null;
+    const pickCourse = (key) => setTab('tuition', { course: key });
     // Each student's place in the class now (joining from a later course, leaving after this one).
     const places = new Map((cls.students ?? []).map((row) => [row.student?.id, { joined_at: row.joined_at, leaves_after: row.leaves_after }]));
 
@@ -98,6 +104,7 @@ const TuitionTab = ({ ctx }) => {
             case 'switch':
             case 'amount':
             case 'waive':
+            case 'note':
                 setDialog({ kind, invoice });
                 break;
             case 'undo':
@@ -121,16 +128,24 @@ const TuitionTab = ({ ctx }) => {
     };
 
     const close = () => setDialog(null);
-    const courseOptions = groups.map((group) => ({
-        key: group.key,
-        label: group.course ? group.course.title : t('Without a course'),
-        count: group.invoices.length,
-    }));
+    const rowProps = { invoices: rows, today, places, busyId, onAction };
 
     return (
         <>
             {next && (
-                <RenewalPanel cls={cls} next={next} current={current} settings={settings.data} busy={busyId === `open-${next.key}`} onOpen={() => openRenewal(next)} />
+                <RenewalPanel cls={cls} current={current} next={next} settings={settings.data} rowProps={rowProps} busy={busyId === `open-${next.key}`} onOpen={() => openRenewal(next)} />
+            )}
+            {current && !planned && !cls.ended_on && (
+                <SectionCard icon={LuRepeat} title={t('Next course')} className="hubRenewal">
+                    <div className="hubNextEmpty">
+                        <p className="hubNextSentence">
+                            {tn(settings.data?.renewal_open_sessions ?? 2, 'No next course is planned yet. Plan it in Routines: its renewal then opens by itself when {count} session is left.', 'No next course is planned yet. Plan it in Routines: its renewal then opens by itself when {count} sessions are left.')}
+                        </p>
+                        <Button variant="flat" startContent={<LuCalendarPlus aria-hidden="true" />} onPress={() => setTab('routines')}>
+                            {t('Plan the next course')}
+                        </Button>
+                    </div>
+                </SectionCard>
             )}
 
             <SectionCard
@@ -142,18 +157,16 @@ const TuitionTab = ({ ctx }) => {
                 <AsyncState state={invoices} isEmpty={groups.length === 0} emptyText="No courses yet. Plan a routine in Routines: it is the course students pay for.">
                     {selected && (
                         <>
-                            {groups.length > 1 && (
-                                <div className="hubCoursePick">
-                                    <Segmented label={t('Course')} options={courseOptions} value={selected.key} onChange={setPicked} />
-                                </div>
-                            )}
-                            <CourseHead group={selected} />
+                            <div className="hubCourseBar">
+                                <CoursePicker groups={groups} value={selected.key} onChange={pickCourse} />
+                                <CourseHead group={selected} />
+                            </div>
                             {selected.invoices.length === 0 ? (
                                 <div className="hubEmptyBlock">
                                     <p>
                                         {selected.course?.status === 'planned'
-                                            ? t('Nobody is billed for this course yet: its renewal isn’t open.')
-                                            : t('Nobody was billed for this course.')}
+                                            ? t('Nobody pays for this course yet: its renewal isn’t open.')
+                                            : t('Nobody paid for this course.')}
                                     </p>
                                     {selected.course?.status === 'planned' && !next && (cls.students ?? []).length > 0 && (
                                         <button type="button" className="hubLink" onClick={() => openRenewal(selected)}>
@@ -198,6 +211,13 @@ const TuitionTab = ({ ctx }) => {
                             ? run(dialog.invoice.id, () => waiveInvoice(dialog.invoice.id, note), t('“{course}” waived for {name}.', { course: course(dialog.invoice), name: dialog.invoice.student_name }))
                             : run(dialog.invoice.id, () => setInvoiceAmount(dialog.invoice.id, amount, note), t('Amount changed to {amount}.', { amount: formatVnd(amount) }))
                     }
+                />
+            )}
+            {dialog?.kind === 'note' && (
+                <NoteDialog
+                    invoice={dialog.invoice}
+                    onClose={close}
+                    onSubmit={(note) => run(dialog.invoice.id, () => setInvoiceNote(dialog.invoice.id, note), note ? t('Note saved.') : t('Note removed.'))}
                 />
             )}
             {dialog?.kind === 'code' && (

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, pickOption, rest, rooms, staffJwt, studioToday } from './support.js';
+import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, rest, rooms, staffJwt, studioToday } from './support.js';
 
 // /admin/bookings as a calendar: class sessions as context, a free slot opens "New booking"
 // prefilled, a booking opens its dialog (approve / cancel), room lanes with "All rooms", a
@@ -20,6 +20,15 @@ const calendar = () => page.getByRole('region', { name: 'Bookings calendar' });
 // "Tue 22 Dec 20:30–21:30 Lê Minh Anh, Phòng B, pending, Awaiting approval"
 const block = () => calendar().getByRole('button', { name: new RegExp(`20:30–21:30 ${guest.full_name}`) });
 const lane = (roomId) => calendar().locator(`.calDay[data-date="${bookingDate}"] .calLane[data-lane="${roomId}"]`);
+
+// Escape out of every open dialog (the booking dialog and the QR on top of it).
+async function closeDialogs() {
+    await expect(page.getByRole('dialog').first()).toBeVisible();
+    while (await page.getByRole('dialog').count()) {
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(250);
+    }
+}
 
 // Mouse down on the `from` slot of a lane and drag to the `last` slot (still pressed).
 async function dragInLane(roomId, from, last) {
@@ -99,9 +108,10 @@ test('a free slot opens "New booking" with the room, date and time filled in', a
 
     await dialog.getByLabel('Guest').fill(lastName(guest));
     await page.getByRole('option').first().click();
-    await pickOption(page, dialog, 'Status', 'pending');
+    await dialog.getByRole('button', { name: 'Hold (pending)' }).click();
     await dialog.getByRole('button', { name: 'Add Booking' }).click();
-    await expectToast(page, 'Booking added.');
+    await expectToast(page, 'created · code');
+    await closeDialogs(); // a new booking opens on its QR code (nothing taken yet)
 });
 
 test('a pending booking is dashed, badged and counted in the header', async () => {
@@ -171,9 +181,10 @@ test('a drag from 14:00 to 16:00 in the B lane opens the form with that range; s
 
     await dialog.getByLabel('Guest').fill(lastName(guest2));
     await page.getByRole('option').first().click();
-    await pickOption(page, dialog, 'Status', 'pending');
+    await dialog.getByRole('button', { name: 'Hold (pending)' }).click();
     await dialog.getByRole('button', { name: 'Add Booking' }).click();
-    await expectToast(page, 'Booking added.');
+    await expectToast(page, 'created · code');
+    await closeDialogs(); // a new booking opens on its QR code (nothing taken yet)
     const booked = lane(roomB.id).getByRole('button', { name: new RegExp(`14:00–16:00 ${guest2.full_name}`) });
     await expect(booked).toBeVisible();
     await expect(booked).toHaveClass(/tone-dashed/);

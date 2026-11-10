@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Input } from '@nextui-org/react';
 import { LuPlus, LuSearch, LuTicket } from 'react-icons/lu';
@@ -8,6 +8,8 @@ import { listRoomSessions } from '@/services/bookingsExtra';
 import { listRooms } from '@/services/rooms';
 import { getProfile, listGuests } from '@/services/users';
 import { getStudioToday } from '@/services/studio';
+import { getTuitionSettings, isPaymentSandbox } from '@/services/tuition';
+import { bookingBalance } from '@/services/bookingPayments';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import SectionCard from '../../common/SectionCard';
@@ -19,7 +21,8 @@ import BookingList from './components/booking-list/BookingList';
 import BookingForm from './components/booking-list/BookingForm';
 import BookingCalendar from './components/booking-calendar/BookingCalendar';
 import BookingDetails from './components/booking-calendar/BookingDetails';
-import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
+import CompleteDialog from './components/booking-calendar/CompleteDialog';
+import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, isOwing, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
 import { useBookingActions } from './useBookingActions';
 import './bookings.scss';
 
@@ -27,7 +30,8 @@ const inRange = ({ from, until }) => (booking) => booking.date >= from && bookin
 
 // /admin/bookings: every room booking as a calendar (default; week or month, with the rooms' class
 // sessions behind) or as the searchable table. Room and status filters apply to both; the header
-// counts what is shown. `?view=list|month`, `?status=pending` and `?date=yyyy-MM-dd` open it pre-set.
+// counts what is shown. `?view=list|month`, `?status=pending`, `?date=yyyy-MM-dd` and `?booking=<id>`
+// open it pre-set.
 const BookingsManager = () => {
     const toast = useToast();
     const { t, tn, formatDate, monthName } = useI18n();
@@ -36,6 +40,8 @@ const BookingsManager = () => {
     const rooms = useAsync(listRooms, []);
     const guests = useAsync(listGuests, []);
     const today = useAsync(getStudioToday, []);
+    // The bank account for the QR code, and whether simulated transfers work (local stack, demo).
+    const payment = useAsync(() => Promise.all([getTuitionSettings(), isPaymentSandbox()]), []);
     const todayIso = today.data ?? studioTodayIso();
 
     // Layout: the URL keeps it, so a reload (or a link) opens the same view.
@@ -44,16 +50,22 @@ const BookingsManager = () => {
     const lastCalendar = useRef(view === 'month' ? 'month' : 'week');
     if (!isList) lastCalendar.current = view;
     const calView = lastCalendar.current;
-    const setView = (next) =>
+    const setView = (next, extra = {}) =>
         setParams(
             (prev) => {
                 const copy = new URLSearchParams(prev);
                 if (next === 'week') copy.delete('view');
                 else copy.set('view', next);
+                for (const [key, value] of Object.entries(extra)) {
+                    if (value) copy.set(key, value);
+                    else copy.delete(key);
+                }
                 return copy;
             },
             { replace: true }
         );
+    // "Owes money" (?owing=1, list only): past bookings that still have a balance.
+    const owing = isList && params.get('owing') === '1';
 
     const [calDate, setCalDate] = useState(() => asDate(/^\d{4}-\d{2}-\d{2}$/.test(params.get('date') ?? '') ? params.get('date') : studioTodayIso()));
     const [roomFilter, setRoomFilter] = useState('all');
@@ -63,9 +75,37 @@ const BookingsManager = () => {
     const [page, setPage] = useState(1);
     const [editing, setEditing] = useState(undefined); // undefined = closed, null = new, row = edit
     const [draft, setDraft] = useState(null); // prefill of a new booking (free slot)
-    const [openId, setOpenId] = useState(null); // booking shown in the details dialog
+    const [openId, setOpenId] = useState(() => Number(params.get('booking')) || null); // booking in the details dialog (?booking=<id> opens it)
+    const [openOn, setOpenOn] = useState(null); // 'pay': the dialog opens on its QR (a new booking with nothing taken)
+    const [completing, setCompleting] = useState(null); // booking id waiting for the "still unpaid" prompt
 
-    const actions = useBookingActions(bookings.reload);
+    const setOwing = (on) => {
+        setPage(1);
+        setView(on ? 'list' : view, { owing: on ? '1' : null });
+    };
+
+    const baseActions = useBookingActions(bookings.reload);
+    // Completing a booking that still owes money asks first (take it now, or complete anyway).
+    const actions = {
+        ...baseActions,
+        setStatus: async (id, status) => {
+            const target = (bookings.data ?? []).find((booking) => booking.id === id);
+            if (status === 'completed' && target && bookingBalance(target) > 0) {
+                setCompleting(id);
+                return false;
+            }
+            return baseActions.setStatus(id, status);
+        },
+    };
+
+    // ?booking=<id> without ?date: show that booking's week behind its dialog, once it is loaded.
+    const linkedWeek = useRef(!params.get('date') && Number(params.get('booking')));
+    useEffect(() => {
+        const linked = linkedWeek.current && bookings.data?.find((booking) => booking.id === linkedWeek.current);
+        if (!linked) return;
+        linkedWeek.current = null;
+        setCalDate(asDate(linked.date));
+    }, [bookings.data]);
 
     // Class sessions behind the calendar, for the days it shows.
     const shown = calendarRange(calView, calDate);
@@ -86,7 +126,10 @@ const BookingsManager = () => {
     const term = query.trim().toLowerCase();
     const period = periodOf(calView, calDate);
     const all = bookings.data ?? [];
-    const base = isList
+    const owingCount = today.data ? all.filter((booking) => isOwing(booking, todayIso)).length : 0;
+    const base = owing
+        ? all.filter((booking) => isOwing(booking, todayIso))
+        : isList
         ? all.filter((booking) => {
             if (today.data && scope === 'upcoming' && booking.date < todayIso) return false;
             if (today.data && scope === 'past' && booking.date >= todayIso) return false;
@@ -143,7 +186,13 @@ const BookingsManager = () => {
         return pendingCount && statusFilter !== 'pending' ? `${text} · ${t('{count} awaiting approval', { count: pendingCount })}` : text;
     };
     let summary = t('Loading bookings…');
-    if (bookings.data) summary = isList ? listSummary(visible.length) : calendarSummary(visible.length);
+    if (bookings.data) {
+        summary = owing
+            ? tn(visible.length, '{count} past booking still owes money', '{count} past bookings still owe money')
+            : isList
+                ? listSummary(visible.length)
+                : calendarSummary(visible.length);
+    }
 
     const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
     const currentPage = Math.min(page, pages);
@@ -226,7 +275,10 @@ const BookingsManager = () => {
                 status={statusFilter}
                 onStatus={filterSetter(setStatusFilter)}
                 pendingCount={pendingCount}
-                scope={isList ? scope : null}
+                owingCount={owingCount}
+                owing={owing}
+                onOwing={setOwing}
+                scope={isList && !owing ? scope : null}
                 onScope={filterSetter(setScope)}
             />
 
@@ -267,11 +319,29 @@ const BookingsManager = () => {
                     phone={listedPhone ?? profile.data?.contact_number}
                     roomColor={roomColor}
                     actions={actions}
+                    settings={payment.data?.[0]}
+                    sandbox={Boolean(payment.data?.[1])}
+                    today={todayIso}
+                    onRefresh={bookings.reload}
                     onEdit={(booking) => {
                         setOpenId(null);
                         setEditing(booking);
                     }}
-                    onClose={() => setOpenId(null)}
+                    key={opened.id}
+                    initialExtra={openOn}
+                    onClose={() => {
+                        setOpenId(null);
+                        setOpenOn(null);
+                    }}
+                />
+            )}
+
+            {completing && all.some((booking) => booking.id === completing) && (
+                <CompleteDialog
+                    booking={all.find((booking) => booking.id === completing)}
+                    onClose={() => setCompleting(null)}
+                    onComplete={() => baseActions.setStatus(completing, 'completed')}
+                    onChanged={bookings.reload}
                 />
             )}
 
@@ -282,9 +352,16 @@ const BookingsManager = () => {
                     rooms={rooms.data ?? []}
                     guests={guests.data ?? []}
                     onClose={() => setEditing(undefined)}
-                    onSaved={() => {
+                    onSaved={(saved, { taken } = {}) => {
+                        const created = !editing;
                         setEditing(undefined);
                         bookings.reload();
+                        // A new booking opens right away: on its QR when nothing was taken (to show the guest or
+                        // send the transfer content), else on its payment summary with the line just recorded.
+                        if (created && saved) {
+                            setOpenOn(taken ? null : 'pay');
+                            setOpenId(saved.id);
+                        }
                     }}
                 />
             )}

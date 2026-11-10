@@ -309,3 +309,634 @@
         }
     }
 }
+
+// Booking dialog, wide: booking on the left, payment on the right.
+.bookingDetails {
+    .bdCode {
+        padding: .15rem .55rem;
+        border-radius: 8px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: .8rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+    }
+
+    .bdColumns {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+        align-items: start;
+        gap: 1.25rem;
+    }
+
+    .bdInfo {
+        display: grid;
+        gap: 1rem;
+        min-width: 0;
+    }
+
+    .bdPay {
+        display: grid;
+        gap: .9rem;
+        min-width: 0;
+        padding: 1rem 1.1rem 1.1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: var(--ad-radius-lg);
+        background: hsl(20, 20%, 98.5%);
+    }
+
+    .bdPayHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+
+        h3 {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            margin: 0;
+            font-family: var(--ad-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+
+            svg {
+                font-size: 1.1rem;
+                color: var(--ad-primary);
+            }
+        }
+    }
+
+    .bdPill {
+        padding: .2rem .65rem;
+        border-radius: 999px;
+        background: hsl(20, 12%, 93%);
+        color: var(--ad-muted);
+        font-size: .78rem;
+        font-weight: 700;
+
+        &.tone-good {
+            background: hsl(150, 60%, 93%);
+            color: hsl(156, 64%, 30%);
+        }
+
+        &.tone-due {
+            background: hsl(40, 95%, 91%);
+            color: hsl(30, 90%, 34%);
+        }
+
+        &.tone-late {
+            background: hsl(0, 85%, 95%);
+            color: hsl(0, 70%, 44%);
+        }
+    }
+
+    .bdPayLines {
+        display: grid;
+        margin: 0;
+
+        > div {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .55rem 0;
+            border-bottom: 1px solid var(--ad-border);
+        }
+
+        dt {
+            display: grid;
+            min-width: 0;
+            font-size: .92rem;
+            font-weight: 600;
+            color: var(--ad-text);
+
+            small {
+                font-size: .8rem;
+                font-weight: 500;
+                color: var(--ad-muted);
+            }
+        }
+
+        dd {
+            margin: 0;
+            font-size: .98rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .bdDue {
+            border-bottom: 0;
+
+            dt {
+                font-weight: 700;
+            }
+
+            dd {
+                font-family: var(--ad-display);
+                font-size: 1.25rem;
+                color: hsl(156, 64%, 30%);
+            }
+
+            &.isDue dd {
+                color: var(--ad-primary);
+            }
+        }
+    }
+
+    .bdPayActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .bdHistory {
+        display: grid;
+        gap: .45rem;
+        padding-top: .75rem;
+        border-top: 1px dashed var(--ad-border);
+
+        h4 {
+            margin: 0;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+        }
+
+        ul {
+            display: grid;
+            gap: .4rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: .65rem;
+            padding: .5rem .6rem;
+            border-radius: 12px;
+            background: var(--ad-surface);
+            border: 1px solid var(--ad-border);
+        }
+    }
+
+    .bdHistIcon {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 10px;
+        background: hsl(150, 60%, 93%);
+        color: hsl(156, 64%, 30%);
+
+        svg {
+            font-size: 1rem;
+            color: currentColor;
+        }
+
+        &.isCash {
+            background: hsl(40, 95%, 91%);
+            color: hsl(30, 90%, 34%);
+        }
+    }
+
+    .bdHistText {
+        display: grid;
+        min-width: 0;
+        gap: .05rem;
+
+        strong {
+            font-size: .9rem;
+        }
+
+        small {
+            font-size: .78rem;
+            color: var(--ad-muted);
+        }
+
+        code {
+            overflow-wrap: anywhere;
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            font-size: .78rem;
+            color: var(--ad-text);
+        }
+    }
+}
+
+@media screen and (max-width: 760px) {
+    .bookingDetails .bdColumns {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+// Payment panel: a changed price reads "List price → reason ± difference → agreed price".
+.bookingDetails .bdPayLines {
+    .isList dd {
+        color: var(--ad-muted);
+        font-weight: 600;
+    }
+
+    .bdPriceNote {
+        border-bottom-style: dashed;
+
+        dt {
+            font-weight: 600;
+            color: var(--ad-primary);
+        }
+
+        dd {
+            color: var(--ad-primary);
+        }
+    }
+
+    .isTotal dt,
+    .isTotal dd {
+        font-weight: 800;
+    }
+}
+
+.bookingDetails .bdHistIcon.isRefund {
+    background: hsl(0, 85%, 95%);
+    color: hsl(0, 70%, 44%);
+}
+
+// Record payment / refund and change price dialogs.
+.bdMoneyDialog {
+    border-radius: 22px;
+
+    .bdMoneyHead {
+        display: grid;
+        gap: .1rem;
+
+        span {
+            font-family: var(--ad-display);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        small {
+            font-size: .84rem;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .bdMoneyBody {
+        gap: .85rem;
+    }
+
+    .bdMoneyRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem;
+    }
+
+    .tuQuick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+
+        button {
+            padding: .3rem .7rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            color: var(--ad-text);
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color .15s ease, color .15s ease;
+
+            &:hover {
+                border-color: var(--ad-primary-tint);
+                color: var(--ad-primary);
+            }
+        }
+    }
+
+    .bdMoneyHint {
+        margin: 0;
+        font-size: .84rem;
+        color: var(--ad-muted);
+
+        &.isError {
+            color: var(--ad-primary);
+            font-weight: 600;
+        }
+    }
+
+    .bdPriceFlow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem;
+        margin: 0;
+        padding: .6rem .8rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+        font-size: .88rem;
+        color: var(--ad-muted);
+
+        .isLess {
+            color: hsl(156, 64%, 30%);
+            font-weight: 700;
+        }
+
+        .isMore {
+            color: hsl(30, 90%, 34%);
+            font-weight: 700;
+        }
+
+        strong {
+            color: var(--ad-text);
+            font-size: 1rem;
+        }
+    }
+
+    .bdAdvanced {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        justify-self: start;
+        align-self: flex-start;
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--ad-muted);
+        cursor: pointer;
+
+        svg {
+            font-size: .95rem;
+            color: currentColor;
+            transition: transform .2s ease;
+        }
+
+        &.isOpen svg {
+            transform: rotate(180deg);
+        }
+    }
+}
+
+// New booking form: the price the room gives, status, payment taken now.
+.bookingForm {
+    .bfMoney {
+        display: grid;
+        gap: .85rem;
+        padding: .9rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: var(--ad-radius);
+        background: hsl(20, 20%, 98.5%);
+    }
+
+    .bfPrice,
+    .bfRow {
+        display: grid;
+        gap: .35rem;
+    }
+
+    .bfRow .segmented {
+        justify-self: start;
+    }
+
+    .bfLabel {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+
+    .bfPriceLine {
+        margin: 0;
+        font-size: .95rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    .bfLink {
+        justify-self: start;
+        font-size: .84rem;
+        font-weight: 700;
+        color: var(--ad-primary);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+    }
+
+    .bfChange {
+        display: grid;
+        gap: .5rem;
+        padding-top: .25rem;
+    }
+
+    .bfTaken {
+        display: grid;
+        gap: .5rem;
+
+        .segmented {
+            justify-self: start;
+        }
+    }
+
+    .bfMuted {
+        margin: 0;
+        font-size: .84rem;
+        color: var(--ad-muted);
+    }
+
+    .bfHint {
+        margin: 0;
+        padding: .55rem .8rem;
+        border-radius: 12px;
+        background: hsl(40, 95%, 93%);
+        color: hsl(30, 90%, 30%);
+        font-size: .86rem;
+        font-weight: 600;
+    }
+
+    .tuQuick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+
+        button {
+            padding: .3rem .7rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+
+            &:hover {
+                border-color: var(--ad-primary-tint);
+                color: var(--ad-primary);
+            }
+        }
+    }
+}
+
+// "Still due": the biggest number of the payment section, with its three quick ways to settle it.
+.bookingDetails {
+    .bdDueHero {
+        display: grid;
+        gap: .2rem;
+        margin: 0;
+        padding: .9rem 1rem 1rem;
+        border-radius: 16px;
+
+        &.isDue {
+            border: 1.5px solid var(--ad-primary-tint);
+            background: var(--ad-primary-soft);
+        }
+
+        &.isPaid {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .5rem;
+            background: hsl(150, 60%, 93%);
+            color: hsl(156, 64%, 28%);
+
+            svg {
+                font-size: 1.2rem;
+                color: currentColor;
+            }
+
+            strong {
+                font-family: var(--ad-display);
+                font-size: 1.15rem;
+            }
+        }
+
+        &.isClosed {
+            background: var(--ad-surface-2);
+            color: var(--ad-muted);
+            font-weight: 600;
+        }
+    }
+
+    .bdDueLabel {
+        font-size: .74rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-primary);
+    }
+
+    .bdDueAmount {
+        font-family: var(--ad-display);
+        font-size: 2rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--ad-primary);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .bdDueHero small {
+        font-size: .84rem;
+        color: var(--ad-muted);
+    }
+
+    .bdQuickPay {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin-top: .55rem;
+
+        svg {
+            font-size: .95rem;
+            color: currentColor;
+        }
+    }
+
+    .bdMatchLine {
+        margin: .35rem 0 0;
+        font-size: .8rem;
+        color: var(--ad-muted);
+
+        code {
+            padding: .05rem .35rem;
+            border-radius: 6px;
+            background: var(--ad-surface);
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            color: var(--ad-text);
+        }
+    }
+
+    .bdLink {
+        margin-left: auto;
+        font-size: .86rem;
+        font-weight: 700;
+        color: inherit;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        cursor: pointer;
+    }
+}
+
+.bdMoneyDialog .bdMatch {
+    margin: 0;
+}
+
+// "X still unpaid" before completing a booking.
+.bdCompleteDialog {
+    .bdCompleteAmount {
+        font-family: var(--ad-display);
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--ad-primary);
+    }
+
+    .bdCompleteChoices {
+        display: grid;
+        gap: .5rem;
+    }
+}
+
+.bookingDetails {
+    .bdDepositLine {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .9rem !important;
+        font-weight: 700;
+        color: hsl(30, 90%, 32%) !important;
+
+        &.isPaid {
+            color: hsl(156, 64%, 30%) !important;
+        }
+
+        svg {
+            font-size: .95rem;
+            color: currentColor;
+        }
+    }
+
+    .bdPick {
+        justify-self: start;
+        margin-top: .4rem;
+    }
+}
+
+.bfReasons {
+    display: grid;
+    gap: .35rem;
+
+    .bfQuickTitle {
+        align-self: center;
+        margin-right: .2rem;
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+}

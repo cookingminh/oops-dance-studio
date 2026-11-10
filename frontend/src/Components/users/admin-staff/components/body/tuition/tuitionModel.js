@@ -1,9 +1,11 @@
 import { amountDue, invoiceState } from '@/services/tuition';
-import { isSwitchedAway } from '../../common/switch-class/switchNotes';
+import { routineState, routinesByClass } from '@/lib/lessons';
+import { isSwitchedAway, isSwitchedIn } from '../../common/switch-class/switchNotes';
 
-// Helpers for the staff tuition page: invoice states, filters, totals, courses, transfer
-// suggestions and the CSV export. Labels are English i18n keys. Tuition is per COURSE (khoá):
-// one invoice per student and course (class_lessons row), `month` = the month the course starts.
+// Helpers for the staff tuition page: invoice states, the page's lists (to do, by class, search),
+// money, courses, transfer suggestions and the CSV export. Labels are English i18n keys. Tuition is
+// per COURSE (khoá): one invoice per student and course (class_lessons row), `month` = the month the
+// course starts.
 
 // What a row shows for each rowState(). `partial` counts as "due" in the totals.
 // Colours: the validated status hues of chartTheme (green / blue / red / violet / pink) + a neutral.
@@ -18,19 +20,6 @@ export const STATES = {
     switched: { label: 'Switched', color: '#e87ba4' },
 };
 
-// The list filter. 'unanswered' overlaps the others: unpaid invoices without a renewal answer.
-export const FILTERS = [
-    { key: 'all', label: 'All' },
-    { key: 'due', label: 'Due', color: STATES.due.color },
-    { key: 'overdue', label: 'Overdue', color: STATES.overdue.color },
-    { key: 'unanswered', label: 'No answer', color: '#eda100' },
-    { key: 'paid', label: 'Paid', color: STATES.paid.color },
-    { key: 'waived', label: 'Waived', color: STATES.waived.color },
-    { key: 'void', label: 'Cancelled', color: STATES.void.color },
-    // Kept apart from Cancelled: a class switch isn't someone leaving.
-    { key: 'switched', label: 'Switched', color: STATES.switched.color },
-];
-
 export const VOID_REASONS = { stopped: 'Said stop', not_renewed: 'Didn’t renew', removed: 'Removed from the class', switched: 'Switched class', class_ended: 'Class ended' };
 export const METHOD_LABELS = { cash: 'Cash', transfer: 'Bank transfer' };
 export const RENEWAL = {
@@ -38,20 +27,11 @@ export const RENEWAL = {
     stop: { label: 'Stopping', tone: 'no' },
     none: { label: 'No answer', tone: 'none' },
 };
-// Renewal tracker segments (thin bar, legend order), validated together (adjacent pairs).
-export const RENEWAL_COLORS = { continue: '#1baf7a', none: '#eda100', stop: '#e34948' };
 
-export const isUnanswered = (invoice) => invoice.status === 'unpaid' && !invoice.renewal;
-export const filterKey = (state) => (state === 'partial' ? 'due' : state);
+const isUnanswered = (invoice) => invoice.status === 'unpaid' && !invoice.renewal;
 
 // invoiceState(), with the old class's invoice of a class switch as 'switched' (not 'void').
 export const rowState = (invoice, today) => (isSwitchedAway(invoice) ? 'switched' : invoiceState(invoice, today));
-
-export function matchesFilter(invoice, filter, today) {
-    if (filter === 'all') return true;
-    if (filter === 'unanswered') return isUnanswered(invoice);
-    return filterKey(rowState(invoice, today)) === filter;
-}
 
 // "tháng 11 năm 2026" → "Tháng 11 năm 2026" (a heading).
 export const capitalizeFirst = (text) => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
@@ -114,7 +94,20 @@ export function invoiceActions(invoice, place = null, thisMonth = null) {
     if (current && unpaid && invoice.renewal !== 'continue') actions.renewal.push('continue');
     if (current && unpaid && !hasPaid && invoice.renewal !== 'stop') actions.renewal.push('stop');
     if (place && !place.leaves_after && current && invoice.status !== 'void' && invoice.student_id && invoice.class_id) actions.move.push('switch');
+    // A class switch's notes are written by the server and read back (switchNotes.js): not editable.
+    if (!isSwitchedAway(invoice) && !isSwitchedIn(invoice)) actions.fix.push('note');
     return actions;
+}
+
+// Notes on an invoice: the server's "Joined after N of M sessions." (private.bill_course) comes first;
+// what follows is staff's own words. { prefix, text }.
+export const LATE_NOTE = /^Joined after (\d+) of (\d+) sessions\.\s*/;
+export const NOTE_MAX = 300;
+
+export function splitNote(invoice) {
+    const note = invoice.note ?? '';
+    const late = note.match(LATE_NOTE);
+    return late ? { prefix: late[0].endsWith(' ') ? late[0] : `${late[0]} `, text: note.slice(late[0].length) } : { prefix: '', text: note };
 }
 
 
@@ -137,29 +130,17 @@ export function invoiceSearchText(invoice) {
     return fold([invoice.student_name, student?.full_name, student?.username, student?.email, student?.contact_number, invoice.class_name, invoice.lesson_title, invoice.payment_code].join(' '));
 }
 
-// Money and counts for a set of invoices (the view picked: running, next or a month).
+// Money of a set of invoices (the running courses):
 //   billed: unpaid + paid invoices (what they ask for, like the finance report)
-//   collected: money received on them · outstanding: still due on unpaid ones
-export function summarize(invoices, today) {
-    const counts = { all: invoices.length, due: 0, overdue: 0, paid: 0, waived: 0, void: 0, switched: 0, unanswered: 0 };
-    const money = { billed: 0, collected: 0, outstanding: 0, overdue: 0, cash: 0, transfer: 0, waived: 0 };
+//   collected: money received on them · owed: still due on unpaid ones · rate: collected / billed
+export function moneyOf(invoices) {
+    const money = { billed: 0, collected: 0, owed: 0 };
     for (const invoice of invoices) {
-        const state = rowState(invoice, today);
-        counts[filterKey(state)] += 1;
-        if (isUnanswered(invoice)) counts.unanswered += 1;
-        const amount = Number(invoice.amount);
-        const paid = Number(invoice.paid_amount);
-        if (invoice.status === 'unpaid' || invoice.status === 'paid') money.billed += amount;
-        if (invoice.status === 'waived') money.waived += amount;
-        money.collected += paid;
-        if (invoice.method) money[invoice.method] += paid;
-        if (invoice.status === 'unpaid') {
-            money.outstanding += amountDue(invoice);
-            if (state === 'overdue') money.overdue += amountDue(invoice);
-        }
+        if (invoice.status === 'unpaid' || invoice.status === 'paid') money.billed += Number(invoice.amount);
+        money.collected += Number(invoice.paid_amount);
+        if (invoice.status === 'unpaid') money.owed += amountDue(invoice);
     }
-    money.rate = money.billed ? money.collected / money.billed : null;
-    return { counts, money };
+    return { ...money, rate: money.billed ? money.collected / money.billed : null };
 }
 
 // One course's renewal answers, per student: continuing (paid, waived or said yes), stopping
@@ -272,8 +253,9 @@ const TRANSFER_NOTES = [
     [/^Invoice (\w+) is already (\w+)\.$/, (t, [code, status]) => t('Invoice {code} is already {status}.', { code, status: t(status) })],
     [/^Partial payment: (\d+) still due\.$/, (t, [amount], vnd) => t('Partial payment: {amount} still due.', { amount: vnd(amount) })],
     [/^Paid (\d+) more than was due\.$/, (t, [amount], vnd) => t('Paid {amount} more than was due.', { amount: vnd(amount) })],
+    [/^Booking #(\d+) is (\w+)\.$/, (t, [id, status]) => t('Booking #{id} is {status}.', { id, status: t(status) })],
 ];
-const FIXED_NOTES = ['No invoice code in the transfer content.', 'Payment undone by staff.', 'Assigned by staff.', 'Room deposit, not tuition.'];
+const FIXED_NOTES = ['No invoice code in the transfer content.', 'Payment undone by staff.', 'Assigned by staff.', 'Room deposit, not tuition.', 'Taken back by staff.'];
 
 export function transferNote(note, t, vnd) {
     if (!note) return '';
@@ -292,4 +274,85 @@ export function typicalDueDate(invoices) {
     const counts = new Map();
     for (const invoice of invoices) counts.set(invoice.due_date, (counts.get(invoice.due_date) ?? 0) + 1);
     return [...counts].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0]?.[0] ?? null;
+}
+
+// ---- The page's lists --------------------------------------------------------------------------
+
+export const DUE_SOON_DAYS = 7;
+
+// 'yyyy-MM-dd' + days.
+export const shiftIso = (isoDate, days) => new Date(Date.parse(`${isoDate}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+
+const byDueThenName = (a, b) => a.due_date.localeCompare(b.due_date) || a.class_name.localeCompare(b.class_name, 'vi') || a.student_name.localeCompare(b.student_name, 'vi');
+
+// The courses running now, and finished ones still owed (rows from withCourses).
+export const runningInvoices = (rows) => rows.filter((invoice) => invoice.course.phase === 'current' || (invoice.course.phase === 'done' && invoice.status === 'unpaid'));
+
+// What to collect, across every class (unpaid invoices of any course):
+//   late  past the due date, longest late first
+//   soon  due today or within DUE_SOON_DAYS days, soonest first
+export function todoLists(rows, today) {
+    const unpaid = rows.filter((invoice) => invoice.status === 'unpaid');
+    const until = shiftIso(today, DUE_SOON_DAYS);
+    return {
+        late: unpaid.filter((invoice) => invoice.due_date < today).sort(byDueThenName),
+        soon: unpaid.filter((invoice) => invoice.due_date >= today && invoice.due_date <= until).sort(byDueThenName),
+    };
+}
+
+// People (not invoices) on a list: one student late for two classes counts once.
+export const peopleOn = (invoices) => new Set(invoices.map((invoice) => invoice.student_id ?? invoice.student_name)).size;
+
+// One entry per class that hasn't ended, with its running course and the next one:
+//   running   { count (invoices that count), settled (paid or waived), owed (₫), late } — null without a running course
+//   renewal   'open' (the next course is billed: answers so far) | 'waiting' (planned, not billed yet)
+//             | 'unplanned' (nothing after the running course) | 'none' (no course running or planned)
+//   answers   renewalSummary() of the next course · due: when its answers are due
+//   opensIn   sessions until the renewal opens (≤ 0: with tonight's check) — null without a running course
+//   upcoming  the class itself starts later (cls.starts_on)
+// `openAt` is tuition_settings.renewal_open_sessions. Sorted by name; with `openFirst`, classes whose
+// renewal still has students who haven't answered come first.
+export function classBoard(classes, progress, rows, today, openAt, { openFirst = false } = {}) {
+    const byClass = routinesByClass(progress);
+    const entries = classes.map((cls) => {
+        const { current, next } = routineState(byClass.get(cls.id) ?? []);
+        let running = null;
+        if (current) {
+            const live = rows.filter((invoice) => invoice.lesson_id === current.lesson_id && invoice.status !== 'void');
+            const unpaid = live.filter((invoice) => invoice.status === 'unpaid');
+            running = {
+                count: live.length,
+                settled: live.length - unpaid.length,
+                owed: unpaid.reduce((sum, invoice) => sum + amountDue(invoice), 0),
+                late: unpaid.filter((invoice) => invoice.due_date < today).length,
+            };
+        }
+        const billed = next ? rows.filter((invoice) => invoice.lesson_id === next.lesson_id) : [];
+        const renewal = next ? (billed.length ? 'open' : 'waiting') : current ? 'unplanned' : 'none';
+        const left = current ? Math.max(0, current.session_count - current.sessions_held) : null;
+        return {
+            cls,
+            current,
+            next,
+            running,
+            renewal,
+            answers: renewalSummary(billed),
+            due: typicalDueDate(billed.filter((invoice) => invoice.status === 'unpaid')),
+            left,
+            opensIn: left === null ? null : left - openAt,
+            upcoming: Boolean(cls.starts_on && cls.starts_on > today),
+        };
+    });
+    const waiting = (entry) => (entry.renewal === 'open' && entry.answers.none.length > 0 ? 0 : 1);
+    return entries.sort((a, b) => (openFirst ? waiting(a) - waiting(b) : 0) || a.cls.name.localeCompare(b.cls.name, 'vi'));
+}
+
+// What a search looks up beyond the lists on the page: a payment code ('OOPS7K3M9Q', invoices and
+// room bookings share them) or a booking number ('#236'). Null for anything else (a name).
+export function lookupOf(query) {
+    const text = String(query ?? '').trim();
+    const number = text.match(/^#(\d{1,9})$/);
+    if (number) return { kind: 'booking', term: number[1] };
+    const code = text.toUpperCase().replace(/[^A-Z0-9]/g, '').match(/^OOPS[2-9A-HJ-NP-Z]{6}$/);
+    return code ? { kind: 'code', term: code[0] } : null;
 }

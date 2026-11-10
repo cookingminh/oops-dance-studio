@@ -28,7 +28,9 @@ export const actorName = (row, fmt) => row.actor_name || fmt.people?.get(row.act
 // ---- One row ------------------------------------------------------------------------------
 
 const BOOKINGS = (row, fmt) => {
-    const facts = [row.meta?.room, when(fmt, row.meta?.date, row.meta?.start, row.meta?.end)];
+    const m = row.meta ?? {};
+    const facts = [m.room, when(fmt, m.date, m.start, m.end)];
+    const amount = money(Math.abs(Number(m.received ?? 0)));
     const keys = {
         created: isSelf(row) ? '{actor} asked to book a room' : '{actor} booked a room for {name}',
         approved: '{actor} approved {name}’s booking',
@@ -39,9 +41,23 @@ const BOOKINGS = (row, fmt) => {
         payment_updated: '{actor} updated the payment on {name}’s booking',
         updated: '{actor} edited {name}’s booking',
         deleted: '{actor} deleted {name}’s booking',
+        // Money on a booking (booking payments RPCs): the bank (no actor) or a staff member.
+        paid: !row.actor_id || m.bank
+            ? 'Bank transfer of {amount} received for {name}’s booking'
+            : m.method === 'transfer'
+                ? '{actor} recorded a {amount} transfer for {name}’s booking'
+                : '{actor} recorded {amount} cash for {name}’s booking',
+        refunded: '{actor} refunded {amount} to {name}',
+        payment_removed: '{actor} removed a {amount} payment from {name}’s booking',
+        price_changed: '{actor} changed {name}’s booking price {from} → {to}',
     };
     if (row.action === 'updated') facts.push(fieldsFact(row, fmt));
-    return keys[row.action] && { key: keys[row.action], facts };
+    if (['paid', 'refunded', 'payment_removed'].includes(row.action)) {
+        facts.unshift(m.method === 'cash' ? fmt.t('Cash') : fmt.t('Bank transfer'));
+        facts.push(quote(m.note));
+    }
+    if (row.action === 'price_changed') facts.unshift(quote(m.note));
+    return keys[row.action] && { key: keys[row.action], vars: { amount, from: money(m.from), to: money(m.to) }, facts };
 };
 
 const CLASSES = (row, fmt) => {
@@ -152,9 +168,10 @@ const TUITION = (row, fmt) => {
         ],
         amount_changed: ['{actor} changed the amount on {name}’s invoice', [change(money(m.from), money(m.amount)), quote(m.note)]],
         renewal: [renewalKey, [m.course]],
-        note: ['{actor} added a note to {name}’s invoice', [quote(m.note), ...course]],
+        note: [m.note ? '{actor} added a note to {name}’s invoice' : '{actor} removed the note from {name}’s invoice', [quote(m.note), ...course]],
         transfer_unmatched: ['A bank transfer couldn’t be matched to an invoice', transfer],
-        transfer_assigned: ['{actor} matched a bank transfer to {name}', transfer],
+        // No invoice on an assigned transfer: staff put it on a room booking.
+        transfer_assigned: [m.invoice_id ? '{actor} matched a bank transfer to {name}' : '{actor} matched a bank transfer to a room booking', transfer],
         transfer_ignored: ['{actor} ignored a bank transfer', transfer],
         transfer_reopened: ['{actor} put a bank transfer back in the inbox', transfer],
     }[row.action];
@@ -276,6 +293,11 @@ const PLURALS = {
     'bookings.approved': () => ({ key: '{actor} approved {count} bookings' }),
     'bookings.rejected': () => ({ key: '{actor} rejected {count} bookings' }),
     'bookings.cancelled': () => ({ key: '{actor} cancelled {count} bookings' }),
+    'bookings.paid': (rows, fmt, system) => ({
+        key: system ? '{count} bank transfers received for bookings' : '{actor} recorded {count} booking payments',
+        facts: [fmt.t('{amount} in total', { amount: money(sumOf(rows, 'received')) })],
+        vars: { amount: money(sumOf(rows, 'received')) },
+    }),
     'classes.schedule_added': () => ({ key: '{actor} added {count} weekly sessions to {class}' }),
     'routines.planned': () => ({ key: '{actor} planned {count} routines for {class}' }),
     'students.enrolled': () => ({ key: '{actor} added {count} students to {class}' }),

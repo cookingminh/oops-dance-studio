@@ -2,24 +2,21 @@ import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { MiniBar } from '../../HubParts';
 import { CourseFacts } from '../../../tuition/TuitionParts';
-import { COURSE_STATUS, courseFactsOf } from './courseModel';
+import { courseFactsOf } from './courseModel';
 
-// One course's status, dates, progress and money (paid x / y, collected of billed, overdue).
+// The picked course's progress and money: sessions held, paid x / y, collected of the total, late.
+// (Its title, dates and status are on the course picker above.)
 const CourseHead = ({ group }) => {
     const { t } = useI18n();
-    const info = group.course ? COURSE_STATUS[group.course.status] ?? COURSE_STATUS.done : null;
     const { sums } = group;
     return (
         <div className="hubCourseHead">
-            <div className="hubCourseTitle">
-                {info && <span className={`phaseBadge tone-${info.tone}`}>{t(info.label)}</span>}
-                <strong>{group.course ? group.course.title : t('Invoices from before courses')}</strong>
-                {group.course && (
-                    <span className="hubHint">
-                        <CourseFacts course={courseFactsOf(group)} />
-                    </span>
-                )}
-            </div>
+            {/* Sessions held so far: the picker above already has the dates of the others. */}
+            {group.course?.status === 'current' && (
+                <span className="hubHint">
+                    <CourseFacts course={courseFactsOf(group)} />
+                </span>
+            )}
             <div className="hubCourseMoney">
                 <span>
                     <small>{t('Paid')}</small>
@@ -33,7 +30,7 @@ const CourseHead = ({ group }) => {
                 </span>
                 {sums.overdue.length > 0 && (
                     <span className="isAlert">
-                        <small>{t('Overdue')}</small>
+                        <small>{t('Late')}</small>
                         <strong>{sums.overdue.length}</strong>
                     </span>
                 )}

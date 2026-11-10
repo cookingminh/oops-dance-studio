@@ -707,6 +707,68 @@
     }
 }
 
+// Detailed chips (<CalendarView detailedChips>): like a week block, the lines one under the other.
+.calChip.isDetailed {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: .28rem .4rem .32rem .45rem;
+    border: 1px solid color-mix(in srgb, var(--cal-accent) 32%, white);
+    border-left: 3px solid var(--cal-accent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--cal-accent) 12%, white);
+    line-height: 1.25;
+
+    &:is(button):hover {
+        background: color-mix(in srgb, var(--cal-accent) 20%, white);
+    }
+
+    .calChipTime {
+        font-size: .68rem;
+        color: color-mix(in srgb, var(--cal-accent) 62%, black);
+    }
+
+    .calChipTitle {
+        display: -webkit-box;
+        max-width: 100%;
+        font-size: .76rem;
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: break-word;
+        white-space: normal;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .calChipSub {
+        max-width: 100%;
+        font-size: .7rem;
+        font-weight: 600;
+        color: var(--cal-muted);
+    }
+
+    .calBadge {
+        margin-top: 2px;
+        font-size: .62rem;
+    }
+
+    &.tone-dashed {
+        border: 1.5px dashed var(--cal-accent);
+        border-left: 3px solid var(--cal-accent);
+        background: color-mix(in srgb, var(--cal-accent) 5%, white);
+    }
+
+    &.tone-muted {
+        border-color: var(--cal-border);
+        border-left-color: color-mix(in srgb, var(--cal-accent) 40%, hsl(0, 0%, 80%));
+        background: var(--cal-surface-2);
+
+        .calChipTime {
+            color: var(--cal-muted);
+        }
+    }
+}
+
 .calDot {
     flex-shrink: 0;
     width: .5rem;

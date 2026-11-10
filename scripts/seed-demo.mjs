@@ -434,6 +434,8 @@ async function seedTuition() {
   // sessions (attendance history) don't count.
   const fitted = await must(db.rpc("seed_demo_fit_routines"), "seed_demo_fit_routines");
   console.log(`✓ routines: ${fitted} past routine(s) fitted to the sessions held`);
+  const bookingTransfers = await must(db.rpc("seed_demo_booking_payments"), "seed_demo_booking_payments");
+  console.log(`✓ bookings: ${bookingTransfers} transfers with their payment code`);
   const finance = await must(db.rpc("seed_demo_finance"), "seed_demo_finance");
   console.log(`✓ finance: ${finance.expenses} expenses (${finance.recurring} recurring), ${finance.switched} switched invoices`);
   const classes = await must(db.rpc("seed_demo_classes"), "seed_demo_classes");

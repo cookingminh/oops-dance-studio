@@ -70,9 +70,9 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `clash.spec.js` | schedule and room-move forms explain clashes with bookings |
 | `demo-mode.spec.js` | the `VITE_DEMO_MODE` build on port 5174: banner, one-click logins, locked demo accounts |
 | `i18n.spec.js` | the EN / VI switch on the public site and in the workspace |
-| `payroll.spec.js` | payroll is admin only; a deduction, finalize and reopen |
+| `payroll.spec.js` | payroll is admin only; a deduction, finalize and reopen; the payslip's month calendar and legend |
 | `tuition-student.spec.js` | a student's tuition: VietQR dialog, sandbox transfer marks it paid, renewal stop / continue |
-| `tuition-staff.spec.js` | staff record cash and undo, assign / ignore bank transfers, payment settings are admin only |
+| `tuition-staff.spec.js` | the lean Tuition page (to do, by class, search by name / code), cash and undo, transfers, notes, payment settings are admin only |
 | `finance.spec.js` | the admin finance report matches `finance_monthly` / `finance_by_class`; staff are refused; CSV exports |
 | `expenses.spec.js` | expenses with class + receipt, staff see only their own, recurring costs |
 | `class-switch.spec.js` | joining another class's upcoming course: finish the paid course, leave after it |
@@ -82,6 +82,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `bookings-calendar.spec.js` | the bookings calendar: class sessions behind, a free-slot click prefills a booking, pending style and chip, dialog actions, month / list |
 | `attendance.spec.js` | the one Attendance page: today, review queue and badge, roll call and session actions in the modal, calendar / list, deep link |
 | `activity.spec.js` | the admin's Activity log: day groups, collapsed bursts, filters in the URL, a staff action shows up, staff have no access |
+| `booking-payments.spec.js` | booking QR / transfer content with its code, sandbox payment, still-to-pay vs deposit, cash and refunds, price change with a reason, receipt, the new add-booking form, inbox assign to a booking |
 
 ```bash
 # from the repository root, once per stack reset

@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LuFlaskConical, LuQrCode } from 'react-icons/lu';
+import { LuQrCode } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { amountDue, getInvoice, simulateTransfer, vietQrUrl } from '@/services/tuition';
 import { forgetMyTuition } from '@/services/tuitionStudent';
 import { EASE_OUT } from '../../../../../admin-staff/components/common/motion';
+import { SandboxBox } from '@/ui/payment/PayExtras';
 import { DeskPanel, PaidMoment, PayInfo, QrPanel, Waiting } from './PayParts';
 
 const POLL_MS = 3000;
@@ -114,15 +115,12 @@ const PayDialog = ({ invoice: initial, settings, sandbox, onClose, onPaid }) => 
                                 </div>
                                 <PayInfo invoice={invoice} settings={settings} hasQr={Boolean(qr)} due={due}>
                                     {sandbox && invoice.status === 'unpaid' && (
-                                        <div className="tuSandbox">
-                                            <span className="tuSandboxTag">
-                                                <LuFlaskConical aria-hidden="true" /> {t('Demo mode')}
-                                            </span>
-                                            <p>{t('No real money moves here. Pretend you sent the transfer and watch this page update by itself.')}</p>
-                                            <Button size="sm" variant="bordered" className="tuSandboxBtn" onPress={simulate} isLoading={simulating}>
-                                                {t('Simulate the bank transfer')}
-                                            </Button>
-                                        </div>
+                                        <SandboxBox
+                                            text={t('No real money moves here. Pretend you sent the transfer and watch this page update by itself.')}
+                                            label={t('Simulate the bank transfer')}
+                                            busy={simulating}
+                                            onSimulate={simulate}
+                                        />
                                     )}
                                 </PayInfo>
                             </motion.div>

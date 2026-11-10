@@ -353,6 +353,9 @@ select public.seed_demo_classes();
 update public.class_lessons set session_count = 4
  where class_id = (select id from public.classes where name = 'Hip-hop Summer Camp');
 
+-- Room deposits paid by transfer, each with its transfer (the booking's payment history).
+select public.seed_demo_booking_payments();
+
 -- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
 select public.seed_demo_activity();
 

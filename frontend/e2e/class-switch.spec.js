@@ -164,7 +164,7 @@ test('the Tuition page previews the switch: finish the paid course, join the nex
     const { student, from, to, keep, target, fee } = plan;
 
     await page.goto(`/admin/tuition?q=${encodeURIComponent(student.name)}`);
-    const row = page.locator(`.tuRow[data-code="${keep.invoice.payment_code}"]`);
+    const row = page.locator(`#tuition-search .tuRow[data-code="${keep.invoice.payment_code}"]`);
     await row.getByRole('button', { name: /^More for/ }).click();
     await page.getByRole('menuitem', { name: 'Switch class' }).click();
 
@@ -230,15 +230,15 @@ test('the database: leaves after the paid course, joins from the next one, bille
 test('the staff tuition page shows the planned leave and the new course', async () => {
     const { student, from, keep, fresh } = plan;
     await page.goto(`/admin/tuition?q=${encodeURIComponent(student.name)}`);
-    const oldRow = page.locator(`.tuRow[data-code="${keep.invoice.payment_code}"]`);
+    const oldRow = page.locator(`#tuition-search .tuRow[data-code="${keep.invoice.payment_code}"]`);
     await expect(oldRow.locator('.tuPlaceTag')).toHaveText(`Leaves after ${shortDate(keep.endsOn)}`);
     // Already switching: no second switch from this row.
     await oldRow.getByRole('button', { name: /^More for/ }).click();
     await expect(page.getByRole('menuitem', { name: 'Switch class' })).toHaveCount(0);
     await page.keyboard.press('Escape');
 
-    await page.locator('.tuViews').getByRole('button', { name: 'Next courses' }).click();
-    const newRow = page.locator(`.tuRow[data-code="${fresh.payment_code}"]`);
+    // The search shows the running and the next courses together.
+    const newRow = page.locator(`#tuition-search .tuRow[data-code="${fresh.payment_code}"]`);
     await expect(newRow.locator('.tuFromTag')).toHaveText(`from ${from.name}`);
     await expect(newRow).toContainText(NOTE);
     if (plan.target.starts_on > (await studioToday())) await expect(newRow.locator('.tuPlaceTag')).toHaveText(`Joins ${shortDate(plan.target.starts_on)}`);

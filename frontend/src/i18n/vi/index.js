@@ -17,6 +17,7 @@ import classHub from './classHub';
 import calendar from './calendar';
 import attendanceHub from './attendanceHub';
 import activity from './activity';
+import payments from './payments';
 
 // One flat English → Vietnamese map. Areas live in their own files; later files win on clashes.
-export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity };
+export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity, ...payments };

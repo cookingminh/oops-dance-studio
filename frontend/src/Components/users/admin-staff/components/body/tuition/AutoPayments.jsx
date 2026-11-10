@@ -1,21 +1,22 @@
 import { useState } from 'react';
 import { Button } from '@nextui-org/react';
-import { LuKeyRound, LuPlay, LuZap } from 'react-icons/lu';
+import { LuKeyRound, LuZap } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { randomKey } from './tuitionModel';
 import { CopyValue } from './TuitionParts';
 
 const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bank-webhook`;
 
-// How to connect the bank (SePay → the bank-webhook Edge Function), and the nightly check on demand.
-const AutoPayments = ({ settings, onRunCycle, running }) => {
+// How to connect the bank (SePay → the bank-webhook Edge Function). The nightly check runs from the
+// tuition page's ⋯ menu.
+const AutoPayments = () => {
     const { t } = useI18n();
     const [key, setKey] = useState('');
     const command = `supabase secrets set BANK_WEBHOOK_KEY=${key || '<key>'}`;
 
     return (
         <div className="tuSetup">
-            <section className="tuSetupBlock" aria-labelledby="tu-auto-title">
+            <section className="tuSettingsBlock" aria-labelledby="tu-auto-title">
                 <h3 id="tu-auto-title">
                     <LuZap aria-hidden="true" /> {t('Automatic payments')}
                 </h3>
@@ -51,20 +52,6 @@ const AutoPayments = ({ settings, onRunCycle, running }) => {
                         <span>{t('Transfer a small amount with an invoice code in the content: it shows as paid on this page.')}</span>
                     </li>
                 </ol>
-            </section>
-
-            <section className="tuSetupBlock" aria-labelledby="tu-cycle-title">
-                <h3 id="tu-cycle-title">
-                    <LuPlay aria-hidden="true" /> {t('The daily check')}
-                </h3>
-                <p>
-                    {t('Every night the studio bills members of a running course who have no invoice yet, opens the next course’s renewal when {count} sessions are left, cancels invoices that are unpaid and unanswered after their due date, and takes those students out of their class.', {
-                        count: settings?.renewal_open_sessions ?? 2,
-                    })}
-                </p>
-                <Button variant="flat" isLoading={running} startContent={running ? null : <LuPlay aria-hidden="true" />} onPress={onRunCycle}>
-                    {t('Run today’s check now')}
-                </Button>
             </section>
         </div>
     );

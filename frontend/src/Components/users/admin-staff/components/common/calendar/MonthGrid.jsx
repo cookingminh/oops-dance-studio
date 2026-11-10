@@ -8,7 +8,9 @@ const MAX_DOTS = 4;
 // 6 × 7 month grid. Desktop: each day lists chips, "+N more" opens that day's week. Phones: each day
 // is a button with coloured dots; the picked day's list shows under the grid (see CalendarView).
 // Context-only ('background') items stay out of the month: they'd crowd every cell.
-const MonthGrid = ({ weeks, month, byDate, today, onSelect, onOpenDay, compact, picked, onPick }) => {
+// `fixed` (one month only, no week to open): every chip shows and the day number is plain text.
+// `detailed`: chips with start–end, a two-line title, the subtitle and the badge.
+const MonthGrid = ({ weeks, month, byDate, today, onSelect, onOpenDay, compact, picked, onPick, fixed = false, detailed = false }) => {
     const { t, tn, dayName, formatDate } = useI18n();
     const monthKey = toIso(month).slice(0, 7);
 
@@ -47,20 +49,24 @@ const MonthGrid = ({ weeks, month, byDate, today, onSelect, onOpenDay, compact, 
                                 </button>
                             );
                         }
-                        const shown = items.length > MAX_CHIPS ? items.slice(0, MAX_CHIPS - 1) : items;
+                        const shown = !fixed && items.length > MAX_CHIPS ? items.slice(0, MAX_CHIPS - 1) : items;
                         return (
                             <div key={iso} role="gridcell" className={`calCell${state}`}>
-                                <button
-                                    type="button"
-                                    className="calCellNum"
-                                    aria-label={t('Open the week of {date}', { date: formatDate(iso, 'long') })}
-                                    onClick={() => onOpenDay(iso)}
-                                >
-                                    {day.getDate()}
-                                </button>
+                                {fixed ? (
+                                    <span className="calCellNum">{day.getDate()}</span>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="calCellNum"
+                                        aria-label={t('Open the week of {date}', { date: formatDate(iso, 'long') })}
+                                        onClick={() => onOpenDay(iso)}
+                                    >
+                                        {day.getDate()}
+                                    </button>
+                                )}
                                 <div className="calCellItems">
                                     {shown.map((item) => (
-                                        <ItemChip key={item.id} item={item} onSelect={onSelect} />
+                                        <ItemChip key={item.id} item={item} onSelect={onSelect} detailed={detailed} />
                                     ))}
                                     {items.length > shown.length && (
                                         <button type="button" className="calMore" onClick={() => onOpenDay(iso)}>

@@ -206,6 +206,7 @@ const Payroll = () => {
                     key={`${open.profile_id}-${month}`}
                     row={open}
                     month={month}
+                    today={today.data}
                     onClose={() => setOpenId(null)}
                     onChanged={payroll.reload}
                 />

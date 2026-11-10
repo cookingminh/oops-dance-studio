@@ -33,9 +33,13 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
      việc cần làm của lớp, bài đang học.
   2. **Học viên**: thêm (từ khoá đang chạy hoặc từ khoá sắp tới), xoá, chuyển lớp, thu tiền, "vào lớp ngày…" /
      "rời lớp sau…".
-  3. **Buổi học & điểm danh**: từng buổi trong tháng (thường + học bù), check-in/out của giáo viên và ảnh, duyệt,
-     huỷ buổi, **dạy thay** một buổi, điểm danh học viên của buổi đó.
-  4. **Học phí**: hoá đơn theo từng khoá, gia hạn khoá sau, "Mở gia hạn ngay".
+  3. **Buổi học & điểm danh**: lịch tháng / tuần các buổi (thường + học bù); bấm một buổi để xem check-in/out kèm
+     ảnh, duyệt, huỷ, **dạy thay**, điểm danh học viên.
+  4. **Học phí**: chọn khoá trong **dropdown** (tên bài, ngày bắt đầu – kết thúc, số buổi, nhãn *Hiện tại / Sắp tới /
+     Đã xong*; mặc định khoá đang chạy) → hoá đơn của khoá đó. Thẻ **Khoá tiếp theo** nói rõ: bắt đầu ngày nào, học
+     phí bao nhiêu, học viên trả lời *học tiếp / nghỉ* trước hạn nào (ai chưa trả lời và chưa đóng đến hạn thì rời
+     lớp); có 3 số đếm *Học tiếp · Nghỉ · Chưa trả lời*. Trước khi mở gia hạn: "Tự mở khi còn 2 buổi (ngày …)" + *Mở
+     ngay*.
   5. **Bài nhảy**: khoá đang học, lập khoá tiếp theo, video, học bù.
   6. **Tiền** (admin): học phí thu được, lương giáo viên, chi phí riêng của lớp, lãi gộp 6 tháng, mức lương/buổi.
   7. **Thiết lập**: thông tin, lịch tuần, ảnh, kết thúc / mở lại / xoá lớp.
@@ -85,6 +89,14 @@ Mỗi **khoá** là một bài: *tên bài*, *số buổi* (mặc định 8), *n
 
 ## 4. Học phí — thu theo khoá
 
+**Trang *Học phí*** chỉ giữ việc chung của cả studio; chi tiết từng lớp nằm ở tab *Học phí* của lớp:
+- Dòng tổng quan (đã thu / cần thu của các khoá đang chạy, còn nợ, số người trễ) + ô **tìm học viên hoặc mã `OOPS…`**
+  (cả mã đặt phòng) + menu ⋯ (*Xuất CSV*, *Chạy kiểm tra hôm nay*, *Cài đặt thanh toán* cho admin).
+- **Việc cần làm**: *Trễ hạn* (thu tiền, mã QR, ghi chú ngay trên dòng) → *Chuyển khoản cần xử lý* (gán cho học phí
+  hoặc lượt đặt phòng, để riêng) → *Sắp đến hạn* (thu gọn). *Lịch sử chuyển khoản* mở ở ngăn bên.
+- **Theo lớp**: mỗi lớp một dòng — khoá đang chạy (đã đóng x/y, còn nợ) và khoá tiếp theo (học tiếp / chưa trả lời,
+  hạn trả lời) → bấm để mở tab Học phí của lớp.
+
 ```mermaid
 sequenceDiagram
   participant S as Staff / hệ thống
@@ -121,6 +133,8 @@ Các con số "2 buổi", "buổi thứ 2", "tính theo buổi còn lại" chỉ
 - **Chuyển khoản QR**: học viên vào *Học phí* → *Đóng ngay* → quét VietQR (đúng số tiền + mã `OOPS…`). Ngân hàng báo
   qua **SePay webhook** → hoá đơn tự chuyển "Đã thanh toán". Chuyển thiếu → ghi nhận một phần; thừa → ghi chú.
 - **Tiền mặt**: staff bấm *Ghi nhận thanh toán* trên dòng hoá đơn (số tiền, ghi chú). Có *Hoàn tác* nếu bấm nhầm.
+- **Ghi chú**: menu ⋮ của mỗi khoản → *Thêm / Sửa ghi chú* (vd. "Hẹn đóng tiền mặt cuối tuần", "Đã nhắc qua Zalo").
+  Ghi chú hiện ngay dưới dòng học viên; để trống là xoá.
 - **Miễn / giảm**: *Miễn học phí khoá này* (kèm lý do) hoặc *Đổi số tiền* (giảm giá, ghi chú). *Mở lại* một khoản đã
   miễn → về "chưa đóng", lý do miễn biến mất, ghi chú trước đó (nếu có) quay lại.
 - **Hộp thư chuyển khoản** (trang Học phí): tiền vào **không có mã** → hệ thống gợi ý hoá đơn khớp (cùng số tiền, có tên
@@ -183,6 +197,31 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
   - Bấm vào một lượt đặt → hộp thông tin: khách, phòng, giờ, tiền, cọc, ghi chú; duyệt / từ chối, sửa thanh toán, huỷ,
     xoá.
   - Bấm vào ô trống (tuần) → *Đặt phòng mới* điền sẵn phòng, ngày, giờ.
+- **Thanh toán bằng QR** (như học phí): mỗi lượt đặt có **mã thanh toán** riêng (`OOPS…`).
+  - Hộp lượt đặt phòng có phần *Thanh toán*: giá theo giờ × số giờ, cọc, đã nhận, còn phải trả.
+  - Mã QR VietQR cho tiền cọc / phần còn lại / toàn bộ, kèm số tài khoản và **nội dung chuyển khoản** có mã.
+  - Lịch sử từng khoản chuyển khoản (giờ, số tiền, nội dung) và **hoá đơn** in được.
+  - Khách cũng thấy nút *Đóng cọc* / *Đóng phần còn lại* ở trang *Phòng đã đặt*.
+  - Tiền về đúng mã → tự cộng vào lượt đặt, cọc tự chuyển *đã trả*.
+  - **Trả nốt phần còn lại**:
+    - chuyển khoản → QR *Phần còn lại*, tiền tự cộng;
+    - tiền mặt (hoặc chuyển khoản mà hệ thống không tự thấy) → *Ghi nhận thanh toán*: số tiền điền sẵn phần còn lại,
+      ghi rõ ai thu, lúc nào.
+  - **Hoàn tiền**: cũng ở *Ghi nhận thanh toán* → chọn *Hoàn tiền*, bắt buộc ghi lý do.
+  - **Đổi giá** (giảm giá, thêm / bớt giờ, phụ thu): *Đổi giá* → nhập tổng mới + **lý do** (bắt buộc), vd. "Khách
+    quen giảm 10%". Giá gốc (giá phòng × số giờ) vẫn giữ. Hoá đơn ghi: *Giá gốc 375.000 → Khách quen giảm 10% →
+    337.500*. Đổi giờ / đổi phòng thì giá tự tính lại, trừ khi giá đã chỉnh tay.
+  - **Staff đặt hộ khách** (khách gọi điện / đến quầy): *Đặt phòng mới*.
+    - Chọn khách, phòng, ngày, giờ. Giá tự tính (giá phòng × số giờ, cọc 50%); muốn đổi giá thì ghi lý do.
+    - Trạng thái: *Đã duyệt* (mặc định) hoặc *Giữ chỗ (chờ duyệt)*.
+    - **Thu ngay**: *Chưa thu* (khách trả sau bằng QR) / *Cọc* / *Toàn bộ* / *Số khác*, bằng *Tiền mặt* hoặc
+      *Chuyển khoản* (khách đưa màn hình chuyển khoản).
+    - Lưu xong mở luôn lượt đặt: nếu chưa thu thì hiện QR có mã để gửi khách.
+    - Mã thanh toán luôn được tạo tự động.
+  - Các ô tiền không còn sửa tay trong form *Sửa lượt đặt*. Mọi khoản tiền đều có dòng trong lịch sử, và nhật ký
+    hoạt động ghi ai làm.
+  - Chuyển khoản thiếu hoặc sai mã nằm trong hộp *Chuyển khoản* (trang Học phí) → staff *gán cho lượt đặt phòng* (theo
+    #số hoặc mã), hoặc *gỡ ra* nếu gán nhầm. Lượt đặt đã huỷ / bị từ chối thì tiền không tự cộng (để hoàn tiền).
 - Lịch lớp và buổi học bù tự chặn phòng, nhưng chỉ trong thời gian lớp chạy. **Buổi lớp đã huỷ thì phòng trống** và
   có thể cho đặt; khi đó buổi huỷ không mở lại được nữa (báo trùng phòng).
 
@@ -194,6 +233,11 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
 - **Staff**: lương cố định hằng tháng.
 - **Thưởng / phạt** có lý do (ví dụ check-in trễ, dạy thay).
 - Cuối tháng: **Chốt** bảng lương (số liệu đóng băng) → **Đã trả**. Có thể mở lại khi chưa trả. Xuất CSV.
+- **Phiếu lương** của giáo viên có **lịch tháng**:
+  - mỗi buổi đã dạy là một ô theo màu lớp (giờ vào → ra, tiền buổi đó, nhãn *học bù / dạy thay / vào muộn*);
+  - buổi huỷ / thiếu check-in hiện mờ *Không tính*, buổi chưa tới *Chưa tính*;
+  - chú thích theo lớp khớp với các dòng tiền;
+  - bấm một buổi để xem ảnh và điểm danh (phiếu còn *Đang tính* thì duyệt được ngay).
 
 ---
 

@@ -1,5 +1,5 @@
 import { addMinutes, endOfMonth, format, parse, startOfMonth } from 'date-fns';
-import { formatTime } from '@/lib/format';
+import { formatTime, toMinutes } from '@/lib/format';
 import { asDate, calendarRange, toIso } from '../../common/calendar/calendarModel';
 
 // Pure helpers of the bookings page (filters, counts, calendar items).
@@ -95,3 +95,36 @@ export const roomLanes = (rooms, roomColor) =>
         const last = room.name.trim().split(/\s+/).at(-1);
         return { id: String(room.id), label: room.name, short: last.length <= 3 ? last : room.name, color: roomColor.get(room.id) };
     });
+
+// Quick reasons for another agreed price (Change price dialog, new booking form), as discounts and
+// surcharges; some set an amount too. Only the group matching the change is offered (a lower total →
+// discounts, a higher one → surcharges); both while the total is still the list price.
+const thousand = (amount) => Math.max(0, Math.round(amount / 1000) * 1000);
+export function priceReasons({ list, total, rate }) {
+    const discounts = [
+        { label: 'Regular customer −10%', amount: thousand(list * 0.9) },
+        { label: 'One hour less', amount: Math.max(list - rate, 0) },
+    ];
+    const surcharges = [{ label: 'Extra hour', amount: list + rate }, { label: 'Late finish surcharge' }, { label: 'Damage fee' }];
+    if (total < list) return { discounts, surcharges: [] };
+    if (total > list) return { discounts: [], surcharges };
+    return { discounts, surcharges };
+}
+
+// A room's price for the hours of a booking ('HH:mm' → 'HH:mm'), as the server prices it (room price ×
+// hours); null without a room or with times the wrong way round.
+export function listPriceFor(room, startTime, endTime) {
+    if (!room || !startTime || !endTime) return null;
+    const hours = (toMinutes(endTime) - toMinutes(startTime)) / 60;
+    return hours > 0 ? Math.round(Number(room.price ?? 0) * hours) : null;
+}
+
+// A past booking (approved or completed, within the last 60 days) whose balance is still open — the
+// "Owes money" filter, like listOwingBookings() behind the staff to-do.
+export function isOwing(booking, today, days = 60) {
+    if (!['approved', 'completed'].includes(booking.status) || booking.date >= today) return false;
+    const from = new Date(`${today}T00:00:00Z`);
+    from.setUTCDate(from.getUTCDate() - days);
+    if (booking.date < from.toISOString().slice(0, 10)) return false;
+    return Number(booking.full_payment ?? 0) - Number(booking.bank_transfer ?? 0) - Number(booking.cash ?? 0) > 0;
+}

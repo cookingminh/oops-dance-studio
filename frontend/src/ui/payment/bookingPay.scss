@@ -1,0 +1,60 @@
+// The room booking's pay dialog: on top of the shared pay dialog look (payment.scss).
+
+.bkPayModal {
+    .bkPayChoice {
+        display: grid;
+        gap: .4rem;
+
+        > span {
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+        }
+
+        .segmented {
+            display: flex;
+
+            button {
+                flex: 1 1 auto;
+                justify-content: center;
+            }
+        }
+    }
+
+    .bkAutoNote {
+        display: flex;
+        align-items: flex-start;
+        gap: .7rem;
+        padding: .7rem .9rem;
+        border-radius: 14px;
+        background: var(--tu-good-soft);
+        color: var(--tu-good);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+            font-size: 1.05rem;
+        }
+
+        strong {
+            display: block;
+            font-size: .9rem;
+        }
+
+        small {
+            display: block;
+            font-size: .8rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+        }
+    }
+
+    // The transfer content is long ("OOPSD869YY dat phong 11/11"): a little smaller than an invoice code.
+    .tuCopyRow.isKey .tuCopyValue {
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 1rem;
+        letter-spacing: .03em;
+    }
+}

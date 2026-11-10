@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 import { listClasses, listLessonProgress } from '@/services/classes';
 import { listInstructorAttendance, listOpenInstructorAttendance, listStudentAttendance } from '@/services/attendance';
 import { listPendingBookings } from '@/services/bookings';
+import { listOwingBookings } from '@/services/bookingPayments';
 import { getStudioToday } from '@/services/studio';
 import { loadTuitionTodo } from '@/services/tuitionStaff';
 import { withOwnTimes } from '@/services/sessions';
@@ -121,7 +122,7 @@ export async function loadStaffTasks() {
     const today = await getStudioToday();
     const now = studioTimeNow();
     const weekday = isoWeekdayOf(today);
-    const [open, todayRecords, { classes, progress }, students, pending, tuition] = await Promise.all([
+    const [open, todayRecords, { classes, progress }, students, pending, owing, tuition] = await Promise.all([
         // Make-up sessions carry their own times (withOwnTimes), regular ones the weekly slot.
         listOpenInstructorAttendance({ until: today }).then(withOwnTimes),
         listInstructorAttendance({ date: today }).then(withOwnTimes),
@@ -132,6 +133,8 @@ export async function loadStaffTasks() {
         })),
         listStudentAttendance({ date: today }),
         listPendingBookings({ from: today, limit: 1 }),
+        // Booking payments are newer: if they can't load, the other tasks still show.
+        listOwingBookings(today).catch(() => []),
         // Tuition is a newer feature: if it can't load, the other tasks still show.
         loadTuitionTodo(today).catch(() => null),
     ]);
@@ -247,6 +250,24 @@ export async function loadStaffTasks() {
             to: '/admin/bookings?status=pending',
         }]
         : [];
+    // Sessions that are over but still owe money (the rest after a deposit, usually): one booking → open it;
+    // several → the list of what is owed.
+    if (owing.length) {
+        const total = owing.reduce((sum, row) => sum + row.owed, 0);
+        const one = owing.length === 1 ? owing[0] : null;
+        bookingTasks.push({
+            id: 'bookings-owing',
+            kind: 'bookings',
+            tone: 'normal',
+            title: one
+                ? msg('{guest} still owes for their booking', { guest: personName(one.guest) ?? `#${one.id}` })
+                : count(owing.length, '{count} past booking still owes money', '{count} past bookings still owe money'),
+            detail: one
+                ? msg('{amount} left · {room} on {date}', { amount: formatVnd(one.owed), room: one.room?.name ?? '', date: one.date })
+                : msg('{amount} left to collect', { amount: formatVnd(total) }),
+            to: one ? `/admin/bookings?booking=${one.id}` : '/admin/bookings?view=list&owing=1',
+        });
+    }
 
     const tuitionTasks = tuition ? buildTuitionTasks(tuition) : [];
 
@@ -257,7 +278,7 @@ export async function loadStaffTasks() {
         // Sidebar badges.
         counts: {
             [ATTENDANCE_PAGE]: attendance.length + studentTasks.length,
-            '/admin/bookings': pending.total,
+            '/admin/bookings': pending.total + owing.length,
             '/admin/classes': lessonTasks.length,
             // Invoices to chase and transfers to sort (renewal answers are a reminder, not a count).
             [TUITION_PAGE]: tuition ? new Set(tuition.overdue.map((row) => row.student_id)).size + tuition.unmatched.length : 0,

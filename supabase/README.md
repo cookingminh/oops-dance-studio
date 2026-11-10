@@ -33,9 +33,13 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261116000400_switch_after_course.sql` | class switches between courses (`leaves_after`, future `joined_at`), no refunds mid-course |
 | `migrations/20261117000100_routine_order_and_waive.sql` | one routine at a time (the next starts after the last one's shoot day); reopening a waived invoice drops the waive reason; demo routines fitted to their month |
 | `migrations/20261117000200_activity_log.sql` | `activity_log` (who did what) written by one trigger on the studio tables, admin-only read, `activity_summary`, nightly prune, demo activity |
+| `migrations/20261117000300_booking_free_slots.sql` | a cancelled class session frees its room; it can't be reopened once booked |
+| `migrations/20261117000400_activity_seed_lint.sql` | the demo activity seed without a temporary table (db lint) |
+| `migrations/20261117000500_booking_payments.sql` | room bookings paid by transfer: payment code, webhook matching, payment history, assign / take back, sandbox |
+| `migrations/20261117000600_invoice_notes.sql` | staff write a note on an invoice on its own (`tuition_set_note`) |
 | `functions/bank-webhook/` | Edge Function: SePay webhook → `tuition_record_transfer` (API key in `BANK_WEBHOOK_KEY`). `handler_test.ts` unit-tests it |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users (and names the admin in the activity log). `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
-| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log) |
+| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
 | `../scripts/demo-images.mjs` | uploads demo photos to Storage (instructor avatars, class photo, room photos) and sets `avatar_path` / `image_path` / `image_paths` |
 | `../scripts/demo-assets/` | the demo photos, WebP (instructor cut-outs keep their transparency) |

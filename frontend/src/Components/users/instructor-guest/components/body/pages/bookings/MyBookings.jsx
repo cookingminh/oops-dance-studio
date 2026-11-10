@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { Button, Chip, Pagination, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
-import { LuInfo, LuPlus, LuTicket } from 'react-icons/lu';
+import { LuInfo, LuPlus, LuQrCode, LuReceipt, LuTicket } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useAsync } from '@/hooks/useAsync';
 import { cancelBooking, listMyBookings } from '@/services/bookings';
 import { getStudioToday } from '@/services/studio';
+import { getTuitionSettings, isPaymentSandbox } from '@/services/tuition';
 import { formatTimeRange, formatVnd } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import LinkButton from '@/ui/LinkButton';
+import BookingPayDialog from '@/ui/payment/BookingPayDialog';
+import BookingReceipt from '@/ui/payment/BookingReceipt';
+import { payLabel, paymentState } from '@/ui/payment/bookingMoney';
+import { bookingBalance } from '@/services/bookingPayments';
 import { statusColorMap } from '../../../../../../Table/utils';
 import SectionCard from '../../../../../admin-staff/components/common/SectionCard';
 import Segmented from '../../../../../admin-staff/components/common/Segmented';
@@ -17,6 +22,7 @@ import StatusSelect from '../../../../../admin-staff/components/common/StatusSel
 import { STATUS_COLORS } from '../../../../../admin-staff/components/common/chartTheme';
 import { useIsPhone } from '../../profileHelpers';
 import BookingCards from './BookingCards';
+import './myBookings.scss';
 
 const PAGE_SIZE = 8;
 // Labels are English source text, translated where they are shown.
@@ -28,12 +34,19 @@ const SCOPES = [
 const STATUSES = ['all', 'pending', 'approved', 'completed', 'rejected', 'cancelled'];
 const DEPOSIT_LABELS = { waiting: 'waiting', completed: 'paid', cancelled: 'cancelled' };
 
+// The bank account for the QR code and the sandbox flag are extras: the list still shows without them.
 async function load(userId) {
-    const [today, bookings] = await Promise.all([getStudioToday(), listMyBookings(userId)]);
-    return { today, bookings };
+    const [today, bookings, settings, sandbox] = await Promise.all([
+        getStudioToday(),
+        listMyBookings(userId),
+        getTuitionSettings().catch(() => null),
+        isPaymentSandbox().catch(() => false),
+    ]);
+    return { today, bookings, settings, sandbox };
 }
 
 // The signed-in user's room bookings; a pending one can be cancelled from its row (a card on phones).
+// A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each has a receipt.
 const MyBookings = () => {
     const { user } = useAuth();
     const toast = useToast();
@@ -43,6 +56,8 @@ const MyBookings = () => {
     const [status, setStatus] = useState('all');
     const [page, setPage] = useState(1);
     const [busyId, setBusyId] = useState(null);
+    const [paying, setPaying] = useState(null); // booking id in the pay dialog
+    const [receipt, setReceipt] = useState(null); // booking id in the receipt
     const isPhone = useIsPhone();
 
     const today = data.data?.today;
@@ -56,6 +71,8 @@ const MyBookings = () => {
     const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
     const currentPage = Math.min(page, pages);
     const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const payingBooking = all.find((b) => b.id === paying);
+    const receiptBooking = all.find((b) => b.id === receipt);
     const awaitingDeposit = all.filter((b) => b.deposit_status === 'waiting' && ['pending', 'approved'].includes(b.status) && (!today || b.date >= today));
 
     const statusOptions = STATUSES.map((key) => ({
@@ -125,7 +142,7 @@ const MyBookings = () => {
 
             <AsyncState state={data} isEmpty={false}>
                 {isPhone ? (
-                    <BookingCards bookings={pageRows} today={today} busyId={busyId} onCancel={handleCancel} empty={emptyContent} />
+                    <BookingCards bookings={pageRows} today={today} busyId={busyId} onCancel={handleCancel} onPay={setPaying} onReceipt={setReceipt} empty={emptyContent} />
                 ) : (
                     <div className="tableScroll">
                         <Table aria-label={t('My bookings')} removeWrapper className="bookingTable">
@@ -168,6 +185,8 @@ const MyBookings = () => {
                                                     {t('Deposit {amount}', { amount: formatVnd(b.deposit) })} ·{' '}
                                                     <span className={`depositState is-${b.deposit_status}`}>{t(DEPOSIT_LABELS[b.deposit_status] ?? b.deposit_status)}</span>
                                                 </span>
+                                                <span className={`payState tone-${paymentState(b).tone}`}>{t(paymentState(b).label)}</span>
+                                                {bookingBalance(b) > 0 && <span className="payLeft">{t('Still to pay {amount}', { amount: formatVnd(bookingBalance(b)) })}</span>}
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -176,13 +195,21 @@ const MyBookings = () => {
                                             </Chip>
                                         </TableCell>
                                         <TableCell>
-                                            {b.status === 'pending' ? (
-                                                <Button size="sm" color="danger" variant="flat" isLoading={busyId === b.id} onPress={() => handleCancel(b.id)}>
-                                                    {t('Cancel')}
+                                            <div className="myBookingActions">
+                                                {payLabel(b) && (
+                                                    <Button size="sm" color="danger" startContent={<LuQrCode aria-hidden="true" />} onPress={() => setPaying(b.id)} aria-label={`${t(payLabel(b))} · #${b.id}`}>
+                                                        {t(payLabel(b))}
+                                                    </Button>
+                                                )}
+                                                <Button size="sm" variant="light" startContent={<LuReceipt aria-hidden="true" />} onPress={() => setReceipt(b.id)} aria-label={t('Receipt for booking #{id}', { id: b.id })}>
+                                                    {t('Receipt')}
                                                 </Button>
-                                            ) : (
-                                                <span className="isMuted">—</span>
-                                            )}
+                                                {b.status === 'pending' && (
+                                                    <Button size="sm" color="danger" variant="flat" isLoading={busyId === b.id} onPress={() => handleCancel(b.id)}>
+                                                        {t('Cancel')}
+                                                    </Button>
+                                                )}
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -197,6 +224,24 @@ const MyBookings = () => {
                     </div>
                 )}
             </AsyncState>
+
+            {payingBooking && (
+                <BookingPayDialog
+                    booking={payingBooking}
+                    settings={data.data?.settings}
+                    sandbox={Boolean(data.data?.sandbox)}
+                    onClose={() => setPaying(null)}
+                    onChanged={data.reload}
+                />
+            )}
+            {receiptBooking && (
+                <BookingReceipt
+                    booking={receiptBooking}
+                    guest={{ name: user.full_name || user.username, phone: user.contact_number, email: user.email }}
+                    today={today}
+                    onClose={() => setReceipt(null)}
+                />
+            )}
         </SectionCard>
     );
 };

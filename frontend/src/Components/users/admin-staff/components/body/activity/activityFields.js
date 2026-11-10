@@ -173,9 +173,9 @@ export function recordLink(row, lookups) {
     const inClass = (tab, extra) => (classExists ? { to: classPath(classId, { tab, ...extra }), className: lookups.classes.get(classId) } : null);
     switch (row.entity) {
         case 'bookings':
-            // The bookings calendar opens on that booking's week (?date=).
+            // The bookings page opens that booking's dialog, on its week in the calendar.
             if (row.action === 'deleted') return null;
-            return { to: row.meta?.date ? `/admin/bookings?date=${row.meta.date}` : '/admin/bookings', page: 'Bookings' };
+            return { to: `/admin/bookings?booking=${row.entity_id}${row.meta?.date ? `&date=${row.meta.date}` : ''}`, page: 'Bookings' };
         case 'classes':
             return inClass('overview');
         case 'class_schedules':
