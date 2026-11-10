@@ -44,7 +44,9 @@ export const ItemBlock = ({ item, column, columns, range, onSelect }) => {
     return (
         <Shell item={item} onSelect={onSelect} className={classesOf(item, `calItem${size}`)} style={style} label={itemLabel(item, { t, formatDate })}>
             <span className="calItemTime">
-                {item.start}–{item.end}
+                {item.start}
+                {/* Narrow lanes keep the start time only (see calendar.scss). */}
+                <span className="calItemEnd">–{item.end}</span>
             </span>
             <strong className="calItemTitle">{item.title}</strong>
             {item.badge && <span className="calBadge">{item.badge}</span>}

@@ -16,10 +16,16 @@ import './calendar.scss';
 // Controlled: the page owns `view` and `date` and loads the items of calendarRange(view, date).
 //
 // items: [{ id, date: 'yyyy-MM-dd', start: 'HH:mm', end: 'HH:mm', title, subtitle, color, status,
-//           statusLabel?, tone: 'solid' | 'dashed' | 'muted' | 'background', badge, data }]
+//           statusLabel?, tone: 'solid' | 'dashed' | 'muted' | 'background', badge, lane?, data }]
 // Optional extras beyond the brief: `today` ('yyyy-MM-dd', the studio's date; defaults to the
 // studio-timezone date of this device), `label` (accessible name of the calendar), `slotLabel` (what a
 // free-slot click does, e.g. "New booking"), `className`.
+// `lanes` ([{ id, label, short?, color }], off by default): the desktop week view splits every day
+// into one sub-column per lane (e.g. rooms) in this order, even when empty; items go to the lane
+// matching `item.lane`. Month view and the phone agenda ignore lanes.
+// onSlotClick(date, 'HH:mm', { lane, end? }): a click on a free slot, or a press-and-drag over several
+// (week view, mouse / pen; touch taps). `end` comes only with a dragged range longer than one slot;
+// `lane` is the lane's id (undefined without lanes). The phone agenda's "+" passes a null time.
 const CalendarView = ({
     view = 'week',
     onViewChange,
@@ -35,6 +41,7 @@ const CalendarView = ({
     today,
     label,
     slotLabel,
+    lanes,
     className = '',
 }) => {
     const { t, formatDate } = useI18n();
@@ -119,6 +126,7 @@ const CalendarView = ({
                 now={now}
                 minHour={minHour}
                 maxHour={maxHour}
+                lanes={lanes}
                 onSelect={onSelect}
                 onSlotClick={onSlotClick}
                 slotLabel={slotLabel}
@@ -140,7 +148,7 @@ const CalendarView = ({
             <div className="calFrame">
                 {loading && <span className="calProgress" aria-hidden="true" />}
                 <motion.div
-                    key={`${view}-${range.from}-${isPhone}`}
+                    key={`${view}-${range.from}-${isPhone}-${lanes?.length ?? 0}`}
                     className="calStage"
                     initial={{ opacity: 0, x: direction.current * 14 }}
                     animate={{ opacity: 1, x: 0 }}

@@ -40,15 +40,17 @@ export function periodOf(view, date) {
 // cancelled and rejected are also struck through by the calendar).
 const TONES = { pending: 'dashed', approved: 'solid', completed: 'muted', cancelled: 'muted', rejected: 'muted' };
 
-export function bookingItem(booking, { roomColor, t }) {
+// `withRoom` false when the calendar shows rooms as lanes (the lane already says which room).
+export function bookingItem(booking, { roomColor, t, withRoom = true }) {
     return {
         id: `b${booking.id}`,
         date: booking.date,
         start: formatTime(booking.start_time),
         end: formatTime(booking.end_time),
         title: guestName(booking, t),
-        subtitle: booking.room?.name,
+        subtitle: withRoom ? booking.room?.name : undefined,
         color: roomColor.get(booking.room_id),
+        lane: String(booking.room_id),
         status: booking.status,
         statusLabel: t(booking.status),
         tone: TONES[booking.status] ?? 'solid',
@@ -58,15 +60,16 @@ export function bookingItem(booking, { roomColor, t }) {
 }
 
 // A class session behind the bookings: it explains why that slot of the room is taken.
-export function sessionItem(session, { roomColor, t }) {
+export function sessionItem(session, { roomColor, t, withRoom = true }) {
     return {
         id: `s${session.key}`,
         date: session.date,
         start: session.start,
         end: session.end,
         title: session.class_name,
-        subtitle: [t('Class'), session.room_name, session.instructor_name].filter(Boolean).join(' · '),
+        subtitle: [t('Class'), withRoom ? session.room_name : null, session.instructor_name].filter(Boolean).join(' · '),
         color: roomColor.get(session.room_id),
+        lane: String(session.room_id),
         status: 'class',
         statusLabel: t('Class'),
         tone: 'background',
@@ -75,10 +78,20 @@ export function sessionItem(session, { roomColor, t }) {
     };
 }
 
-// "New booking" from a free slot: one hour from the picked start, within opening hours.
-export function slotDraft({ date, time, roomId }) {
+// "New booking" from a free slot: the dragged range, or one hour from the picked start (within
+// opening hours); the room of the lane, else the selected room tab.
+export function slotDraft({ date, time, end, roomId }) {
     const draft = { date, roomId: roomId ?? '' };
     if (!time) return draft;
-    const end = addMinutes(parse(time, 'HH:mm', new Date()), 60);
-    return { ...draft, startTime: time, endTime: format(end, 'HH:mm') > '22:00' || format(end, 'HH:mm') < time ? '22:00' : format(end, 'HH:mm') };
+    if (end) return { ...draft, startTime: time, endTime: end };
+    const oneHour = format(addMinutes(parse(time, 'HH:mm', new Date()), 60), 'HH:mm');
+    return { ...draft, startTime: time, endTime: oneHour > '22:00' || oneHour < time ? '22:00' : oneHour };
 }
+
+// Room lanes for the week calendar ("All rooms"): same order and colours as the room tabs; the
+// short label is the room's letter ("Phòng A" → "A").
+export const roomLanes = (rooms, roomColor) =>
+    rooms.map((room) => {
+        const last = room.name.trim().split(/\s+/).at(-1);
+        return { id: String(room.id), label: room.name, short: last.length <= 3 ? last : room.name, color: roomColor.get(room.id) };
+    });

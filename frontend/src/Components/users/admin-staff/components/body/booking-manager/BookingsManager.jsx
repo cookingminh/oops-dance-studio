@@ -19,7 +19,7 @@ import BookingList from './components/booking-list/BookingList';
 import BookingForm from './components/booking-list/BookingForm';
 import BookingCalendar from './components/booking-calendar/BookingCalendar';
 import BookingDetails from './components/booking-calendar/BookingDetails';
-import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, periodOf, slotDraft, soonestFirst } from './bookingsModel';
+import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
 import { useBookingActions } from './useBookingActions';
 import './bookings.scss';
 
@@ -164,12 +164,13 @@ const BookingsManager = () => {
         setDraft(prefill);
         setEditing(null);
     };
-    const pickSlot = (date, time) => {
+    // A free slot (click) or a dragged range, in a room lane or the selected room.
+    const pickSlot = (date, time, { end, lane } = {}) => {
         if (date < todayIso) {
             toast.error('That date is in the past. Please choose today or a later date.');
             return;
         }
-        newBooking(slotDraft({ date, time, roomId: roomFilter === 'all' ? null : roomFilter }));
+        newBooking(slotDraft({ date, time, end, roomId: lane ?? (roomFilter === 'all' ? null : roomFilter) }));
     };
 
     const opened = openId ? all.find((booking) => booking.id === openId) : null;
@@ -248,6 +249,7 @@ const BookingsManager = () => {
                     bookings={calendarBookings}
                     sessions={calendarSessions}
                     roomColor={roomColor}
+                    lanes={roomFilter === 'all' && roomList.length > 1 ? roomLanes(roomList, roomColor) : undefined}
                     view={calView}
                     date={calDate}
                     onViewChange={setView}

@@ -13,6 +13,8 @@
     --cal-primary-soft: var(--ad-primary-soft, hsl(0, 85%, 96%));
     --cal-slot: 2rem; // one half hour
     --cal-gutter: 3.4rem;
+    --cal-lane-min: 4.5rem; // narrowest lane before the week scrolls sideways
+    --cal-day-line: hsl(20, 8%, 82%); // between days when they have lanes
 
     display: flex;
     flex-direction: column;
@@ -133,7 +135,7 @@
 .calWeekHead {
     position: sticky;
     top: 0;
-    z-index: 6;
+    z-index: 10; // above the sticky time gutter
     border-bottom: 1px solid var(--cal-border);
     background: var(--cal-surface);
 }
@@ -180,8 +182,19 @@
     position: relative;
 }
 
+.calWeekHead .calGutter {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--cal-surface);
+}
+
+// The hours stay put when a wide (lanes) grid scrolls sideways.
 .calTimes {
-    position: relative;
+    position: sticky;
+    left: 0;
+    z-index: 8;
+    background: var(--cal-surface);
 
     span {
         position: absolute;
@@ -225,7 +238,7 @@
     }
 
     &.isOpen {
-        cursor: copy;
+        cursor: crosshair;
         transition: background-color .12s ease;
 
         &:hover {
@@ -264,6 +277,123 @@
         height: 10px;
         border-radius: 50%;
         background: var(--cal-primary);
+    }
+}
+
+// Lanes (e.g. rooms): every day split into fixed sub-columns, a light line between lanes and a
+// stronger one between days. Below --cal-lane-min per lane the week scrolls sideways in its box.
+.calWeek.hasLanes {
+    min-width: calc(var(--cal-gutter) + 7 * var(--cal-lanes) * var(--cal-lane-min));
+
+    .calDayHead {
+        padding-bottom: 0;
+        border-left: 1px solid var(--cal-day-line);
+    }
+
+    .calDay {
+        display: grid;
+        grid-template-columns: repeat(var(--cal-lanes), minmax(0, 1fr));
+        border-left-color: var(--cal-day-line);
+    }
+}
+
+.calLaneHeads {
+    display: grid;
+    grid-template-columns: repeat(var(--cal-lanes), minmax(0, 1fr));
+    align-self: stretch;
+    margin-top: .3rem;
+    border-top: 1px solid var(--cal-border);
+}
+
+.calLaneHead {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    min-width: 0;
+    padding: .22rem .2rem;
+    font-size: .72rem;
+    color: var(--cal-muted);
+
+    & + .calLaneHead {
+        border-left: 1px solid var(--cal-border);
+    }
+
+    b {
+        overflow: hidden;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .calDot {
+        width: .45rem;
+        height: .45rem;
+    }
+}
+
+.calLane {
+    position: relative;
+    min-width: 0;
+
+    & + .calLane {
+        border-left: 1px solid var(--cal-border);
+    }
+}
+
+// Press and drag on free slots: the live range as a ghost block; red when it overlaps something.
+.calWeek.isDragging {
+    cursor: ns-resize;
+    user-select: none;
+
+    .calSlot.isOpen {
+        cursor: ns-resize;
+
+        &:hover {
+            background: none;
+
+            &::after {
+                content: none;
+            }
+        }
+    }
+}
+
+.calGhost {
+    position: absolute;
+    left: 2px;
+    right: 2px;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    overflow: hidden;
+    padding: .25rem .35rem;
+    border: 1.5px dashed var(--cal-text);
+    border-radius: 8px;
+    background: hsla(0, 0%, 100%, .92);
+    box-shadow: 0 8px 18px -10px hsla(20, 30%, 20%, .45);
+    color: var(--cal-text);
+    font-size: .72rem;
+    line-height: 1.25;
+    pointer-events: none;
+
+    // "14:30–16:00" may break after the dash in a narrow lane.
+    strong {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    span {
+        font-weight: 600;
+    }
+
+    &.isClash {
+        border: 2px solid hsl(0, 72%, 46%);
+        background:
+            repeating-linear-gradient(135deg, hsla(0, 80%, 50%, .1) 0 6px, transparent 6px 12px),
+            hsla(0, 90%, 97%, .95);
+        color: hsl(0, 72%, 36%);
     }
 }
 
@@ -348,6 +478,35 @@
         .calItemSub {
             display: none;
         }
+    }
+}
+
+// Lanes make blocks narrow: the title may wrap on two lines and, below ~5.5rem, the end time goes
+// (time + name first, then the badge; the full text stays in the label / tooltip).
+.calWeek.hasLanes .calItem {
+    container-type: inline-size;
+    padding-right: .2rem;
+    padding-left: .35rem;
+
+    .calItemTitle {
+        font-size: .74rem;
+    }
+
+    // A long word breaks with a hyphen (the page's lang is set) rather than at any letter.
+    &:not(.isTiny) .calItemTitle {
+        display: -webkit-box;
+        overflow-wrap: break-word;
+        white-space: normal;
+        line-height: 1.2;
+        hyphens: auto;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+}
+
+@container (max-width: 5.5rem) {
+    .calItemEnd {
+        display: none;
     }
 }
 

@@ -8,6 +8,7 @@ export default {
     'Next week': 'Tuần sau',
     'Open the week of {date}': 'Mở tuần có ngày {date}',
     '+{count} more': '+{count} nữa',
+    'Overlaps {name}': 'Trùng với {name}',
     '{count} item': '{count} mục',
     '{count} items': '{count} mục',
 
