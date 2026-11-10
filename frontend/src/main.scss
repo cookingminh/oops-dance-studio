@@ -875,439 +875,8 @@ h2 {
 
 //Search section styling =================>
 
-.search {
-    position: relative;
 
-    .sectionContainer {
-        flex-direction: column;
-        width: 100%;
-        padding: 1.5rem;
-        border: 5px solid var(--PrimaryColor);
-        border-radius: 2rem;
-        row-gap: 2rem;
-        margin-bottom: 5rem;
-        // overflow: hidden;
-        gap: 3rem;
 
-        .guide {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-        }
-
-        .btns {
-            background: var(--SecondaryColor);
-            padding: .5rem;
-            border-radius: 1rem;
-            flex-direction: column;
-            width: 100%;
-            margin: auto;
-            margin-top: 1.5rem;
-            gap: 1rem;
-
-            .singleBtn {
-                padding: .8rem 1.5rem;
-                font-size: 13px;
-                border-radius: 3rem;
-                width: 50%;
-                text-align: center;
-
-                &:hover {
-                    background: var(--PrimaryColor);
-                    color: var(--whiteColor);
-                    font-weight: 500;
-                    transition: .4s ease;
-                    cursor: pointer;
-                }
-            }
-
-            .active {
-                background: var(--PrimaryColor);
-                color: var(--whiteColor);
-                font-weight: 500;
-            }
-        }
-
-        .searchInputs {
-            justify-content: center;
-            flex-direction: column;
-            gap: 1rem;
-
-            .singleInput {
-                select {
-                    border: none;
-                    color: var(--textColor);
-                    appearance: none;
-                }
-
-                .iconDiv {
-                    padding: 16px;
-                    border-radius: 3rem;
-                    background: var(--SecondaryColor);
-                    margin-right: 1rem;
-
-                    .icon {
-                        color: var(--blackColor);
-                        opacity: .7;
-                    }
-                }
-
-                .texts {
-                    h4 {
-                        padding-top: 0;
-                        padding-bottom: .7rem;
-                        color: var(--blackColor);
-                        font-weight: 500;
-                    }
-
-                    input {
-                        border: none;
-                        outline: none;
-                        background: transparent;
-                        width: 100%;
-
-                        &::placeholder {
-                            font-size: 12px;
-                            opacity: .5;
-                        }
-                    }
-                }
-            }
-        }
-
-        .btn {
-            margin: auto;
-            max-width: fit-content;
-        }
-
-        .searchResult {
-            padding: 1rem;
-            padding-top: 0;
-            width: 100%;
-            background: var(--SecondaryColor);
-            border-radius: 1rem;
-            margin: 1rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-
-            h1,
-            h2 {
-                margin: .5rem;
-                margin-top: 1rem;
-                color: var(--PrimaryColor);
-            }
-
-            p {
-                background: var(--whiteColor);
-                padding: 0.5rem 1rem;
-                border-radius: 0.5rem;
-                margin-bottom: 0.5rem;
-                color: var(--blackColor);
-                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-                &:last-child {
-                    margin-bottom: 0;
-                }
-            }
-
-            .btn {
-                margin-top: .5rem;
-            }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .visible {
-            display: block;
-        }
-
-        .error-message {
-            color: var(--PrimaryColor);
-            font-weight: bold;
-            margin-top: 1rem;
-            text-align: center;
-        }
-    }
-
-    .formDiv {
-        position: absolute;
-        z-index: 3;
-        right: -50%;
-        top: 50%;
-        transform: translate(50%, -50%);
-        transition: .6s ease-in-out;
-
-        .form {
-            flex-direction: column;
-            gap: 1.5rem;
-            border: 3px solid var(--PrimaryColor);
-            border-radius: 1rem;
-            padding: 1rem;
-            padding-top: 2rem;
-            background-color: var(--SecondaryColor);
-            width: 300px;
-
-            .guestInfo {
-                flex-direction: column;
-                gap: 1rem;
-
-                .bookingInfo {
-                    h2 {
-                        background-color: var(--PrimaryColor);
-                        width: fit-content;
-                        color: var(--whiteColor);
-                        padding: .5rem;
-                        border-radius: .5rem;
-                        margin-bottom: 1rem;
-                    }
-
-                    flex-direction: column;
-                    background: var(--whiteColor);
-                    border-radius: 1rem;
-                    padding: 1rem;
-                    color: var(--blackColor);
-                    margin: auto;
-                    width: 100%;
-
-                    p {
-                        margin: 0.5rem 0;
-                    }
-                }
-            }
-
-            h2 {
-                font-size: var(--h2FontSize);
-                text-align: center;
-                font-weight: 500;
-            }
-
-            .icon {
-                position: absolute;
-                top: .5rem;
-                right: .5rem;
-                color: var(--blackColor);
-
-                :hover {
-                    cursor: pointer;
-                }
-            }
-        }
-    }
-
-    .showForm {
-        right: 50%;
-        transition: .6s ease-in-out;
-    }
-
-    .blurLayer {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: inherit;
-        z-index: 2;
-        filter: blur(2px);
-        background: rgba(225, 225, 225, 0.465);
-        backdrop-filter: blur(1px);
-    }
-
-    .showLayer {
-        display: block;
-    }
-
-    .confirmation {
-        text-align: center;
-        margin-top: 20px;
-        position: absolute;
-        z-index: 3;
-        right: 50%;
-        top: 50%;
-        transform: translate(50%, -50%);
-        flex-direction: column;
-        gap: 1.5rem;
-        border: 3px solid var(--PrimaryColor);
-        border-radius: 1rem;
-        padding: 1rem;
-        padding-top: 2rem;
-        background-color: var(--whiteColor);
-
-
-        h2 {
-            color: var(--PrimaryColor);
-            font-size: var(--h2FontSize);
-            font-weight: 500;
-            margin-bottom: 1rem;
-        }
-
-        img {
-            margin-top: 1rem;
-            width: 150px;
-            height: 150px;
-        }
-
-        .icon {
-            position: absolute;
-            top: .5rem;
-            right: .5rem;
-            color: var(--blackColor);
-
-            :hover {
-                cursor: pointer;
-            }
-        }
-    }
-}
-
-
-//Classes section styling ===============>
-.classes {
-    justify-content: center;
-
-    .flex {
-        align-items: center;
-    }
-
-    .sectionContainer {
-        width: 100%;
-        color: var(--whiteColor);
-        gap: 2rem;
-        flex-direction: column;
-        position: relative;
-        padding-right: 1rem;
-        padding-left: 1rem;
-        padding-bottom: 1rem;
-
-        .background {
-            width: 100%;
-            display: flex;
-            position: absolute;
-            z-index: 0;
-            height: 100%;
-        }
-
-        .titlesDiv {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            color: #ffcc6c;
-            margin-top: 2rem;
-            text-align: center;
-            z-index: 1;
-
-            h1 {
-                font-family: "Merienda", cursive;
-                font-size: 50px;
-            }
-
-            span {
-                font-family: "Merienda", cursive;
-                font-size: 90px;
-            }
-        }
-
-        .timeTableDiv {
-            justify-content: center;
-            position: relative;
-
-            table {
-                width: 100%;
-                max-width: 100%;
-
-                .days th {
-                    font-family: "Merienda", cursive;
-                    font-size: 25px;
-                }
-
-                .time {
-                    transform: rotate(90deg);
-                    transform-origin: center;
-                    font-weight: 700;
-                    font-size: larger;
-                }
-
-                .dance-class {
-                    display: flex;
-                    align-items: center;
-                    position: relative;
-                    width: auto;
-                    max-width: 7rem;
-                    height: 3rem;
-                    margin: 1rem .5rem 1.5rem .5rem;
-
-                    .class-bg {
-                        position: absolute;
-                        z-index: -2;
-                    }
-
-                    .instructor {
-                        z-index: 1;
-                        position: absolute;
-                        width: 5.5rem;
-                    }
-
-                    span {
-                        z-index: 2;
-                        font-family: "League Spartan", sans-serif;
-                        color: var(--blackColor);
-                        text-transform: uppercase;
-                        font-size: 18px;
-                        font-weight: 700;
-                        width: 70%;
-                        white-space: normal;
-                        overflow-wrap: break-word;
-                    }
-
-
-
-                }
-
-                .dance-class:first-child {
-                    .instructor {
-                        left: 52px;
-                        top: -25px;
-                    }
-
-                    span {
-                        text-align: left;
-                        margin-left: 1rem;
-                    }
-                }
-
-                .dance-class:not(:first-child) {
-                    text-align: right;
-
-                    .instructor {
-                        left: -20px;
-                        top: -25px;
-                    }
-
-                    span {
-                        text-align: right;
-                        margin-left: 2.2rem;
-                    }
-                }
-            }
-        }
-
-
-        .infoDiv {
-            z-index: 1;
-
-            .facebook-button {
-                background-color: #1877F2;
-                color: white;
-            }
-
-            .facebook-button:hover {
-                background-color: #145dbf;
-            }
-        }
-
-    }
-}
 
 
 // Support section styling ==============>
@@ -1503,120 +1072,6 @@ h2 {
     // }
 }
 
-// participants section styling ==============>
-.participants {
-    .sectionContainer {
-        text-align: center;
-        padding-bottom: 2rem;
-
-        .participantsContainer {
-            margin-top: 1rem;
-            gap: 1.5rem;
-
-            .singleparticipant {
-                position: relative;
-                height: 280px;
-                width: 85%;
-                max-width: 250px;
-                overflow: hidden;
-                border-radius: 10rem;
-                gap: 1rem;
-                margin: auto;
-
-                .destinationImage,
-                .participantImage,
-                .participantName {
-                    position: absolute;
-
-                }
-
-                .destinationImage {
-                    height: 100%;
-                    width: 100%;
-                    top: 0;
-                    right: 0;
-                    left: 0;
-                    bottom: 0;
-                    object-fit: cover;
-                }
-
-                .participantImage {
-                    height: 90px;
-                    width: 90px;
-                    object-fit: cover;
-                    border-radius: 50%;
-                    bottom: 30px;
-                    left: 32%;
-                    transform: translateX(-50%);
-                    border: 5px solid var(--whiteColor);
-                    transition: var(--transition);
-                    animation: animated 2.3s infinite;
-                }
-
-                @keyframes animated {
-                    0% {
-                        transform: translateY(0px);
-                    }
-
-                    50% {
-                        transform: translateY(8px);
-                    }
-
-                    100% {
-                        transform: translateY(0px);
-                    }
-                }
-
-                .participantName {
-                    bottom: -100%;
-                    width: 100%;
-                    height: max-content;
-                    background: var(--whiteColor);
-                    padding: 1.5rem 1rem;
-                    transition: var(--transition);
-                    animation: animatedBorders 2.3s infinite;
-
-                    span {
-                        display: block;
-                        color: var(--blackColor);
-                        font-weight: 700;
-                    }
-
-                    p {
-                        color: var(--PrimaryColor);
-                        font-style: italic;
-                    }
-                }
-
-                @keyframes animatedBorders {
-                    0% {
-                        border-radius: 0rem;
-                    }
-
-                    50% {
-                        border-radius: 3rem;
-                    }
-
-                    100% {
-                        border-radius: 0rem;
-                    }
-                }
-
-                &:hover {
-                    .participantName {
-                        bottom: 0;
-                        transition: 1s ease-in-out;
-                    }
-
-                    .participantImage {
-                        bottom: 110px;
-                        transition: 1s ease-in-out;
-                    }
-                }
-            }
-        }
-    }
-}
 
 // Subscribe section styling ==============>
 .subscribe {
@@ -1739,29 +1194,8 @@ h2 {
         padding-top: 12rem;
     }
 
-    //Search section styling =============>
-    .search {
-        .sectionContainer {
-            .btns {
-                border-radius: 3rem;
-                flex-direction: row;
-            }
-
-            .searchInputs {
-                display: grid;
-                grid-template-columns: repeat(1, 1fr);
-            }
-        }
-    }
 
     //participants  section styling =============>
-    .participants {
-        .sectionContainer {
-            .participantsContainer {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-    }
 
     //Rooms  section styling =============>
     .rooms {
@@ -1797,19 +1231,6 @@ h2 {
         }
     }
 
-    //Classes sectiong styling ===============>
-    .classes {
-        .sectionContainer {
-            .timeTableDiv {
-                height: 200px;
-
-                table {
-                    position: absolute;
-                    scale: 62%;
-                }
-            }
-        }
-    }
 
 
 }
@@ -1835,22 +1256,6 @@ h2 {
         }
     }
 
-    //Search section styling =============>
-    .search {
-        .sectionContainer {
-            justify-content: center;
-
-            .btns {
-                border-radius: 3rem;
-                flex-direction: row;
-            }
-
-            .searchInputs {
-                display: grid;
-
-            }
-        }
-    }
 
     //Support section styling =============>
     .support {
@@ -1914,19 +1319,6 @@ h2 {
         }
     }
 
-    //Classes sectiong styling ===============>
-    .classes {
-        .sectionContainer {
-            .timeTableDiv {
-                height: 200px;
-
-                table {
-                    position: absolute;
-                    scale: 70%;
-                }
-            }
-        }
-    }
 }
 
 @media screen and (min-width: 680px) {
@@ -1956,21 +1348,6 @@ h2 {
         }
     }
 
-    //Search section styling =============>
-    .search {
-        .sectionContainer {
-
-            .btns {
-                border-radius: 3rem;
-                flex-direction: row;
-            }
-
-            .searchInputs {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-    }
 
     //Footer  section styling =============>
     .footer {
@@ -1979,19 +1356,6 @@ h2 {
         }
     }
 
-    //Classes section styling ===============>
-    .classes {
-        .sectionContainer {
-            .timeTableDiv {
-                height: 220px;
-
-                table {
-                    position: absolute;
-                    scale: 87%;
-                }
-            }
-        }
-    }
 
     //Rooms section styling =================>
     .rooms {
@@ -2075,28 +1439,6 @@ h2 {
         }
     }
 
-    //Search  section styling =============>
-    .search {
-        .sectionContainer {
-
-            .btns {
-                width: 60%;
-            }
-
-            .searchInputs {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
-
-                .singleInput {
-                    .texts {
-                        input {
-                            width: 100%
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     //Support section styling =============>
     .support {
@@ -2163,31 +1505,7 @@ h2 {
     }
 
     //participant section styling =============>
-    .participants {
-        .sectionContainer {
-            .participantsContainer {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
-    }
 
-    //Classes sectiong styling ===============>
-    .classes {
-        .sectionContainer {
-
-            .timeTableDiv {
-                //background-color: #d83f3f;
-                height: auto;
-                width: 100%;
-
-                table {
-                    //background-color: #ffcc6c;
-                    position: relative;
-                    scale: 100%;
-                }
-            }
-        }
-    }
 
     //Rooms section styling =================>
     .rooms {
@@ -2249,23 +1567,7 @@ h2 {
 
     }
 
-    //Search  section styling =============>
-    .search {
-        .sectionContainer {
-            .searchInputs {
-                display: grid;
-                grid-template-columns: repeat(3, 1fr);
 
-            }
-        }
-    }
-
-    //Classes sectiong styling ===============>
-    .classes {
-        table {
-            scale: 100%;
-        }
-    }
 
     //Rooms section styling =================>
     .rooms {
@@ -2364,14 +1666,6 @@ h2 {
 
     }
 
-    //Search section styling =============>
-    .search {
-        .sectionContainer {
-            .btns {
-                //width: 50%;
-            }
-        }
-    }
 
     .rooms {
         max-width: 100%;
@@ -2414,12 +1708,6 @@ h2 {
         }
     }
 
-    //Classes sectiong styling ===============>
-    .classes {
-        table {
-            scale: 103%;
-        }
-    }
 
     .rooms {
         max-width: 100%;
@@ -2552,4 +1840,14 @@ h2 {
 ::-webkit-scrollbar-thumb {
     background: var(--PrimaryColor);
     border-radius: 10px;
+}
+
+// Vietnamese: CSS `capitalize` (used on status chips) would capitalise every word ("Chờ Duyệt").
+// Capitalise only the first letter instead; the text itself stays as written.
+html[lang='vi'] .capitalize {
+    text-transform: none;
+}
+
+html[lang='vi'] .capitalize > span::first-letter {
+    text-transform: uppercase;
 }

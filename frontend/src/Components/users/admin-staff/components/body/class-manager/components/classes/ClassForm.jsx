@@ -3,12 +3,14 @@ import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent
 import { createClass, updateClass } from '@/services/classes';
 import { avatarUrl } from '@/services/storage';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useI18n } from '@/i18n/i18nContext';
 import ImagePicker from '@/ui/ImagePicker';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 
 // Create or edit a class. Schedules are managed separately (each schedule belongs to one class).
 const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
     const toast = useToast();
+    const { t } = useI18n();
     const isNew = !classRow;
     const [form, setForm] = useState({
         name: classRow?.name ?? '',
@@ -29,7 +31,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
             const fields = { ...form, roomId: form.roomId ? Number(form.roomId) : null };
             if (isNew) {
                 await createClass(fields, image);
-                toast.success('Class added. Add its weekly sessions and this month’s lesson next.');
+                toast.success('Class added. Add its weekly sessions and its first routine next.');
             } else {
                 await updateClass(classRow.id, fields);
                 toast.success('Class updated.');
@@ -38,7 +40,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
         } catch (error) {
             if (error.code === 'DUPLICATE') toast.error('A class with this name already exists.');
             // Moving a class to another room must not clash with that room's bookings or classes.
-            else if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(`That room isn’t free at this class’s times: ${error.detail}.`);
+            else if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That room isn’t free at this class’s times: {detail}.', { detail: error.detail }));
             else toast.error(error);
         } finally {
             setSaving(false);
@@ -48,13 +50,13 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
     return (
         <Modal isOpen scrollBehavior="inside" onOpenChange={(open) => !open && onClose()}>
             <ModalContent>
-                <ModalHeader>{isNew ? 'Add New Class' : 'Edit Class'}</ModalHeader>
+                <ModalHeader>{isNew ? t('Add New Class') : t('Edit Class')}</ModalHeader>
                 <ModalBody>
-                    <Input label="Class Name" isRequired value={form.name} onValueChange={set('name')} />
+                    <Input label={t('Class Name')} isRequired value={form.name} onValueChange={set('name')} />
                     <Select
-                        label="Instructor"
+                        label={t('Instructor')}
                         isRequired
-                        placeholder={instructors.length ? 'Select an instructor' : 'No instructors yet'}
+                        placeholder={instructors.length ? t('Select an instructor') : t('No instructors yet')}
                         selectedKeys={form.instructorId ? [form.instructorId] : []}
                         onChange={(event) => set('instructorId')(event.target.value)}
                     >
@@ -69,8 +71,8 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
                         ))}
                     </Select>
                     <Select
-                        label="Room"
-                        placeholder="Select a room"
+                        label={t('Room')}
+                        placeholder={t('Select a room')}
                         selectedKeys={form.roomId ? [form.roomId] : []}
                         onChange={(event) => set('roomId')(event.target.value)}
                     >
@@ -79,7 +81,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
                         ))}
                     </Select>
                     <Input
-                        label="Price (VND)"
+                        label={t('Price (VND)')}
                         type="number"
                         min={0}
                         step={1000}
@@ -87,16 +89,16 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
                         value={form.price}
                         onValueChange={set('price')}
                         isInvalid={priceInvalid}
-                        errorMessage={priceInvalid ? 'Enter a price of 0 or more.' : undefined}
+                        errorMessage={priceInvalid ? t('Enter a price of 0 or more.') : undefined}
                     />
-                    {isNew && <ImagePicker label="Upload Class Image (optional)" onChange={setImage} isDisabled={saving} />}
+                    {isNew && <ImagePicker label={t('Upload Class Image (optional)')} onChange={setImage} isDisabled={saving} />}
                 </ModalBody>
                 <ModalFooter>
                     <Button variant="light" onPress={onClose} isDisabled={saving}>
-                        Close
+                        {t('Close')}
                     </Button>
                     <Button color="danger" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
-                        {isNew ? 'Add Class' : 'Update Class'}
+                        {isNew ? t('Add Class') : t('Update Class')}
                     </Button>
                 </ModalFooter>
             </ModalContent>

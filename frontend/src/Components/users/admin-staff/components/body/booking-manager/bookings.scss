@@ -1,0 +1,311 @@
+// Bookings page: layout switch, "Awaiting approval" chip, the calendar's booking colours and the
+// booking dialog (rendered outside the shell, hence .adminPortal). Table styles live in admin.scss.
+
+.adminShell .bookingsCard {
+    .cardActions {
+        flex-wrap: wrap;
+    }
+
+    .bookingId {
+        border-radius: 6px;
+        cursor: pointer;
+        transition: color .15s ease;
+
+        &:hover {
+            color: var(--ad-primary);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+}
+
+// Quick filter: pending requests (amber, like their badge in the calendar).
+.adminShell .awaitChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    height: 2.9rem;
+    padding: 0 .95rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+    color: var(--ad-muted);
+    font-size: .92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+
+    svg {
+        font-size: 1rem;
+        color: currentColor;
+    }
+
+    &.hasPending {
+        color: hsl(30, 88%, 32%);
+
+        .segCount {
+            background: hsl(42, 100%, 90%);
+            color: hsl(30, 88%, 32%);
+        }
+    }
+
+    &:hover {
+        border-color: hsl(38, 80%, 70%);
+    }
+
+    &[aria-pressed='true'] {
+        border-color: hsl(38, 92%, 50%);
+        background: hsl(45, 100%, 95%);
+        color: hsl(30, 88%, 28%);
+        box-shadow: inset 0 0 0 1px hsl(38, 92%, 50%);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+// Calendar: a pending request's badge is amber; context class sessions stay quiet.
+.bookingCalendar {
+    .status-pending .calBadge {
+        border-color: hsl(40, 90%, 72%);
+        background: hsl(45, 100%, 93%);
+        color: hsl(30, 88%, 30%);
+    }
+}
+
+// Booking dialog
+.bookingDetails {
+    .bdHeader {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .55rem;
+        padding-right: 3rem;
+    }
+
+    .bdTitle {
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .bdBody {
+        gap: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .bdGuest {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: .8rem .9rem;
+        border-radius: var(--ad-radius);
+        background: var(--ad-surface-2);
+    }
+
+    .bdGuestText {
+        display: grid;
+        gap: .15rem;
+        min-width: 0;
+
+        strong {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        a,
+        span {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            min-width: 0;
+            overflow: hidden;
+            font-size: .88rem;
+            color: var(--ad-muted);
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        a:hover {
+            color: var(--ad-primary);
+        }
+
+        svg {
+            flex-shrink: 0;
+            font-size: .95rem;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .bdFacts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .9rem 1.2rem;
+        margin: 0;
+
+        > div {
+            display: grid;
+            align-content: start;
+            gap: .3rem;
+            min-width: 0;
+        }
+
+        dt {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+
+            svg {
+                font-size: .9rem;
+                color: var(--ad-primary);
+            }
+        }
+
+        dd {
+            display: grid;
+            gap: .1rem;
+            margin: 0;
+            font-size: .88rem;
+            color: var(--ad-muted);
+
+            strong {
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--ad-text);
+            }
+
+            .roomPill {
+                justify-self: start;
+                display: inline-flex;
+                align-items: center;
+                gap: .45rem;
+                padding: .3rem .75rem;
+                border-radius: 999px;
+                background: var(--ad-surface-2);
+                color: var(--ad-text);
+                font-size: .9rem;
+                font-weight: 600;
+            }
+        }
+
+        .bdDate::first-letter {
+            text-transform: uppercase;
+        }
+    }
+
+    .segDot {
+        width: .6rem;
+        height: .6rem;
+        flex-shrink: 0;
+        border-radius: 50%;
+    }
+
+    .depositState {
+        font-weight: 600;
+
+        &.is-completed {
+            color: hsl(152, 60%, 32%);
+        }
+
+        &.is-waiting {
+            color: hsl(30, 88%, 38%);
+        }
+
+        &.is-cancelled {
+            color: var(--ad-primary);
+        }
+    }
+
+    .bdNotes {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        padding: .75rem .9rem;
+        border: 1px solid var(--ad-border);
+        border-radius: var(--ad-radius);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+            font-size: 1rem;
+            color: var(--ad-subtle);
+        }
+
+        p {
+            margin: 0;
+            font-size: .92rem;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+    }
+
+    .bdMuted {
+        color: var(--ad-subtle);
+    }
+
+    // Delete / edit on the left, the decision (approve, complete…) on the right; they wrap as groups.
+    .bdFooter {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .bdFooterGroup {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+
+        &.isDecide {
+            margin-left: auto;
+        }
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .bookingDetails {
+        .bdFacts {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .bdFooterGroup {
+            flex: 1 1 100%;
+
+            > * {
+                flex: 1 1 auto;
+            }
+        }
+    }
+
+    // The quick filter and the status filter share one row.
+    .adminShell .bookingsCard .bookingToolbar .toolbarGroup {
+        flex-wrap: nowrap;
+        width: 100%;
+
+        .statusSelect {
+            flex: 1 1 auto;
+            width: auto;
+            min-width: 0;
+        }
+    }
+
+    .adminShell .bookingsCard .bookingLayout {
+        flex: 1 1 auto;
+
+        button {
+            flex: 1 1 0;
+            justify-content: center;
+        }
+    }
+}

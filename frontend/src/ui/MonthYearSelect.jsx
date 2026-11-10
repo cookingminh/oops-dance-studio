@@ -1,22 +1,25 @@
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+import { useI18n } from '@/i18n/i18nContext';
 
 // Month (1–12) and year selects used by the charts.
 const MonthYearSelect = ({ month, year, onChange, years = 5, className = 'flex gap-4 mb-4 justify-center', selectClassName = 'p-2 border rounded' }) => {
+    const { t, monthName } = useI18n();
     const currentYear = new Date().getFullYear();
     return (
         <div className={className}>
             <select
-                aria-label="Month"
+                aria-label={t('Month')}
                 className={selectClassName}
                 value={month}
                 onChange={(event) => onChange({ month: Number(event.target.value), year })}
             >
-                {MONTHS.map((label, index) => (
-                    <option key={label} value={index + 1}>{label}</option>
+                {Array.from({ length: 12 }, (_, index) => (
+                    <option key={index} value={index + 1}>
+                        {monthName(`2026-${String(index + 1).padStart(2, '0')}-01`)}
+                    </option>
                 ))}
             </select>
             <select
-                aria-label="Year"
+                aria-label={t('Year')}
                 className={selectClassName}
                 value={year}
                 onChange={(event) => onChange({ month, year: Number(event.target.value) })}

@@ -47,20 +47,30 @@ for (const target of ['/admin', '/admin/users', '/profile/attendance']) {
 
 test('settings: profile update is saved', async () => {
     await page.goto('/profile/my-profile');
-    await page.getByLabel('Contact Number').fill('0987 333 101');
-    await page.getByRole('button', { name: 'Save Changes' }).click();
+    const save = page.getByRole('button', { name: 'Save Changes' });
+    await expect(save).toBeDisabled(); // nothing changed yet
+    await page.getByLabel('Contact Number').fill('0987 333 109');
+    await save.click();
     await expectToast(page, 'Profile updated.');
+    const res = await rest(me.jwt, `profiles?select=contact_number&id=eq.${me.id}`);
+    expect(res.data).toEqual([{ contact_number: '0987 333 109' }]);
+    // Put the seeded number back.
+    await page.getByLabel('Contact Number').fill('0987 333 101');
+    await save.click();
+    await expect(save).toBeDisabled();
 });
 
-test('books a room from the homepage (create_booking)', async () => {
-    await page.goto('/home');
+test('books a room from the rooms page (create_booking)', async () => {
+    await page.goto('/rooms');
     const search = await searchRooms(page, bookingDate, '21:00', '22:00');
     await search.getByRole('button', { name: 'Book Now' }).first().click();
     await expect(page.getByRole('heading', { name: 'Your Booking', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Confirm' }).click();
     const confirmation = page.locator('.confirmation');
     await expect(confirmation.getByText('Booking request sent!')).toBeVisible();
-    await expect(confirmation).toContainText(bookingDate);
+    // The dialog shows the server's booking date as e.g. "Monday 30 November".
+    const shown = new Date(`${bookingDate}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    await expect(confirmation).toContainText(shown);
     await expect(confirmation).toContainText('pending');
 });
 

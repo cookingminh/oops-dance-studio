@@ -7,6 +7,7 @@ export const BUCKETS = {
     classImages: 'class-images',
     proofs: 'attendance-proofs',
     siteAssets: 'site-assets',
+    receipts: 'receipts',
 };
 
 const SIGNED_URL_SECONDS = 3600;

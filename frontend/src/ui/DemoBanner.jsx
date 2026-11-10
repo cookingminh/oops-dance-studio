@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { DEMO_MODE } from '@/lib/demo';
+import { useI18n } from '@/i18n/i18nContext';
 
 const DISMISSED_KEY = 'oops-demo-banner-dismissed';
 
@@ -14,6 +15,7 @@ const readDismissed = () => {
 
 // Shown on every page of the public demo until the visitor hides it for this tab.
 const DemoBanner = () => {
+    const { t } = useI18n();
     const [dismissed, setDismissed] = useState(readDismissed);
     if (!DEMO_MODE || dismissed) return null;
 
@@ -28,8 +30,8 @@ const DemoBanner = () => {
 
     return (
         <div className="demoBanner" role="note">
-            <span>Demo data, resets every 6 hours</span>
-            <button type="button" aria-label="Hide demo notice" onClick={dismiss}>
+            <span>{t('Demo data, resets every 6 hours')}</span>
+            <button type="button" aria-label={t('Hide demo notice')} onClick={dismiss}>
                 <IoClose />
             </button>
         </div>

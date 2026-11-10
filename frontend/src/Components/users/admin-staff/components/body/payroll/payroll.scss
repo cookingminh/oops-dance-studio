@@ -1,0 +1,617 @@
+// Payroll page and dialogs. Tokens --ad-* come from admin.scss (.adminShell, .adminPortal).
+
+.adminShell .payMonthBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: 1rem;
+}
+
+.adminShell .payMonthNav {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: 4px;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+
+    strong {
+        min-width: 10rem;
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 10px;
+        color: var(--ad-muted);
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: var(--ad-surface-2);
+            color: var(--ad-text);
+        }
+
+        &:disabled {
+            opacity: .35;
+            cursor: default;
+        }
+    }
+}
+
+// Month totals
+.adminShell .payTotals {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .8rem;
+    margin-bottom: 1.4rem;
+}
+
+.adminShell .payTotalTile {
+    display: grid;
+    gap: .15rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+
+    > span {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.45rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ad-text);
+
+        .isPlus {
+            color: hsl(152, 60%, 32%);
+            font-size: 1.1rem;
+        }
+
+        .isMinus {
+            color: var(--ad-primary);
+            font-size: 1.1rem;
+        }
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-subtle);
+    }
+
+    &.isMain {
+        border: 0;
+        background:
+            radial-gradient(circle at 100% 0%, hsla(40, 100%, 70%, .4), transparent 50%),
+            linear-gradient(135deg, hsl(0, 66%, 40%), hsl(345, 60%, 30%));
+
+        > span,
+        small {
+            color: hsla(0, 0%, 100%, .8);
+        }
+
+        strong {
+            color: #fff;
+            font-size: 1.7rem;
+        }
+    }
+}
+
+// People list
+.adminShell .payGroup {
+    & + .payGroup {
+        margin-top: 1.25rem;
+    }
+
+    h3 {
+        margin-bottom: .5rem;
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .payList {
+    display: grid;
+    gap: .45rem;
+}
+
+.adminShell .payRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, .9fr) minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: .7rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .25s ease, transform .3s var(--ad-ease);
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+        transform: translateX(3px);
+
+        .payGo {
+            color: var(--ad-primary);
+            transform: translateX(3px);
+        }
+    }
+
+    &.is-paid {
+        background: hsl(150, 50%, 98.5%);
+    }
+
+    strong {
+        font-size: .96rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    small {
+        display: block;
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .payWho,
+.adminShell .payBasis {
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.adminShell .payAdjust {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--ad-subtle);
+
+    &.isPlus {
+        color: hsl(152, 60%, 32%);
+    }
+
+    &.isMinus {
+        color: var(--ad-primary);
+    }
+}
+
+.adminShell .payTotal {
+    font-family: var(--ad-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ad-text);
+    text-align: right;
+}
+
+.payStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .65rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-draft {
+        background: hsl(40, 95%, 92%);
+        color: hsl(30, 80%, 32%);
+    }
+
+    &.is-finalized {
+        background: hsl(217, 85%, 95%);
+        color: hsl(217, 60%, 40%);
+    }
+
+    &.is-paid {
+        background: hsl(150, 60%, 92%);
+        color: hsl(152, 60%, 28%);
+    }
+}
+
+.adminShell .payGo {
+    color: var(--ad-subtle);
+    transition: transform .25s var(--ad-ease), color .2s ease;
+}
+
+// Payslip dialog (portal; carries .adminPortal tokens)
+.payslipModal {
+    font-family: 'Spartan', sans-serif;
+
+    .payslipHead {
+        display: flex;
+        align-items: center;
+        gap: .8rem;
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .payslipTitle {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        line-height: 1.3;
+
+        strong {
+            font-family: var(--ad-display);
+            font-size: 1.3rem;
+        }
+
+        small {
+            font-size: .85rem;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .payslipBody {
+        gap: 1.2rem;
+        padding-top: 1.1rem;
+    }
+
+    .payslipFoot {
+        align-items: center;
+        border-top: 1px solid var(--ad-border);
+    }
+}
+
+.payBreakdown {
+    margin: 0;
+    padding: .4rem 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface-2);
+
+    div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .55rem 0;
+        border-bottom: 1px dashed var(--ad-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    dt {
+        font-size: .95rem;
+        color: var(--ad-text);
+
+        small {
+            margin-left: .35rem;
+            font-size: .8rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    dd {
+        margin: 0;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .isPlus dd {
+        color: hsl(152, 60%, 32%);
+    }
+
+    .isMinus dd {
+        color: var(--ad-primary);
+    }
+
+    .isTotal {
+        dt,
+        dd {
+            font-family: var(--ad-display);
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+    }
+}
+
+.payNote {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    color: var(--ad-muted);
+}
+
+.payEmpty {
+    font-size: .9rem;
+    color: var(--ad-subtle);
+}
+
+.paySection h4 {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin-bottom: .55rem;
+    font-family: var(--ad-display);
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.paySessions,
+.payAdjustments {
+    display: grid;
+    gap: .35rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        padding: .55rem .7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+    }
+
+    li.isOff {
+        background: var(--ad-surface-2);
+        opacity: .75;
+    }
+}
+
+.paySessionDate {
+    width: 7.8rem;
+    flex-shrink: 0;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+}
+
+.paySessionClass,
+.payAdjText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .92rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .78rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.paySessionRate {
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.paySessionOff {
+    font-size: .8rem;
+    color: var(--ad-subtle);
+}
+
+.lateBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    background: hsl(40, 95%, 92%);
+    color: hsl(30, 80%, 32%);
+    font-size: .76rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.payAdjIcon {
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    border-radius: 9px;
+    font-size: .9rem;
+
+    &.isPlus {
+        background: hsl(150, 60%, 92%);
+        color: hsl(152, 60%, 30%);
+    }
+
+    &.isMinus {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+}
+
+.payAdjAmount {
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.isPlus {
+        color: hsl(152, 60%, 30%);
+    }
+
+    &.isMinus {
+        color: var(--ad-primary);
+    }
+}
+
+.payAdjForm {
+    display: grid;
+    gap: .7rem;
+    margin-top: .8rem;
+    padding: 1rem;
+    border: 1px dashed var(--ad-border);
+    border-radius: 16px;
+
+    .segmented {
+        justify-self: start;
+    }
+
+    > button:last-child {
+        justify-self: end;
+    }
+}
+
+.payAdjFields {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    gap: .6rem;
+}
+
+.payQuick {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+
+    button {
+        padding: .3rem .7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color .2s ease, border-color .2s ease;
+
+        &:hover {
+            color: var(--ad-primary);
+            border-color: var(--ad-primary-tint);
+        }
+    }
+}
+
+.payQuickSep {
+    width: 1px;
+    height: 1.2rem;
+    margin: 0 .2rem;
+    background: var(--ad-border);
+}
+
+.payPaidOn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-right: auto;
+    color: hsl(152, 60%, 30%);
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+// Rates & salaries dialog
+.payRates {
+    display: grid;
+    gap: 1.4rem;
+
+    h4 {
+        margin-bottom: .6rem;
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+}
+
+.payRateList {
+    display: grid;
+    gap: .35rem;
+    margin-top: .8rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+    }
+}
+
+.payRateName {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .92rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .78rem;
+        color: var(--ad-muted);
+    }
+
+    &.isPerson {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+
+        > span {
+            display: grid;
+        }
+    }
+}
+
+.payRateInput {
+    width: 13rem;
+    flex-shrink: 0;
+}
+
+@media screen and (max-width: 1100px) {
+    .adminShell .payTotals {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .adminShell .payRow {
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+
+        .payBasis,
+        .payAdjust {
+            display: none;
+        }
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .adminShell .payRow .payGo {
+        display: none;
+    }
+
+    .payAdjFields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .payRateInput {
+        width: 9rem;
+    }
+}

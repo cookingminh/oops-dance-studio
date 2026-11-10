@@ -1,0 +1,651 @@
+// The session modal (SessionModal.jsx). It renders in a portal outside the admin shell, so it
+// carries .adminPortal (the --ad-* tokens) and styles everything it shows itself.
+
+$green: hsl(152, 60%, 36%);
+$green-soft: hsl(150, 60%, 93%);
+$blue: hsl(217, 75%, 50%);
+$blue-soft: hsl(217, 85%, 95%);
+$amber: hsl(30, 85%, 32%);
+$amber-soft: hsl(40, 95%, 92%);
+
+.adminPortal.sessionModal {
+    overflow: hidden;
+    border-radius: var(--ad-radius-lg);
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    text-align: left;
+
+    :where(h2, h3, h4) {
+        padding: 0;
+    }
+
+    :where(ul, ol) {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    // ---- Header: class, when, where, state ----------------------------------------------------
+
+    .smHeader {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: 1.15rem 3.4rem 1rem 1.4rem;
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .smAccent {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 5px;
+    }
+
+    .smThumb {
+        width: 3.2rem;
+        height: 3.2rem;
+        flex-shrink: 0;
+        object-fit: cover;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+    }
+
+    .smTitle {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: .2rem;
+    }
+
+    .smName {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+        font-family: var(--ad-display);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.15;
+    }
+
+    .smClassLink {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        color: inherit;
+        text-decoration: none;
+
+        svg {
+            color: var(--ad-subtle);
+            font-size: 1rem;
+            transition: transform .2s var(--ad-ease), color .2s ease;
+        }
+
+        &:hover {
+            color: var(--ad-primary);
+
+            svg {
+                color: var(--ad-primary);
+                transform: translate(2px, -2px);
+            }
+        }
+    }
+
+    .smWhen {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .2rem .9rem;
+        color: var(--ad-muted);
+        font-size: .9rem;
+        font-weight: 500;
+
+        > span {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+        }
+
+        > span:first-child {
+            color: var(--ad-text);
+            font-weight: 600;
+        }
+
+        svg {
+            color: var(--ad-subtle);
+        }
+    }
+
+    // ---- State badge (the shell's phaseBadge, here outside the shell) --------------------------
+
+    .phaseBadge {
+        --phase: var(--ad-subtle);
+        --phase-soft: var(--ad-surface-2);
+        display: inline-flex;
+        align-items: center;
+        flex-shrink: 0;
+        gap: .4rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        background: var(--phase-soft);
+        color: var(--phase);
+        font-size: .8rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.tone-good {
+            --phase: #{$green};
+            --phase-soft: #{$green-soft};
+        }
+
+        &.tone-live {
+            --phase: #{$blue};
+            --phase-soft: #{$blue-soft};
+        }
+
+        &.tone-alert {
+            --phase: var(--ad-primary);
+            --phase-soft: var(--ad-primary-soft);
+        }
+
+        &.tone-muted {
+            --phase: hsl(240, 4%, 52%);
+        }
+
+        .livePulse {
+            width: .45rem;
+            height: .45rem;
+            border-radius: 50%;
+            background: currentColor;
+            animation: smPulse 1.6s ease-in-out infinite;
+        }
+    }
+
+    // ---- Body: session on the left, roll call on the right -------------------------------------
+
+    .smBody {
+        padding: 1.2rem 1.4rem;
+    }
+
+    .smGrid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        gap: 1.4rem;
+        align-items: start;
+    }
+
+    .smSide {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .smMain {
+        display: grid;
+        gap: .6rem;
+        scroll-margin-top: 1rem;
+    }
+
+    .smSectionTitle {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+
+        svg {
+            color: var(--ad-primary);
+        }
+    }
+
+    .smHint {
+        color: var(--ad-muted);
+        font-size: .88rem;
+        line-height: 1.45;
+
+        &.isError {
+            margin-top: .6rem;
+            color: var(--ad-primary);
+        }
+    }
+
+    .smRowEnd {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .4rem;
+    }
+
+    // Instructor
+    .smWho {
+        display: grid;
+        gap: .7rem;
+        padding: .85rem .95rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: hsl(20, 20%, 99%);
+    }
+
+    .smWhoRow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .75rem;
+    }
+
+    .smWhoText {
+        flex: 1 1 9rem;
+        min-width: 0;
+        display: grid;
+        line-height: 1.3;
+
+        small {
+            color: var(--ad-subtle);
+            font-size: .76rem;
+            font-weight: 600;
+        }
+
+        strong {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .4rem;
+            font-size: 1rem;
+        }
+    }
+
+    .smWhoHint {
+        color: var(--ad-muted);
+        font-size: .82rem;
+    }
+
+    .smTag {
+        padding: .05rem .5rem;
+        border-radius: 999px;
+        background: $amber-soft;
+        color: $amber;
+        font-size: .72rem;
+        font-weight: 700;
+    }
+
+    .smSubstitute {
+        display: grid;
+        gap: .6rem;
+        padding-top: .7rem;
+        border-top: 1px dashed var(--ad-border);
+
+        p {
+            color: var(--ad-muted);
+            font-size: .85rem;
+            line-height: 1.45;
+        }
+    }
+
+    // A past session nobody closed
+    .smAlert {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        padding: .7rem .85rem;
+        border-radius: 14px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary-strong);
+        font-size: .88rem;
+        line-height: 1.45;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+
+    // Check-in / check-out
+    .smChecks {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
+    }
+
+    .smCheck {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        padding: .6rem .7rem;
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+    }
+
+    .smCheckMark {
+        display: grid;
+        place-items: center;
+        width: 1.4rem;
+        height: 1.4rem;
+        flex-shrink: 0;
+        border: 2px dashed var(--ad-subtle);
+        border-radius: 50%;
+        color: #fff;
+        font-size: .8rem;
+    }
+
+    .smCheck.isDone .smCheckMark {
+        border: 0;
+        background: $green;
+    }
+
+    .smCheckText {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        line-height: 1.25;
+
+        small {
+            color: var(--ad-subtle);
+            font-size: .76rem;
+            font-weight: 600;
+        }
+
+        strong {
+            font-size: .98rem;
+        }
+    }
+
+    .smCheck:not(.isDone) .smCheckText strong {
+        color: var(--ad-muted);
+        font-weight: 500;
+    }
+
+    .smProof {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 2px solid var(--ad-surface);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px hsla(20, 20%, 20%, .2);
+        cursor: zoom-in;
+        transition: transform .25s var(--ad-ease);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        &:hover {
+            transform: scale(1.08);
+        }
+
+        &.isEmpty {
+            box-shadow: none;
+            background: var(--ad-surface);
+            color: var(--ad-subtle);
+            cursor: default;
+        }
+    }
+
+    .smCancelled {
+        display: grid;
+        gap: .6rem;
+        justify-items: start;
+        padding: .8rem .9rem;
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .88rem;
+        line-height: 1.45;
+    }
+
+    .smActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+    }
+
+    .smNote {
+        display: grid;
+        gap: .45rem;
+
+        > small {
+            color: var(--ad-subtle);
+            font-size: .76rem;
+            font-weight: 600;
+        }
+
+        > p {
+            padding: .6rem .8rem;
+            border-radius: 12px;
+            background: $amber-soft;
+            color: $amber;
+            font-size: .9rem;
+        }
+    }
+
+    // ---- Roll call --------------------------------------------------------------------------
+
+    .smRoll {
+        display: grid;
+        gap: .5rem;
+    }
+
+    .smRollHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+
+        // The count stays on one line; the button drops below it when both don't fit.
+        > span {
+            flex: 1 0 auto;
+            color: var(--ad-muted);
+            font-size: .88rem;
+            white-space: nowrap;
+        }
+    }
+
+    .smProgress {
+        position: relative;
+        height: .4rem;
+        overflow: hidden;
+        border-radius: 999px;
+        background: var(--ad-surface-2);
+
+        span {
+            position: absolute;
+            inset: 0 auto 0 0;
+            border-radius: inherit;
+            background: $green;
+            transition: width .5s var(--ad-ease);
+        }
+    }
+
+    .smRoster {
+        display: grid;
+    }
+
+    .smRosterRow {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        padding: .5rem .2rem;
+        border-bottom: 1px solid var(--ad-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .smRosterName {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        line-height: 1.3;
+
+        strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .94rem;
+            font-weight: 600;
+        }
+
+        span {
+            color: var(--ad-subtle);
+            font-size: .8rem;
+        }
+    }
+
+    .smToggle {
+        display: inline-flex;
+        flex-shrink: 0;
+        gap: 3px;
+        padding: 3px;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            height: 2rem;
+            padding: 0 .7rem;
+            border-radius: 9px;
+            color: var(--ad-muted);
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .2s ease, color .2s ease, transform .15s ease;
+
+            &:hover:not(:disabled) {
+                color: var(--ad-text);
+            }
+
+            &:active:not(:disabled) {
+                transform: scale(.96);
+            }
+
+            &:disabled {
+                opacity: .6;
+                cursor: wait;
+            }
+
+            &.isAttend[aria-pressed='true'] {
+                background: $green;
+                color: #fff;
+            }
+
+            &.isAbsent[aria-pressed='true'] {
+                background: var(--ad-primary);
+                color: #fff;
+            }
+        }
+    }
+
+    .smMark {
+        flex-shrink: 0;
+        padding: .2rem .6rem;
+        border-radius: 999px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .78rem;
+        font-weight: 700;
+
+        &.is-attend {
+            background: $green-soft;
+            color: $green;
+        }
+
+        &.is-absent {
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+    }
+
+    .smRollEmpty {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .6rem;
+        padding: .8rem .9rem;
+        border: 1px dashed var(--ad-border);
+        border-radius: 14px;
+        color: var(--ad-muted);
+        font-size: .9rem;
+
+        > span {
+            flex: 1 1 12rem;
+        }
+    }
+
+    .smLoading {
+        display: grid;
+        place-items: center;
+        min-height: 8rem;
+    }
+
+    .smFooter {
+        border-top: 1px solid var(--ad-border);
+        padding: .7rem 1.4rem;
+    }
+}
+
+@keyframes smPulse {
+    50% {
+        opacity: .35;
+    }
+}
+
+// Phones and narrow windows: one column, the roll call under the session.
+@media screen and (max-width: 900px) {
+    .adminPortal.sessionModal .smGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .adminPortal.sessionModal {
+        // Thumb and title side by side, the state under the title.
+        .smHeader {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            align-items: start;
+            gap: .35rem .8rem;
+            padding: 1rem 3rem .9rem 1.1rem;
+
+            .phaseBadge {
+                grid-column: 2;
+                justify-self: start;
+            }
+        }
+
+        .smThumb {
+            width: 2.6rem;
+            height: 2.6rem;
+        }
+
+        .smName {
+            font-size: 1.15rem;
+        }
+
+        .smBody {
+            padding: 1rem 1.1rem;
+        }
+
+        .smToggle button span {
+            display: none;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminPortal.sessionModal .phaseBadge .livePulse {
+        animation: none;
+    }
+}

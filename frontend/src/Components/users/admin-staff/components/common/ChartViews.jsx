@@ -1,16 +1,22 @@
-// Segmented Chart / Table switch for a card header.
-export const ViewToggle = ({ view, onChange, label }) => (
-    <div className="viewToggle" role="group" aria-label={`${label}: show as`}>
-        {['chart', 'table'].map((option) => (
-            <button key={option} type="button" aria-pressed={view === option} onClick={() => onChange(option)}>
-                {option === 'chart' ? 'Chart' : 'Table'}
-            </button>
-        ))}
-    </div>
-);
+import { useI18n } from '@/i18n/i18nContext';
+
+// Segmented Chart / Table switch for a card header. `label` is already translated by the caller.
+export const ViewToggle = ({ view, onChange, label }) => {
+    const { t } = useI18n();
+    return (
+        <div className="viewToggle" role="group" aria-label={t('{label}: show as', { label })}>
+            {['chart', 'table'].map((option) => (
+                <button key={option} type="button" aria-pressed={view === option} onClick={() => onChange(option)}>
+                    {option === 'chart' ? t('Chart') : t('Table')}
+                </button>
+            ))}
+        </div>
+    );
+};
 
 // The same numbers as the chart, for reading exact values (and for screen readers).
 export const ChartTable = ({ data, rowHeader, format = (value) => value }) => {
+    const { t } = useI18n();
     const showTotal = data.datasets.length > 1;
     return (
         <div className="chartTableWrap">
@@ -24,7 +30,7 @@ export const ChartTable = ({ data, rowHeader, format = (value) => value }) => {
                                 {dataset.label}
                             </th>
                         ))}
-                        {showTotal && <th scope="col">Total</th>}
+                        {showTotal && <th scope="col">{t('Total')}</th>}
                     </tr>
                 </thead>
                 <tbody>

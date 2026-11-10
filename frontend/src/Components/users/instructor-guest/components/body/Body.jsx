@@ -1,49 +1,57 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import RequireRole from '@/auth/RequireRole';
 import { ROLES } from '@/auth/roles';
-import { useAuth } from '@/auth/useAuth';
-import './body.scss';
+import { stagger } from '../../../admin-staff/components/common/motion';
+import ProfileSettings from '../../../admin-staff/components/body/settings/ProfileSettings';
+import Overview from './pages/overview/Overview';
+import CheckIn from './pages/check-in/CheckIn';
+import MyClasses from './pages/classes/MyClasses';
+import MyAttendance from './pages/attendance/MyAttendance';
+import MyBookings from './pages/bookings/MyBookings';
+import MyTuition from './pages/tuition/MyTuition';
+import './profile.scss';
 
-import MainBody from './components/main-body/MainBody';
-import Attendance from './components/attendance/Attendance';
-import InstructorClasses from './components/my-classes-instructor/MyClasses';
-import GuestClasses from './components/my-classes-guest/MyClasses';
-import StudentChart from './components/my-classes-guest/StudentChart';
-import MyBookings from './components/my-bookings/MyBookings';
-import Setting from './components/setting/Setting';
-
+// Each page fades in and its cards follow one after another (same as /admin).
 const Body = () => {
-    const { role } = useAuth();
+    const location = useLocation();
 
     return (
-        <div className="mainContentInstructor">
-            <Routes>
-                <Route index element={<MainBody />} />
-                <Route path="my-profile" element={<Setting />} />
-                <Route path="my-bookings" element={<MyBookings />} />
-                <Route
-                    path="my-classes"
-                    element={role === ROLES.instructor ? <InstructorClasses /> : <GuestClasses />}
-                />
-                <Route
-                    path="attendance"
-                    element={
-                        <RequireRole roles={[ROLES.instructor]}>
-                            <Attendance />
-                        </RequireRole>
-                    }
-                />
-                <Route
-                    path="my-attendance"
-                    element={
-                        <RequireRole roles={[ROLES.guest]}>
-                            <StudentChart />
-                        </RequireRole>
-                    }
-                />
-                <Route path="*" element={<Navigate to="/profile" replace />} />
-            </Routes>
-        </div>
+        <main className="mainContentAdmin">
+            <motion.div key={location.pathname} className="adminPage" variants={stagger} initial="hidden" animate="show">
+                <Routes location={location}>
+                    <Route index element={<Overview />} />
+                    <Route path="my-profile" element={<ProfileSettings />} />
+                    <Route path="my-bookings" element={<MyBookings />} />
+                    <Route path="my-classes" element={<MyClasses />} />
+                    <Route
+                        path="attendance"
+                        element={
+                            <RequireRole roles={[ROLES.instructor]}>
+                                <CheckIn />
+                            </RequireRole>
+                        }
+                    />
+                    <Route
+                        path="my-attendance"
+                        element={
+                            <RequireRole roles={[ROLES.guest]}>
+                                <MyAttendance />
+                            </RequireRole>
+                        }
+                    />
+                    <Route
+                        path="tuition"
+                        element={
+                            <RequireRole roles={[ROLES.guest]}>
+                                <MyTuition />
+                            </RequireRole>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to="/profile" replace />} />
+                </Routes>
+            </motion.div>
+        </main>
     );
 };
 

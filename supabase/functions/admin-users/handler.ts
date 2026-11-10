@@ -135,7 +135,42 @@ async function requireAdmin(req: Request, admin: SupabaseClient): Promise<string
   return user.id;
 }
 
-async function createUser(admin: SupabaseClient, body: Record<string, unknown>) {
+// The activity log (activity_log, migration 20261117000200) sees account changes made here as the system:
+// the service role has no signed-in person. This names the admin who made them. Best effort — the account
+// change has already happened, so a failure here is only logged.
+async function noteActivity(
+  admin: SupabaseClient,
+  callerId: string,
+  userId: string,
+  action: "account_created" | "account_deleted" | "profile_edited",
+  details: { meta?: Record<string, unknown>; changes?: Record<string, unknown>; label?: string } = {},
+) {
+  try {
+    const { data: caller } = await admin
+      .from("profiles").select("full_name, username, email, role").eq("id", callerId).maybeSingle();
+    const actor = {
+      actor_id: callerId,
+      actor_name: caller?.full_name?.trim() || caller?.username || caller?.email || null,
+      actor_role: caller?.role ?? "admin",
+    };
+    if (action === "profile_edited") {
+      const { error } = await admin.from("activity_log").insert({
+        ...actor, area: "users", action, entity: "profiles", entity_id: userId, subject_id: userId,
+        label: details.label ?? "", meta: details.meta ?? null, changes: details.changes ?? null,
+      });
+      if (error) throw error;
+      return;
+    }
+    const { error } = await admin.from("activity_log")
+      .update({ ...actor, ...(details.meta ? { meta: details.meta } : {}) })
+      .eq("entity", "profiles").eq("entity_id", userId).eq("action", action).is("actor_id", null);
+    if (error) throw error;
+  } catch (err) {
+    console.error("activity log:", err);
+  }
+}
+
+async function createUser(admin: SupabaseClient, callerId: string, body: Record<string, unknown>) {
   const email = requireString(body, "email").toLowerCase();
   const password = requireString(body, "password");
   const fullName = requireString(body, "full_name");
@@ -176,12 +211,13 @@ async function createUser(admin: SupabaseClient, body: Record<string, unknown>) 
     await admin.auth.admin.deleteUser(data.user.id); // roll back the half-created user
     throw new HttpError(500, "INTERNAL", roleError.message);
   }
+  await noteActivity(admin, callerId, data.user.id, "account_created", { meta: { email, role } });
   return json(200, { ok: true, user: profile });
 }
 
 // Changes another user's auth email (applied immediately, no confirmation mail);
 // the on_auth_user_email_changed trigger mirrors it into profiles.email.
-async function updateUser(deps: Deps, body: Record<string, unknown>) {
+async function updateUser(deps: Deps, callerId: string, body: Record<string, unknown>) {
   const { admin } = deps;
   const userId = requireString(body, "user_id");
   if (!UUID_RE.test(userId)) throw new HttpError(400, "INVALID_INPUT", "user_id must be a uuid");
@@ -189,7 +225,8 @@ async function updateUser(deps: Deps, body: Record<string, unknown>) {
   if (!email) throw new HttpError(400, "INVALID_INPUT", "nothing to update (email is required)");
   if (!EMAIL_RE.test(email)) throw new HttpError(400, "INVALID_INPUT", "email is not valid");
 
-  refuseDemoAccount(deps, await getProfile(admin, userId));
+  const before = await getProfile(admin, userId);
+  refuseDemoAccount(deps, before);
   // GoTrue only reports a clash as a generic "Error updating user".
   const { count, error: clashError } = await admin.from("profiles")
     .select("id", { count: "exact", head: true }).eq("email", email).neq("id", userId);
@@ -201,7 +238,15 @@ async function updateUser(deps: Deps, body: Record<string, unknown>) {
     const taken = isEmailTaken(error);
     throw new HttpError(taken ? 409 : 400, taken ? "INVALID_STATE" : "INVALID_INPUT", error.message);
   }
-  return json(200, { ok: true, user: await getProfile(admin, userId) });
+  const after = await getProfile(admin, userId);
+  if (before.email !== after.email) {
+    await noteActivity(admin, callerId, userId, "profile_edited", {
+      label: after.full_name?.trim() || after.username || after.email || "",
+      meta: { email: after.email, role: after.role },
+      changes: { email: { from: before.email, to: after.email } },
+    });
+  }
+  return json(200, { ok: true, user: after });
 }
 
 async function deleteUser(deps: Deps, callerId: string, body: Record<string, unknown>) {
@@ -214,23 +259,27 @@ async function deleteUser(deps: Deps, callerId: string, body: Record<string, unk
 
   // Bookings and teaching history are kept (FKs without cascade). Refuse with a
   // readable reason instead of GoTrue's generic "Database error deleting user".
-  const count = async (table: string, column: string) => {
-    const { count, error } = await admin.from(table).select("id", { count: "exact", head: true }).eq(column, userId);
+  // Payslips would cascade away with the profile, so they block a delete too: pay
+  // history stays for the studio's records.
+  const count = async (table: string, column: string, key = "id") => {
+    const { count, error } = await admin.from(table).select(key, { count: "exact", head: true }).eq(column, userId);
     if (error) throw new HttpError(500, "INTERNAL", error.message);
     return count ?? 0;
   };
-  const [classes, bookings, sessions] = await Promise.all([
+  const [classes, bookings, sessions, payslips] = await Promise.all([
     count("classes", "instructor_id"),
     count("bookings", "guest_id"),
     count("instructor_attendance", "instructor_id"),
+    count("payslips", "profile_id", "profile_id"),
   ]);
-  if (classes + bookings + sessions > 0) {
+  if (classes + bookings + sessions + payslips > 0) {
     throw new HttpError(409, "INVALID_STATE",
-      `user still has ${classes} class(es), ${bookings} booking(s), ${sessions} teaching session(s)`);
+      `user still has ${classes} class(es), ${bookings} booking(s), ${sessions} teaching session(s), ${payslips} payslip(s)`);
   }
 
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) throw new HttpError(500, "INTERNAL", error.message);
+  await noteActivity(admin, callerId, userId, "account_deleted");
   return json(200, { ok: true, user_id: userId });
 }
 
@@ -250,9 +299,9 @@ export async function handleRequest(req: Request, deps: Deps): Promise<Response>
 
     switch (body?.action) {
       case "create":
-        return await createUser(deps.admin, body);
+        return await createUser(deps.admin, callerId, body);
       case "update":
-        return await updateUser(deps, body);
+        return await updateUser(deps, callerId, body);
       case "delete":
         return await deleteUser(deps, callerId, body);
       default:

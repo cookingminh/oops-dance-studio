@@ -1,0 +1,1445 @@
+// Public site (PublicLayout + /home, /classes, /rooms): shared tokens, the page shell, and the
+// perks, classes, timetable, instructors and join sections. The navbar, footer, hero, page header
+// and rooms have their own stylesheets next to their components.
+
+// <body> centres #root as a shrink-to-fit flex item; pin it to the viewport width so wide
+// children (the scrolling timetable, the carousel) scroll inside instead of widening the page.
+#root:has(.homePage) {
+    width: 100%;
+    min-width: 0;
+}
+
+.homePage {
+    --hp-red: hsl(0, 66%, 43%);
+    --hp-red-soft: hsl(0, 85%, 95.5%);
+    --hp-ink: hsl(0, 0%, 12%);
+    --hp-muted: hsl(240, 4%, 42%);
+    --hp-border: hsl(20, 10%, 90%);
+    --hp-surface-2: hsl(20, 16%, 96%);
+    --hp-gold: #ffcc6c;
+    --hp-ease: cubic-bezier(.22, 1, .36, 1);
+    --hp-display: 'League Spartan', 'Spartan', sans-serif;
+
+    // Global h1–h4 / ul rules in main.scss add padding and pointer cursors; sections set their own.
+    :where(h1, h2, h3, h4) {
+        padding: 0;
+    }
+
+    :where(ul, ol) {
+        margin: 0;
+        padding: 0;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--hp-red);
+        outline-offset: 3px;
+    }
+
+    // In-page anchors (#timetable, #book…) stop below the fixed navbar.
+    [id] {
+        scroll-margin-top: 5.5rem;
+    }
+}
+
+html:has(.homePage) {
+    scroll-behavior: smooth;
+}
+
+.publicMain {
+    display: block;
+    min-height: 70vh;
+}
+
+.pubPageLoading {
+    display: flex;
+    align-items: center;
+    min-height: 80vh;
+}
+
+// Keyboard users can jump straight past the navbar.
+.pubSkip {
+    position: fixed;
+    top: .75rem;
+    left: .75rem;
+    z-index: 1100;
+    padding: .6rem 1rem;
+    border-radius: 12px;
+    background: var(--hp-ink);
+    color: #fff;
+    font-weight: 600;
+    transform: translateY(-160%);
+    transition: transform .2s ease;
+
+    &:focus {
+        transform: none;
+    }
+}
+
+.hpPerks,
+.hpClasses,
+.hpClassGrid,
+.hpTimetable,
+.hpInstructors,
+.hpJoin {
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+
+// Section heading (eyebrow, title, intro) ====================>
+
+.hpSectionHead {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+
+    .hpEyebrow {
+        display: inline-block;
+        padding: .3rem .85rem;
+        border-radius: 999px;
+        background: var(--hp-red-soft);
+        color: var(--hp-red);
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+    }
+
+    h2 {
+        margin-top: .7rem;
+        padding: 0;
+        font-family: var(--hp-display);
+        font-size: clamp(2rem, 3.4vw, 2.9rem);
+        font-weight: 700;
+        line-height: 1.08;
+        color: var(--hp-ink);
+    }
+
+    p {
+        max-width: 52ch;
+        margin-top: .55rem;
+        font-size: 1.05rem;
+        line-height: 1.55;
+        color: var(--hp-muted);
+    }
+
+    &.isCentered {
+        justify-content: center;
+        text-align: center;
+
+        p {
+            margin-inline: auto;
+        }
+    }
+}
+
+// "See the timetable →" beside a section title.
+.hpHeadLink {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .45rem;
+    height: 2.9rem;
+    padding: 0 1.25rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--hp-ink);
+    font-size: .98rem;
+    font-weight: 600;
+    transition: transform .3s var(--hp-ease), border-color .2s ease, color .2s ease, box-shadow .3s ease;
+
+    svg {
+        color: var(--hp-red);
+        transition: transform .3s var(--hp-ease);
+    }
+
+    &:hover {
+        border-color: hsl(0, 70%, 84%);
+        color: var(--hp-red);
+        box-shadow: 0 14px 28px -18px hsla(0, 50%, 30%, .6);
+        transform: translateY(-2px);
+
+        svg {
+            transform: translateX(4px);
+        }
+    }
+
+    &:active {
+        transform: scale(.97);
+    }
+}
+
+.hpNavBtn {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 50%;
+    background: #fff;
+    color: var(--hp-ink);
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+
+    &:hover {
+        border-color: var(--hp-red);
+        background: var(--hp-red);
+        color: #fff;
+    }
+
+    &:active {
+        transform: scale(.94);
+    }
+
+    &.swiper-button-disabled {
+        opacity: .35;
+        pointer-events: none;
+    }
+}
+
+// Why Oops! (perks) ====================>
+
+.hpPerks {
+    padding: 5.5rem 0 1rem;
+}
+
+.perkGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(13rem, auto);
+    gap: 1.1rem;
+}
+
+.perk {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: .55rem;
+    padding: 1.5rem;
+    overflow: hidden;
+    border: 1px solid var(--hp-border);
+    border-radius: 24px;
+    background: #fff;
+    transition: transform .4s var(--hp-ease), box-shadow .4s var(--hp-ease);
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 26px 50px -30px hsla(0, 45%, 25%, .5);
+
+        .perkIcon {
+            transform: rotate(-8deg) scale(1.08);
+        }
+    }
+
+    h3 {
+        padding: 0;
+        font-family: var(--hp-display);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--hp-ink);
+    }
+
+    p {
+        font-size: .96rem;
+        line-height: 1.55;
+        color: var(--hp-muted);
+    }
+}
+
+.perkIcon {
+    display: grid;
+    place-items: center;
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: .35rem;
+    border-radius: 15px;
+    font-size: 1.4rem;
+    transition: transform .4s var(--hp-ease);
+}
+
+// Big tile: the class video.
+.perk.isVideo {
+    grid-column: span 2;
+    grid-row: span 2;
+    justify-content: flex-end;
+    min-height: 27rem;
+    border: 0;
+    background: hsl(0, 30%, 12%);
+    color: #fff;
+
+    &:hover .perkVideo {
+        transform: scale(1.04);
+    }
+}
+
+.perkVideo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 1.2s var(--hp-ease);
+}
+
+.perkVideoShade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, hsla(0, 60%, 10%, .92) 0%, hsla(0, 60%, 12%, .55) 38%, transparent 70%),
+        linear-gradient(to right, hsla(0, 66%, 30%, .35), transparent 60%);
+}
+
+.perkVideoText {
+    position: relative;
+    max-width: 30rem;
+
+    h3 {
+        margin-top: .8rem;
+        font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+        line-height: 1.1;
+        color: #fff;
+    }
+
+    p {
+        margin-top: .5rem;
+        font-size: 1rem;
+        color: hsla(0, 0%, 100%, .85);
+    }
+}
+
+.perkTag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .8rem;
+    border: 1px solid hsla(0, 0%, 100%, .25);
+    border-radius: 999px;
+    background: hsla(0, 0%, 100%, .14);
+    backdrop-filter: blur(6px);
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+// Crew tile: brand red with a soft glow.
+.perk.isCrew {
+    border: 0;
+    background:
+        radial-gradient(circle at 100% 0%, hsla(40, 100%, 70%, .45), transparent 50%),
+        linear-gradient(140deg, hsl(0, 66%, 42%), hsl(345, 62%, 32%));
+
+    h3,
+    p {
+        color: #fff;
+    }
+
+    p {
+        opacity: .88;
+    }
+
+    .perkIcon {
+        background: hsla(0, 0%, 100%, .18);
+        color: var(--hp-gold);
+    }
+}
+
+.perk.isCare .perkIcon {
+    background: hsl(42, 95%, 92%);
+    color: hsl(30, 85%, 36%);
+}
+
+.perk.isSongs .perkIcon {
+    background: hsl(330, 75%, 95%);
+    color: hsl(330, 60%, 45%);
+}
+
+.perk.isRooms .perkIcon {
+    background: hsl(165, 55%, 92%);
+    color: hsl(172, 60%, 28%);
+}
+
+.perk.isNumbers .perkIcon {
+    background: hsl(262, 80%, 96%);
+    color: hsl(262, 50%, 46%);
+}
+
+.perk.isSongs,
+.perk.isTrial {
+    grid-column: span 2;
+}
+
+// "Book a room →" under the practice-room perk.
+.perkLink {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: .35rem;
+    margin-top: auto;
+    padding-top: .35rem;
+    color: hsl(172, 60%, 26%);
+    font-size: .92rem;
+    font-weight: 700;
+
+    svg {
+        transition: transform .3s var(--hp-ease);
+    }
+
+    &:hover svg {
+        transform: translateX(4px);
+    }
+}
+
+// Free first class: gold, with its own call to action.
+.perk.isTrial {
+    border: 0;
+    background:
+        radial-gradient(circle at 100% 0%, hsla(0, 0%, 100%, .55), transparent 45%),
+        linear-gradient(135deg, hsl(44, 100%, 74%), hsl(36, 100%, 62%));
+
+    h3 {
+        font-size: 1.6rem;
+    }
+
+    p {
+        max-width: 42ch;
+        color: hsl(25, 45%, 22%);
+    }
+
+    .perkIcon {
+        background: hsla(0, 0%, 100%, .55);
+        color: var(--hp-red);
+    }
+}
+
+.perkTrialTag {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: .3rem .75rem;
+    border-radius: 999px;
+    background: var(--hp-red);
+    color: #fff;
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.perkTrialBtn {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: .45rem;
+    margin-top: auto;
+    padding: .7rem 1.3rem;
+    border-radius: 999px;
+    background: var(--hp-ink);
+    color: #fff;
+    font-size: .95rem;
+    font-weight: 600;
+    transition: transform .3s var(--hp-ease), background-color .2s ease;
+
+    svg {
+        transition: transform .3s var(--hp-ease);
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        background: var(--hp-red);
+
+        svg {
+            transform: translateX(3px);
+        }
+    }
+}
+
+.perkSongs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .35rem;
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .35rem .75rem;
+        border-radius: 999px;
+        background: hsl(330, 70%, 97%);
+        color: hsl(330, 45%, 32%);
+        font-size: .85rem;
+        font-weight: 600;
+        cursor: default;
+
+        svg {
+            color: hsl(330, 60%, 52%);
+        }
+    }
+}
+
+.perkStats {
+    display: grid;
+    gap: .55rem;
+    margin: 0;
+
+    div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .5rem;
+        padding-bottom: .45rem;
+        border-bottom: 1px dashed var(--hp-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    dt {
+        font-size: .9rem;
+        color: var(--hp-muted);
+    }
+
+    dd {
+        margin: 0;
+        font-family: var(--hp-display);
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--hp-red);
+    }
+}
+
+// Instructors: crew badge on the photo
+.hpCrewBadge {
+    position: absolute;
+    top: .8rem;
+    left: .8rem;
+    z-index: 2;
+    padding: .25rem .65rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 8%, .78);
+    color: var(--hp-gold);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+// Join banner ====================>
+
+.hpJoin {
+    padding: 1rem 0 5rem;
+}
+
+.hpJoinCard {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem 2.5rem;
+    padding: 2.4rem 2.6rem;
+    overflow: hidden;
+    border-radius: 28px;
+    background:
+        radial-gradient(circle at 92% 10%, hsla(40, 100%, 70%, .45), transparent 40%),
+        radial-gradient(circle at 0% 100%, hsla(345, 80%, 60%, .45), transparent 45%),
+        linear-gradient(135deg, hsl(0, 66%, 38%), hsl(350, 60%, 26%));
+    color: #fff;
+    box-shadow: 0 30px 60px -34px hsla(0, 66%, 25%, .8);
+
+    h2 {
+        margin-top: .8rem;
+        padding: 0;
+        font-family: var(--hp-display);
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+        font-weight: 700;
+        line-height: 1.1;
+        color: #fff;
+    }
+
+    p {
+        max-width: 46ch;
+        margin-top: .45rem;
+        font-size: 1.02rem;
+        line-height: 1.55;
+        color: hsla(0, 0%, 100%, .85);
+    }
+}
+
+// A slow light drifting across the banner.
+.hpJoinGlow {
+    position: absolute;
+    top: -40%;
+    left: -20%;
+    width: 45%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, hsla(40, 100%, 75%, .35), transparent 65%);
+    pointer-events: none;
+    animation: hpDrift 14s ease-in-out infinite alternate;
+}
+
+@keyframes hpDrift {
+    to {
+        transform: translate(160%, 60%);
+    }
+}
+
+.hpJoinCard > div {
+    position: relative;
+}
+
+.hpJoinTag {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .85rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 100%, .14);
+    font-size: .84rem;
+    font-weight: 600;
+    color: var(--hp-gold);
+}
+
+.hpJoinActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .7rem;
+}
+
+.hpJoinBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    height: 3.2rem;
+    padding: 0 1.5rem;
+    border: 1px solid hsla(0, 0%, 100%, .35);
+    border-radius: 999px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .3s var(--hp-ease), background-color .2s ease, box-shadow .3s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        background: hsla(0, 0%, 100%, .14);
+    }
+
+    &:active {
+        transform: scale(.97);
+    }
+
+    &.isPrimary {
+        border-color: #fff;
+        background: #fff;
+        color: var(--hp-red);
+        box-shadow: 0 12px 26px -14px hsla(0, 0%, 0%, .6);
+
+        &:hover {
+            background: hsl(40, 100%, 96%);
+        }
+    }
+}
+
+// Classes carousel ====================>
+
+// Arrows sit in a gutter beside the cards (outside them when the page has room).
+.hpCarousel {
+    position: relative;
+    padding-inline: 3.75rem;
+
+    .hpNavBtn {
+        position: absolute;
+        top: 50%;
+        z-index: 2;
+        box-shadow: 0 8px 20px -10px hsla(0, 40%, 20%, .45);
+        transform: translateY(-50%);
+
+        &:active {
+            transform: translateY(-50%) scale(.94);
+        }
+    }
+
+    .hpClassesPrev {
+        left: 0;
+    }
+
+    .hpClassesNext {
+        right: 0;
+    }
+}
+
+.hpClasses {
+    padding: 5.5rem 0 2.5rem;
+}
+
+.hpClassesSwiper {
+    // Room for the cards' shadow and hover lift inside the clipped carousel.
+    margin: -.75rem -.5rem;
+    padding: .75rem .5rem 1.5rem;
+
+    .swiper-slide {
+        height: auto;
+    }
+}
+
+.hpClassCard {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid var(--hp-border);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 1px 2px hsla(0, 0%, 0%, .04), 0 12px 30px -20px hsla(0, 40%, 25%, .4);
+    transition: transform .4s var(--hp-ease), box-shadow .4s var(--hp-ease);
+
+    &:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 26px 50px -26px hsla(0, 50%, 25%, .5);
+
+        .hpClassMedia img {
+            transform: scale(1.06);
+        }
+    }
+}
+
+.hpClassMedia {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: var(--hp-surface-2);
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .7s var(--hp-ease);
+    }
+}
+
+.hpClassPlaceholder {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+    background:
+        radial-gradient(circle at 78% 22%, hsla(40, 100%, 70%, .55), transparent 50%),
+        linear-gradient(135deg, hsl(0, 66%, 42%), hsl(345, 60%, 28%));
+    color: hsla(0, 0%, 100%, .9);
+    font-family: var(--hp-display);
+    font-size: 4.2rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+}
+
+.hpClassBody {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: .85rem;
+    padding: 1.2rem 1.3rem 1.3rem;
+
+    h3 {
+        font-family: var(--hp-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.15;
+        color: var(--hp-ink);
+    }
+}
+
+.hpClassTeacher {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    margin-top: -.3rem;
+    font-size: .95rem;
+    color: var(--hp-muted);
+
+    img {
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: top;
+        background: hsl(40, 95%, 88%);
+    }
+
+    strong {
+        font-weight: 600;
+        color: var(--hp-ink);
+    }
+}
+
+.hpClassLesson {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin: 0;
+    padding: .65rem .85rem;
+    border-radius: 14px;
+    background: hsl(330, 70%, 97%);
+
+    svg {
+        flex-shrink: 0;
+        font-size: 1.1rem;
+        color: hsl(330, 60%, 45%);
+    }
+
+    span {
+        display: grid;
+        font-size: .95rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: var(--hp-ink);
+    }
+
+    small {
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+        color: hsl(330, 50%, 45%);
+    }
+}
+
+.hpClassTimes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+
+    li {
+        padding: .3rem .6rem;
+        border-radius: 8px;
+        background: var(--hp-surface-2);
+        color: var(--hp-muted);
+        font-size: .82rem;
+        cursor: default;
+
+        strong {
+            font-weight: 700;
+            color: var(--hp-ink);
+        }
+    }
+}
+
+.hpClassFoot {
+    margin-top: auto;
+    padding-top: .9rem;
+    border-top: 1px dashed var(--hp-border);
+}
+
+.hpClassPrice {
+    font-family: var(--hp-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--hp-red);
+}
+
+.hpClassesDots {
+    display: flex;
+    justify-content: center;
+    gap: .4rem;
+    margin-top: 1.25rem;
+
+    .swiper-pagination-bullet {
+        display: inline-block;
+        width: .55rem;
+        height: .55rem;
+        border-radius: 999px;
+        background: hsl(0, 0%, 80%);
+        cursor: pointer;
+        transition: width .3s var(--hp-ease), background-color .3s ease;
+    }
+
+    .swiper-pagination-bullet-active {
+        width: 1.6rem;
+        background: var(--hp-red);
+    }
+}
+
+// All classes (/classes) ====================>
+
+.hpClassGrid {
+    padding: 5rem 0 1rem;
+}
+
+.hpClassGridList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+    gap: 1.3rem;
+
+    > div {
+        display: flex;
+    }
+
+    .hpClassCard {
+        width: 100%;
+    }
+}
+
+// Ring that pulses round a card picked in the timetable (remounted on each pick).
+.hpClassFlash {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 3px var(--hp-red);
+    pointer-events: none;
+    animation: hpFlash 1.6s ease-out both;
+}
+
+@keyframes hpFlash {
+    0%,
+    45% {
+        opacity: 1;
+        box-shadow: inset 0 0 0 3px var(--hp-red), 0 0 0 0 hsla(0, 66%, 43%, .45);
+    }
+
+    100% {
+        opacity: 0;
+        box-shadow: inset 0 0 0 3px var(--hp-red), 0 0 0 14px hsla(0, 66%, 43%, 0);
+    }
+}
+
+// Weekly timetable ====================>
+
+.hpTimetable {
+    padding: 1.5rem 0 1rem;
+}
+
+// /classes: the timetable rides up over the bottom edge of the page header.
+.pubPageHead.isOverlap + .hpTimetable {
+    position: relative;
+    z-index: 2;
+    margin-top: -4.6rem;
+    padding-top: 0;
+}
+
+.hpTimetableCard {
+    position: relative;
+    padding: 2rem 2rem 2.2rem;
+    overflow: hidden;
+    border-radius: 28px;
+    background-color: hsl(0, 66%, 38%);
+    background-position: center;
+    background-size: cover;
+    color: #fff;
+    box-shadow: 0 30px 60px -32px hsla(0, 66%, 25%, .7);
+}
+
+.hpTimetableHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    h2 {
+        padding: 0;
+        font-family: 'Merienda', cursive;
+        font-size: clamp(1.8rem, 3vw, 2.5rem);
+        line-height: 1.2;
+        color: var(--hp-gold);
+    }
+
+    p {
+        margin-top: .2rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: hsla(0, 0%, 100%, .85);
+    }
+}
+
+.hpFacebook {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .5rem 1rem .5rem .75rem;
+    border: 1px solid hsla(0, 0%, 100%, .3);
+    border-radius: 999px;
+    background: hsla(0, 0%, 100%, .14);
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 600;
+    transition: background-color .2s ease, color .2s ease;
+
+    svg {
+        font-size: 1.35rem;
+    }
+
+    &:hover {
+        background: #fff;
+        color: #1877f2;
+    }
+}
+
+.hpTimetableEmpty {
+    color: hsla(0, 0%, 100%, .85);
+}
+
+.hpTimetable .timeTableDiv {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: .6rem;
+}
+
+.weekDay {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    min-width: 0;
+    padding: .7rem .55rem .85rem;
+    border: 1px solid hsla(0, 0%, 100%, .08);
+    border-radius: 16px;
+    background: hsla(0, 0%, 0%, .14);
+
+    &.isToday {
+        border-color: hsla(40, 100%, 71%, .75);
+        background: hsla(40, 100%, 71%, .14);
+
+        .weekDayHead span {
+            color: var(--hp-gold);
+            font-weight: 700;
+        }
+    }
+}
+
+.weekDayHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .25rem;
+    padding: 0 .2rem .35rem;
+    border-bottom: 1px solid hsla(0, 0%, 100%, .15);
+
+    strong {
+        font-family: 'Merienda', cursive;
+        font-size: 1.25rem;
+        color: var(--hp-gold);
+    }
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .68rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: hsla(0, 0%, 100%, .7);
+    }
+}
+
+.weekDayOff {
+    margin: auto 0;
+    padding: .8rem 0;
+    text-align: center;
+    font-size: .82rem;
+    color: hsla(0, 0%, 100%, .55);
+}
+
+.weekSlot {
+    display: grid;
+    gap: .15rem;
+    width: 100%;
+    text-align: left;
+    border-radius: 10px;
+}
+
+// Sessions are buttons on /classes: they show their class's card.
+button.weekSlot {
+    cursor: pointer;
+
+    &:hover .weekSlotBadge {
+        transform: rotate(-2deg) scale(1.04);
+    }
+
+    &:active .weekSlotBadge {
+        transform: scale(.97);
+    }
+
+    &:focus-visible {
+        outline-color: var(--hp-gold);
+    }
+}
+
+.weekSlotTime {
+    padding-left: .2rem;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: hsla(0, 0%, 100%, .92);
+}
+
+// The yellow brush stroke is drawn a little larger than the label (its edges are ragged and
+// its top-left corner is empty), so the name always sits on solid paint.
+.weekSlotBadge {
+    position: relative;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: .45rem 2.3rem .45rem .95rem;
+    transition: transform .3s var(--hp-ease);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: -.15rem .15rem -.3rem -.35rem;
+        z-index: -1;
+        background: var(--brush) no-repeat center / 100% 100%;
+    }
+
+    .weekSlotName {
+        font-family: var(--hp-display);
+        font-size: .8rem;
+        font-weight: 800;
+        line-height: 1.1;
+        text-transform: uppercase;
+        color: var(--hp-ink);
+    }
+
+    .instructor {
+        position: absolute;
+        top: 50%;
+        right: -.15rem;
+        width: 2.3rem;
+        height: 2.3rem;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        background: #fff;
+        object-fit: cover;
+        object-position: top;
+        box-shadow: 0 4px 10px -4px hsla(0, 0%, 0%, .5);
+        transform: translateY(-50%);
+    }
+}
+
+// Narrow day columns (laptops around 1000–1300 px): a smaller name and avatar, so long single
+// words such as CONTEMPORARY still fit on the paint.
+.hpTimetable .weekDay {
+    container-type: inline-size;
+}
+
+@container (max-width: 136px) {
+    .weekSlotBadge {
+        padding: .4rem 2rem .4rem .8rem;
+
+        .weekSlotName {
+            font-size: .72rem;
+        }
+
+        .instructor {
+            width: 2.05rem;
+            height: 2.05rem;
+        }
+    }
+}
+
+@container (max-width: 122px) {
+    .weekSlotBadge {
+        padding-left: .65rem;
+        padding-right: 1.85rem;
+
+        .weekSlotName {
+            font-size: .64rem;
+        }
+
+        .instructor {
+            width: 1.85rem;
+            height: 1.85rem;
+        }
+    }
+}
+
+// Instructors ====================>
+
+.hpInstructors {
+    padding: 5.5rem 0 3rem;
+}
+
+.hpCoachGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 1.25rem;
+}
+
+.hpCoach {
+    --tone: hsl(355, 75%, 62%);
+    --tone-soft: hsl(355, 85%, 95%);
+    --tone-ink: hsl(355, 60%, 38%);
+
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--hp-border);
+    border-radius: 24px;
+    background: #fff;
+    transition: transform .4s var(--hp-ease), box-shadow .4s var(--hp-ease);
+
+    &:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 26px 50px -28px hsla(0, 40%, 25%, .45);
+
+        .hpCoachPhoto img {
+            transform: translateY(-6px) scale(1.04);
+        }
+
+        .hpCoachBlob {
+            transform: scale(1.08) rotate(10deg);
+        }
+    }
+
+    &.tone-amber {
+        --tone: hsl(38, 92%, 58%);
+        --tone-soft: hsl(42, 95%, 93%);
+        --tone-ink: hsl(30, 80%, 32%);
+    }
+
+    &.tone-violet {
+        --tone: hsl(262, 60%, 66%);
+        --tone-soft: hsl(262, 80%, 96%);
+        --tone-ink: hsl(262, 45%, 42%);
+    }
+
+    &.tone-teal {
+        --tone: hsl(170, 50%, 50%);
+        --tone-soft: hsl(165, 55%, 93%);
+        --tone-ink: hsl(172, 60%, 26%);
+    }
+
+    &.tone-sky {
+        --tone: hsl(205, 75%, 62%);
+        --tone-soft: hsl(205, 85%, 95%);
+        --tone-ink: hsl(210, 60%, 36%);
+    }
+
+    &.tone-coral {
+        --tone: hsl(14, 85%, 64%);
+        --tone-soft: hsl(16, 90%, 94%);
+        --tone-ink: hsl(12, 60%, 38%);
+    }
+}
+
+.hpCoachPhoto {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    aspect-ratio: 1 / 1.05;
+    overflow: hidden;
+    background: var(--tone-soft);
+
+    img {
+        position: relative;
+        z-index: 1;
+        width: auto;
+        max-width: 100%;
+        height: 94%;
+        object-fit: contain;
+        object-position: bottom;
+        transition: transform .5s var(--hp-ease);
+    }
+}
+
+.hpCoachBlob {
+    position: absolute;
+    bottom: 10%;
+    width: 76%;
+    aspect-ratio: 1;
+    border-radius: 42% 58% 55% 45% / 48% 42% 58% 52%;
+    background: var(--tone);
+    transition: transform .6s var(--hp-ease);
+}
+
+.hpCoachInfo {
+    padding: 1rem 1.1rem 1.2rem;
+
+    h3 {
+        padding: 0;
+        font-family: var(--hp-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--hp-ink);
+    }
+
+    p {
+        margin-top: .1rem;
+        font-size: .88rem;
+        line-height: 1.4;
+        color: var(--hp-muted);
+    }
+
+    ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .3rem;
+        margin-top: .75rem;
+    }
+
+    li {
+        padding: .25rem .6rem;
+        border-radius: 999px;
+        background: var(--tone-soft);
+        color: var(--tone-ink);
+        font-size: .78rem;
+        font-weight: 600;
+        cursor: default;
+    }
+}
+
+// Responsive ====================>
+
+// Wide screens: the cards use the full width and the arrows move out into the page margin.
+@media screen and (min-width: 1380px) {
+    .hpCarousel {
+        padding-inline: 0;
+
+        .hpClassesPrev {
+            left: -4.5rem;
+        }
+
+        .hpClassesNext {
+            right: -4.5rem;
+        }
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .perkGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .perk.isVideo {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        min-height: 24rem;
+    }
+}
+
+// Below laptop width seven columns get too narrow for the names: days scroll sideways instead,
+// one column snapping at a time.
+@media screen and (max-width: 1024px) {
+    .hpTimetable .timeTableDiv {
+        grid-template-columns: repeat(7, minmax(10.25rem, 1fr));
+        overflow-x: auto;
+        padding-bottom: .4rem;
+        scroll-snap-type: x mandatory;
+    }
+
+    .weekDay {
+        scroll-snap-align: start;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .hpTimetableCard {
+        padding: 1.4rem 1.1rem 1.5rem;
+        border-radius: 22px;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .hpSectionHead {
+        flex-direction: column;
+        align-items: flex-start;
+
+        &.isCentered {
+            align-items: center;
+        }
+    }
+
+    .hpClasses,
+    .hpInstructors {
+        padding-top: 4rem;
+    }
+
+    .perkGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .perk.isSongs,
+    .perk.isTrial {
+        grid-column: auto;
+    }
+
+    .perkTrialTag {
+        position: static;
+        align-self: flex-start;
+    }
+
+    .hpJoinCard {
+        padding: 1.8rem 1.4rem;
+    }
+
+    .hpJoinBtn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    // Phones swipe; no arrows.
+    .hpCarousel {
+        padding-inline: 0;
+
+        .hpNavBtn {
+            display: none;
+        }
+    }
+
+    // Phones swipe through the classes instead of scrolling past six tall cards.
+    .hpClassGridList {
+        display: flex;
+        gap: .8rem;
+        margin-inline: -1.25rem;
+        padding: .25rem 1.25rem 1rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-padding-inline: 1.25rem;
+        scrollbar-width: none;
+
+        > div {
+            flex: 0 0 84%;
+            scroll-snap-align: start;
+        }
+    }
+
+    .hpClassGrid {
+        padding-top: 3.5rem;
+    }
+
+    .hpCoachGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .8rem;
+    }
+
+    .hpCoachInfo {
+        padding: .8rem .85rem 1rem;
+
+        h3 {
+            font-size: 1.2rem;
+        }
+    }
+}
+
+// Reduced motion: no hover lifts, drifting glows or pulsing dots on the public pages.
+@media (prefers-reduced-motion: reduce) {
+    html:has(.homePage) {
+        scroll-behavior: auto;
+    }
+
+    .homePage *,
+    .homePage *::before,
+    .homePage *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}

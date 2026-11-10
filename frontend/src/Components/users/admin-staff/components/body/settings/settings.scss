@@ -1,0 +1,1004 @@
+// Personal page (profile settings) for every role: /admin/settings and /profile/my-profile.
+// Both shells wrap pages in .adminShell; tokens (--ad-*) and the card system come from admin.scss.
+
+$ok: hsl(152, 60%, 30%);
+$ok-strong: hsl(152, 60%, 36%);
+$scroll-offset: 7.5rem; // sticky top bar + breathing room
+
+.adminShell .settingsPage {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+}
+
+// Identity header ====================>
+
+.adminShell .adminCard.profileHero {
+    padding: 0;
+    overflow: hidden;
+}
+
+.adminShell .profileHero {
+    .heroCover {
+        position: relative;
+        height: 8rem;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 88% -40%, hsla(345, 95%, 72%, .55), transparent 55%),
+            linear-gradient(118deg, hsl(0, 68%, 36%) 0%, hsl(354, 70%, 46%) 52%, hsl(345, 74%, 57%) 100%);
+
+        // Dots like the studio's perforated logo wall, fading in towards the right.
+        &::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(hsla(0, 0%, 100%, .3) 1.3px, transparent 1.6px);
+            background-size: 15px 15px;
+            -webkit-mask-image: linear-gradient(100deg, transparent 28%, #000 88%);
+            mask-image: linear-gradient(100deg, transparent 28%, #000 88%);
+        }
+    }
+
+    .heroOrb {
+        position: absolute;
+        border-radius: 50%;
+        background: hsla(0, 0%, 100%, .12);
+
+        &.isLarge {
+            width: 15rem;
+            height: 15rem;
+            right: -4rem;
+            top: -8.5rem;
+        }
+
+        &.isSmall {
+            width: 6rem;
+            height: 6rem;
+            right: 15rem;
+            bottom: -3.75rem;
+            background: hsla(0, 0%, 100%, .08);
+        }
+    }
+
+    .heroBody {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) minmax(17rem, 23rem);
+        align-items: start;
+        gap: 0 1.6rem;
+        padding: 0 2rem 1.75rem;
+    }
+
+    .heroIdentity {
+        min-width: 0;
+        padding-top: 1rem;
+
+        h2 {
+            font-family: var(--ad-display);
+            font-size: 1.95rem;
+            font-weight: 700;
+            line-height: 1.15;
+            color: var(--ad-text);
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .heroTags {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem .6rem;
+        margin-top: .5rem;
+    }
+
+    .heroHandle {
+        color: var(--ad-muted);
+        font-size: .95rem;
+        font-weight: 500;
+        overflow-wrap: anywhere;
+    }
+
+    .heroMeta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem 1.4rem;
+        margin-top: .8rem;
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            min-width: 0;
+            color: var(--ad-muted);
+            font-size: .93rem;
+        }
+
+        svg {
+            flex-shrink: 0;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .heroEmail {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .photoPending {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem .9rem;
+        width: fit-content;
+        max-width: 100%;
+        margin-top: .9rem;
+        padding: .4rem .45rem .4rem .95rem;
+        border-radius: 14px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary-strong);
+        font-size: .9rem;
+        font-weight: 600;
+    }
+
+    .photoPendingActions {
+        display: flex;
+        gap: .35rem;
+    }
+
+    .photoError {
+        margin-top: .75rem;
+        color: hsl(0, 72%, 42%);
+        font-size: .9rem;
+    }
+}
+
+// Role chip (labels arrive translated and correctly cased).
+.adminShell .roleBadge {
+    padding: .2rem .7rem;
+    border-radius: 999px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: .82rem;
+    font-weight: 600;
+    text-transform: none;
+
+    &.is-staff {
+        background: hsl(262, 80%, 96%);
+        color: hsl(262, 52%, 46%);
+    }
+
+    &.is-instructor {
+        background: hsl(42, 95%, 92%);
+        color: hsl(30, 80%, 32%);
+    }
+
+    &.is-student {
+        background: hsl(150, 60%, 92%);
+        color: hsl(152, 60%, 28%);
+    }
+
+    &.is-guest {
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+    }
+}
+
+// The photo is a button: hover/focus shows "Change photo"; the camera badge is always there.
+.adminShell .avatarEditor {
+    position: relative;
+    width: 7.5rem;
+    margin-top: -3.75rem;
+
+    .avatarButton {
+        position: relative;
+        display: block;
+        width: 7.5rem;
+        height: 7.5rem;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        background: none;
+        cursor: pointer;
+
+        &:disabled {
+            cursor: progress;
+        }
+
+        &:focus-visible {
+            outline: 3px solid var(--ad-primary);
+            outline-offset: 3px;
+        }
+
+        &:hover .avatarHover,
+        &:focus-visible .avatarHover {
+            opacity: 1;
+        }
+
+        &:hover .avatarBadge {
+            transform: scale(1.08) rotate(-8deg);
+        }
+    }
+
+    .heroAvatar {
+        width: 100%;
+        height: 100%;
+        border: 4px solid var(--ad-surface);
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        box-shadow: 0 14px 30px -16px hsla(0, 40%, 20%, .6);
+        font-family: var(--ad-display);
+        font-size: 2rem;
+        font-weight: 700;
+        transition: box-shadow .3s var(--ad-ease);
+
+        // NextUI renders the initials in a thin weight.
+        > span {
+            font-weight: 600;
+        }
+    }
+
+    .avatarHover {
+        position: absolute;
+        inset: 4px;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: .2rem;
+        padding: 0 .6rem;
+        border-radius: 50%;
+        background: hsla(0, 30%, 10%, .68);
+        color: #fff;
+        font-size: .76rem;
+        font-weight: 600;
+        line-height: 1.2;
+        text-align: center;
+        opacity: 0;
+        transition: opacity .2s ease;
+
+        svg {
+            font-size: 1.35rem;
+        }
+    }
+
+    .avatarBadge {
+        position: absolute;
+        right: .15rem;
+        bottom: .15rem;
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border: 3px solid var(--ad-surface);
+        border-radius: 50%;
+        background: var(--ad-primary);
+        color: #fff;
+        font-size: 1rem;
+        box-shadow: 0 6px 14px -6px hsla(0, 66%, 30%, .7);
+        transition: transform .25s var(--ad-ease);
+    }
+
+    .previewBadge {
+        position: absolute;
+        left: 50%;
+        top: calc(100% - 1rem);
+        transform: translateX(-50%);
+        padding: .12rem .6rem;
+        border-radius: 999px;
+        background: var(--ad-text);
+        color: #fff;
+        font-size: .72rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    &.hasPreview .heroAvatar {
+        box-shadow: 0 0 0 3px var(--ad-primary-tint), 0 14px 30px -16px hsla(0, 40%, 20%, .6);
+    }
+}
+
+// Profile checklist ====================>
+
+.adminShell .profileProgress {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.1rem;
+    padding: .9rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface-2);
+
+    .progressRing {
+        position: relative;
+        flex-shrink: 0;
+        width: 3.6rem;
+        height: 3.6rem;
+
+        svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+    }
+
+    .ringTrack,
+    .ringValue {
+        fill: none;
+        stroke-width: 5;
+    }
+
+    .ringTrack {
+        stroke: var(--ad-border);
+    }
+
+    .ringValue {
+        stroke: var(--ad-primary);
+        stroke-linecap: round;
+    }
+
+    .ringLabel {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--ad-text);
+        font-size: .8rem;
+        font-weight: 700;
+
+        svg {
+            width: 1.35rem;
+            height: 1.35rem;
+            transform: none;
+            color: $ok;
+        }
+    }
+
+    .progressText {
+        min-width: 0;
+
+        strong {
+            display: block;
+            font-size: .98rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        p {
+            margin-top: .15rem;
+            color: var(--ad-muted);
+            font-size: .88rem;
+            line-height: 1.4;
+        }
+    }
+
+    .progressTodo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        margin-top: .5rem;
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: .25rem;
+            padding: .28rem .65rem;
+            border: 1px dashed var(--ad-primary-tint);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            color: var(--ad-primary);
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .2s ease, border-color .2s ease, transform .2s var(--ad-ease);
+
+            &:hover {
+                border-style: solid;
+                background: var(--ad-primary-soft);
+                transform: translateY(-1px);
+            }
+        }
+    }
+
+    &.isComplete {
+        border-color: hsl(150, 45%, 86%);
+        background: hsl(150, 60%, 96.5%);
+
+        .ringValue {
+            stroke: $ok-strong;
+        }
+    }
+}
+
+// Layout: "on this page" nav + sections ====================>
+
+.adminShell .settingsLayout {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+    align-items: start;
+    gap: 1.5rem 2rem;
+}
+
+.adminShell .settingsSections {
+    display: grid;
+    gap: 1.5rem;
+    min-width: 0;
+
+    // Jump targets: land below the sticky top bar; programmatic focus needs no ring.
+    [tabindex='-1'] {
+        scroll-margin-top: $scroll-offset;
+
+        &:focus {
+            outline: none;
+        }
+    }
+}
+
+.adminShell .settingsNav {
+    position: sticky;
+    top: $scroll-offset;
+
+    .settingsNavLabel {
+        display: block;
+        padding: 0 .85rem .55rem;
+        color: var(--ad-subtle);
+        font-size: .74rem;
+        font-weight: 600;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+    }
+
+    ul {
+        display: grid;
+        gap: 2px;
+    }
+
+    a {
+        position: relative;
+        isolation: isolate;
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        padding: .65rem .85rem;
+        border-radius: 12px;
+        color: var(--ad-muted);
+        font-size: .98rem;
+        font-weight: 500;
+        line-height: 1.2;
+        transition: color .2s ease;
+
+        &:hover {
+            color: var(--ad-text);
+        }
+
+        &.isActive {
+            color: var(--ad-primary);
+            font-weight: 600;
+        }
+    }
+
+    .navPill {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+        box-shadow: var(--ad-shadow);
+    }
+
+    .navIcon {
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+
+    .unsavedDot {
+        flex-shrink: 0;
+        width: .5rem;
+        height: .5rem;
+        margin-left: auto;
+        border-radius: 50%;
+        background: var(--ad-primary);
+        box-shadow: 0 0 0 3px var(--ad-primary-soft);
+    }
+}
+
+// Details form ====================>
+
+.adminShell .detailsCard {
+    .fieldGroup + .fieldGroup {
+        margin-top: 1.75rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--ad-border);
+    }
+
+    .fieldPrefix {
+        color: var(--ad-subtle);
+        font-size: .95rem;
+        font-weight: 600;
+    }
+
+    .fieldLock {
+        flex-shrink: 0;
+        color: var(--ad-subtle);
+    }
+
+    // Read-only email: outlined instead of filled, so it doesn't look editable.
+    .isLockedField {
+        border: 1.5px dashed var(--ad-border);
+        background: var(--ad-surface);
+        box-shadow: none;
+    }
+}
+
+.adminShell .fieldOk {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    color: $ok;
+    font-weight: 500;
+}
+
+.adminShell .formGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+
+    .isFull {
+        grid-column: 1 / -1;
+    }
+}
+
+// Save bar: a quiet footer that lifts and sticks to the bottom while there are unsaved changes.
+.adminShell .saveBar {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem 1rem;
+    margin-top: 1.75rem;
+    padding: 1rem 0 0;
+    border-top: 1px solid var(--ad-border);
+    border-radius: 0;
+
+    &.isDirty {
+        position: sticky;
+        bottom: 1rem;
+        margin-inline: -.6rem;
+        padding: .6rem .6rem .6rem 1.1rem;
+        border: 1px solid var(--ad-primary-tint);
+        border-radius: 16px;
+        background: hsla(0, 0%, 100%, .94);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 22px 44px -22px hsla(0, 45%, 22%, .5), 0 2px 6px hsla(20, 20%, 20%, .06);
+    }
+
+    .saveStatus {
+        min-width: 0;
+        margin: 0;
+        color: var(--ad-muted);
+        font-size: .93rem;
+    }
+
+    .saveState {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+
+        &.isDirty {
+            color: var(--ad-text);
+            font-weight: 600;
+        }
+
+        &.isSaved {
+            color: $ok;
+            font-weight: 600;
+        }
+
+        &.isBlocked {
+            color: hsl(0, 72%, 42%);
+            font-weight: 600;
+        }
+    }
+
+    .savedIcon {
+        display: inline-grid;
+        font-size: 1.2rem;
+    }
+
+    .pulseDot {
+        position: relative;
+        width: .55rem;
+        height: .55rem;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: var(--ad-primary);
+    }
+
+    .saveActions {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        margin-left: auto;
+    }
+}
+
+// Preferences ====================>
+
+.adminShell .prefRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+}
+
+.adminShell .prefText {
+    display: grid;
+    gap: .15rem;
+
+    strong {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    span {
+        color: var(--ad-muted);
+        font-size: .9rem;
+    }
+}
+
+.adminShell .langChoice {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 15rem));
+    gap: .75rem;
+}
+
+.adminShell .langOption {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    min-width: 0;
+    padding: .7rem .9rem .7rem .75rem;
+    border: 1.5px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+
+    // The real radio stays in the page for keyboards and screen readers.
+    input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+    }
+
+    &:has(input:focus-visible) {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    .langCode {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-family: 'Spartan', sans-serif;
+        font-size: .8rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        transition: background-color .2s ease, color .2s ease;
+    }
+
+    .langText {
+        display: grid;
+        min-width: 0;
+
+        strong {
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        small {
+            overflow: hidden;
+            color: var(--ad-muted);
+            font-size: .8rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .langCheck {
+        flex-shrink: 0;
+        margin-left: auto;
+        color: var(--ad-primary);
+        font-size: 1.1rem;
+        opacity: 0;
+        transform: scale(.5);
+        transition: opacity .2s ease, transform .25s var(--ad-ease);
+    }
+
+    &.isSelected {
+        border-color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+        box-shadow: 0 10px 20px -16px hsla(0, 66%, 43%, .7);
+
+        .langCode {
+            background: var(--ad-primary);
+            color: #fff;
+        }
+
+        .langCheck {
+            opacity: 1;
+            transform: none;
+        }
+    }
+}
+
+// Password ====================>
+
+.adminShell .pwStrength {
+    display: grid;
+    gap: .35rem;
+    padding-top: .15rem;
+
+    .pwBars {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 4px;
+        max-width: 15rem;
+
+        span {
+            height: 4px;
+            border-radius: 4px;
+            background: var(--ad-border);
+            transition: background-color .25s ease;
+        }
+    }
+
+    .pwWords {
+        color: var(--ad-muted);
+    }
+
+    &.level-1 {
+        --pw: hsl(0, 72%, 48%);
+    }
+
+    &.level-2 {
+        --pw: hsl(30, 92%, 44%);
+    }
+
+    &.level-3 {
+        --pw: hsl(152, 50%, 40%);
+    }
+
+    &.level-4 {
+        --pw: #{$ok};
+    }
+
+    .pwBars .isOn {
+        background: var(--pw);
+    }
+
+    strong {
+        color: var(--pw);
+        font-weight: 600;
+    }
+}
+
+.adminShell .pwActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem .9rem;
+    margin-top: 1.25rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--ad-border);
+
+    .ghostToggle {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        height: 2.4rem;
+        margin-right: auto;
+        padding: 0 .95rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color .2s ease, background-color .2s ease, border-color .2s ease;
+
+        &:hover {
+            color: var(--ad-text);
+            background: var(--ad-surface-2);
+        }
+
+        &[aria-pressed='true'] {
+            border-color: var(--ad-primary-tint);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+    }
+
+    .pwChanged {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: $ok;
+        font-size: .93rem;
+        font-weight: 600;
+    }
+}
+
+.adminShell .lockedNote {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: .95rem;
+
+    svg {
+        flex-shrink: 0;
+        color: var(--ad-primary);
+    }
+}
+
+// Motion (only for people who haven't asked their OS for less) ====================>
+
+@keyframes settingsBarIn {
+    from {
+        opacity: .4;
+        transform: translateY(12px);
+    }
+}
+
+@keyframes settingsPulse {
+    0% {
+        box-shadow: 0 0 0 0 hsla(0, 66%, 43%, .45);
+    }
+
+    100% {
+        box-shadow: 0 0 0 .55rem hsla(0, 66%, 43%, 0);
+    }
+}
+
+@keyframes settingsAvatarSaved {
+    0% {
+        box-shadow: 0 0 0 0 hsla(152, 60%, 40%, .55);
+    }
+
+    100% {
+        box-shadow: 0 0 0 1.1rem hsla(152, 60%, 40%, 0);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .adminShell .saveBar.isDirty {
+        animation: settingsBarIn .32s var(--ad-ease);
+    }
+
+    .adminShell .saveBar .pulseDot {
+        animation: settingsPulse 1.6s ease-out infinite;
+    }
+
+    .adminShell .avatarEditor.isSaved .avatarButton {
+        animation: settingsAvatarSaved 1.2s ease-out 2;
+    }
+}
+
+// Responsive ====================>
+
+@media screen and (max-width: 1240px) {
+    .adminShell .profileHero {
+        .heroBody {
+            grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        // The checklist moves under the name, only as wide as it needs.
+        .profileProgress {
+            grid-column: 2;
+            justify-self: start;
+            max-width: 100%;
+            margin-top: 1rem;
+        }
+    }
+}
+
+@media screen and (max-width: 1100px) {
+    .adminShell .settingsLayout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .settingsNav {
+        display: none;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .adminShell .formGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .profileHero {
+        .heroCover {
+            height: 6.5rem;
+        }
+
+        .heroOrb.isSmall {
+            right: 5rem;
+        }
+
+        .heroBody {
+            grid-template-columns: minmax(0, 1fr);
+            justify-items: center;
+            padding: 0 1.1rem 1.2rem;
+            text-align: center;
+        }
+
+        .heroIdentity {
+            padding-top: .9rem;
+
+            h2 {
+                font-size: 1.6rem;
+            }
+        }
+
+        .heroTags,
+        .heroMeta {
+            justify-content: center;
+        }
+
+        .photoPending {
+            justify-content: center;
+            margin-inline: auto;
+        }
+
+        .profileProgress {
+            grid-column: 1;
+            justify-self: stretch;
+            margin-top: 1.1rem;
+            text-align: left;
+        }
+    }
+
+    .adminShell .avatarEditor {
+        width: 6.75rem;
+        margin-top: -3.4rem;
+
+        .avatarButton {
+            width: 6.75rem;
+            height: 6.75rem;
+        }
+    }
+
+    .adminShell .prefRow {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .adminShell .langChoice {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .saveBar.isDirty {
+        bottom: .75rem;
+        margin-inline: -.4rem;
+    }
+}

@@ -21,8 +21,21 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261108000800_cron_jobs.sql` | pg_cron jobs that generate attendance |
 | `migrations/20261108000900_demo_instance.sql` | marker that lets `seed-demo.mjs --reset` wipe a project (public demo only) |
 | `migrations/20261109000100_class_lessons.sql` | `class_lessons` (the piece each class learns per month) + trigger that mirrors the latest title into `classes.lesson` |
-| `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users. `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
-| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons) |
+| `migrations/20261110000100_payroll.sql` | payroll (admin only): default and per-class session rates, staff salaries, bonuses/deductions, payslips + `payroll_*` RPCs |
+| `migrations/20261111000100_class_videos.sql` | `class_lessons.video_url`: each month's end-of-month class video (YouTube links only), shown on /classes |
+| `migrations/20261112000100_tuition.sql` | tuition: monthly invoices per enrolment, renewal + daily cycle (`tuition-cycle` cron), bank transfers matched by invoice code, sandbox simulation, admin finance report (`finance_monthly`, `finance_by_class`) |
+| `migrations/20261113000100_switch_and_expenses.sql` | class switches carry tuition across (`tuition_switch_class`), expenses + recurring expenses (`expenses-recurring` cron) with receipts (bucket `receipts`), profit = revenue − payroll − expenses, per-person student movement |
+| `migrations/20261114000100_class_lifecycle.sql` | classes run from `starts_on` to `ended_on`: end / reopen a class, daily wrap-up (`class-endings` cron), no deleting a class with history |
+| `migrations/20261115000100_routines.sql` | routines by number of sessions (`lesson_progress`), make-up sessions (`class_add_session`), `lessons-refresh` cron |
+| `migrations/20261116000100_course_tuition.sql` | tuition per course (khoá): invoices per routine, renewal when 2 sessions are left, pro-rated late joins, per-course switch, finance by course span |
+| `migrations/20261116000200_course_seed_and_skips.sql` | course-based demo tuition; deleted recurring copies stay skipped that month |
+| `migrations/20261116000300_oauth_profiles.sql` | Google / Facebook sign-ups get their name from `full_name` or `name` |
+| `migrations/20261116000400_switch_after_course.sql` | class switches between courses (`leaves_after`, future `joined_at`), no refunds mid-course |
+| `migrations/20261117000100_routine_order_and_waive.sql` | one routine at a time (the next starts after the last one's shoot day); reopening a waived invoice drops the waive reason; demo routines fitted to their month |
+| `migrations/20261117000200_activity_log.sql` | `activity_log` (who did what) written by one trigger on the studio tables, admin-only read, `activity_summary`, nightly prune, demo activity |
+| `functions/bank-webhook/` | Edge Function: SePay webhook → `tuition_record_transfer` (API key in `BANK_WEBHOOK_KEY`). `handler_test.ts` unit-tests it |
+| `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users (and names the admin in the activity log). `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
+| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
 | `../scripts/demo-images.mjs` | uploads demo photos to Storage (instructor avatars, class photo, room photos) and sets `avatar_path` / `image_path` / `image_paths` |
 | `../scripts/demo-assets/` | the demo photos, WebP (instructor cut-outs keep their transparency) |
@@ -75,6 +88,7 @@ supabase test db                        # pgTAP: 6 files, 195 tests
 supabase db lint                        # plpgsql / schema errors
 supabase db advisors --level info       # security + performance advisors
 deno test --no-lock --config supabase/functions/admin-users/deno.json supabase/functions/admin-users/   # Edge Function unit tests
+deno test --no-lock --config supabase/functions/bank-webhook/deno.json supabase/functions/bank-webhook/   # bank webhook unit tests
 ```
 
 The browser tests (Playwright, every role) live in `../frontend/e2e/` and run against this
@@ -159,6 +173,7 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
 3. **Edge Function**:
    ```sh
    supabase functions deploy admin-users
+   supabase functions deploy bank-webhook --no-verify-jwt
    ```
    `verify_jwt = false` comes from `config.toml`; the function verifies the caller and the admin
    role itself. `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected
@@ -167,6 +182,7 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
    ```sh
    supabase secrets set ALLOWED_ORIGINS=https://<frontend-domain>
    supabase secrets set DEMO_MODE=true          # public demo project only
+   supabase secrets set BANK_WEBHOOK_KEY=<key>  # the API key you give SePay's webhook (tuition payments by QR)
    ```
    Secrets never go in the repo. `.github/workflows/deploy-db.yml` (manual) repeats steps 2–3
    from GitHub with `SUPABASE_ACCESS_TOKEN` and `SUPABASE_DB_PASSWORD`.
@@ -199,6 +215,51 @@ local gateway always answers CORS with `*`; the allow-list only shows on a hoste
    GitHub pauses scheduled workflows after 60 days without repository activity; re-enable it in
    the Actions tab if the demo stops resetting.
 
+## Enable Google / Facebook sign-in
+
+The login and sign-up pages show "Continue with Google / Facebook" only for the providers listed in
+the frontend's `VITE_AUTH_PROVIDERS`. Accounts made this way start as guests like any sign-up; the
+name comes from the provider (the profile trigger reads `full_name` or `name`), and the profile
+overview asks them once to add a username and phone number. The provider sends people back to
+Supabase Auth, which returns them to `<site>/login`; from there they land where a password login
+lands them.
+
+Each provider needs Supabase Auth's callback URL:
+
+| Project | Callback URL |
+|---|---|
+| Hosted | `https://<project-ref>.supabase.co/auth/v1/callback` |
+| Local | `http://127.0.0.1:54321/auth/v1/callback` |
+
+1. **Google**: Google Cloud Console → APIs & Services → Credentials → Create credentials →
+   OAuth client ID, type *Web application* (set up the OAuth consent screen first if asked). Add the
+   callback URL under *Authorized redirect URIs*, then copy the client ID and secret.
+2. **Facebook**: Facebook Developers → My Apps → Create app with Facebook Login. In Facebook Login →
+   Settings, add the same callback URL to *Valid OAuth Redirect URIs*, and make sure the `email`
+   permission is requested. Copy the App ID and App secret (App settings → Basic). Switch the app to
+   Live mode before real users sign in.
+3. **Switch them on in Supabase**
+   - Hosted: Dashboard → Authentication → Sign In / Providers → Google / Facebook: enable, paste the
+     ID and secret, save.
+   - Local: put the values in `supabase/.env` (git-ignored), set `enabled = true` under
+     `[auth.external.google]` / `[auth.external.facebook]` in `config.toml`, then
+     `supabase stop && supabase start`:
+     ```sh
+     SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=…
+     SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=…
+     SUPABASE_AUTH_EXTERNAL_FACEBOOK_CLIENT_ID=…
+     SUPABASE_AUTH_EXTERNAL_FACEBOOK_SECRET=…
+     ```
+4. **Redirect allow-list**: the app asks Auth to come back to `<site>/login`. Hosted: Authentication →
+   URL Configuration, Site URL = the frontend, and add `https://<site>/login` to Redirect URLs (plus
+   any other domain the app runs on, e.g. previews). Local: `additional_redirect_urls` in
+   `config.toml` must contain `http://127.0.0.1:5173/login`; a URL that is not allowed sends people
+   back to the Site URL instead.
+5. **Frontend**: set `VITE_AUTH_PROVIDERS=google,facebook` (only the providers you switched on) in
+   `frontend/.env.local` or the host's environment, then restart Vite / redeploy.
+
+Check: the buttons appear on /login and /register. A provider that is listed but still switched off
+shows "Sign-in with … isn’t switched on yet" on the form instead of leaving the app.
 
 ## Turning the demo project into production
 

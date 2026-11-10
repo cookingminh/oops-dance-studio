@@ -1,0 +1,1200 @@
+// Activity page (/admin/activity): the period overview, the filters, the day-by-day timeline and
+// the entry drawer. Tokens --ad-* come from admin.scss (.adminShell; dialogs carry .adminPortal).
+
+// Area colours ====================>
+// Each area keeps one hue (always shown with its icon and name, never alone).
+
+:is(.adminShell, .adminPortal) [data-area] {
+    --area: var(--ad-muted);
+    --area-soft: var(--ad-surface-2);
+}
+
+$areas: (
+    bookings: (hsl(212, 72%, 42%), hsl(212, 90%, 95.5%)),
+    classes: (hsl(0, 66%, 43%), hsl(0, 85%, 95.5%)),
+    routines: (hsl(328, 62%, 44%), hsl(328, 85%, 96%)),
+    students: (hsl(262, 52%, 50%), hsl(262, 80%, 96%)),
+    sessions: (hsl(186, 72%, 28%), hsl(186, 60%, 93%)),
+    roll_call: (hsl(152, 60%, 30%), hsl(150, 60%, 93%)),
+    tuition: (hsl(30, 85%, 34%), hsl(40, 95%, 92%)),
+    expenses: (hsl(16, 72%, 42%), hsl(18, 90%, 94.5%)),
+    payroll: (hsl(236, 48%, 50%), hsl(236, 80%, 96%)),
+    rooms: (hsl(198, 75%, 32%), hsl(198, 80%, 94%)),
+    users: (hsl(215, 18%, 40%), hsl(215, 28%, 94.5%)),
+    settings: (hsl(240, 5%, 38%), hsl(240, 6%, 94%)),
+);
+
+@each $name, $pair in $areas {
+    :is(.adminShell, .adminPortal) [data-area='#{$name}'] {
+        --area: #{nth($pair, 1)};
+        --area-soft: #{nth($pair, 2)};
+    }
+}
+
+:where(.alogOverview, .alogFeedCard, .alogDrawer, .alogSheet) p {
+    font-size: inherit;
+    line-height: 1.5;
+    color: inherit;
+}
+
+// Names in a sentence: the body font has no bold, so they use the display face (variable weight).
+:is(.adminShell, .adminPortal) :is(.alogSentence, .alogChildText, .alogDrawerSentence, .alogHistoryText) strong {
+    font-family: var(--ad-display);
+    font-size: 1.06em;
+    font-weight: 650;
+    color: var(--ad-text);
+}
+
+// Overview card ====================>
+
+.adminShell .alogRefresh {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .85rem;
+}
+
+.adminShell .alogLive {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    color: hsl(152, 60%, 28%);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.adminShell .alogLiveDot {
+    width: .55rem;
+    height: .55rem;
+    border-radius: 50%;
+    background: hsl(152, 62%, 38%);
+    animation: alogPulse 2.2s ease-out infinite;
+}
+
+.adminShell .alogUpdated {
+    color: var(--ad-muted);
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.alogSpin {
+    animation: alogSpin .8s linear infinite;
+}
+
+.adminShell .alogPeriodRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+}
+
+.adminShell .alogRange {
+    width: min(19rem, 100%);
+}
+
+.adminShell .alogSummary {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-top: 1.15rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface-2);
+}
+
+.adminShell .alogTotal {
+    display: grid;
+    padding-right: 1.5rem;
+    border-right: 1px solid var(--ad-border);
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 2.6rem;
+        font-weight: 700;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    span {
+        margin-top: .2rem;
+        color: var(--ad-muted);
+        font-size: .9rem;
+    }
+}
+
+.adminShell .alogBusiest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .85rem;
+    min-width: 0;
+
+    ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        list-style: none;
+    }
+}
+
+.adminShell .alogLabel {
+    color: var(--ad-muted);
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.adminShell .alogPersonPill {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    max-width: 15rem;
+    height: 2.3rem;
+    padding: 0 .55rem 0 .25rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, color .2s ease, transform .2s var(--ad-ease);
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        transform: translateY(-1px);
+    }
+
+    &[aria-pressed='true'] {
+        border-color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    .segCount {
+        flex-shrink: 0;
+    }
+}
+
+.adminShell .alogPillName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+:is(.adminShell, .adminPortal) .alogPillAvatar {
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    font-size: .7rem;
+}
+
+:is(.adminShell, .adminPortal) .alogAreas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+    margin-top: 1rem;
+}
+
+:is(.adminShell, .adminPortal) .alogAreaChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    height: 2.2rem;
+    padding: 0 .55rem 0 .75rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    font-size: .86rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+
+    svg {
+        flex-shrink: 0;
+        color: var(--area);
+        font-size: 1rem;
+    }
+
+    &:not([data-area]) {
+        padding-left: .85rem;
+    }
+
+    &:hover {
+        border-color: var(--area, var(--ad-subtle));
+    }
+
+    &[aria-pressed='true'] {
+        border-color: var(--area);
+        background: var(--area-soft);
+        color: var(--area);
+
+        .segCount {
+            background: var(--ad-surface);
+            color: var(--area);
+        }
+    }
+
+    &:not([data-area])[aria-pressed='true'] {
+        border-color: var(--ad-text);
+        background: var(--ad-text);
+        color: #fff;
+
+        .segCount {
+            background: hsla(0, 0%, 100%, .18);
+            color: #fff;
+        }
+    }
+}
+
+// Filters ====================>
+
+.adminShell .alogToolbar {
+    display: grid;
+    gap: .65rem;
+    margin-bottom: .75rem;
+}
+
+.adminShell .alogToolbarRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+}
+
+.adminShell .alogPickers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+}
+
+:is(.adminShell, .adminPortal) .alogPersonSelect {
+    width: 17rem;
+}
+
+:is(.adminShell, .adminPortal) .alogActionSelect {
+    width: 14rem;
+}
+
+.adminShell .alogSearch {
+    flex: 1 1 14rem;
+    max-width: 24rem;
+
+    [data-slot='input-wrapper'] {
+        height: 3rem;
+    }
+}
+
+.adminShell .alogFiltersButton {
+    display: none;
+}
+
+.adminShell .alogActiveChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.adminShell .alogChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .25rem .5rem .25rem .75rem;
+    border-radius: 999px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: .82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-primary-tint);
+    }
+}
+
+.alogPersonPopover {
+    min-width: min(22rem, calc(100vw - 2rem));
+}
+
+.alogOption {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-width: 0;
+    font-family: 'Spartan', sans-serif;
+
+    .segCount {
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+}
+
+.alogOptionIcon {
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: hsl(20, 14%, 93%);
+    color: hsl(240, 4%, 40%);
+    font-size: .85rem;
+}
+
+.alogOptionAvatar.alogOptionAvatar {
+    width: 1.6rem;
+    height: 1.6rem;
+    flex-shrink: 0;
+    font-size: .62rem;
+}
+
+.alogOptionName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .9rem;
+}
+
+.adminPortal .alogOptionRole.alogOptionRole {
+    padding: .05rem .45rem .05rem .35rem;
+    font-size: .7rem;
+}
+
+.alogSheet .alogSheetBody {
+    display: grid;
+    gap: 1rem;
+
+    .alogAreas {
+        margin-top: 0;
+    }
+
+    .alogPersonSelect,
+    .alogActionSelect {
+        width: 100%;
+    }
+}
+
+// Timeline ====================>
+
+.adminShell .alogFeed {
+    transition: opacity .2s ease;
+
+    &.isReloading {
+        opacity: .55;
+    }
+}
+
+.adminShell .alogDay + .alogDay {
+    margin-top: .75rem;
+}
+
+// Sticks right under the top bar (--alog-top is its measured height).
+.adminShell .alogDayHead {
+    position: sticky;
+    top: var(--alog-top, 0px);
+    z-index: 4;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin: 0 -.5rem;
+    padding: .65rem .75rem .55rem;
+    border-bottom: 1px solid var(--ad-border);
+    background: hsla(0, 0%, 100%, .94);
+    backdrop-filter: blur(10px);
+
+    span {
+        font-family: var(--ad-display);
+        font-size: 1.02rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--ad-text);
+
+        &::first-letter {
+            text-transform: uppercase;
+        }
+    }
+
+    small {
+        flex-shrink: 0;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 600;
+    }
+}
+
+.adminShell .alogList {
+    display: grid;
+    gap: .1rem;
+    padding-top: .35rem;
+    list-style: none;
+}
+
+.adminShell .alogItem {
+    overflow: hidden; // the slide-in animates the height
+}
+
+.adminShell .alogEntry {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: .9rem;
+    width: 100%;
+    padding: .7rem .75rem;
+    border-radius: 14px;
+    color: var(--ad-text);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-surface-2);
+    }
+
+    &:focus-visible {
+        outline-offset: -2px;
+    }
+
+    &.isFresh {
+        animation: alogFresh 3s ease-out;
+    }
+}
+
+.adminShell .alogItem.isBurst > .alogEntry:hover,
+.adminShell .alogItem.isOpen > .alogEntry {
+    background: var(--ad-surface-2);
+}
+
+:is(.adminShell, .adminPortal) .alogWho {
+    position: relative;
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+
+    &.isSmall {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+:is(.adminShell, .adminPortal) .alogAvatar {
+    width: 100%;
+    height: 100%;
+    font-size: .78rem;
+}
+
+:is(.adminShell, .adminPortal) .alogSystem {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px dashed hsl(20, 8%, 80%);
+    border-radius: 50%;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: 1.1rem;
+
+    &.alogPillAvatar {
+        width: 1.8rem;
+        height: 1.8rem;
+        font-size: .85rem;
+    }
+}
+
+:is(.adminShell, .adminPortal) .alogAreaBadge {
+    position: absolute;
+    right: -5px;
+    bottom: -4px;
+    display: grid;
+    place-items: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: 2px solid var(--ad-surface);
+    border-radius: 50%;
+    background: var(--area);
+    color: #fff;
+    font-size: .66rem;
+}
+
+.adminShell .alogStack {
+    position: relative;
+    display: block;
+
+    // A second disc behind the avatar: "several of these".
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: hsl(20, 10%, 86%);
+        transform: translate(-5px, -4px);
+    }
+
+    .alogWho {
+        position: relative;
+    }
+}
+
+.adminShell .alogStackCount {
+    position: absolute;
+    top: -8px;
+    right: -9px;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 .3rem;
+    border: 2px solid var(--ad-surface);
+    border-radius: 999px;
+    background: var(--ad-text);
+    color: #fff;
+    font-size: .66rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.adminShell .alogBody {
+    display: grid;
+    gap: .3rem;
+    min-width: 0;
+}
+
+.adminShell .alogSentence {
+    color: hsl(240, 4%, 30%);
+    font-size: .95rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.adminShell .alogMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .3rem .6rem;
+    color: var(--ad-muted);
+    font-size: .82rem;
+    line-height: 1.4;
+
+    .roleChip {
+        padding: .08rem .5rem .08rem .4rem;
+        font-size: .72rem;
+    }
+}
+
+:is(.adminShell, .adminPortal) .alogFacts {
+    display: inline;
+    min-width: 0;
+    color: var(--ad-muted);
+    overflow-wrap: anywhere;
+
+    span + span::before {
+        content: '·';
+        margin: 0 .4rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .alogExpand {
+    display: inline-flex;
+    align-items: center;
+    gap: .2rem;
+    color: var(--ad-primary);
+    font-weight: 700;
+
+    svg {
+        transition: transform .25s var(--ad-ease);
+    }
+}
+
+.adminShell .alogItem.isOpen .alogExpand svg {
+    transform: rotate(180deg);
+}
+
+.adminShell .alogTime {
+    display: grid;
+    justify-items: end;
+    gap: .1rem;
+    padding-top: .1rem;
+    text-align: right;
+    white-space: nowrap;
+
+    time {
+        font-size: .86rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    small {
+        color: var(--ad-muted);
+        font-size: .74rem;
+    }
+}
+
+.adminShell .alogChildren {
+    margin: 0 0 .5rem 1.95rem;
+    padding-left: 1.4rem;
+    border-left: 2px solid var(--ad-border);
+    list-style: none;
+}
+
+.adminShell .alogChild {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: start;
+    gap: .6rem;
+    width: 100%;
+    padding: .45rem .6rem;
+    border-radius: 10px;
+    color: var(--ad-text);
+    font-size: .88rem;
+    line-height: 1.4;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-surface-2);
+    }
+
+    time {
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .alogFacts {
+        display: block;
+        margin-top: .1rem;
+        font-size: .78rem;
+    }
+}
+
+.adminShell .alogChildIcon {
+    display: grid;
+    place-items: center;
+    width: 1.45rem;
+    height: 1.45rem;
+    border-radius: 50%;
+    background: var(--area-soft);
+    color: var(--area);
+    font-size: .75rem;
+}
+
+.adminShell .alogMore {
+    display: flex;
+    justify-content: center;
+    padding: 1.1rem 0 .25rem;
+
+    p {
+        color: var(--ad-subtle);
+        font-size: .85rem;
+    }
+}
+
+.adminShell .alogEmpty {
+    display: grid;
+    justify-items: center;
+    gap: .45rem;
+    padding: 2.5rem 1rem;
+    text-align: center;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+    }
+
+    p {
+        max-width: 30rem;
+        color: var(--ad-muted);
+        font-size: .92rem;
+    }
+}
+
+.adminShell .alogEmptyIcon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    margin-bottom: .35rem;
+    border-radius: 16px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.5rem;
+}
+
+.adminShell .alogEmptyActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .5rem;
+    margin-top: .5rem;
+}
+
+.adminShell .alogSkeletonRow {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: .8rem .75rem;
+}
+
+.adminShell .alogSkelCircle,
+.adminShell .alogSkelLines span {
+    background: linear-gradient(90deg, var(--ad-surface-2) 0%, hsl(20, 14%, 92%) 50%, var(--ad-surface-2) 100%);
+    background-size: 200% 100%;
+    animation: alogShimmer 1.3s ease-in-out infinite;
+}
+
+.adminShell .alogSkelCircle {
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+}
+
+.adminShell .alogSkelLines {
+    display: grid;
+    flex: 1;
+    gap: .5rem;
+
+    span {
+        height: .8rem;
+        border-radius: 6px;
+    }
+}
+
+// Drawer ====================>
+
+.alogDrawerWrap.alogDrawerWrap {
+    justify-content: flex-end;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.alogDrawerBackdrop {
+    backdrop-filter: blur(2px);
+}
+
+.alogDrawer.alogDrawer {
+    width: 100%;
+    max-width: 33rem;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 24px 0 0 24px;
+    background: var(--ad-bg);
+    box-shadow: -24px 0 60px -24px hsla(0, 0%, 0%, .35);
+    color: var(--ad-text);
+    font-family: 'Spartan', sans-serif;
+    text-align: left;
+
+    :where(h2, h3, h4) {
+        padding: 0;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.alogDrawer .alogDrawerHead {
+    flex: none;
+    padding: 1rem 1.1rem 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--ad-border);
+    background: var(--ad-surface);
+}
+
+.alogDrawer .alogDrawerTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.alogDrawer .alogDrawerArea {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    color: var(--area);
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.alogDrawer .alogAreaIcon {
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 9px;
+    background: var(--area-soft);
+    color: var(--area);
+    font-size: .95rem;
+}
+
+.alogDrawer .alogDrawerSentence {
+    margin: .55rem 3rem .45rem 0;
+    font-size: 1.2rem;
+    font-weight: 500;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.alogDrawer .alogDrawerHead .alogFacts {
+    display: block;
+    font-size: .88rem;
+}
+
+.alogDrawer .alogDrawerBody {
+    flex: 1;
+    display: grid;
+    align-content: start;
+    gap: 1.35rem;
+    padding: 1.25rem 1.5rem 1.75rem;
+    overflow-y: auto;
+}
+
+.alogDrawer .alogDetails {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: .7rem 1.1rem;
+    margin: 0;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface);
+
+    > div {
+        display: contents;
+    }
+
+    dt {
+        color: var(--ad-muted);
+        font-size: .82rem;
+        font-weight: 600;
+    }
+
+    dd {
+        margin: 0;
+        font-size: .92rem;
+    }
+}
+
+.alogDrawer .alogDetailWho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.alogDrawer .alogDrawerSection h3 {
+    margin-bottom: .6rem;
+    font-family: var(--ad-display);
+    font-size: 1.08rem;
+    font-weight: 700;
+}
+
+.alogDrawer .alogChangesWrap {
+    overflow-x: auto;
+    border: 1px solid var(--ad-border);
+    border-radius: 12px;
+    background: var(--ad-surface);
+}
+
+.alogDrawer .alogChanges {
+    width: 100%;
+    border-collapse: collapse;
+
+    th,
+    td {
+        padding: .6rem .8rem;
+        border-bottom: 1px solid var(--ad-border);
+        font-size: .88rem;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    tbody tr:last-child > * {
+        border-bottom: 0;
+    }
+
+    thead th {
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    tbody th {
+        color: var(--ad-muted);
+        font-weight: 600;
+    }
+
+    .isFrom {
+        color: var(--ad-muted);
+        text-decoration: line-through;
+        text-decoration-color: hsla(0, 0%, 0%, .25);
+    }
+
+    .isTo {
+        font-weight: 700;
+    }
+}
+
+.alogDrawer .alogHistory {
+    display: grid;
+    gap: .1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    button {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: .7rem;
+        width: 100%;
+        padding: .55rem .6rem;
+        border-radius: 10px;
+        color: var(--ad-text);
+        text-align: left;
+        cursor: pointer;
+        transition: background-color .2s ease;
+
+        &:hover:not(:disabled) {
+            background: var(--ad-surface);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+    }
+
+    .isCurrent button {
+        background: var(--ad-primary-soft);
+    }
+}
+
+.alogDrawer .alogHistoryDot {
+    width: .6rem;
+    height: .6rem;
+    margin-top: .3rem;
+    border-radius: 50%;
+    background: var(--ad-subtle);
+
+    .isCurrent & {
+        background: var(--ad-primary);
+    }
+}
+
+.alogDrawer .alogHistoryText {
+    display: grid;
+    gap: .1rem;
+    min-width: 0;
+    font-size: .88rem;
+    line-height: 1.4;
+
+    small {
+        color: var(--ad-muted);
+        font-size: .76rem;
+    }
+
+    em {
+        margin-left: .45rem;
+        color: var(--ad-primary);
+        font-style: normal;
+        font-weight: 700;
+    }
+}
+
+.alogDrawer .alogHint,
+.alogDrawer .alogDrawerLoading {
+    color: var(--ad-muted);
+    font-size: .9rem;
+}
+
+.alogDrawer .alogDrawerLoading {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+}
+
+.alogDrawer .alogDrawerFoot {
+    flex: none;
+    display: flex;
+    justify-content: flex-end;
+    padding: .9rem 1.5rem;
+    border-top: 1px solid var(--ad-border);
+    background: var(--ad-surface);
+}
+
+// Motion ====================>
+
+@keyframes alogPulse {
+    0% {
+        box-shadow: 0 0 0 0 hsla(152, 62%, 38%, .45);
+    }
+
+    70%,
+    100% {
+        box-shadow: 0 0 0 .5rem hsla(152, 62%, 38%, 0);
+    }
+}
+
+@keyframes alogSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes alogFresh {
+    0%,
+    30% {
+        background: var(--ad-primary-soft);
+    }
+
+    100% {
+        background: transparent;
+    }
+}
+
+@keyframes alogShimmer {
+    0% {
+        background-position: 100% 0;
+    }
+
+    100% {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .alogLiveDot,
+    .alogSpin,
+    .adminShell .alogSkelCircle,
+    .adminShell .alogSkelLines span,
+    .adminShell .alogEntry.isFresh {
+        animation: none;
+    }
+}
+
+// Phones ====================>
+
+@media screen and (max-width: 640px) {
+    .adminShell .alogSummary {
+        grid-template-columns: minmax(0, 1fr);
+        padding: .9rem 1rem;
+    }
+
+    .adminShell .alogTotal {
+        display: flex;
+        align-items: baseline;
+        gap: .5rem;
+        padding: 0 0 .75rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--ad-border);
+
+        strong {
+            font-size: 2.1rem;
+        }
+    }
+
+    // One scrolling row of people and of area chips inside the card (the page never scrolls sideways).
+    .adminShell .alogBusiest ul {
+        flex-wrap: nowrap;
+        width: calc(100% + 2rem);
+        margin: 0 -1rem;
+        padding: 0 1rem .15rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .adminShell .alogOverview .alogAreas {
+        flex-wrap: nowrap;
+        margin: 1rem -1.1rem 0;
+        padding: 0 1.1rem .2rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .adminShell .alogPickers {
+        display: none;
+    }
+
+    .adminShell .alogSearch {
+        flex: 1 1 10rem;
+        max-width: none;
+    }
+
+    .adminShell .alogFiltersButton {
+        display: inline-flex;
+        height: 3rem;
+    }
+
+    .adminShell .alogDayHead {
+        margin: 0 -.35rem;
+        padding: .55rem .5rem .5rem;
+    }
+
+    .adminShell .alogEntry {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: .25rem .75rem;
+        padding: .65rem .35rem;
+    }
+
+    .adminShell .alogTime {
+        grid-column: 2;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .45rem;
+        padding: 0;
+        text-align: left;
+
+        time {
+            font-size: .8rem;
+        }
+    }
+
+    .adminShell .alogWho,
+    .adminShell .alogSystem {
+        width: 2.2rem;
+        height: 2.2rem;
+    }
+
+    .adminShell .alogChildren {
+        margin-left: 1rem;
+        padding-left: .6rem;
+    }
+
+    .alogDrawer.alogDrawer {
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .alogDrawer .alogDrawerHead,
+    .alogDrawer .alogDrawerBody {
+        padding-left: 1.1rem;
+        padding-right: 1.1rem;
+    }
+}

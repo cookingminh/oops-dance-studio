@@ -1,0 +1,1998 @@
+// Staff tuition page (/admin/tuition), its dialogs and the person-panel section.
+// Tokens --ad-* come from admin.scss (.adminShell, and .adminPortal on dialogs).
+
+$green: hsl(152, 60%, 28%);
+$green-soft: hsl(150, 60%, 92%);
+$blue: hsl(217, 60%, 40%);
+$blue-soft: hsl(217, 85%, 95%);
+$amber: hsl(30, 80%, 32%);
+$amber-soft: hsl(40, 95%, 92%);
+$violet: hsl(250, 45%, 45%);
+$violet-soft: hsl(250, 80%, 96%);
+$grey: hsl(240, 4%, 40%);
+$grey-soft: hsl(240, 5%, 94%);
+$pink: hsl(335, 55%, 36%);
+$pink-soft: hsl(335, 80%, 95%);
+
+// Shared pieces (page, dialogs, person panel) =================================
+
+:is(.adminShell, .adminPortal) {
+    .tuState {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        line-height: 1.3;
+        white-space: nowrap;
+
+        svg {
+            flex-shrink: 0;
+            font-size: .9rem;
+        }
+
+        &.is-due,
+        &.is-partial {
+            background: $blue-soft;
+            color: $blue;
+        }
+
+        &.is-overdue {
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+
+        &.is-paid {
+            background: $green-soft;
+            color: $green;
+        }
+
+        &.is-waived {
+            background: $violet-soft;
+            color: $violet;
+        }
+
+        &.is-void {
+            background: $grey-soft;
+            color: $grey;
+        }
+
+        &.is-switched {
+            background: $pink-soft;
+            color: $pink;
+        }
+    }
+
+    .tuRenewal {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .18rem .55rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        font-size: .76rem;
+        font-weight: 600;
+        white-space: nowrap;
+        color: var(--ad-muted);
+
+        svg {
+            flex-shrink: 0;
+        }
+
+        &.is-yes svg {
+            color: $green;
+        }
+
+        &.is-no {
+            color: var(--ad-primary);
+            border-color: var(--ad-primary-tint);
+        }
+
+        &.is-none {
+            border-color: hsl(40, 85%, 80%);
+            background: $amber-soft;
+            color: $amber;
+        }
+    }
+
+    .tuWho {
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+
+        > :first-child {
+            flex-shrink: 0;
+        }
+    }
+
+    .tuWhoText {
+        min-width: 0;
+        display: grid;
+        line-height: 1.35;
+
+        strong {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .94rem;
+            font-weight: 600;
+            color: var(--ad-text);
+        }
+
+        small {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .8rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuTel {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        width: fit-content;
+        font-size: .8rem;
+        color: var(--ad-muted);
+        transition: color .2s ease;
+
+        svg {
+            font-size: .75rem;
+        }
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+    }
+
+    .tuMono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: .86em;
+    }
+
+    .tuCopy {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        max-width: 100%;
+        padding: .3rem .35rem .3rem .7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+
+        &.isMono .tuCopyValue {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: .85rem;
+        }
+
+        button {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+            flex-shrink: 0;
+            padding: .3rem .6rem;
+            border-radius: 9px;
+            background: var(--ad-surface);
+            color: var(--ad-muted);
+            font-size: .78rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 1px 2px hsla(20, 20%, 20%, .1);
+            transition: color .2s ease;
+
+            &:hover {
+                color: var(--ad-primary);
+            }
+        }
+    }
+
+    .tuCopyValue {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    .tuLinkButton {
+        padding: .3rem .5rem;
+        border-radius: 8px;
+        color: var(--ad-primary);
+        font-size: .88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color .2s ease;
+
+        &:hover {
+            background: var(--ad-primary-soft);
+        }
+    }
+
+    .tuFinePrint {
+        font-size: .84rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+    }
+
+    .tuQuick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+
+        button {
+            padding: .3rem .7rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            color: var(--ad-muted);
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color .2s ease, border-color .2s ease;
+
+            &:hover {
+                color: var(--ad-primary);
+                border-color: var(--ad-primary-tint);
+            }
+        }
+    }
+
+    .tuReasons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .25rem;
+    }
+
+    .tuReason {
+        padding: .12rem .5rem;
+        border-radius: 999px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .72rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.is-code,
+        &.is-name {
+            background: $green-soft;
+            color: $green;
+        }
+
+        &.is-amount {
+            background: $blue-soft;
+            color: $blue;
+        }
+    }
+
+    .tuTransferIcon {
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: $green-soft;
+        color: $green;
+        font-size: 1.1rem;
+    }
+
+    .tuQrBox {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: min(100%, 17rem);
+        aspect-ratio: 1 / 1.08;
+        margin: 0 auto;
+        overflow: hidden;
+        border: 1px solid var(--ad-border);
+        border-radius: 20px;
+        background: #fff;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        &.isEmpty {
+            aspect-ratio: 1;
+            background: var(--ad-surface-2);
+            color: var(--ad-subtle);
+            font-size: 4rem;
+        }
+    }
+
+    .tuQrLoading {
+        position: absolute;
+        inset: 18%;
+        border-radius: 14px;
+        background: linear-gradient(100deg, var(--ad-surface-2) 30%, var(--ad-border) 50%, var(--ad-surface-2) 70%);
+        background-size: 300% 100%;
+        animation: tuShimmer 1.2s linear infinite;
+    }
+
+    // Sandbox: the seeded bank account is fake, so the QR says so in plain words.
+    .tuDemoRibbon {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: .45rem .6rem;
+        background: hsl(40, 100%, 55%);
+        color: hsl(30, 90%, 14%);
+        font-size: .78rem;
+        font-weight: 800;
+        text-align: center;
+        letter-spacing: .01em;
+    }
+}
+
+@keyframes tuShimmer {
+    to {
+        background-position: -150% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :is(.adminShell, .adminPortal) .tuQrLoading {
+        animation: none;
+    }
+}
+
+// Overview ====================================================================
+
+.adminShell .tuMonthNav {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: 4px;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 10px;
+        color: var(--ad-muted);
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: var(--ad-surface-2);
+            color: var(--ad-text);
+        }
+
+        &:disabled {
+            opacity: .35;
+            cursor: default;
+        }
+    }
+}
+
+.adminShell .tuMonthName {
+    display: grid;
+    min-width: 10rem;
+    line-height: 1.15;
+    text-align: center;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+
+        &.isRenewal {
+            color: $amber;
+        }
+    }
+}
+
+.adminShell .segmented.tuViews {
+    flex-wrap: nowrap;
+}
+
+.adminShell .tuKpis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(4, minmax(0, 1fr));
+    gap: .8rem;
+    transition: opacity .2s ease;
+
+    &.isLoading {
+        opacity: .55;
+    }
+}
+
+.adminShell .tuKpi {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: .15rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+
+    > span,
+    .tuKpiText > span {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ad-text);
+        overflow-wrap: anywhere;
+    }
+
+    small {
+        font-size: .8rem;
+        line-height: 1.35;
+        color: var(--ad-subtle);
+    }
+
+    .tuOf {
+        font-size: 1rem;
+        color: var(--ad-subtle);
+    }
+
+    &.isGood strong {
+        color: $green;
+    }
+
+    &.isBad {
+        border-color: var(--ad-primary-tint);
+        background: linear-gradient(180deg, var(--ad-primary-soft), var(--ad-surface) 70%);
+
+        strong {
+            color: var(--ad-primary);
+        }
+    }
+
+    &.isQuiet strong {
+        color: var(--ad-muted);
+    }
+
+    &.isRing {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 0;
+        background:
+            radial-gradient(circle at 100% 0%, hsla(40, 100%, 70%, .4), transparent 50%),
+            linear-gradient(135deg, hsl(0, 66%, 40%), hsl(345, 60%, 30%));
+
+        .tuKpiText {
+            min-width: 0;
+            display: grid;
+            gap: .1rem;
+
+            > span,
+            small {
+                color: hsla(0, 0%, 100%, .82);
+            }
+
+            strong {
+                color: #fff;
+                font-size: 1.55rem;
+            }
+        }
+    }
+}
+
+.adminShell .tuRing {
+    width: 5.6rem;
+    height: 5.6rem;
+    flex-shrink: 0;
+    transform: rotate(-90deg);
+
+    circle {
+        fill: none;
+        stroke-width: 9;
+    }
+
+    .tuRingTrack {
+        stroke: hsla(0, 0%, 100%, .22);
+    }
+
+    .tuRingFill {
+        stroke: #fff;
+        stroke-linecap: round;
+    }
+
+    .tuRingText {
+        transform: rotate(90deg);
+        transform-origin: 50px 50px;
+        fill: #fff;
+        font-family: var(--ad-display);
+        font-size: 1.45rem;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: central;
+    }
+}
+
+// Inbox + renewal side by side =================================================
+
+.adminShell .tuDuo {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.adminShell :is(#tuition-transfers, #tuition-renewal, #tuition-invoices) {
+    scroll-margin-top: 6.5rem; // clears the sticky top bar
+}
+
+.adminShell .tuTabs {
+    margin-bottom: 1rem;
+}
+
+.adminShell .tuTransfers {
+    display: grid;
+    gap: .8rem;
+}
+
+.adminShell .tuTransfer {
+    display: grid;
+    gap: .7rem;
+    padding: 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: hsl(20, 20%, 99%);
+}
+
+.adminShell .tuTransferTop {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.adminShell .tuTransferMain {
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+}
+
+.adminShell .tuTransferAmount {
+    font-family: var(--ad-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: $green;
+}
+
+:is(.adminShell, .adminPortal) .tuTransferMeta {
+    font-size: .8rem;
+    color: var(--ad-muted);
+
+    em {
+        font-style: normal;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .tuTransferContent {
+    padding: .55rem .75rem;
+    border-radius: 12px;
+    background: var(--ad-surface-2);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .86rem;
+    overflow-wrap: anywhere;
+    color: var(--ad-text);
+}
+
+.adminShell .tuSuggest {
+    h4 {
+        margin-bottom: .4rem;
+        font-size: .74rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+
+    ul {
+        display: grid;
+        gap: .35rem;
+    }
+
+    li {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'who assign'
+            'reasons assign';
+        align-items: center;
+        gap: .3rem .75rem;
+        padding: .55rem .65rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface);
+
+        .tuWho {
+            grid-area: who;
+        }
+
+        .tuReasons {
+            grid-area: reasons;
+            padding-left: 2.65rem;
+        }
+
+        > button {
+            grid-area: assign;
+        }
+    }
+}
+
+.adminShell .tuTransferActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: .4rem;
+}
+
+.adminShell .tuIgnoreBox {
+    display: grid;
+    gap: .6rem;
+    padding: .8rem;
+    overflow: hidden;
+    border: 1.5px dashed var(--ad-border);
+    border-radius: 14px;
+}
+
+.adminShell .tuInboxEmpty {
+    display: grid;
+    justify-items: center;
+    gap: .3rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+
+    > span {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        margin-bottom: .3rem;
+        border-radius: 50%;
+        background: $green-soft;
+        color: $green;
+        font-size: 1.35rem;
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+    }
+
+    small {
+        max-width: 22rem;
+        font-size: .86rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .tuHistory {
+    display: grid;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding: .65rem 0;
+        border-bottom: 1px dashed var(--ad-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+}
+
+.adminShell .tuHistoryText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    gap: .1rem;
+    line-height: 1.35;
+
+    strong {
+        font-size: .94rem;
+        font-weight: 600;
+
+        span {
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .82rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .tuMore {
+    margin-top: .5rem;
+}
+
+// Renewal ======================================================================
+
+.adminShell .tuRenewClasses {
+    display: grid;
+    gap: .55rem;
+    margin-bottom: 1.1rem;
+}
+
+// One class: its running course → the next one, and where that renewal stands.
+.adminShell .tuRenewClass {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: .75rem;
+    padding: .75rem .85rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    transition: border-color .2s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+    }
+
+    > img {
+        width: 2.5rem;
+        height: 2.5rem;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--ad-border);
+        background: var(--ad-surface-2);
+    }
+
+    &.is-unplanned {
+        border-style: dashed;
+    }
+
+    &.isUrgent {
+        border-color: var(--ad-primary-tint);
+    }
+
+    .tuRenewLegend {
+        margin: .5rem 0 .2rem;
+        font-size: .82rem;
+    }
+
+    .tuRenewBar {
+        height: 8px;
+        margin-top: .55rem;
+    }
+}
+
+.adminShell .tuRenewClassBody {
+    min-width: 0;
+}
+
+.adminShell .tuRenewClassHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .3rem .6rem;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+}
+
+.adminShell .tuRenewChip {
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-open {
+        background: $green-soft;
+        color: $green;
+    }
+
+    &.is-waiting {
+        background: $amber-soft;
+        color: $amber;
+    }
+
+    &.is-unplanned {
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+
+        &.isUrgent {
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+    }
+}
+
+// "Magnetic — ILLIT · 5/8 · last session Sat 14 Nov → Armageddon — aespa · starts Sun 15 Nov"
+.adminShell .tuRenewCourses {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .15rem .4rem;
+    margin-top: .2rem;
+    font-size: .82rem;
+    line-height: 1.4;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        color: var(--ad-subtle);
+    }
+
+    .isNext {
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .tuRenewWait {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem .75rem;
+    margin-top: .5rem;
+
+    .tuFinePrint {
+        flex: 1 1 14rem;
+        margin: 0;
+    }
+
+    a.tuLinkButton {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+    }
+}
+
+.adminShell .tuRenewRule {
+    margin-top: 1rem;
+    padding-top: .8rem;
+    border-top: 1px dashed var(--ad-border);
+    line-height: 1.5;
+}
+
+// Thin segmented bar: rounded ends, a 2px surface gap between parts.
+.adminShell .tuRenewBar {
+    display: flex;
+    gap: 2px;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+
+    span {
+        min-width: 4px;
+        height: 100%;
+    }
+}
+
+.adminShell .tuRenewLegend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem 1.1rem;
+    margin: .65rem 0 1.1rem;
+    font-size: .88rem;
+    color: var(--ad-muted);
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        color: var(--ad-text);
+    }
+
+    .tuRenewPaid {
+        margin-left: auto;
+        font-weight: 600;
+        color: $green;
+    }
+}
+
+.adminShell .tuAllAnswered {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .8rem 1rem;
+    border-radius: 14px;
+    background: $green-soft;
+    color: $green;
+    font-weight: 600;
+}
+
+.adminShell .tuPending {
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+
+    > .tuFinePrint {
+        margin: .1rem 0 .6rem;
+    }
+}
+
+.adminShell .tuPendingList {
+    display: grid;
+    gap: .35rem;
+
+    li {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) auto;
+        align-items: center;
+        gap: .6rem;
+        padding: .5rem .6rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface);
+    }
+}
+
+.adminShell .tuPendingClass {
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong,
+    small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    strong {
+        font-size: .84rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .78rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .tuPendingActions {
+    display: flex;
+    gap: .25rem;
+
+    .tuYes {
+        background: $green-soft;
+        color: $green;
+    }
+
+    .tuNo {
+        color: var(--ad-muted);
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+    }
+}
+
+// Invoice list =================================================================
+
+.adminShell .tuInvoicesCard .tuSearch {
+    width: 17rem;
+}
+
+.adminShell .tuFilterRow {
+    margin-bottom: 1rem;
+}
+
+.adminShell .tuGroups {
+    display: grid;
+    gap: 1.3rem;
+}
+
+.adminShell .tuGroupHead {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .55rem;
+
+    img {
+        width: 2.6rem;
+        height: 2.6rem;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 12px;
+        border: 1px solid var(--ad-border);
+        background: var(--ad-surface-2);
+    }
+}
+
+.adminShell .tuGroupTitle {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.12rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .82rem;
+        color: var(--ad-muted);
+    }
+}
+
+// One course of a class: its header (song, progress, money) then its invoices.
+.adminShell .tuCourse {
+    margin-left: 1.3rem;
+    padding-left: 1rem;
+    border-left: 2px solid var(--ad-border);
+
+    & + .tuCourse {
+        margin-top: .9rem;
+    }
+
+    &.is-current {
+        border-left-color: var(--ad-primary-tint);
+    }
+}
+
+.adminShell .tuCourseHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem .9rem;
+    margin-bottom: .5rem;
+}
+
+.adminShell .tuCourseTitle {
+    flex: 1 1 16rem;
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+
+    strong {
+        font-size: .98rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .tuPhase {
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-current {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    &.is-planned {
+        background: $blue-soft;
+        color: $blue;
+    }
+
+    &.isOwed {
+        background: $amber-soft;
+        color: $amber;
+    }
+}
+
+.adminShell .tuCourseMoney {
+    font-size: .82rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--ad-muted);
+}
+
+// Meter: green fill on a pale green track.
+.adminShell .tuGroupBar {
+    width: 8rem;
+    height: 8px;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-radius: 999px;
+    background: hsl(150, 45%, 90%);
+
+    span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+        background: #1baf7a;
+    }
+}
+
+.adminShell .tuRows {
+    display: grid;
+    gap: .4rem;
+}
+
+.adminShell .tuRow {
+    display: grid;
+    // Fixed tracks for the chips and actions, so every row of a class lines up.
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 7.6rem 8rem minmax(0, 1fr) 11.5rem;
+    grid-template-areas: 'who amount state renewal when actions' 'note note note note note note';
+    align-items: center;
+    gap: 0 1rem;
+    padding: .6rem .8rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    transition: border-color .2s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+    }
+
+    &.is-overdue:hover {
+        box-shadow: inset 3px 0 0 var(--ad-primary), var(--ad-shadow);
+    }
+
+    &.is-paid {
+        background: hsl(150, 50%, 98.5%);
+    }
+
+    &.is-overdue {
+        box-shadow: inset 3px 0 0 var(--ad-primary);
+    }
+
+    &.is-void,
+    &.is-switched,
+    &.is-waived {
+        background: var(--ad-surface-2);
+
+        .tuAmount strong {
+            color: var(--ad-muted);
+            text-decoration: line-through;
+            text-decoration-thickness: 1px;
+        }
+    }
+
+    > .tuWho {
+        grid-area: who;
+    }
+}
+
+.adminShell .tuAmount {
+    grid-area: amount;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.08rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .78rem;
+        color: $blue;
+    }
+
+    .tuWas {
+        color: var(--ad-subtle);
+    }
+}
+
+// "from Breaking Kids": the new class's invoice after a class switch.
+.adminShell .tuFromTag {
+    justify-self: start;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-top: .2rem;
+    padding: .08rem .5rem;
+    border-radius: 999px;
+    background: $pink-soft;
+    color: $pink;
+    font-size: .74rem;
+    font-weight: 600;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+:is(.adminShell, .adminPortal) .tuPlaceTag {
+    justify-self: start;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    margin-top: .2rem;
+    padding: .08rem .5rem;
+    border-radius: 999px;
+    font-size: .74rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &.isLeaving {
+        background: $amber-soft;
+        color: $amber;
+    }
+
+    &.isJoining {
+        background: $blue-soft;
+        color: $blue;
+    }
+}
+
+.adminShell .tuStateCell {
+    grid-area: state;
+}
+
+.adminShell .tuRenewalCell {
+    grid-area: renewal;
+}
+
+.adminShell .tuWhen {
+    grid-area: when;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .88rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .78rem;
+        color: var(--ad-muted);
+    }
+
+    &.isLate small {
+        font-weight: 700;
+        color: var(--ad-primary);
+    }
+
+    // "Switched → K-pop Cover Nâng Cao" may take two lines rather than lose the class name.
+    &.isSwitched strong {
+        white-space: normal;
+        color: $pink;
+    }
+}
+
+.adminShell .tuRowActions {
+    grid-area: actions;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .25rem;
+
+    .tuPayButton {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-weight: 600;
+    }
+
+    .tuPaySlot {
+        width: 1px;
+    }
+}
+
+.adminShell .tuRowNote {
+    grid-area: note;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-top: .45rem;
+    padding: .35rem .6rem;
+    border-radius: 10px;
+    background: $amber-soft;
+    color: $amber;
+    font-size: .82rem;
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+.adminShell .tuEmpty {
+    padding: 1.5rem 0;
+}
+
+// Settings (admin) =============================================================
+
+.adminShell .tuSettingsGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.adminShell .tuSettingsForm {
+    display: grid;
+    gap: .8rem;
+
+    h3 {
+        margin-top: .3rem;
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+}
+
+.adminShell .tuFieldPair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.adminShell .tuSwitch {
+    max-width: none;
+    align-items: flex-start;
+
+    .tuSwitchText {
+        display: grid;
+        line-height: 1.4;
+
+        strong {
+            font-size: .92rem;
+            font-weight: 600;
+        }
+
+        small {
+            font-size: .8rem;
+            color: var(--ad-muted);
+        }
+    }
+}
+
+.adminShell .tuExample {
+    display: flex;
+    gap: .5rem;
+    padding: .65rem .8rem;
+    border-radius: 12px;
+    background: var(--ad-surface-2);
+    font-size: .84rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .2rem;
+        color: var(--ad-primary);
+    }
+}
+
+.adminShell .tuSettingsSave {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .8rem;
+
+    span {
+        font-size: .86rem;
+        font-weight: 600;
+        color: $amber;
+    }
+}
+
+.adminShell .tuQrPreview {
+    display: grid;
+    gap: .7rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 20px;
+    background: var(--ad-surface-2);
+
+    figcaption {
+        font-size: .84rem;
+        line-height: 1.45;
+        text-align: center;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .tuSetup {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--ad-border);
+}
+
+.adminShell .tuSetupBlock {
+    display: grid;
+    align-content: start;
+    gap: .7rem;
+
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+
+        svg {
+            color: var(--ad-primary);
+        }
+    }
+
+    > p {
+        font-size: .9rem;
+        line-height: 1.5;
+        color: var(--ad-muted);
+    }
+
+    > button {
+        justify-self: start;
+    }
+}
+
+.adminShell .tuSteps {
+    display: grid;
+    gap: .55rem;
+    counter-reset: tuStep;
+
+    li {
+        position: relative;
+        display: grid;
+        gap: .3rem;
+        padding: .7rem .8rem .7rem 3rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        counter-increment: tuStep;
+
+        &::before {
+            content: counter(tuStep);
+            position: absolute;
+            left: .8rem;
+            top: .7rem;
+            display: grid;
+            place-items: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+            font-size: .78rem;
+            font-weight: 800;
+        }
+
+        strong {
+            font-size: .94rem;
+        }
+
+        > span {
+            font-size: .86rem;
+            line-height: 1.45;
+            color: var(--ad-muted);
+        }
+
+        .tuCopy {
+            justify-self: start;
+        }
+    }
+}
+
+.adminShell .tuStepButton {
+    justify-self: start;
+}
+
+// Dialogs (portal) =============================================================
+
+.tuDialog {
+    font-family: 'Spartan', sans-serif;
+
+    header {
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .tuDialogHead {
+        min-width: 0;
+        display: grid;
+        gap: .2rem;
+    }
+
+    .tuDialogTitle {
+        order: -1;
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-primary);
+    }
+
+    .tuWhoText strong {
+        font-family: var(--ad-display);
+        font-size: 1.15rem;
+    }
+
+    .tuDialogBody {
+        gap: 1rem;
+        padding-top: 1.1rem;
+    }
+
+    .tuDialogText {
+        font-size: .9rem;
+        line-height: 1.5;
+        color: var(--ad-muted);
+    }
+
+    .tuField {
+        display: grid;
+        gap: .4rem;
+
+        .segmented {
+            justify-self: start;
+        }
+    }
+
+    .tuFieldLabel {
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    .tuInlineLink {
+        flex-shrink: 0;
+        color: var(--ad-primary);
+        font-size: .8rem;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .tuSums,
+    .tuPayFacts {
+        margin: 0;
+        padding: .3rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface-2);
+
+        > div {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .55rem 0;
+            border-bottom: 1px dashed var(--ad-border);
+
+            &:last-child {
+                border-bottom: 0;
+            }
+        }
+
+        dt {
+            font-size: .9rem;
+            color: var(--ad-muted);
+        }
+
+        dd {
+            min-width: 0;
+            display: grid;
+            justify-items: end;
+            gap: .2rem;
+            margin: 0;
+            font-weight: 600;
+            text-align: right;
+
+            small {
+                font-size: .78rem;
+                font-weight: 600;
+                color: var(--ad-muted);
+            }
+        }
+
+        .isTotal,
+        .isAmount {
+            dt,
+            dd {
+                font-family: var(--ad-display);
+                font-size: 1.2rem;
+                font-weight: 700;
+                color: var(--ad-text);
+            }
+        }
+    }
+
+    .tuBigCode .tuCopyValue {
+        font-size: 1.05rem;
+        letter-spacing: .06em;
+        white-space: nowrap;
+    }
+
+    .tuAssignHead {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+
+        > span:last-child {
+            min-width: 0;
+            display: grid;
+            gap: .15rem;
+        }
+
+        strong {
+            font-family: var(--ad-display);
+            font-size: 1.15rem;
+        }
+
+        small {
+            overflow-wrap: anywhere;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuAssignList {
+        display: grid;
+        gap: .35rem;
+
+        li {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            grid-template-areas:
+                'who fit assign'
+                'reasons reasons reasons';
+            align-items: center;
+            gap: .2rem .8rem;
+            padding: .55rem .7rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 14px;
+
+            .tuWho {
+                grid-area: who;
+            }
+
+            .tuReasons {
+                grid-area: reasons;
+                padding-left: 2.65rem;
+
+                &:empty {
+                    display: none;
+                }
+            }
+
+            > button {
+                grid-area: assign;
+            }
+        }
+    }
+
+    .tuAssignFit {
+        grid-area: fit;
+        display: grid;
+        justify-items: end;
+        line-height: 1.3;
+
+        strong {
+            font-size: .92rem;
+        }
+
+        small {
+            font-size: .76rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .isExact {
+            color: $green;
+        }
+
+        .isShort {
+            color: $amber;
+        }
+
+        .isOver {
+            color: $blue;
+        }
+    }
+}
+
+// Person panel (People → a student) ============================================
+
+.personSheet .tuLines {
+    display: grid;
+    gap: .4rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        padding: .55rem .7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+    }
+}
+
+.personSheet .tuLineText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .92rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+.personSheet .tuOwes {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin-top: .65rem;
+    font-size: .86rem;
+    font-weight: 600;
+
+    &.isClear {
+        color: $green;
+    }
+
+    &.isOwing {
+        color: var(--ad-primary);
+    }
+}
+
+// Responsive ===================================================================
+
+@media screen and (max-width: 1320px) {
+    .adminShell .tuKpis {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+
+        .tuKpi.isRing {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .adminShell .tuDuo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media screen and (max-width: 1180px) {
+    .adminShell .tuRow {
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 8rem 11.5rem;
+        grid-template-areas:
+            'who amount state actions'
+            'who when renewal actions'
+            'note note note note';
+        gap: .3rem 1rem;
+    }
+
+    .adminShell .tuSettingsGrid,
+    .adminShell .tuSetup {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .tuQrPreview {
+        max-width: 22rem;
+    }
+}
+
+@media screen and (max-width: 760px) {
+    .adminShell .tuKpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
+    }
+
+    .adminShell .tuKpi:not(.isRing) {
+        padding: .85rem .9rem;
+
+        strong {
+            font-size: 1.12rem;
+            white-space: nowrap;
+        }
+    }
+
+    .adminShell .segmented.tuTabs {
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        button {
+            padding: 0 .7rem;
+        }
+    }
+
+    // Narrow cards: let the class · month · amount line wrap instead of cutting it off.
+    .adminShell .tuSuggest .tuWhoText small,
+    .tuDialog .tuAssignList .tuWhoText small {
+        white-space: normal;
+    }
+
+    .adminShell .segmented.tuFilter {
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+        // Fades at the right edge: there is more to scroll to.
+        mask-image: linear-gradient(to right, #000 82%, transparent);
+    }
+
+    .adminShell .tuInvoicesCard .tuSearch {
+        width: 100%;
+    }
+
+    .adminShell .tuInvoicesCard .cardActions {
+        flex: 1 1 100%;
+    }
+
+    .adminShell .tuRow {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'who state'
+            'amount when'
+            'renewal actions'
+            'note note';
+
+        .tuRowActions .tuPaySlot {
+            display: none;
+        }
+        gap: .5rem .8rem;
+        padding: .75rem;
+
+        .tuWhen {
+            justify-items: end;
+            text-align: right;
+        }
+
+        // "Switched → <long class name>" gets the full-width bottom line (a switched row has no
+        // note), instead of widening the right-hand column over the name.
+        .tuWhen.isSwitched {
+            grid-area: note;
+            justify-items: start;
+            text-align: left;
+        }
+    }
+
+    .adminShell .tuGroupBar {
+        width: 4.5rem;
+    }
+
+    .adminShell .tuCourse {
+        margin-left: 0;
+        padding-left: .7rem;
+    }
+
+    .adminShell .segmented.tuViews {
+        flex: 1 1 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
+
+        button {
+            flex: 1 0 auto;
+            padding: 0 .7rem;
+        }
+    }
+
+    .adminShell .tuRenewClass {
+        padding: .7rem;
+
+        > img {
+            width: 2.1rem;
+            height: 2.1rem;
+        }
+    }
+
+    .adminShell .tuPendingList li {
+        grid-template-columns: minmax(0, 1fr) auto;
+
+        .tuPendingClass {
+            grid-column: 1;
+            grid-row: 2;
+            padding-left: 2.65rem;
+
+            small {
+                white-space: normal;
+            }
+        }
+
+        .tuPendingActions {
+            grid-column: 2;
+            grid-row: 1 / span 2;
+            flex-direction: column;
+        }
+    }
+
+    .adminShell .tuFieldPair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .tuRenewLegend .tuRenewPaid {
+        margin-left: 0;
+    }
+
+    .adminShell .tuSuggest li .tuReasons,
+    .tuDialog .tuAssignList li .tuReasons {
+        padding-left: 0;
+    }
+
+    .tuDialog .tuAssignList li {
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            'who assign'
+            'fit fit'
+            'reasons reasons';
+
+        .tuAssignFit {
+            justify-items: start;
+            grid-auto-flow: column;
+            justify-content: start;
+            gap: .5rem;
+        }
+    }
+}
+
+.personSheet .sectionHead .sectionSub {
+    font-family: 'Spartan', sans-serif;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ad-subtle);
+}

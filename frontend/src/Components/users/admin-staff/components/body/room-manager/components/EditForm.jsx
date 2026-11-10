@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent } from '@nextui-org/react';
 import { updateRoom } from '@/services/rooms';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useI18n } from '@/i18n/i18nContext';
 
 const EditForm = ({ room, onClose, onSaved }) => {
     const toast = useToast();
+    const { t } = useI18n();
     const [form, setForm] = useState({ name: room.name, size: room.size ?? '', price: String(room.price) });
     const [saving, setSaving] = useState(false);
 
@@ -27,12 +29,12 @@ const EditForm = ({ room, onClose, onSaved }) => {
     return (
         <Modal isOpen onOpenChange={(open) => !open && onClose()}>
             <ModalContent>
-                <ModalHeader>Edit Room</ModalHeader>
+                <ModalHeader>{t('Edit Room')}</ModalHeader>
                 <ModalBody>
-                    <Input label="Room Name" isRequired value={form.name} onValueChange={update('name')} />
-                    <Input label="Room Size" placeholder="e.g. 80 m²" value={form.size} onValueChange={update('size')} />
+                    <Input label={t('Room Name')} isRequired value={form.name} onValueChange={update('name')} />
+                    <Input label={t('Room Size')} placeholder={t('e.g. 80 m²')} value={form.size} onValueChange={update('size')} />
                     <Input
-                        label="Price per hour (VND)"
+                        label={t('Price per hour (VND)')}
                         type="number"
                         min={0}
                         step={1000}
@@ -40,15 +42,15 @@ const EditForm = ({ room, onClose, onSaved }) => {
                         value={form.price}
                         onValueChange={update('price')}
                         isInvalid={priceInvalid}
-                        errorMessage={priceInvalid ? 'Enter a price of 0 or more.' : undefined}
+                        errorMessage={priceInvalid ? t('Enter a price of 0 or more.') : undefined}
                     />
                 </ModalBody>
                 <ModalFooter>
                     <Button color="danger" variant="light" onPress={onClose} isDisabled={saving}>
-                        Close
+                        {t('Close')}
                     </Button>
                     <Button color="primary" onPress={handleSubmit} isLoading={saving} isDisabled={!form.name.trim() || priceInvalid}>
-                        Update Room
+                        {t('Update Room')}
                     </Button>
                 </ModalFooter>
             </ModalContent>

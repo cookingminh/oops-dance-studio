@@ -1,38 +1,34 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LuHelpCircle, LuLogOut, LuX } from 'react-icons/lu';
-import { useAuth } from '@/auth/useAuth';
-import { ROLES } from '@/auth/roles';
+import { useI18n } from '@/i18n/i18nContext';
 import LogoutButton from '../../../../Logout/LogoutButton';
-import { ADMIN_NAV, findAdminPage } from '../../adminPages';
-import { useStaffTasks } from '../../tasks/staffTasks';
 import logoMark from '@/assets/images/logo-mark.webp';
 
-// On wide screens the sidebar is always shown; below 1024px it slides in as a drawer (`open`).
-const SideBar = ({ open, onClose }) => {
-    const { role } = useAuth();
-    const current = findAdminPage(useLocation().pathname);
-    const badges = useStaffTasks().data?.counts ?? {};
-    const sections = ADMIN_NAV.map((section) => ({
-        ...section,
-        items: section.items.filter((item) => !item.adminOnly || role === ROLES.admin),
-    }));
+// Workspace sidebar, shared by /admin and /profile.
+//   sections        [{ group, items: [{ to, label, icon }] }]
+//   findPage(path)  the item to highlight for the current URL
+//   badges          { [to]: count } shown next to items
+// On wide screens it is always shown; below 1024px it slides in as a drawer (`open`).
+const SideBar = ({ open, onClose, sections, findPage, badges = {}, workspaceLabel, ariaLabel = 'Menu' }) => {
+    const { t } = useI18n();
+    const current = findPage(useLocation().pathname);
 
     return (
         <>
             <div className={`adminBackdrop${open ? ' isOpen' : ''}`} onClick={onClose} aria-hidden="true" />
-            <aside className={`sideBar adminSidebar${open ? ' isOpen' : ''}`} aria-label="Admin menu">
+            <aside className={`sideBar adminSidebar${open ? ' isOpen' : ''}`} aria-label={t(ariaLabel)}>
                 <div className="sidebarBrand">
-                    <Link to="/home" className="brandLink" title="Go to the homepage">
+                    <Link to="/home" className="brandLink" title={t('Go to the homepage')}>
                         <span className="brandMark">
                             <img src={logoMark} alt="" />
                         </span>
                         <span className="brandText">
                             <strong>Oops! Dance</strong>
-                            <small>{role === ROLES.admin ? 'Admin' : 'Staff'} workspace</small>
+                            <small>{t(workspaceLabel)}</small>
                         </span>
                     </Link>
-                    <button type="button" className="iconButton sidebarClose" onClick={onClose} aria-label="Close menu">
+                    <button type="button" className="iconButton sidebarClose" onClick={onClose} aria-label={t('Close menu')}>
                         <LuX />
                     </button>
                 </div>
@@ -40,7 +36,7 @@ const SideBar = ({ open, onClose }) => {
                 <nav className="sidebarNav">
                     {sections.map((section) => (
                         <div className="navGroup" key={section.group}>
-                            <span className="navGroupLabel">{section.group}</span>
+                            <span className="navGroupLabel">{t(section.group)}</span>
                             <ul>
                                 {section.items.map(({ to, label, icon: Icon }) => {
                                     const isActive = current.to === to;
@@ -59,9 +55,9 @@ const SideBar = ({ open, onClose }) => {
                                                     />
                                                 )}
                                                 <Icon className="navIcon" aria-hidden="true" />
-                                                <span className="navLabel">{label}</span>
+                                                <span className="navLabel">{t(label)}</span>
                                                 {badges[to] > 0 && (
-                                                    <span className="navBadge" aria-label={`${badges[to]} to do`}>
+                                                    <span className="navBadge" aria-label={t('{count} to do', { count: badges[to] })}>
                                                         {badges[to] > 99 ? '99+' : badges[to]}
                                                     </span>
                                                 )}
@@ -78,13 +74,13 @@ const SideBar = ({ open, onClose }) => {
                     <a className="helpCard" href="mailto:oopsdancestudio@gmail.com">
                         <LuHelpCircle className="helpIcon" aria-hidden="true" />
                         <span>
-                            <strong>Need a hand?</strong>
-                            <small>Email the studio team</small>
+                            <strong>{t('Need a hand?')}</strong>
+                            <small>{t('Email the studio team')}</small>
                         </span>
                     </a>
                     <LogoutButton className="logoutBtn">
                         <LuLogOut aria-hidden="true" />
-                        <span>Log Out</span>
+                        <span>{t('Log Out')}</span>
                     </LogoutButton>
                 </div>
             </aside>

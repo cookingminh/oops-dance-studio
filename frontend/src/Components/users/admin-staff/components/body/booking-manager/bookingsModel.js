@@ -1,0 +1,84 @@
+import { addMinutes, endOfMonth, format, parse, startOfMonth } from 'date-fns';
+import { formatTime } from '@/lib/format';
+import { asDate, calendarRange, toIso } from '../../common/calendar/calendarModel';
+
+// Pure helpers of the bookings page (filters, counts, calendar items).
+
+export const PAGE_SIZE = 10;
+
+export const SCOPES = [
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'past', label: 'Past' },
+    { key: 'all', label: 'All dates' },
+];
+
+export const STATUS_FILTERS = ['all', 'pending', 'approved', 'completed', 'rejected', 'cancelled'];
+
+// Page layouts: the calendar (week / month) or the searchable table.
+export const MODES = ['week', 'month', 'list'];
+
+export const capitalize = (text) => text[0].toUpperCase() + text.slice(1);
+export const byRoomId = (a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
+export const soonestFirst = (a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time);
+
+export function countBy(list, keyOf) {
+    const counts = new Map();
+    for (const item of list) counts.set(keyOf(item), (counts.get(keyOf(item)) ?? 0) + 1);
+    return counts;
+}
+
+export const guestName = (booking, t) => booking.guest?.full_name || booking.guest?.username || booking.guest?.email || t('Guest');
+
+// The days a header count covers: the shown week, or the month itself (not the grid's spill-over days).
+export function periodOf(view, date) {
+    if (view !== 'month') return calendarRange('week', date);
+    const day = asDate(date);
+    return { from: toIso(startOfMonth(day)), until: toIso(endOfMonth(day)) };
+}
+
+// Pending requests wait (dashed + a badge), approved ones are solid, the rest are done with (muted;
+// cancelled and rejected are also struck through by the calendar).
+const TONES = { pending: 'dashed', approved: 'solid', completed: 'muted', cancelled: 'muted', rejected: 'muted' };
+
+export function bookingItem(booking, { roomColor, t }) {
+    return {
+        id: `b${booking.id}`,
+        date: booking.date,
+        start: formatTime(booking.start_time),
+        end: formatTime(booking.end_time),
+        title: guestName(booking, t),
+        subtitle: booking.room?.name,
+        color: roomColor.get(booking.room_id),
+        status: booking.status,
+        statusLabel: t(booking.status),
+        tone: TONES[booking.status] ?? 'solid',
+        badge: booking.status === 'pending' ? t('Awaiting approval') : undefined,
+        data: booking,
+    };
+}
+
+// A class session behind the bookings: it explains why that slot of the room is taken.
+export function sessionItem(session, { roomColor, t }) {
+    return {
+        id: `s${session.key}`,
+        date: session.date,
+        start: session.start,
+        end: session.end,
+        title: session.class_name,
+        subtitle: [t('Class'), session.room_name, session.instructor_name].filter(Boolean).join(' · '),
+        color: roomColor.get(session.room_id),
+        status: 'class',
+        statusLabel: t('Class'),
+        tone: 'background',
+        badge: session.is_extra ? t('Make-up') : undefined,
+        data: session,
+    };
+}
+
+// "New booking" from a free slot: one hour from the picked start, within opening hours.
+export function slotDraft({ date, time, roomId }) {
+    const draft = { date, roomId: roomId ?? '' };
+    if (!time) return draft;
+    const end = addMinutes(parse(time, 'HH:mm', new Date()), 60);
+    return { ...draft, startTime: time, endTime: format(end, 'HH:mm') > '22:00' || format(end, 'HH:mm') < time ? '22:00' : format(end, 'HH:mm') };
+}

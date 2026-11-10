@@ -38,12 +38,13 @@ test('admin cannot re-email or delete demo accounts', async ({ page }) => {
     await page.getByRole('button', { name: 'Admin', exact: true }).click();
     await page.waitForURL((url) => url.pathname === '/admin');
     await page.goto('/admin/users');
-    await page.getByPlaceholder('Search...').fill('Nguyễn Thảo Vy'); // guest@demo.oopsdance.test
-    const row = page.getByRole('row').filter({ hasText: 'Nguyễn Thảo Vy' });
-    await expect(row.getByRole('button', { name: 'Edit user' })).toBeVisible();
-    await expect(row.getByRole('button', { name: 'Delete user' })).toHaveCount(0);
-    await row.getByRole('button', { name: 'Edit user' }).click();
-    await expect(page.getByRole('dialog').getByLabel('Email')).toHaveAttribute('readonly', '');
+    await page.getByLabel('Search people').fill('Nguyễn Thảo Vy'); // guest@demo.oopsdance.test
+    await page.getByRole('list', { name: 'Everyone at the studio' }).getByRole('button').filter({ hasText: 'Nguyễn Thảo Vy' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Nguyễn Thảo Vy' });
+    await expect(sheet.getByText('Demo accounts can’t be deleted in the public demo.')).toBeVisible();
+    await expect(sheet.getByRole('button', { name: 'Delete account' })).toHaveCount(0);
+    await sheet.getByRole('button', { name: 'Edit details' }).click();
+    await expect(sheet.getByLabel('Email', { exact: true })).toHaveAttribute('readonly', '');
 });
 
 test('the demo banner can be hidden for the tab', async ({ page }) => {

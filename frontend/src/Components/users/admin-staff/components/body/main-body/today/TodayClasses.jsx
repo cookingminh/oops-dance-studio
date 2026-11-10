@@ -7,11 +7,13 @@ import { listInstructorAttendance } from '@/services/attendance';
 import { getStudioToday } from '@/services/studio';
 import { classImageUrl } from '@/services/storage';
 import { formatTime, isoWeekdayOf } from '@/lib/format';
+import { useI18n } from '@/i18n/i18nContext';
 import { statusColorMap } from '../../../../../../Table/utils';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard, { CardFooterLink } from '../../../common/SectionCard';
 import { useStudioClock } from '../../../common/useStudioClock';
 import placeholder from '@/assets/images/logo-mark.webp';
+import ClassLink from '../../class-hub/ClassLink';
 
 // Today's sessions from the class schedules, with the instructor attendance status when generated.
 async function loadTodaysClasses() {
@@ -39,6 +41,7 @@ const PREVIEW = 4;
 const phaseOf = ({ start, end }, now) => (now < start ? 'upcoming' : now < end ? 'live' : 'done');
 
 const TodayClasses = () => {
+    const { t, tn } = useI18n();
     const sessions = useAsync(loadTodaysClasses, []);
     const now = useStudioClock();
     const count = sessions.data?.length;
@@ -47,11 +50,11 @@ const TodayClasses = () => {
         <SectionCard
             className="todayCard"
             icon={LuCalendarDays}
-            title="Today’s Classes"
-            subtitle={count === undefined ? 'Loading the timetable…' : `${count} session${count === 1 ? '' : 's'} on the timetable`}
+            title={t('Today’s Classes')}
+            subtitle={count === undefined ? t('Loading the timetable…') : tn(count, '{count} session on the timetable', '{count} sessions on the timetable')}
             footer={
                 <CardFooterLink to="/admin/classes">
-                    {count > PREVIEW ? `${count - PREVIEW} more today · open the timetable` : 'Open the full timetable'}
+                    {count > PREVIEW ? t('{count} more today · open the timetable', { count: count - PREVIEW }) : t('Open the full timetable')}
                 </CardFooterLink>
             }
         >
@@ -60,7 +63,7 @@ const TodayClasses = () => {
                 isEmpty={count === 0}
                 emptyText={
                     <span className="emptyState">
-                        <LuCalendarX aria-hidden="true" /> No classes scheduled today.
+                        <LuCalendarX aria-hidden="true" /> {t('No classes scheduled today.')}
                     </span>
                 }
             >
@@ -82,20 +85,22 @@ const TodayClasses = () => {
                                     <div className="timelineBody">
                                         <img className="timelineThumb" src={classImageUrl(cls.image_path) ?? placeholder} alt="" />
                                         <div className="timelineInfo">
-                                            <strong>{cls.name}</strong>
+                                            <strong>
+                                                <ClassLink id={cls.id}>{cls.name}</ClassLink>
+                                            </strong>
                                             <span>{people.join(' · ')}</span>
                                         </div>
                                         {phase === 'live' ? (
                                             <span className="liveBadge">
-                                                <span className="livePulse" aria-hidden="true" /> Live now
+                                                <span className="livePulse" aria-hidden="true" /> {t('Live now')}
                                             </span>
                                         ) : status ? (
                                             <Chip size="sm" variant="flat" className="capitalize" color={statusColorMap[status] ?? 'default'}>
-                                                {status.replace('_', ' ')}
+                                                {t(status.replace('_', ' '))}
                                             </Chip>
                                         ) : (
-                                            <Link to="/admin/attendance-records" className="timelineLink">
-                                                No record
+                                            <Link to="/admin/attendance" className="timelineLink">
+                                                {t('No record')}
                                             </Link>
                                         )}
                                     </div>

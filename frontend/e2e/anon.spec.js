@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { freeDate, publicClasses, rooms, searchRooms } from './support.js';
+import { freeDate, lastMonthVideos, publicClasses, rooms, searchRooms } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -25,7 +25,37 @@ test('classes slider shows list_public_classes data', async () => {
     await expect(page.getByText(CLASSES[0].name).first()).toBeVisible();
 });
 
-test('rooms section lists every room', async () => {
+test('the navbar moves between the public pages', async () => {
+    const nav = page.locator('.navBar');
+    for (const [label, path] of [['Classes', '/classes'], ['Rooms', '/rooms'], ['About us', '/about'], ['Home', '/home']]) {
+        await nav.getByRole('link', { name: label, exact: true }).click();
+        await page.waitForURL(`**${path}`);
+        await expect(nav.getByRole('link', { name: label, exact: true })).toHaveClass(/active/);
+    }
+});
+
+test('the about page tells the Oops! Crew story', async () => {
+    await page.goto('/about');
+    await expect(page.locator('h1')).toContainText('Oops! Crew');
+});
+
+test('class videos: last month on camera, plus the YouTube channel', async () => {
+    await page.goto('/classes');
+    const videos = page.locator('#class-videos');
+    await videos.scrollIntoViewIfNeeded();
+    const expected = await lastMonthVideos();
+    expect(expected).toBeGreaterThan(0);
+    await expect(videos.locator('.hpVideoItem')).toHaveCount(expected);
+    await expect(videos.getByRole('link', { name: 'Explore more on YouTube' })).toHaveAttribute('href', /youtube\.com\/channel\//);
+    // Nothing loads from YouTube until someone presses play.
+    await expect(videos.locator('iframe')).toHaveCount(0);
+    await videos.locator('.hpVideoItem').nth(1).click();
+    await expect(videos.locator('iframe')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/[\w-]{11}/);
+    await expect(videos.locator('.hpVideoItem').nth(1)).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('rooms page lists every room', async () => {
+    await page.goto('/rooms');
     await page.locator('.rooms').scrollIntoViewIfNeeded();
     await expect(page.locator('.rooms .room1')).toHaveCount(ROOMS.length);
 });
@@ -38,9 +68,12 @@ test('room photos come from rooms.image_paths (fallback otherwise)', async () =>
     else expect(fromBucket).toBeGreaterThan(0);
 });
 
-test('timetable rows are rendered from class_schedules', async () => {
-    await page.locator('.timeTableDiv table').scrollIntoViewIfNeeded();
-    await expect(page.locator('.timeTableDiv table tbody tr').first()).toBeVisible();
+test('timetable sessions are rendered from class_schedules', async () => {
+    await page.goto('/classes');
+    await page.locator('.timeTableDiv').scrollIntoViewIfNeeded();
+    await expect(page.locator('.timeTableDiv .weekSlot').first()).toBeVisible();
+    const sessions = CLASSES.reduce((sum, c) => sum + (c.schedules ?? []).length, 0);
+    await expect(page.locator('.timeTableDiv .weekSlot')).toHaveCount(sessions);
 });
 
 test('timetable instructor avatars load', async () => {
@@ -57,6 +90,7 @@ test('timetable shows an avatar for every instructor with a photo', async () => 
 });
 
 test('room buttons come from the rooms table', async () => {
+    await page.goto('/rooms');
     const search = page.locator('.search');
     await search.scrollIntoViewIfNeeded();
     for (const room of ROOMS) await expect(search.getByRole('button', { name: room.name, exact: true })).toHaveCount(1);

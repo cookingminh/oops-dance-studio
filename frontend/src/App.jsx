@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { NextUIProvider } from '@nextui-org/react';
+import { useI18n } from '@/i18n/i18nContext';
 import { AuthProvider } from '@/auth/AuthProvider';
 import RequireRole from '@/auth/RequireRole';
 import PublicOnly from '@/auth/PublicOnly';
@@ -8,9 +9,14 @@ import { DASHBOARD_ROLES, PROFILE_ROLES } from '@/auth/roles';
 import { ToastProvider } from '@/ui/feedback/ToastProvider';
 import { Loading } from '@/ui/feedback/AsyncState';
 import DemoBanner from '@/ui/DemoBanner';
-import HomePage from './Components/HomePage/HomePage';
+import { I18nProvider } from '@/i18n/I18nProvider';
+import PublicLayout from './Components/HomePage/PublicLayout';
+import HomeLanding from './Components/HomePage/pages/HomeLanding';
 
-// The homepage loads eagerly; the other areas are split into their own chunks.
+// The public landing page loads eagerly; the other pages and areas are split into their own chunks.
+const ClassesPage = lazy(() => import('./Components/HomePage/pages/ClassesPage'));
+const RoomsPage = lazy(() => import('./Components/HomePage/pages/RoomsPage'));
+const AboutPage = lazy(() => import('./Components/HomePage/pages/AboutPage'));
 const Login = lazy(() => import('./Components/Login/Login'));
 const Register = lazy(() => import('./Components/Register/Register'));
 const ResetPassword = lazy(() => import('./Components/ResetPassword/ResetPassword'));
@@ -27,7 +33,12 @@ const AppRoutes = () => (
     <Suspense fallback={<PageLoading />}>
         <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<HomePage />} />
+            <Route element={<PublicLayout />}>
+                <Route path="/home" element={<HomeLanding />} />
+                <Route path="/classes" element={<ClassesPage />} />
+                <Route path="/rooms" element={<RoomsPage />} />
+                <Route path="/about" element={<AboutPage />} />
+            </Route>
             <Route element={<PublicOnly />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -55,27 +66,31 @@ const AppRoutes = () => (
     </Suspense>
 );
 
-// NextUI links (e.g. DropdownItem href) navigate through React Router instead of reloading the page.
+// NextUI links (e.g. DropdownItem href) navigate through React Router instead of reloading the page;
+// date inputs follow the chosen language (dd/mm/yyyy, not the browser's US order).
 const RouterAwareUI = ({ children }) => {
     const navigate = useNavigate();
+    const { intl } = useI18n();
     return (
-        <NextUIProvider navigate={navigate}>
+        <NextUIProvider navigate={navigate} locale={intl}>
             {children}
         </NextUIProvider>
     );
 };
 
 const App = () => (
-    <BrowserRouter>
-        <RouterAwareUI>
-            <ToastProvider>
-                <AuthProvider>
-                    <AppRoutes />
-                    <DemoBanner />
-                </AuthProvider>
-            </ToastProvider>
-        </RouterAwareUI>
-    </BrowserRouter>
+    <I18nProvider>
+        <BrowserRouter>
+            <RouterAwareUI>
+                <ToastProvider>
+                    <AuthProvider>
+                        <AppRoutes />
+                        <DemoBanner />
+                    </AuthProvider>
+                </ToastProvider>
+            </RouterAwareUI>
+        </BrowserRouter>
+    </I18nProvider>
 );
 
 export default App;

@@ -22,7 +22,12 @@ export const MESSAGES = {
     UNKNOWN: 'Something went wrong. Please try again.',
 };
 
-const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|PAST_DATE)\b\s*:?\s*/;
+const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|PAST_DATE|IN_USE)\b\s*:?\s*/;
+
+// Specific IN_USE reasons from the database.
+const CLASS_HAS_HISTORY = 'This class has sessions, attendance or payments on record. End the class instead of deleting it.';
+// A cancelled session frees its room; once someone books it, the session can't come back (guard_session_reopen).
+const BOOKED_AFTER_CANCEL = 'The room was booked after this session was cancelled, so it can’t be reopened. Add a make-up session instead.';
 
 // Specific INVALID_INPUT reasons (RPC text or constraint name) that deserve their own message.
 const INVALID_INPUT_REASONS = [
@@ -80,7 +85,14 @@ export function toAppError(error) {
     const rpc = raw.match(RPC_CODE);
     if (rpc) {
         const detail = raw.slice(rpc[0].length).trim();
-        const message = rpc[1] === 'INVALID_INPUT' ? invalidInputMessage(detail) : MESSAGES[rpc[1]];
+        const message =
+            rpc[1] === 'INVALID_INPUT'
+                ? invalidInputMessage(detail)
+                : rpc[1] === 'IN_USE' && /class has history/i.test(detail)
+                  ? CLASS_HAS_HISTORY
+                  : rpc[1] === 'SLOT_TAKEN' && /after the session was cancelled/i.test(detail)
+                    ? BOOKED_AFTER_CANCEL
+                    : MESSAGES[rpc[1]];
         return new AppError(rpc[1], message, error, detail);
     }
 

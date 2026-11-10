@@ -3,6 +3,7 @@ import { Modal, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Selec
 import { createSchedule, updateSchedule } from '@/services/schedules';
 import { TIME_OPTIONS, WEEKDAYS, formatTime, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useI18n } from '@/i18n/i18nContext';
 
 // Existing sessions may start off the half-hour grid (e.g. 19:45); keep that value selectable.
 const withCurrent = (options, value) => (value && !options.includes(value) ? [...options, value].sort() : options);
@@ -11,6 +12,7 @@ const withCurrent = (options, value) => (value && !options.includes(value) ? [..
 // `defaultClassId` preselects the class when adding a session from a class card.
 const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) => {
     const toast = useToast();
+    const { t, dayName } = useI18n();
     const isNew = !schedule;
     const [form, setForm] = useState({
         classId: schedule ? String(schedule.class_id) : defaultClassId ? String(defaultClassId) : '',
@@ -22,7 +24,7 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
 
     const set = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
     const timeError = form.startTime && form.endTime && toMinutes(form.startTime) >= toMinutes(form.endTime)
-        ? 'End time must be after start time.'
+        ? t('End time must be after start time.')
         : '';
     const canSave = form.classId && form.dayOfWeek && form.startTime && form.endTime && !timeError;
 
@@ -41,7 +43,7 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
             onSaved();
         } catch (error) {
             // The room is shared with bookings and other classes; say what it clashes with.
-            if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(`That time isn’t free in this class’s room: ${error.detail}.`);
+            if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That time isn’t free in this class’s room: {detail}.', { detail: error.detail }));
             else toast.error(error);
         } finally {
             setSaving(false);
@@ -51,12 +53,12 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
     return (
         <Modal isOpen onOpenChange={(open) => !open && onClose()}>
             <ModalContent>
-                <ModalHeader>{isNew ? 'Add Schedule' : 'Edit Schedule'}</ModalHeader>
+                <ModalHeader>{isNew ? t('Add Schedule') : t('Edit Schedule')}</ModalHeader>
                 <ModalBody>
                     <Select
-                        label="Class"
+                        label={t('Class')}
                         isRequired
-                        placeholder={classes.length ? 'Select a class' : 'Add a class first'}
+                        placeholder={classes.length ? t('Select a class') : t('Add a class first')}
                         selectedKeys={form.classId ? [form.classId] : []}
                         onChange={set('classId')}
                     >
@@ -64,18 +66,18 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
                             <SelectItem key={String(item.id)}>{item.name}</SelectItem>
                         ))}
                     </Select>
-                    <Select label="Day of the Week" isRequired selectedKeys={form.dayOfWeek ? [form.dayOfWeek] : []} onChange={set('dayOfWeek')}>
+                    <Select label={t('Day of the Week')} isRequired selectedKeys={form.dayOfWeek ? [form.dayOfWeek] : []} onChange={set('dayOfWeek')}>
                         {WEEKDAYS.map((day) => (
-                            <SelectItem key={String(day.value)}>{day.label}</SelectItem>
+                            <SelectItem key={String(day.value)}>{dayName(day.value)}</SelectItem>
                         ))}
                     </Select>
-                    <Select label="Start Time" isRequired selectedKeys={form.startTime ? [form.startTime] : []} onChange={set('startTime')}>
+                    <Select label={t('Start Time')} isRequired selectedKeys={form.startTime ? [form.startTime] : []} onChange={set('startTime')}>
                         {withCurrent(TIME_OPTIONS.slice(0, -1), form.startTime).map((time) => (
                             <SelectItem key={time}>{time}</SelectItem>
                         ))}
                     </Select>
                     <Select
-                        label="End Time"
+                        label={t('End Time')}
                         isRequired
                         selectedKeys={form.endTime ? [form.endTime] : []}
                         onChange={set('endTime')}
@@ -89,10 +91,10 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
                 </ModalBody>
                 <ModalFooter>
                     <Button variant="light" onPress={onClose} isDisabled={saving}>
-                        Close
+                        {t('Close')}
                     </Button>
                     <Button color="danger" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
-                        {isNew ? 'Add Schedule' : 'Update Schedule'}
+                        {isNew ? t('Add Schedule') : t('Update Schedule')}
                     </Button>
                 </ModalFooter>
             </ModalContent>

@@ -1,0 +1,472 @@
+// /rooms: room cards (Rooms.jsx) and "How booking works" (BookingGuide.jsx).
+// main.scss still has legacy `.rooms` / `.rooms .swiper` rules; the overrides are scoped under
+// .homePage .pubRooms so they win whatever order the stylesheets load in.
+
+.homePage .rooms.pubRooms {
+    display: block;
+    width: min(1200px, calc(100% - 2.5rem));
+    max-width: none;
+    margin: 0 auto;
+    padding: 4.5rem 0 1rem;
+    overflow: visible;
+
+    .swiper {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+.pubRoomGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 1.4rem;
+}
+
+.pubRoom {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--hp-border);
+    border-radius: 26px;
+    background: #fff;
+    box-shadow: 0 1px 2px hsla(0, 0%, 0%, .04), 0 18px 40px -30px hsla(0, 40%, 25%, .45);
+    transition: transform .4s var(--hp-ease), box-shadow .4s var(--hp-ease);
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 30px 60px -34px hsla(0, 45%, 25%, .55);
+
+        .pubRoomNav {
+            opacity: 1;
+        }
+    }
+}
+
+.pubRoomMedia {
+    position: relative;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: hsl(0, 20%, 14%);
+
+    .pubRoomSwiper,
+    .swiper-wrapper,
+    .swiper-slide {
+        height: 100%;
+    }
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        user-select: none;
+    }
+
+    // Soft shade at the bottom so the price chip reads on bright photos.
+    &::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0;
+        z-index: 1;
+        height: 40%;
+        background: linear-gradient(to top, hsla(0, 40%, 6%, .5), transparent);
+        pointer-events: none;
+    }
+}
+
+.pubRoomNav {
+    position: absolute;
+    inset: 50% .8rem auto;
+    z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    opacity: .85;
+    transform: translateY(-50%);
+    transition: opacity .25s ease;
+    pointer-events: none;
+
+    &.isHidden {
+        display: none;
+    }
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 50%;
+        background: hsla(0, 0%, 100%, .92);
+        color: var(--hp-ink);
+        font-size: 1.25rem;
+        box-shadow: 0 8px 20px -10px hsla(0, 0%, 0%, .6);
+        cursor: pointer;
+        pointer-events: auto;
+        transition: transform .2s var(--hp-ease), background-color .2s ease, color .2s ease;
+
+        &:hover {
+            background: var(--hp-red);
+            color: #fff;
+        }
+
+        &:active {
+            transform: scale(.92);
+        }
+    }
+}
+
+.pubRoomCount {
+    position: absolute;
+    top: .9rem;
+    right: .9rem;
+    z-index: 2;
+    padding: .25rem .65rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 8%, .6);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+}
+
+.pubRoomPrice {
+    position: absolute;
+    left: 1rem;
+    bottom: 1rem;
+    z-index: 2;
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+    padding: .4rem .9rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--hp-red);
+    font-family: var(--hp-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 10px 22px -12px hsla(0, 0%, 0%, .6);
+
+    small {
+        font-family: 'Spartan', sans-serif;
+        font-size: .78rem;
+        font-weight: 500;
+        color: var(--hp-muted);
+    }
+}
+
+.pubRoomBody {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.2rem 1.35rem 1.35rem;
+
+    h3 {
+        font-family: var(--hp-display);
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--hp-ink);
+    }
+}
+
+.pubRoomFeatures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin: .6rem 0 0;
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        background: var(--hp-surface-2);
+        color: var(--hp-ink);
+        font-size: .86rem;
+        font-weight: 500;
+        cursor: default;
+
+        &:first-child {
+            background: var(--hp-red-soft);
+            color: var(--hp-red);
+            font-weight: 700;
+        }
+    }
+}
+
+.pubRoomBook {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    height: 2.9rem;
+    padding: 0 1.25rem;
+    border-radius: 999px;
+    background: var(--hp-ink);
+    color: #fff;
+    font-size: .98rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .3s var(--hp-ease), background-color .2s ease, box-shadow .3s ease;
+
+    &:hover {
+        background: var(--hp-red);
+        box-shadow: 0 14px 26px -14px hsla(0, 66%, 35%, .9);
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: scale(.97);
+    }
+}
+
+// How booking works ====================>
+
+.hpGuide {
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+    padding: 5rem 0 4rem;
+}
+
+.hpSteps {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    counter-reset: none;
+
+    // Dashed line linking the steps (behind the icons).
+    &::before {
+        content: '';
+        position: absolute;
+        top: 2.65rem;
+        left: 2.5rem;
+        right: 2.5rem;
+        border-top: 2px dashed hsl(0, 60%, 86%);
+    }
+}
+
+.hpStep {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    padding: 1.4rem 1.3rem 1.4rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 22px;
+    background: #fff;
+    cursor: default;
+    transition: transform .35s var(--hp-ease), box-shadow .35s var(--hp-ease), border-color .2s ease;
+
+    &:hover {
+        border-color: hsl(0, 70%, 88%);
+        box-shadow: 0 22px 44px -30px hsla(0, 45%, 25%, .5);
+        transform: translateY(-4px);
+
+        .hpStepIcon {
+            background: var(--hp-red);
+            color: #fff;
+            transform: rotate(-8deg);
+        }
+    }
+
+    h3 {
+        margin-top: .5rem;
+        font-family: var(--hp-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--hp-ink);
+    }
+
+    p {
+        font-size: .95rem;
+        line-height: 1.55;
+        color: var(--hp-muted);
+    }
+}
+
+.hpStepNo {
+    position: absolute;
+    top: 1.1rem;
+    right: 1.2rem;
+    font-family: var(--hp-display);
+    font-size: 2.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: hsl(20, 14%, 92%);
+}
+
+.hpStepIcon {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 14px;
+    background: var(--hp-red-soft);
+    color: var(--hp-red);
+    font-size: 1.2rem;
+    transition: transform .35s var(--hp-ease), background-color .25s ease, color .25s ease;
+}
+
+.hpGuideFoot {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+
+    h3 {
+        font-family: var(--hp-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+}
+
+.hpIncluded {
+    padding: 1.4rem 1.4rem 1.5rem;
+    border-radius: 22px;
+    background: var(--hp-surface-2);
+
+    h3 {
+        color: var(--hp-ink);
+    }
+
+    ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        margin: .9rem 0 0;
+    }
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .5rem .9rem;
+        border: 1px solid var(--hp-border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--hp-ink);
+        font-size: .92rem;
+        font-weight: 500;
+        cursor: default;
+        transition: transform .25s var(--hp-ease), border-color .2s ease;
+
+        svg {
+            color: var(--hp-red);
+        }
+
+        &:hover {
+            border-color: hsl(0, 70%, 86%);
+            transform: translateY(-2px);
+        }
+    }
+}
+
+.hpHelp {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+    padding: 1.4rem 1.4rem 1.5rem;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 100% 0%, hsla(40, 100%, 70%, .4), transparent 50%),
+        linear-gradient(140deg, hsl(0, 66%, 42%), hsl(345, 62%, 32%));
+    color: #fff;
+
+    h3 {
+        color: #fff;
+    }
+
+    p {
+        font-size: .95rem;
+        line-height: 1.55;
+        color: hsla(0, 0%, 100%, .86);
+    }
+}
+
+.hpHelpBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    height: 2.8rem;
+    margin-top: auto;
+    padding: 0 1.2rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--hp-red);
+    font-size: .96rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .3s var(--hp-ease), box-shadow .3s ease;
+
+    &:hover {
+        box-shadow: 0 14px 26px -14px hsla(0, 0%, 0%, .7);
+        transform: translateY(-2px);
+    }
+
+    &:active {
+        transform: scale(.97);
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    .hpSteps {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        &::before {
+            display: none;
+        }
+    }
+
+    .hpGuideFoot {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .homePage .rooms.pubRooms {
+        width: calc(100% - 1.5rem);
+        padding-top: 3.5rem;
+    }
+
+    .pubRoomBody {
+        padding: 1rem 1.1rem 1.15rem;
+
+        h3 {
+            font-size: 1.5rem;
+        }
+    }
+
+    .pubRoomBook {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    // Phones swipe the photos; no arrows.
+    .pubRoomNav {
+        display: none;
+    }
+
+    .hpGuide {
+        width: calc(100% - 1.5rem);
+        padding: 3.5rem 0 2.5rem;
+    }
+
+    .hpSteps {
+        grid-template-columns: minmax(0, 1fr);
+        gap: .7rem;
+    }
+
+    .hpStep {
+        padding: 1.1rem 1.15rem;
+    }
+}

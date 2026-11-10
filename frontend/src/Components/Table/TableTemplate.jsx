@@ -27,6 +27,7 @@ import { SearchIcon } from './SearchIcon';
 import { ChevronDownIcon } from './ChevronDownIcon';
 import { capitalize, statusColorMap } from './utils';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
+import { useI18n } from '@/i18n/i18nContext';
 
 const SEARCH_FIELDS = ['username', 'name', 'email', 'instructor_name', 'guest_username', 'day_label', 'date', 'class_name', 'room'];
 
@@ -43,6 +44,7 @@ const TableTemplate = ({
     StatusBtn_active,
     ariaLabel = 'Data table',
 }) => {
+    const { t } = useI18n();
     const [modalImage, setModalImage] = useState(null);
     const [filterValue, setFilterValue] = useState('');
     const [visibleColumns, setVisibleColumns] = useState(new Set(initialVisibleColumns));
@@ -105,13 +107,13 @@ const TableTemplate = ({
             case 'status':
                 return (
                     <Chip className="capitalize" color={statusColorMap[cellValue] ?? 'default'} size="sm" variant="flat">
-                        {String(cellValue ?? '').replace('_', ' ')}
+                        {t(String(cellValue ?? '').replace('_', ' '))}
                     </Chip>
                 );
             case 'deposit_status':
                 return (
                     <Chip className="capitalize" color={statusColorMap[cellValue] ?? 'default'} size="sm" variant="dot">
-                        {cellValue}
+                        {t(cellValue)}
                     </Chip>
                 );
             case 'user':
@@ -150,11 +152,11 @@ const TableTemplate = ({
                                 as="button"
                                 src={cellValue}
                                 radius="sm"
-                                aria-label="View proof photo"
+                                aria-label={t('View proof photo')}
                                 onClick={() => setModalImage(cellValue)}
                             />
                         ) : (
-                            <span className="text-default-400">No proof</span>
+                            <span className="text-default-400">{t('No proof')}</span>
                         )}
                     </div>
                 );
@@ -163,7 +165,7 @@ const TableTemplate = ({
             default:
                 return cellValue ?? '';
         }
-    }, [renderActions]);
+    }, [renderActions, t]);
 
     const onRowsPerPageChange = useCallback((event) => {
         setRowsPerPage(Number(event.target.value));
@@ -180,9 +182,9 @@ const TableTemplate = ({
             <div className="flex justify-between gap-3 items-end">
                 <Input
                     isClearable
-                    aria-label="Search"
+                    aria-label={t('Search')}
                     className="w-full sm:max-w-[44%]"
-                    placeholder="Search..."
+                    placeholder={t('Search...')}
                     startContent={<SearchIcon />}
                     value={filterValue}
                     onClear={() => onSearchChange('')}
@@ -194,12 +196,12 @@ const TableTemplate = ({
                             <Dropdown>
                                 <DropdownTrigger className="hidden sm:flex">
                                     <Button endContent={<ChevronDownIcon className="text-small" />} variant="flat">
-                                        Status
+                                        {t('Status')}
                                     </Button>
                                 </DropdownTrigger>
                                 <DropdownMenu
                                     disallowEmptySelection
-                                    aria-label="Filter by status"
+                                    aria-label={t('Filter by status')}
                                     closeOnSelect={false}
                                     selectedKeys={statusFilter}
                                     selectionMode="multiple"
@@ -210,7 +212,7 @@ const TableTemplate = ({
                                 >
                                     {statusOptions.map((status) => (
                                         <DropdownItem key={status.uid} className="capitalize">
-                                            {capitalize(status.name)}
+                                            {t(capitalize(status.name))}
                                         </DropdownItem>
                                     ))}
                                 </DropdownMenu>
@@ -220,12 +222,12 @@ const TableTemplate = ({
                     <Dropdown>
                         <DropdownTrigger className="sm:flex">
                             <Button endContent={<ChevronDownIcon className="text-small" />} variant="flat">
-                                Columns
+                                {t('Columns')}
                             </Button>
                         </DropdownTrigger>
                         <DropdownMenu
                             disallowEmptySelection
-                            aria-label="Visible columns"
+                            aria-label={t('Visible columns')}
                             closeOnSelect={false}
                             selectedKeys={visibleColumns}
                             selectionMode="multiple"
@@ -233,23 +235,23 @@ const TableTemplate = ({
                         >
                             {columns.map((column) => (
                                 <DropdownItem key={column.uid} className="capitalize">
-                                    {capitalize(column.name)}
+                                    {t(capitalize(column.name))}
                                 </DropdownItem>
                             ))}
                         </DropdownMenu>
                     </Dropdown>
                     {onAddNew && (
                         <Button color="danger" endContent={<PlusIcon />} onPress={onAddNew} className={AddNewBtn_active}>
-                            Add New
+                            {t('Add New')}
                         </Button>
                     )}
                 </div>
             </div>
 
             <div className="flex justify-between items-center">
-                <span className="text-default-400 text-small">Total {data.length} items</span>
+                <span className="text-default-400 text-small">{t('Total {count} items', { count: data.length })}</span>
                 <label className="flex items-center text-default-400 text-small">
-                    Rows per page:
+                    {t('Rows per page:')}
                     <select
                         className="bg-transparent outline-none text-default-400 text-small"
                         value={rowsPerPage}
@@ -270,10 +272,10 @@ const TableTemplate = ({
             <Pagination className="sm:flex" isCompact showShadow color="danger" page={page} total={pages} onChange={setPage} />
             <div className="hidden sm:flex w-[30%] justify-end gap-2">
                 <Button isDisabled={page <= 1} size="sm" variant="flat" onPress={() => setPage((p) => p - 1)}>
-                    Previous
+                    {t('Previous')}
                 </Button>
                 <Button isDisabled={page >= pages} size="sm" variant="flat" onPress={() => setPage((p) => p + 1)}>
-                    Next
+                    {t('Next')}
                 </Button>
             </div>
         </div>
@@ -296,11 +298,11 @@ const TableTemplate = ({
                 <TableHeader columns={headerColumns}>
                     {(column) => (
                         <TableColumn key={column.uid} align={column.uid === 'actions' ? 'center' : 'start'} allowsSorting={column.allowsSorting}>
-                            {column.name}
+                            {t(column.name)}
                         </TableColumn>
                     )}
                 </TableHeader>
-                <TableBody emptyContent="No items found" items={items}>
+                <TableBody emptyContent={t('No items found')} items={items}>
                     {(item) => (
                         <TableRow key={item.id}>
                             {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
@@ -310,9 +312,9 @@ const TableTemplate = ({
             </Table>
             <Modal isOpen={Boolean(modalImage)} onClose={() => setModalImage(null)}>
                 <ModalContent>
-                    <ModalHeader>Proof photo</ModalHeader>
+                    <ModalHeader>{t('Proof photo')}</ModalHeader>
                     <ModalBody>
-                        {modalImage && <Image src={modalImage} alt="Check-in or check-out proof" />}
+                        {modalImage && <Image src={modalImage} alt={t('Check-in or check-out proof')} />}
                     </ModalBody>
                 </ModalContent>
             </Modal>

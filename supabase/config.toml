@@ -161,7 +161,7 @@ site_url = "http://localhost:5173"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:5173/reset-password", "http://127.0.0.1:5173/reset-password", "http://localhost:5173", "http://127.0.0.1:5173"]
+additional_redirect_urls = ["http://localhost:5173/reset-password", "http://127.0.0.1:5173/reset-password", "http://localhost:5173/login", "http://127.0.0.1:5173/login", "http://localhost:5173", "http://127.0.0.1:5173"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -323,6 +323,23 @@ max_frequency = "5s"
 # Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
 # `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin_oidc`, `notion`, `twitch`,
 # `twitter`, `x`, `slack_oidc`, `spotify`, `workos`, `zoom`.
+# Sign in with Google / Facebook. Create the OAuth apps (Google Cloud Console → Credentials;
+# Facebook Developers → Facebook Login), use http://127.0.0.1:54321/auth/v1/callback as the
+# redirect URI locally, put the secrets in supabase/.env, set enabled = true, restart the stack,
+# and list the providers in frontend VITE_AUTH_PROVIDERS (e.g. "google,facebook").
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+skip_nonce_check = true
+
+[auth.external.facebook]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_FACEBOOK_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_FACEBOOK_SECRET)"
+redirect_uri = ""
+
 [auth.external.apple]
 enabled = false
 client_id = ""
@@ -431,3 +448,11 @@ entrypoint = "./functions/admin-users/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/admin-users/*.html" ]
+
+# Bank → tuition payments (SePay webhook). Called server to server with an API key
+# (BANK_WEBHOOK_KEY), not a Supabase JWT.
+[functions.bank-webhook]
+enabled = true
+verify_jwt = false
+import_map = "./functions/bank-webhook/deno.json"
+entrypoint = "./functions/bank-webhook/index.ts"

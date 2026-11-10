@@ -14,6 +14,17 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(() => page.close());
 
+// The buttons only show for providers listed in VITE_AUTH_PROVIDERS (none in the e2e setup).
+test('no Google / Facebook buttons without VITE_AUTH_PROVIDERS', async () => {
+    test.skip(Boolean(process.env.VITE_AUTH_PROVIDERS), 'VITE_AUTH_PROVIDERS is set for this run');
+    for (const [path, submit] of [['/login', /login/i], ['/register', 'Register']]) {
+        await page.goto(path);
+        await expect(page.getByRole('button', { name: submit })).toBeVisible();
+        await expect(page.getByRole('button', { name: /continue with/i })).toHaveCount(0);
+        await expect(page.getByText(/or (sign in|sign up) with email/i)).toHaveCount(0);
+    }
+});
+
 test.describe('sign-up', () => {
     test('blocks a short password (native validation)', async () => {
         await page.goto('/register');

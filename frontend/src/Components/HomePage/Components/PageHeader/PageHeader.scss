@@ -1,0 +1,247 @@
+// Page header for /classes and /rooms (PageHeader.jsx): warm light band under the frosted navbar.
+
+.pubPageHead {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 8.2rem 0 3.4rem;
+    background:
+        radial-gradient(circle at 88% 8%, hsla(0, 85%, 70%, .22), transparent 34%),
+        radial-gradient(circle at 6% 100%, hsla(40, 100%, 70%, .3), transparent 36%),
+        linear-gradient(180deg, hsl(20, 30%, 97%), hsl(20, 22%, 94.5%));
+
+    // Fine dot grid, fading out to the left.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background-image: radial-gradient(hsla(0, 30%, 30%, .14) 1px, transparent 1.2px);
+        background-size: 18px 18px;
+        mask-image: linear-gradient(100deg, transparent 35%, #000 85%);
+    }
+
+    &.isOverlap {
+        padding-bottom: 7rem;
+    }
+}
+
+// The page's name in giant outlined letters behind the facts.
+.pubPageWatermark {
+    position: absolute;
+    top: 4.4rem;
+    right: -1rem;
+    z-index: -1;
+    font-family: var(--hp-display);
+    font-size: clamp(6rem, 15vw, 13rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: transparent;
+    -webkit-text-stroke: 1.5px hsla(0, 66%, 43%, .12);
+    pointer-events: none;
+    user-select: none;
+}
+
+.pubPageHeadInner {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 2rem 3rem;
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+
+.pubPageHeadText {
+    max-width: 40rem;
+
+    h1 {
+        margin-top: .85rem;
+        font-family: var(--hp-display);
+        font-size: clamp(2.4rem, 4.6vw, 3.8rem);
+        font-weight: 800;
+        line-height: 1.02;
+        letter-spacing: -.02em;
+        color: var(--hp-ink);
+        text-wrap: balance;
+    }
+
+    p {
+        max-width: 38rem;
+        margin-top: .8rem;
+        font-size: 1.1rem;
+        line-height: 1.55;
+        color: var(--hp-muted);
+    }
+}
+
+.pubPageEyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .38rem .9rem .38rem .75rem;
+    border-radius: 999px;
+    background: var(--hp-red);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    box-shadow: 0 10px 20px -12px hsla(0, 66%, 35%, .9);
+
+    svg {
+        font-size: 1rem;
+    }
+}
+
+// Quick-jump chips ====================>
+
+.pubPageJump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1.4rem;
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        height: 2.5rem;
+        padding: 0 1rem;
+        border: 1px solid var(--hp-border);
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .85);
+        color: var(--hp-ink);
+        font-size: .93rem;
+        font-weight: 600;
+        box-shadow: 0 1px 2px hsla(20, 20%, 20%, .05);
+        transition: transform .25s var(--hp-ease), border-color .2s ease, color .2s ease, box-shadow .3s ease;
+
+        svg {
+            color: var(--hp-red);
+            transition: transform .3s var(--hp-ease);
+        }
+
+        &:hover {
+            border-color: hsl(0, 70%, 82%);
+            color: var(--hp-red);
+            box-shadow: 0 12px 24px -16px hsla(0, 50%, 30%, .6);
+            transform: translateY(-2px);
+
+            svg {
+                transform: translateY(1px) scale(1.1);
+            }
+        }
+
+        &:active {
+            transform: scale(.97);
+        }
+    }
+}
+
+// Facts ====================>
+
+.pubPageFacts {
+    display: flex;
+    flex-shrink: 0;
+    gap: .7rem;
+    margin: 0;
+
+    > div {
+        display: flex;
+        flex-direction: column-reverse;
+        justify-content: flex-end;
+        gap: .2rem;
+        min-width: 7.6rem;
+        padding: 1rem 1.1rem .95rem;
+        border: 1px solid hsla(0, 0%, 100%, .9);
+        border-radius: 20px;
+        background: hsla(0, 0%, 100%, .78);
+        backdrop-filter: blur(6px);
+        box-shadow: 0 18px 36px -26px hsla(0, 40%, 25%, .55);
+        transition: transform .3s var(--hp-ease);
+
+        &:hover {
+            transform: translateY(-3px) rotate(-1deg);
+        }
+    }
+
+    dt {
+        font-size: .8rem;
+        line-height: 1.3;
+        color: var(--hp-muted);
+    }
+
+    dd {
+        margin: 0;
+        font-family: var(--hp-display);
+        font-size: 1.85rem;
+        font-weight: 800;
+        line-height: 1;
+        white-space: nowrap;
+        color: var(--hp-red);
+    }
+}
+
+@media screen and (max-width: 1000px) {
+    .pubPageHeadInner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .pubPageWatermark {
+        display: none;
+    }
+
+    .pubPageHead {
+        padding: 6.4rem 0 2.2rem;
+
+        &.isOverlap {
+            padding-bottom: 5.5rem;
+        }
+    }
+
+    .pubPageHeadInner {
+        width: calc(100% - 2rem);
+        gap: 1.4rem;
+    }
+
+    .pubPageHeadText p {
+        font-size: 1rem;
+    }
+
+    .pubPageJump {
+        margin-top: 1.1rem;
+
+        a {
+            height: 2.3rem;
+            padding: 0 .85rem;
+            font-size: .88rem;
+        }
+    }
+
+    .pubPageFacts {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
+        gap: .5rem;
+
+        > div {
+            min-width: 0;
+            padding: .75rem .8rem;
+            border-radius: 16px;
+        }
+
+        dd {
+            font-size: 1.35rem;
+        }
+
+        dt {
+            font-size: .74rem;
+        }
+    }
+}

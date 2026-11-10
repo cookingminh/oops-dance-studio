@@ -1,0 +1,75 @@
+// A routine's class video (the routines panel).
+
+.lessonVideoAdd {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: .35rem;
+    padding: .3rem .7rem;
+    border: 1px dashed hsl(0, 60%, 80%);
+    border-radius: 999px;
+    color: hsl(0, 66%, 43%);
+    font-size: .8rem;
+    font-weight: 600;
+    transition: background .2s ease, border-color .2s ease;
+
+    &:hover {
+        border-color: hsl(0, 66%, 43%);
+        background: hsl(0, 85%, 96%);
+    }
+}
+
+.lessonVideo {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.lessonVideoThumb {
+    position: relative;
+    flex-shrink: 0;
+    width: 4.6rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: .5rem;
+    background: #000;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.lessonVideoText {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    font-size: .8rem;
+
+    strong {
+        font-weight: 600;
+    }
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        white-space: nowrap;
+        color: hsl(0, 66%, 43%);
+    }
+}
+
+.lessonVideoEdit {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.lessonVideoEditActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .4rem;
+}

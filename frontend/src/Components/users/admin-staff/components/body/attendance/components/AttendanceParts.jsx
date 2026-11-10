@@ -1,49 +1,42 @@
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger, Tooltip } from '@nextui-org/react';
-import { LuStickyNote } from 'react-icons/lu';
-import { VerticalDotsIcon } from '../../../../../../Table/VerticalDotsIcon';
+import { Button, Tooltip } from '@nextui-org/react';
+import { LuCheck, LuStickyNote } from 'react-icons/lu';
+import { formatClock } from '@/lib/format';
+import { useI18n } from '@/i18n/i18nContext';
 
-// Small pieces shared by the attendance sections. `actions` comes from Attendance.jsx.
+// Small pieces shared by the attendance sections.
 
-export const ProofThumb = ({ url, label, onView }) =>
-    url ? (
-        <button type="button" className="proofThumb" aria-label="View proof photo" title={label} onClick={() => onView(url, label)}>
+// `label` is already translated.
+export const ProofThumb = ({ url, label, onView }) => {
+    const { t } = useI18n();
+    return url ? (
+        <button type="button" className="proofThumb" aria-label={t('View proof photo')} title={label} onClick={() => onView({ url, label })}>
             <img src={url} alt="" />
         </button>
     ) : null;
+};
 
-export const NoteButton = ({ record }) =>
-    record.details ? (
+export const NoteButton = ({ record }) => {
+    const { t } = useI18n();
+    return record?.details ? (
         <Tooltip content={<span className="noteTooltip">{record.details}</span>}>
-            <Button isIconOnly size="sm" variant="light" aria-label="Session note">
+            <Button isIconOnly size="sm" variant="light" aria-label={t('Session note')}>
                 <LuStickyNote className="text-default-500" />
             </Button>
         </Tooltip>
     ) : null;
+};
 
-export const AttendanceMenu = ({ record, actions }) => {
-    const items = [];
-    if (record.status !== 'completed') {
-        items.push(<DropdownItem key="approve" onPress={() => actions.approve(record)}>Mark completed</DropdownItem>);
-    }
-    items.push(<DropdownItem key="details" onPress={() => actions.details(record)}>{record.details ? 'Edit note' : 'Add note'}</DropdownItem>);
-    if (record.status === 'pending' || record.status === 'waiting') {
-        items.push(<DropdownItem key="instructor" onPress={() => actions.instructor(record)}>Change instructor</DropdownItem>);
-    }
-    if (record.status !== 'cancelled') {
-        items.push(
-            <DropdownItem key="cancel" className="text-danger" color="danger" onPress={() => actions.cancel(record)}>
-                Cancel session
-            </DropdownItem>
-        );
-    }
+// Check-in or check-out on a row: a tick, the time (or "Not yet") and the proof photo.
+export const CheckMini = ({ label, proofLabel, at, proof, onView }) => {
+    const { t } = useI18n();
     return (
-        <Dropdown>
-            <DropdownTrigger>
-                <Button isIconOnly size="sm" variant="light" aria-label="Attendance actions">
-                    <VerticalDotsIcon className="text-default-400" />
-                </Button>
-            </DropdownTrigger>
-            <DropdownMenu aria-label="Attendance actions">{items}</DropdownMenu>
-        </Dropdown>
+        <span className={`atStep${at ? ' isDone' : ''}`}>
+            <span className="atStepMark" aria-hidden="true">{at && <LuCheck />}</span>
+            <span className="atStepText">
+                <small>{label}</small>
+                <strong>{at ? formatClock(at) : t('Not yet')}</strong>
+            </span>
+            <ProofThumb url={proof} label={proofLabel} onView={onView} />
+        </span>
     );
 };

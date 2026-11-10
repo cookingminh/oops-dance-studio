@@ -3,22 +3,26 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Avatar } from '@nextui-org/react';
 import { LuCalendarDays, LuMenu } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
+import { useRoleLabel } from '@/hooks/useRoleLabel';
 import { studioDateLabel } from '@/lib/format';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
-import { findAdminPage } from '../../adminPages';
-import TaskBell from './TaskBell';
+import LanguageSwitch from '@/ui/LanguageSwitch';
+import { useI18n } from '@/i18n/i18nContext';
 
-// Sticky header: the current page's title and description, today's date and who is signed in
-// (which opens their profile settings).
-const TopBar = ({ onOpenMenu }) => {
-    const { user, role } = useAuth();
+// Workspace top bar, shared by /admin and /profile: the current page's title and description,
+// optional `actions` (the staff to-do bell), today's date and who is signed in (which opens
+// `settingsPath`).
+const TopBar = ({ onOpenMenu, findPage, settingsPath, actions = null }) => {
+    const { user } = useAuth();
+    const { t, intl } = useI18n();
+    const roleLabel = useRoleLabel();
     const { pathname } = useLocation();
-    const page = findAdminPage(pathname);
+    const page = findPage(pathname);
     const name = user.full_name || user.username;
 
     return (
         <header className="adminTopBar">
-            <button type="button" className="iconButton menuToggle" onClick={onOpenMenu} aria-label="Open menu">
+            <button type="button" className="iconButton menuToggle" onClick={onOpenMenu} aria-label={t('Open menu')}>
                 <LuMenu />
             </button>
 
@@ -31,23 +35,24 @@ const TopBar = ({ onOpenMenu }) => {
                         exit={{ opacity: 0, y: -8 }}
                         transition={{ duration: 0.2 }}
                     >
-                        <h1>{page.label}</h1>
-                        <p>{page.description}</p>
+                        <h1>{t(page.label)}</h1>
+                        <p>{t(page.description)}</p>
                     </motion.div>
                 </AnimatePresence>
             </div>
 
             <div className="topBarRight">
-                <TaskBell />
+                <LanguageSwitch />
+                {actions}
                 <span className="datePill">
                     <LuCalendarDays aria-hidden="true" />
-                    {studioDateLabel()}
+                    {studioDateLabel(intl)}
                 </span>
-                <Link to="/admin/settings" className="userChip" title="Profile settings">
+                <Link to={settingsPath} className="userChip" title={t('Profile settings')}>
                     <Avatar {...AVATAR_DEFAULTS} size="sm" src={user.avatar_url ?? undefined} name={name} />
                     <span className="userMeta">
                         <strong>{name}</strong>
-                        <small>{role}</small>
+                        <small>{t(roleLabel)}</small>
                     </span>
                 </Link>
             </div>

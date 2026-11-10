@@ -1,0 +1,1632 @@
+// Expenses page (/admin/expenses) and its dialogs. Tokens --ad-* come from admin.scss
+// (.adminShell, and .adminPortal on dialogs, which render outside the shell).
+
+$green: hsl(152, 60%, 28%);
+$green-soft: hsl(150, 60%, 92%);
+$blue: hsl(217, 60%, 40%);
+$blue-soft: hsl(217, 85%, 95%);
+$amber: hsl(30, 80%, 32%);
+$amber-soft: hsl(40, 95%, 92%);
+$grey: hsl(240, 4%, 40%);
+$grey-soft: hsl(240, 5%, 94%);
+
+// Shared pieces (page + dialogs) ==============================================
+
+:is(.adminShell, .adminPortal) {
+    .exCatIcon {
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+        color: var(--ad-text);
+        font-size: 1.15rem;
+
+        &.is-sm {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 10px;
+            font-size: .95rem;
+        }
+    }
+
+    .exClassChip {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        max-width: 100%;
+        min-width: 0;
+        padding: .18rem .6rem .18rem .2rem;
+        border: 1px solid hsl(20, 60%, 86%);
+        border-radius: 999px;
+        background: hsl(22, 90%, 97%);
+        color: hsl(18, 60%, 30%);
+        font-size: .78rem;
+        font-weight: 600;
+        line-height: 1.3;
+
+        img {
+            width: 1.3rem;
+            height: 1.3rem;
+            flex-shrink: 0;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .exShared {
+        font-size: .82rem;
+        color: var(--ad-subtle);
+    }
+
+    .exBadge {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: .1rem .5rem;
+        border-radius: 999px;
+        background: $blue-soft;
+        color: $blue;
+        font-size: .72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .exLinkButton {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        padding: 0;
+        color: var(--ad-primary);
+        font-size: .84rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
+    .exHint {
+        font-size: .82rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+
+        &.isError {
+            color: hsl(0, 70%, 42%);
+        }
+    }
+
+    .exNote {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        padding: .7rem .9rem;
+        border-radius: 14px;
+        background: $blue-soft;
+        color: $blue;
+        font-size: .86rem;
+        line-height: 1.45;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+}
+
+// Overview =====================================================================
+
+.adminShell .exMonthNav {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: 4px;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 10px;
+        color: var(--ad-muted);
+        cursor: pointer;
+        transition: background-color .2s ease, color .2s ease;
+
+        &:hover:not(:disabled) {
+            background: var(--ad-surface-2);
+            color: var(--ad-text);
+        }
+
+        &:disabled {
+            opacity: .35;
+            cursor: default;
+        }
+    }
+}
+
+.adminShell .exMonthName {
+    display: grid;
+    min-width: 10rem;
+    line-height: 1.15;
+    text-align: center;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .exKpis {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr));
+    gap: .8rem;
+    transition: opacity .2s ease;
+
+    &.isLoading {
+        opacity: .55;
+    }
+}
+
+.adminShell .exKpi {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: .15rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+
+    > span {
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--ad-text);
+        overflow-wrap: anywhere;
+    }
+
+    small {
+        font-size: .8rem;
+        line-height: 1.35;
+        color: var(--ad-subtle);
+    }
+
+    &.isTied strong {
+        color: hsl(18, 70%, 38%);
+    }
+
+    // The month's total: the one number the page leads with.
+    &.isHero {
+        gap: .2rem;
+        border: 0;
+        background:
+            radial-gradient(circle at 100% 0%, hsla(0, 75%, 55%, .38), transparent 55%),
+            linear-gradient(135deg, hsl(0, 0%, 16%), hsl(350, 20%, 23%));
+        color: #fff;
+
+        > span,
+        small {
+            color: hsla(0, 0%, 100%, .78);
+        }
+
+        strong {
+            color: #fff;
+            font-size: 1.85rem;
+        }
+    }
+}
+
+.adminShell .exDelta {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: .35rem;
+    padding: .3rem .7rem;
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .12);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.35;
+
+    svg {
+        flex-shrink: 0;
+    }
+}
+
+.adminShell .exInsight {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.adminShell .exPanel {
+    min-width: 0;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: hsl(20, 20%, 99%);
+}
+
+.adminShell .exPanelHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem 1rem;
+    margin-bottom: .8rem;
+
+    h3 {
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .exLegend {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .9rem;
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--ad-muted);
+
+    > span {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .exKeyBar {
+        width: .65rem;
+        height: .65rem;
+        border-radius: 3px;
+    }
+
+    .exKeyTick {
+        width: 2px;
+        height: .85rem;
+        border-radius: 1px;
+        background: var(--ad-text);
+    }
+}
+
+.adminShell .exPanelEmpty {
+    padding: .9rem 0 .3rem;
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+}
+
+.adminShell .exBars {
+    display: grid;
+    gap: .15rem;
+}
+
+.adminShell .exBarRow {
+    display: grid;
+    grid-template-columns: 2rem minmax(7rem, 11.5rem) minmax(0, 1fr) 8.5rem;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    padding: .45rem .5rem;
+    border-radius: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .2s ease;
+
+    &:hover:not(:disabled),
+    &.isActive {
+        background: var(--ad-surface-2);
+    }
+
+    &.isActive .exBarLabel strong {
+        color: var(--ad-primary);
+    }
+
+    &:disabled {
+        cursor: default;
+        opacity: .7;
+    }
+}
+
+.adminShell .exBarLabel {
+    min-width: 0;
+    display: grid;
+    line-height: 1.3;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .9rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .76rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .exBarTrack {
+    position: relative;
+    height: .65rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+
+    .exBarFill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: 999px;
+    }
+
+    // Last month, on the same scale.
+    .exBarTick {
+        position: absolute;
+        top: -.25rem;
+        bottom: -.25rem;
+        width: 2px;
+        margin-left: -1px;
+        border-radius: 1px;
+        background: var(--ad-text);
+        box-shadow: 0 0 0 2px hsl(20, 20%, 99%);
+    }
+}
+
+.adminShell .exBarValue {
+    display: grid;
+    justify-items: end;
+    line-height: 1.3;
+
+    strong {
+        font-size: .9rem;
+        font-weight: 700;
+        color: var(--ad-text);
+        white-space: nowrap;
+    }
+
+    small {
+        font-size: .76rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .exSplitBar {
+    display: flex;
+    gap: 2px;
+    height: 10px;
+    overflow: hidden;
+    border-radius: 999px;
+
+    > span {
+        min-width: 0;
+        height: 100%;
+    }
+
+    .isEmpty {
+        flex: 1;
+        background: var(--ad-surface-2);
+    }
+}
+
+.adminShell .exSplitKeys {
+    display: grid;
+    gap: .1rem;
+    margin: .8rem 0 0;
+
+    > div {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .4rem 0;
+    }
+
+    dt {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .88rem;
+        color: var(--ad-muted);
+
+        i {
+            width: .65rem;
+            height: .65rem;
+            flex-shrink: 0;
+            border-radius: 3px;
+        }
+    }
+
+    dd {
+        display: inline-flex;
+        align-items: baseline;
+        gap: .5rem;
+
+        strong {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+
+        small {
+            min-width: 2.6rem;
+            font-size: .78rem;
+            color: var(--ad-subtle);
+            text-align: right;
+        }
+    }
+}
+
+.adminShell .exClassTotals {
+    display: grid;
+    gap: .2rem;
+    margin-top: .6rem;
+    padding-top: .6rem;
+    border-top: 1px dashed var(--ad-border);
+
+    button {
+        display: grid;
+        grid-template-columns: 1.7rem minmax(0, 1fr) auto;
+        align-items: center;
+        gap: .6rem;
+        width: 100%;
+        padding: .4rem .45rem;
+        border-radius: 10px;
+        text-align: left;
+        cursor: pointer;
+        transition: background-color .2s ease;
+
+        &:hover,
+        &.isActive {
+            background: var(--ad-surface-2);
+        }
+
+        &.isActive span {
+            color: var(--ad-primary);
+        }
+    }
+
+    img {
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    strong {
+        font-size: .88rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+}
+
+.adminShell .exSide {
+    min-width: 0;
+    display: grid;
+    align-content: start;
+    gap: 1rem;
+}
+
+// How the numbers reach the report: a quiet note beside the split.
+.adminShell .exReportNote {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: .35rem .8rem;
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    background: hsl(217, 60%, 97.5%);
+
+    p {
+        min-width: 0;
+        display: grid;
+        gap: .2rem;
+        font-size: .86rem;
+        line-height: 1.5;
+        color: var(--ad-muted);
+
+        strong {
+            color: var(--ad-text);
+            font-weight: 700;
+        }
+    }
+
+    .exReportLink {
+        grid-column: 2;
+        justify-self: start;
+        margin-left: -.9rem;
+    }
+}
+
+.adminShell .exReportIcon {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: $blue-soft;
+    color: $blue;
+}
+
+.adminShell .exReportLink {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    flex-shrink: 0;
+    padding: .5rem .9rem;
+    border-radius: 999px;
+    color: var(--ad-muted);
+    font-size: .9rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .2s ease, background-color .2s ease;
+
+    svg {
+        transition: transform .25s var(--ad-ease);
+    }
+
+    &:hover {
+        color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+
+        svg {
+            transform: translateX(3px);
+        }
+    }
+}
+
+// The list =========================================================================
+
+.adminShell .exSearch {
+    width: 18rem;
+}
+
+.adminShell .exToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+    margin-bottom: 1rem;
+
+    .exFilterSelect {
+        width: 13.5rem;
+    }
+}
+
+.adminShell .exShownTotal {
+    margin-left: auto;
+    font-size: .88rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    white-space: nowrap;
+}
+
+.adminShell .exRows {
+    display: grid;
+    gap: .5rem;
+}
+
+.adminShell .exRow,
+.adminShell .exRecRow {
+    display: grid;
+    align-items: center;
+    gap: .35rem 1rem;
+    padding: .75rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    transition: border-color .2s ease, box-shadow .2s ease, opacity .2s ease;
+
+    &:hover {
+        border-color: hsl(20, 10%, 85%);
+        box-shadow: var(--ad-shadow);
+    }
+
+    &.isBusy {
+        opacity: .6;
+    }
+}
+
+.adminShell .exRow {
+    grid-template-columns: 2.6rem minmax(0, 2.2fr) minmax(0, 1.1fr) 7.5rem 2.75rem 9.5rem auto;
+    grid-template-areas: 'icon main class when receipt amount actions';
+
+    > .exCatIcon {
+        grid-area: icon;
+    }
+}
+
+.adminShell .exRowMain {
+    grid-area: main;
+    min-width: 0;
+    display: grid;
+    gap: .15rem;
+    line-height: 1.35;
+}
+
+.adminShell .exRowTitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--ad-text);
+}
+
+.adminShell .exRowSub {
+    min-width: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .25rem .5rem;
+    font-size: .8rem;
+    color: var(--ad-muted);
+
+    .exRowCat {
+        font-weight: 600;
+    }
+
+    .exRowVendor {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &::before {
+            content: '·';
+            margin-right: .5rem;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .exRowCat + .exBadge,
+    .exRowVendor + .exBadge {
+        margin-left: .1rem;
+    }
+}
+
+.adminShell .exRowClass {
+    grid-area: class;
+    min-width: 0;
+    display: flex;
+}
+
+.adminShell .exRowWhen,
+.adminShell .exRecWhen {
+    grid-area: when;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--ad-text);
+        white-space: nowrap;
+    }
+
+    small {
+        font-size: .78rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .exReceiptCell {
+    grid-area: receipt;
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    overflow: hidden;
+    border: 1px solid var(--ad-border);
+    border-radius: 10px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: transform .2s var(--ad-ease), border-color .2s ease, color .2s ease;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &.isPdf {
+        gap: 0;
+        align-content: center;
+        color: hsl(0, 60%, 42%);
+        background: hsl(0, 70%, 97%);
+        font-size: .95rem;
+
+        span {
+            font-size: .55rem;
+            font-weight: 800;
+            letter-spacing: .04em;
+        }
+    }
+
+    &:hover {
+        transform: translateY(-1px);
+        border-color: var(--ad-primary-tint);
+        color: var(--ad-primary);
+    }
+
+    &.isNone {
+        visibility: hidden;
+        cursor: default;
+    }
+}
+
+.adminShell .exRowAmount {
+    grid-area: amount;
+    min-width: 0;
+    display: grid;
+    justify-items: end;
+    line-height: 1.35;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ad-text);
+        white-space: nowrap;
+    }
+
+    small {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .76rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .exRowActions {
+    grid-area: actions;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .15rem;
+
+    .exDanger:hover {
+        color: var(--ad-primary);
+    }
+}
+
+.adminShell .exEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+    line-height: 1.5;
+}
+
+// Recurring ==========================================================================
+
+.adminShell .exRecSummary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem 1rem;
+    margin-bottom: .9rem;
+    font-size: .9rem;
+    color: var(--ad-muted);
+
+    strong {
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .exRecLate {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .25rem .7rem;
+    border-radius: 999px;
+    background: $amber-soft;
+    color: $amber;
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.adminShell .exRecRow {
+    grid-template-columns: 2.6rem minmax(0, 1.8fr) 10.5rem minmax(9rem, 11.5rem) 8.5rem auto;
+    grid-template-areas: 'icon main when status amount actions';
+
+    > .exCatIcon {
+        grid-area: icon;
+    }
+
+    &.is-paused,
+    &.is-ended {
+        background: hsl(20, 14%, 98.5%);
+
+        .exRowTitle,
+        .exRowAmount strong {
+            color: var(--ad-muted);
+        }
+    }
+
+    .exToggle {
+        min-width: 6.2rem;
+    }
+}
+
+.adminShell .exRecFoot {
+    display: contents;
+}
+
+.adminShell .exRecStatus {
+    grid-area: status;
+    min-width: 0;
+}
+
+.adminShell .exStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    max-width: 100%;
+    padding: .22rem .6rem;
+    border-radius: 999px;
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.3;
+
+    svg {
+        flex-shrink: 0;
+        font-size: .9rem;
+    }
+
+    &.is-added {
+        background: $green-soft;
+        color: $green;
+    }
+
+    &.is-due,
+    &.is-upcoming {
+        background: $blue-soft;
+        color: $blue;
+    }
+
+    &.is-late {
+        background: $amber-soft;
+        color: $amber;
+    }
+
+    &.is-paused,
+    &.is-ended {
+        background: $grey-soft;
+        color: $grey;
+    }
+}
+
+.adminShell .exFinePrint {
+    margin-top: 1rem;
+    font-size: .84rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+}
+
+// Dialogs (portal) ==================================================================
+
+.exDialog {
+    font-family: 'Spartan', sans-serif;
+
+    .exDialogForm {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        max-height: inherit;
+        overflow: hidden;
+    }
+
+    .exDialogHeader {
+        display: grid;
+        gap: .15rem;
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .exDialogKicker {
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-primary);
+    }
+
+    .exDialogTitle {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+
+    .exDialogSub {
+        font-size: .84rem;
+        font-weight: 500;
+        color: var(--ad-muted);
+    }
+
+    .exDialogBody {
+        gap: 1.15rem;
+        padding-top: 1.1rem;
+        padding-bottom: 1.2rem;
+    }
+
+    // Amount + category on the left, the details on the right (one column on phones).
+    .exDialogGrid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1.5rem;
+    }
+
+    .exDialogCol {
+        min-width: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-content: start;
+        gap: 1.1rem;
+    }
+
+    .exFieldLabel {
+        display: block;
+        margin-bottom: .45rem;
+        padding: 0;
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    .exField {
+        display: grid;
+        align-content: start;
+
+        .segmented {
+            justify-self: start;
+        }
+    }
+
+    .exFieldRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: start;
+
+        &.isDate {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+    }
+
+    // The big amount ----------------------------------------------------------------
+    .exAmount {
+        padding: .9rem 1rem .8rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 18px;
+        background: var(--ad-surface-2);
+        transition: border-color .2s ease, box-shadow .2s ease;
+
+        &:focus-within {
+            border-color: var(--ad-primary-tint);
+            box-shadow: 0 0 0 3px var(--ad-primary-soft);
+        }
+
+        &.isInvalid {
+            border-color: hsl(0, 70%, 75%);
+        }
+
+        .exFieldLabel {
+            margin-bottom: .1rem;
+        }
+    }
+
+    .exAmountBox {
+        display: flex;
+        align-items: baseline;
+        gap: .5rem;
+
+        input {
+            flex: 1;
+            width: 100%;
+            min-width: 0;
+            padding: .1rem 0;
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: var(--ad-text);
+            font-family: var(--ad-display);
+            font-size: 2.4rem;
+            font-weight: 700;
+            line-height: 1.15;
+            font-variant-numeric: tabular-nums;
+
+            &::placeholder {
+                color: hsl(240, 4%, 78%);
+            }
+        }
+    }
+
+    .exAmountUnit {
+        font-family: var(--ad-display);
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--ad-subtle);
+    }
+
+    .exQuick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+        margin: .55rem 0 .45rem;
+
+        button {
+            padding: .32rem .8rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            color: var(--ad-muted);
+            font-size: .82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .15s ease;
+
+            &:hover {
+                color: var(--ad-primary);
+                border-color: var(--ad-primary-tint);
+            }
+
+            &:active {
+                transform: scale(.96);
+            }
+
+            &[aria-pressed='true'] {
+                background: var(--ad-primary);
+                border-color: var(--ad-primary);
+                color: #fff;
+            }
+        }
+    }
+
+    // Category grid -------------------------------------------------------------------
+    .exCatPicker {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+
+        &.isInvalid .exCatOption {
+            border-color: hsl(0, 70%, 85%);
+        }
+    }
+
+    .exCatGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(5.9rem, 1fr));
+        grid-auto-rows: 1fr;
+        gap: .5rem;
+    }
+
+    .exCatOption {
+        position: relative;
+        display: grid;
+        justify-items: center;
+        align-content: center;
+        gap: .35rem;
+        min-height: 4.6rem;
+        padding: .65rem .4rem .55rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface);
+        color: var(--ad-text);
+        text-align: center;
+        cursor: pointer;
+        transition: border-color .2s ease, background-color .2s ease, transform .2s var(--ad-ease), box-shadow .2s ease;
+
+        input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        &:hover {
+            border-color: hsl(20, 10%, 80%);
+            transform: translateY(-1px);
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+
+        &.isChecked {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            box-shadow: 0 6px 16px -10px hsla(0, 66%, 43%, .6);
+
+            .exCatTileIcon {
+                background: var(--ad-primary);
+                color: #fff;
+            }
+        }
+    }
+
+    .exCatTileIcon {
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 10px;
+        background: var(--ad-surface-2);
+        font-size: 1.05rem;
+        transition: background-color .2s ease, color .2s ease;
+    }
+
+    .exCatTileLabel {
+        font-size: .78rem;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+
+    .exCatTick {
+        position: absolute;
+        top: .45rem;
+        right: .45rem;
+        font-size: .75rem;
+        color: var(--ad-primary);
+    }
+
+    .exCatHint {
+        min-height: 2.4em;
+        margin-top: .5rem;
+
+        strong {
+            color: var(--ad-text);
+        }
+    }
+
+    // Class ------------------------------------------------------------------------------
+    .exClassField {
+        display: grid;
+        gap: .55rem;
+        padding: .85rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+    }
+
+    .exClassPick {
+        overflow: hidden;
+        padding: 0 2px 2px;
+    }
+
+    .exClassHint {
+        display: flex;
+        align-items: flex-start;
+        gap: .45rem;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .2rem;
+        }
+    }
+
+    // Receipt ----------------------------------------------------------------------------
+    .exFileInput {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .exDrop {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        width: 100%;
+        padding: 1rem 1.1rem;
+        border: 1.5px dashed hsl(20, 10%, 80%);
+        border-radius: 16px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .2s ease, background-color .2s ease, color .2s ease;
+
+        > svg {
+            flex-shrink: 0;
+            font-size: 1.35rem;
+        }
+
+        span {
+            display: grid;
+            gap: .1rem;
+        }
+
+        strong {
+            font-size: .92rem;
+            color: var(--ad-text);
+        }
+
+        small {
+            font-size: .8rem;
+        }
+
+        &:hover,
+        &.isDragging {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+    }
+
+    .exReceiptPicked {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        padding: .6rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface);
+    }
+
+    .exReceiptThumbButton {
+        flex-shrink: 0;
+        padding: 0;
+        border-radius: 12px;
+        cursor: zoom-in;
+    }
+
+    .exReceiptThumb {
+        display: grid;
+        place-items: center;
+        width: 3.6rem;
+        height: 3.6rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        object-fit: cover;
+        background: var(--ad-surface-2);
+
+        &.isFile {
+            color: hsl(0, 60%, 42%);
+            font-size: 1.5rem;
+            background: hsl(0, 70%, 97%);
+        }
+    }
+
+    .exReceiptMeta {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        justify-items: start;
+        gap: .1rem;
+
+        strong {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: .9rem;
+            color: var(--ad-text);
+        }
+
+        small {
+            font-size: .78rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .exReceiptActions {
+        display: flex;
+        align-items: center;
+        gap: .2rem;
+        flex-shrink: 0;
+    }
+
+    // Viewer -------------------------------------------------------------------------------
+    .exViewerBody {
+        display: grid;
+        place-items: center;
+        min-height: 12rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .exViewerImage {
+        max-width: 100%;
+        max-height: 70vh;
+        border-radius: 12px;
+        object-fit: contain;
+        box-shadow: var(--ad-shadow);
+    }
+
+    .exPdfCard {
+        display: grid;
+        justify-items: center;
+        gap: .6rem;
+        padding: 1.5rem;
+        color: var(--ad-muted);
+        font-size: .92rem;
+
+        svg {
+            font-size: 2.4rem;
+            color: hsl(0, 60%, 42%);
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .exDialog .exCatOption,
+    .adminShell .exReceiptCell {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+}
+
+// Responsive =========================================================================
+
+@media screen and (max-width: 900px) {
+    .exDialog .exDialogGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media screen and (max-width: 1240px) {
+    .adminShell .exKpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .adminShell .exInsight {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .exRow {
+        grid-template-columns: 2.6rem minmax(0, 1fr) 7.5rem 2.75rem 9rem auto;
+        grid-template-areas:
+            'icon main when receipt amount actions'
+            'icon class when receipt amount actions';
+        row-gap: .35rem;
+
+        > .exCatIcon {
+            align-self: start;
+        }
+    }
+
+    .adminShell .exRecRow {
+        grid-template-columns: 2.6rem minmax(0, 1fr) 9rem auto;
+        grid-template-areas:
+            'icon main amount actions'
+            'icon when status status';
+
+        .exRecStatus {
+            justify-self: end;
+        }
+    }
+}
+
+@media screen and (max-width: 760px) {
+    .adminShell .exMonthName {
+        min-width: 8.5rem;
+    }
+
+    .adminShell .exSearch {
+        width: 100%;
+    }
+
+    .adminShell .exKpi {
+        padding: .85rem .9rem;
+
+        strong {
+            font-size: 1.15rem;
+        }
+
+        &.isHero,
+        &:last-child {
+            grid-column: 1 / -1;
+        }
+
+        &.isHero strong {
+            font-size: 1.6rem;
+        }
+    }
+
+    .adminShell .exListCard .cardActions {
+        width: 100%;
+    }
+
+    .adminShell .exPanel {
+        padding: .9rem .8rem;
+    }
+
+    .adminShell .exBarRow {
+        grid-template-columns: 2rem minmax(0, 1fr) auto;
+        grid-template-areas:
+            'icon label value'
+            'track track track';
+        gap: .35rem .7rem;
+
+        > .exCatIcon {
+            grid-area: icon;
+        }
+
+        .exBarLabel {
+            grid-area: label;
+        }
+
+        .exBarTrack {
+            grid-area: track;
+            margin: .15rem .25rem .2rem;
+        }
+
+        .exBarValue {
+            grid-area: value;
+        }
+    }
+
+    .adminShell .exToolbar {
+        .exFilterSelect {
+            width: calc(50% - .3rem);
+        }
+
+        .exShownTotal {
+            width: 100%;
+            margin-left: 0;
+        }
+    }
+
+    .adminShell .exRow {
+        grid-template-columns: 2.4rem minmax(0, 1fr) auto auto;
+        grid-template-areas:
+            'icon main main amount'
+            'icon class class class'
+            'icon when receipt actions';
+        gap: .4rem .6rem;
+        padding: .75rem .75rem .6rem;
+
+        .exRowTitle {
+            white-space: normal;
+        }
+
+        // Category · vendor flow as one line of text, so a wrap doesn't start with the dot.
+        .exRowSub {
+            display: block;
+            line-height: 1.5;
+
+            > span {
+                display: inline;
+            }
+
+            .exRowVendor {
+                white-space: normal;
+
+                &::before {
+                    margin: 0 .35rem;
+                }
+            }
+
+            .exBadge {
+                display: inline-flex;
+                margin-left: .4rem;
+                vertical-align: middle;
+            }
+        }
+
+        .exRowClass:has(.exShared) {
+            display: none;
+        }
+
+        .exRowWhen {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 0 .45rem;
+        }
+
+        .exReceiptCell {
+            width: 2.3rem;
+            height: 2.3rem;
+
+            &.isNone {
+                display: none;
+            }
+        }
+    }
+
+    .adminShell .exRecRow {
+        grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+        grid-template-areas:
+            'icon main amount'
+            'icon when when'
+            'icon foot foot';
+        gap: .45rem .6rem;
+        padding: .75rem;
+
+        .exRowTitle {
+            white-space: normal;
+        }
+
+        .exRecFoot {
+            grid-area: foot;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .4rem;
+        }
+    }
+
+    .exDialog {
+        .exFieldRow,
+        .exFieldRow.isDate {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .exAmountBox input {
+            font-size: 2rem;
+        }
+
+        .exCatGrid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .exReceiptPicked {
+            flex-wrap: wrap;
+        }
+    }
+}

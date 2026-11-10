@@ -1,0 +1,598 @@
+// /rooms booking card (.hpBook). Tokens --hp-* come from homeSections.scss (.homePage).
+
+// Rides up over the bottom edge of the page header, so booking is the first thing on the page.
+.hpBook {
+    position: relative;
+    z-index: 2;
+    width: min(1200px, calc(100% - 2.5rem));
+    margin: -4.6rem auto 0;
+    padding: 0 0 2rem;
+}
+
+.hpBookTitle {
+    padding: 0;
+    font-family: var(--hp-display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--hp-ink);
+}
+
+.hpBookCard {
+    display: grid;
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    overflow: hidden;
+    border: 1px solid var(--hp-border);
+    border-radius: 28px;
+    background: #fff;
+    box-shadow: 0 2px 4px hsla(20, 20%, 20%, .04), 0 40px 70px -40px hsla(0, 40%, 20%, .55);
+}
+
+// Left: room photo(s) that cross-fade when the room changes ====================>
+
+// Layers, bottom to top: photos (z 0, the incoming one z 1 while it fades in), shade (z 2),
+// caption (z 3). `isolation` keeps these z-indexes inside the panel.
+.hpBookVisual {
+    position: relative;
+    isolation: isolate;
+    min-height: 26rem;
+    overflow: hidden;
+    background: hsl(0, 20%, 14%);
+}
+
+// A fixed-height layer centred in the panel: when the card grows (search results) more of the
+// photo shows instead of the photo zooming.
+.hpBookPhotos {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(50% - 20rem);
+    height: 40rem;
+    display: grid;
+    grid-auto-flow: column;
+    gap: 3px;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
+.hpBookShade {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: linear-gradient(to top, hsla(0, 50%, 8%, .85) 0%, hsla(0, 50%, 10%, .35) 40%, transparent 70%);
+    pointer-events: none;
+}
+
+.hpBookCaption {
+    position: absolute;
+    z-index: 3;
+    left: 1.6rem;
+    right: 1.6rem;
+    bottom: 1.5rem;
+    color: #fff;
+
+    h3 {
+        padding: 0;
+        font-family: var(--hp-display);
+        font-size: 2.2rem;
+        font-weight: 700;
+        line-height: 1.05;
+        color: #fff;
+    }
+
+    p {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        margin-top: .4rem;
+        font-size: .95rem;
+        line-height: 1.45;
+        color: hsla(0, 0%, 100%, .85);
+    }
+}
+
+.hpBookPrice {
+    display: inline-flex;
+    align-items: baseline;
+    gap: .3rem;
+    margin-top: .8rem;
+    padding: .35rem .85rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 100%, .95);
+    color: var(--hp-red);
+    font-family: var(--hp-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    small {
+        font-family: 'Spartan', sans-serif;
+        font-size: .78rem;
+        font-weight: 500;
+        color: var(--hp-muted);
+    }
+}
+
+// Right: room tabs, date and time, search ====================>
+
+.hpBookForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding: 1.6rem 1.7rem 1.7rem;
+}
+
+.hpRoomTabs {
+    display: flex;
+    padding: 4px;
+    border: 1px solid var(--hp-border);
+    border-radius: 16px;
+    background: var(--hp-surface-2);
+
+    button {
+        position: relative;
+        flex: 1;
+        height: 2.75rem;
+        border-radius: 12px;
+        color: var(--hp-muted);
+        font-size: .98rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color .25s ease;
+
+        &:hover {
+            color: var(--hp-ink);
+        }
+
+        &.active {
+            color: #fff;
+        }
+    }
+}
+
+// Slides to the selected room (framer-motion layoutId).
+.hpRoomTabPill {
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: var(--hp-red);
+    box-shadow: 0 8px 18px -10px hsla(0, 66%, 35%, .8);
+}
+
+.hpRoomTabLabel {
+    position: relative;
+}
+
+.hpBookFields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .7rem;
+}
+
+.hpField {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    min-width: 0;
+    padding: .7rem .85rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 16px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease;
+
+    &:hover {
+        border-color: hsl(0, 70%, 86%);
+    }
+
+    &:focus-within {
+        border-color: var(--hp-red);
+        box-shadow: 0 0 0 4px hsla(0, 66%, 43%, .1);
+    }
+
+    select,
+    input {
+        width: 100%;
+        padding: 0;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: var(--hp-ink);
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.4;
+        cursor: pointer;
+    }
+
+    .react-datepicker-wrapper {
+        width: 100%;
+    }
+}
+
+.hpFieldLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .76rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--hp-muted);
+
+    svg {
+        font-size: .95rem;
+        color: var(--hp-red);
+    }
+}
+
+.hpSearchBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    height: 3.2rem;
+    border-radius: 16px;
+    background: var(--hp-red);
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .2s ease, transform .15s ease, box-shadow .3s ease;
+
+    &:hover:not(:disabled) {
+        background: hsl(0, 66%, 37%);
+        box-shadow: 0 14px 28px -16px hsla(0, 66%, 35%, .9);
+    }
+
+    &:active:not(:disabled) {
+        transform: scale(.98);
+    }
+
+    &:disabled {
+        opacity: .6;
+        cursor: default;
+    }
+}
+
+.hpBookHint {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    margin-top: auto;
+    padding: .8rem .95rem;
+    border: 1px dashed hsl(20, 12%, 86%);
+    border-radius: 14px;
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--hp-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .2rem;
+        color: hsl(36, 90%, 50%);
+    }
+}
+
+.hpBookError {
+    padding: .7rem 1rem;
+    border: 1px solid hsl(0, 70%, 88%);
+    border-radius: 12px;
+    background: var(--hp-red-soft);
+    color: var(--hp-red);
+    font-size: .92rem;
+}
+
+// Results ====================>
+
+.hpBook .searchResult {
+    display: grid;
+    gap: .6rem;
+
+    &.hidden {
+        display: none;
+    }
+}
+
+.hpResultTop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem 1rem;
+}
+
+.hpLegend {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .76rem;
+    color: var(--hp-muted);
+
+    span {
+        width: .8rem;
+        height: .45rem;
+        margin-left: .45rem;
+        border-radius: 999px;
+
+        &:first-child {
+            margin-left: 0;
+        }
+    }
+
+    .isFree {
+        background: #1baf7a;
+    }
+
+    .isBusy {
+        background: hsl(0, 0%, 88%);
+    }
+
+    .isPick {
+        box-shadow: inset 0 0 0 2px var(--hp-ink);
+    }
+}
+
+.hpResultTitle {
+    font-size: .82rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--hp-muted);
+}
+
+.hpResult {
+    padding: .85rem 1rem .7rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 16px;
+    background: #fff;
+
+    &.isFree {
+        border-color: hsl(152, 50%, 78%);
+        background: hsl(150, 60%, 98%);
+    }
+
+    &.isTaken {
+        background: var(--hp-surface-2);
+    }
+}
+
+.hpResultHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .8rem;
+
+    strong {
+        font-family: var(--hp-display);
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--hp-ink);
+    }
+}
+
+.hpResultState {
+    flex: 1;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    font-size: .9rem;
+    color: var(--hp-muted);
+
+    .isFree & {
+        color: hsl(152, 60%, 28%);
+        font-weight: 600;
+    }
+
+    .isTaken & {
+        color: var(--hp-red);
+    }
+}
+
+.hpBookNow {
+    padding: .5rem 1.1rem;
+    border-radius: 999px;
+    background: hsl(152, 60%, 34%);
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color .2s ease, transform .2s ease;
+
+    &:hover {
+        background: hsl(152, 60%, 28%);
+        transform: translateY(-1px);
+    }
+}
+
+.dayBar {
+    margin-top: .65rem;
+}
+
+.dayBarTrack {
+    position: relative;
+    height: .65rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: hsl(0, 0%, 88%);
+}
+
+.dayBarFree {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: #1baf7a;
+}
+
+.dayBarPick {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background: hsla(0, 0%, 12%, .2);
+    box-shadow: inset 0 0 0 2px var(--hp-ink);
+}
+
+.dayBarScale {
+    position: relative;
+    height: 1.1rem;
+    margin-top: .25rem;
+
+    // Times of the free windows, under their green stretch.
+    span {
+        position: absolute;
+        top: 0;
+        overflow: hidden;
+        font-size: .7rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        color: #148a60;
+
+        &.is-start {
+            text-align: left;
+        }
+
+        &.is-end {
+            text-align: right;
+        }
+
+        &.is-center {
+            text-align: center;
+        }
+    }
+}
+
+// Booking dialogs (portal, outside .homePage) ====================>
+
+.hpBookSummary {
+    display: grid;
+    margin: 0;
+
+    div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .6rem 0;
+        border-bottom: 1px solid hsl(20, 10%, 91%);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    dt {
+        font-size: .9rem;
+        color: hsl(240, 4%, 44%);
+    }
+
+    dd {
+        margin: 0;
+        text-align: right;
+        font-weight: 600;
+
+        small {
+            font-weight: 400;
+            color: hsl(240, 4%, 50%);
+        }
+    }
+
+    .isDeposit dd {
+        color: hsl(0, 66%, 43%);
+    }
+}
+
+.hpConfirmed {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    padding: 2rem 1.75rem 1.5rem;
+    text-align: center;
+
+    h2 {
+        font-family: 'League Spartan', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 700;
+    }
+
+    p {
+        max-width: 36ch;
+        font-size: .95rem;
+        line-height: 1.55;
+        color: hsl(240, 4%, 40%);
+    }
+}
+
+.hpConfirmedIcon {
+    display: grid;
+    place-items: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 50%;
+    background: hsl(150, 60%, 92%);
+    color: hsl(152, 60%, 30%);
+    font-size: 1.7rem;
+    animation: hpPop .5s cubic-bezier(.22, 1.4, .36, 1) both;
+}
+
+.hpConfirmedActions {
+    display: flex;
+    gap: .5rem;
+    margin-top: .6rem;
+}
+
+@keyframes hpPop {
+    from {
+        transform: scale(.4);
+        opacity: 0;
+    }
+}
+
+// Responsive ====================>
+
+@media screen and (max-width: 900px) {
+    .hpBookCard {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    // Stacked: the photo panel has its own height, so it can simply fill it.
+    .hpBookPhotos {
+        top: 0;
+        height: 100%;
+    }
+
+    .hpBookVisual {
+        min-height: 14rem;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .hpBook {
+        width: calc(100% - 1.5rem);
+        margin-top: -3.6rem;
+    }
+
+    .hpBookTitle {
+        font-size: 1.3rem;
+    }
+
+    .hpBookFields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        .isDate {
+            grid-column: 1 / -1;
+        }
+    }
+
+    .hpBookForm {
+        padding: 1.2rem;
+    }
+
+    .hpBookCaption h3 {
+        font-size: 1.7rem;
+    }
+}

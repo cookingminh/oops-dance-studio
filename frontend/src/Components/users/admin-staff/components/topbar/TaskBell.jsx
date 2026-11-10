@@ -8,14 +8,18 @@ import {
     LuChevronRight,
     LuClock,
     LuClipboardCheck,
+    LuLandmark,
     LuListChecks,
     LuLogIn,
     LuLogOut,
     LuMusic,
     LuPartyPopper,
+    LuReceipt,
     LuRefreshCw,
+    LuRepeat,
     LuTicket,
 } from 'react-icons/lu';
+import { useI18n } from '@/i18n/i18nContext';
 import { useStaffTasks } from '../../tasks/staffTasks';
 
 const ICONS = {
@@ -26,6 +30,9 @@ const ICONS = {
     students: LuListChecks,
     bookings: LuTicket,
     lessons: LuMusic,
+    tuition: LuReceipt,
+    transfers: LuLandmark,
+    renewals: LuRepeat,
 };
 
 const GROUPS = [
@@ -41,6 +48,18 @@ const TaskBell = () => {
     const [open, setOpen] = useState(false);
     const tasks = data?.tasks ?? [];
     const urgent = tasks.filter((task) => task.tone === 'urgent').length;
+    const { t, tn, formatDate, monthName } = useI18n();
+
+    // A task message is { key, vars } (English key) or { text } (data, shown as is).
+    const say = (message) => {
+        if (!message) return '';
+        if (message.text !== undefined) return message.text;
+        const vars = { ...message.vars };
+        if ('who' in vars) vars.who = vars.who ?? t('An instructor');
+        if (vars.date) vars.date = formatDate(vars.date, 'short');
+        if (vars.month) vars.month = monthName(vars.month);
+        return t(message.key, vars);
+    };
 
     const go = (task) => {
         setOpen(false);
@@ -53,7 +72,7 @@ const TaskBell = () => {
                 <button
                     type="button"
                     className={`iconButton taskBell${urgent ? ' hasUrgent' : ''}`}
-                    aria-label={tasks.length ? `Notifications: ${tasks.length} to do` : 'Notifications: nothing to do'}
+                    aria-label={tasks.length ? t('Notifications: {count} to do', { count: tasks.length }) : t('Notifications: nothing to do')}
                 >
                     <LuBell />
                     <AnimatePresence>
@@ -78,14 +97,14 @@ const TaskBell = () => {
                         <LuBell />
                     </span>
                     <div className="taskHeaderText">
-                        <strong>Notifications</strong>
+                        <strong>{t('Notifications')}</strong>
                         <span>
                             {tasks.length
-                                ? `${tasks.length} thing${tasks.length === 1 ? '' : 's'} need${tasks.length === 1 ? 's' : ''} you${urgent ? ` · ${urgent} urgent` : ''}`
-                                : 'Nothing needs you right now'}
+                                ? `${tn(tasks.length, '{count} thing needs you', '{count} things need you')}${urgent ? ` · ${t('{count} urgent', { count: urgent })}` : ''}`
+                                : t('Nothing needs you right now')}
                         </span>
                     </div>
-                    <button type="button" className="taskRefresh" onClick={refresh} aria-label="Refresh notifications" disabled={loading}>
+                    <button type="button" className="taskRefresh" onClick={refresh} aria-label={t('Refresh notifications')} disabled={loading}>
                         <LuRefreshCw className={loading ? 'isSpinning' : undefined} />
                     </button>
                 </div>
@@ -95,8 +114,8 @@ const TaskBell = () => {
                         <span className="taskEmptyIcon" aria-hidden="true">
                             <LuPartyPopper />
                         </span>
-                        <strong>You’re all caught up</strong>
-                        <span>New requests and missed check-ins will show up here.</span>
+                        <strong>{t('You’re all caught up')}</strong>
+                        <span>{t('New requests, missed check-ins and tuition to collect will show up here.')}</span>
                     </div>
                 ) : (
                     <div className="taskScroll">
@@ -105,7 +124,7 @@ const TaskBell = () => {
                             if (group.length === 0) return null;
                             return (
                                 <section key={tone} className="taskGroup">
-                                    <h3>{label}</h3>
+                                    <h3>{t(label)}</h3>
                                     <ul>
                                         {group.map((task) => {
                                             const Icon = ICONS[task.kind] ?? LuClipboardCheck;
@@ -116,8 +135,8 @@ const TaskBell = () => {
                                                             <Icon />
                                                         </span>
                                                         <span className="taskText">
-                                                            <strong>{task.title}</strong>
-                                                            <span>{task.detail}</span>
+                                                            <strong>{say(task.title)}</strong>
+                                                            <span>{say(task.detail)}</span>
                                                         </span>
                                                         <LuChevronRight className="taskChevron" aria-hidden="true" />
                                                     </button>
@@ -133,7 +152,7 @@ const TaskBell = () => {
 
                 <div className="taskPanelFooter">
                     <LuClock aria-hidden="true" />
-                    {data?.checkedAt ? `Updated ${data.checkedAt} · refreshes every minute` : 'Checking…'}
+                    {data?.checkedAt ? t('Updated {time} · refreshes every minute', { time: data.checkedAt }) : t('Checking…')}
                 </div>
             </PopoverContent>
         </Popover>

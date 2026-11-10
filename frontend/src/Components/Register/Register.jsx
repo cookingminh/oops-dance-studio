@@ -1,119 +1,147 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { FaUserShield } from 'react-icons/fa';
-import { BsFillShieldLockFill, BsPersonVcard } from 'react-icons/bs';
-import { AiOutlineSwapRight } from 'react-icons/ai';
-import { MdMarkEmailRead } from 'react-icons/md';
-import { signUp } from '@/services/auth';
+import { Link, useLocation } from 'react-router-dom';
+import { LuAtSign, LuMail, LuMailCheck, LuUser } from 'react-icons/lu';
+import { OAUTH_PROVIDERS, signUp } from '@/services/auth';
 import { isUsernameAvailable } from '@/services/users';
+import { useI18n } from '@/i18n/i18nContext';
 import AuthInput from '../Login/AuthInput';
 import AuthLayout from '../Login/AuthLayout';
+import AuthNotice from '../Login/AuthNotice';
+import FormAlert from '../Login/FormAlert';
+import OAuthButtons from '../Login/OAuthButtons';
+import PasswordInput from '../Login/PasswordInput';
+import SubmitButton from '../Login/SubmitButton';
+import { MIN_PASSWORD_LENGTH, toAlert } from '../Login/authShared';
+import { useProviderSignIn } from '../Login/useProviderSignIn';
 
-import video from '@/assets/video/register.mp4';
-
-const MIN_PASSWORD_LENGTH = 8; // auth.minimum_password_length in supabase/config.toml
-
-// New accounts are always guests; the role is assigned server-side.
+// New accounts are always guests; the role is assigned server-side. Google / Facebook sign-ups
+// skip this form (no username or phone yet; the profile overview nudges them to add both).
 const Register = () => {
-    const [form, setForm] = useState({ email: '', username: '', fullName: '', password: '' });
-    const [status, setStatus] = useState('');
+    const { t } = useI18n();
+    const location = useLocation();
+    const [form, setForm] = useState({ fullName: '', username: '', email: '', password: '' });
+    const [alert, setAlert] = useState(null);
     const [needsConfirmation, setNeedsConfirmation] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    const oauth = useProviderSignIn((error) => setAlert(toAlert(error)));
+    const busy = submitting || Boolean(oauth.pending);
 
     const update = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
 
     const onSubmit = async (event) => {
         event.preventDefault();
-        setStatus('');
+        setAlert(null);
         if (form.password.length < MIN_PASSWORD_LENGTH) {
-            setStatus(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH } });
             return;
         }
         setSubmitting(true);
         try {
             if (!(await isUsernameAvailable(form.username.trim()))) {
-                setStatus('This username is already taken. Please choose another one.');
+                setAlert({ text: 'This username is already taken. Please choose another one.' });
+                document.getElementById('username')?.focus();
                 return;
             }
             const { session } = await signUp(form);
             // With a session, <PublicOnly> redirects; without one, email confirmation is required.
             if (!session) setNeedsConfirmation(true);
         } catch (error) {
-            setStatus(error.message);
+            setAlert(toAlert(error));
         } finally {
             setSubmitting(false);
         }
     };
 
+    if (needsConfirmation) {
+        return (
+            <AuthLayout step="confirm" title={t('Check your inbox')}>
+                <AuthNotice
+                    icon={LuMailCheck}
+                    action={
+                        <Link to="/login" className="authSubmit">
+                            {t('Go to login')}
+                        </Link>
+                    }
+                    tip={t('Can’t find it? Check your spam folder.')}
+                >
+                    {t('Almost there! We sent a confirmation link to')}
+                    <strong className="authNoticeEmail">{form.email}</strong>
+                    {t('Open it to activate your account, then log in.')}
+                </AuthNotice>
+            </AuthLayout>
+        );
+    }
+
     return (
         <AuthLayout
-            media={<video src={video} autoPlay muted loop playsInline aria-hidden="true"></video>}
-            title={needsConfirmation ? 'Check your inbox' : 'Create your account'}
-            subtitle={needsConfirmation ? null : 'Join the studio to book rooms and sign up for classes.'}
-            footer={!needsConfirmation && <>Already have an account? <Link to="/login">Log in</Link></>}
+            title={t('Create your account')}
+            subtitle={t('Join the Oops! family. Your first class is free.')}
+            footer={
+                <>
+                    {t('Already have an account?')}{' '}
+                    <Link to="/login" state={location.state}>
+                        {t('Log in')}
+                    </Link>
+                </>
+            }
         >
-            {needsConfirmation ? (
-                <div className="form grid">
-                    <p className="text-center">
-                        Almost there! We sent a confirmation link to <strong>{form.email}</strong>.
-                        Open it to activate your account, then log in.
-                    </p>
-                    <Link to="/login" className="btn flex">Go to login</Link>
+            <FormAlert alert={alert} />
+            <OAuthButtons pending={oauth.pending} disabled={busy} onPick={(provider) => { setAlert(null); oauth.start(provider); }} />
+            {OAUTH_PROVIDERS.length > 0 && <p className="authDivider">{t('or sign up with email')}</p>}
+
+            <form className="authForm" onSubmit={onSubmit}>
+                <div className="authFieldRow">
+                    <AuthInput
+                        id="fullName"
+                        label={t('Full name')}
+                        icon={LuUser}
+                        autoComplete="name"
+                        placeholder={t('Your name')}
+                        required
+                        value={form.fullName}
+                        onChange={update('fullName')}
+                    />
+                    <AuthInput
+                        id="username"
+                        label={t('Username')}
+                        icon={LuAtSign}
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        spellCheck={false}
+                        placeholder={t('e.g. thaovy')}
+                        required
+                        value={form.username}
+                        onChange={update('username')}
+                    />
                 </div>
-            ) : (
-                <form className="form grid" onSubmit={onSubmit}>
-                    <span role="alert" className={status ? 'showMessage' : 'message'}>{status}</span>
-                    <AuthInput
-                        id="email"
-                        label="Email"
-                        icon={MdMarkEmailRead}
-                        type="email"
-                        autoComplete="email"
-                        placeholder="you@example.com"
-                        required
-                        value={form.email}
-                        onChange={update('email')}
-                    />
-                    <div className="formRow">
-                        <AuthInput
-                            id="username"
-                            label="Username"
-                            icon={FaUserShield}
-                            autoComplete="username"
-                            placeholder="e.g. thaovy"
-                            required
-                            value={form.username}
-                            onChange={update('username')}
-                        />
-                        <AuthInput
-                            id="fullName"
-                            label="Full name"
-                            icon={BsPersonVcard}
-                            autoComplete="name"
-                            placeholder="Your name"
-                            required
-                            value={form.fullName}
-                            onChange={update('fullName')}
-                        />
-                    </div>
-                    <AuthInput
-                        id="password"
-                        label="Password"
-                        icon={BsFillShieldLockFill}
-                        type="password"
-                        autoComplete="new-password"
-                        placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
-                        required
-                        minLength={MIN_PASSWORD_LENGTH}
-                        value={form.password}
-                        onChange={update('password')}
-                    />
-                    <button type="submit" className="btn flex" disabled={submitting}>
-                        <span>{submitting ? 'Creating account…' : 'Register'}</span>
-                        <AiOutlineSwapRight className="icon" />
-                    </button>
-                </form>
-            )}
+                <AuthInput
+                    id="email"
+                    label={t('Email')}
+                    icon={LuMail}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                    required
+                    value={form.email}
+                    onChange={update('email')}
+                />
+                <PasswordInput
+                    id="password"
+                    label={t('Password')}
+                    autoComplete="new-password"
+                    required
+                    minLength={MIN_PASSWORD_LENGTH}
+                    value={form.password}
+                    onChange={update('password')}
+                    rule={{
+                        text: t('At least {count} characters', { count: MIN_PASSWORD_LENGTH }),
+                        met: form.password.length >= MIN_PASSWORD_LENGTH,
+                    }}
+                />
+                <SubmitButton busy={submitting} disabled={busy} busyLabel={t('Creating account…')}>
+                    {t('Register')}
+                </SubmitButton>
+            </form>
         </AuthLayout>
     );
 };

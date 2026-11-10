@@ -29,7 +29,7 @@ const SHOTS = {
         await settle(page);
     },
     timetable: async (page) => {
-        await page.goto(`${BASE}/home`);
+        await page.goto(`${BASE}/classes`);
         await page.locator('.timeTableDiv').scrollIntoViewIfNeeded();
         await settle(page);
     },

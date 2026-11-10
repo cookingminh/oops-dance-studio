@@ -1,0 +1,1786 @@
+// Student tuition: /profile/tuition, the pay dialog, the overview strip and the class line.
+// Tokens come from admin.scss (--ad-*) and profile.scss (--pf-*); everything here is `tu`.
+// The dialogs render outside the shell (portal), so they carry .adminPortal plus the tones below.
+
+:is(.adminShell, .tuPayModal, .tuStopModal) {
+    --tu-good: hsl(156, 64%, 34%);
+    --tu-good-soft: hsl(150, 60%, 93%);
+    --tu-due: hsl(30, 90%, 38%);
+    --tu-due-soft: hsl(40, 95%, 91%);
+    --tu-late: hsl(0, 70%, 48%);
+    --tu-late-soft: hsl(0, 85%, 95%);
+    --tu-calm: hsl(262, 48%, 50%);
+    --tu-calm-soft: hsl(262, 80%, 96%);
+}
+
+// Small shared pieces ====================>
+
+:is(.adminShell, .adminPortal) {
+    .tuPill {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .22rem .6rem;
+        border-radius: 999px;
+        background: var(--pf-idle-soft, hsl(20, 12%, 93%));
+        color: var(--ad-muted);
+        font-family: inherit;
+        font-size: .76rem;
+        font-weight: 700;
+        line-height: 1.2;
+        white-space: nowrap;
+
+        svg {
+            flex-shrink: 0;
+            font-size: .85rem;
+        }
+
+        &.tone-good {
+            background: var(--tu-good-soft);
+            color: var(--tu-good);
+        }
+
+        &.tone-due {
+            background: var(--tu-due-soft);
+            color: var(--tu-due);
+        }
+
+        &.tone-late {
+            background: var(--tu-late-soft);
+            color: var(--tu-late);
+        }
+
+        &.tone-calm {
+            background: var(--tu-calm-soft);
+            color: var(--tu-calm);
+        }
+    }
+
+    .pfBtn.isSmall {
+        height: 2.3rem;
+        padding: 0 .95rem;
+        font-size: .88rem;
+        gap: .4rem;
+    }
+
+    .pfBtn:disabled {
+        opacity: .55;
+        pointer-events: none;
+    }
+
+    // "Pay now" right after "Continue": a soft ring twice, so the eye finds it.
+    .pfBtn.isGlow {
+        animation: tuGlow 1.2s ease-out 2;
+    }
+
+    .tuLinkBtn {
+        padding: .3rem .15rem;
+        color: var(--ad-muted);
+        font-size: .86rem;
+        font-weight: 600;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        text-underline-offset: 3px;
+        transition: color .2s ease, text-decoration-color .2s ease;
+
+        &:hover {
+            color: var(--ad-text);
+            text-decoration-color: currentColor;
+        }
+
+        &.isGood {
+            color: var(--tu-good);
+        }
+
+        &:disabled {
+            opacity: .55;
+            pointer-events: none;
+        }
+    }
+}
+
+@keyframes tuGlow {
+    from {
+        box-shadow: 0 0 0 0 hsla(0, 66%, 43%, .45);
+    }
+
+    to {
+        box-shadow: 0 0 0 12px hsla(0, 66%, 43%, 0);
+    }
+}
+
+// Page layout ====================>
+
+.adminShell .tuPage {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+
+    > * {
+        grid-column: 1 / -1;
+    }
+
+    > .tuNowCard {
+        grid-column: span 7;
+    }
+
+    > .tuRenewCard {
+        grid-column: span 5;
+    }
+
+    > .tuNowCard,
+    > .tuRenewCard {
+        align-self: stretch;
+    }
+
+    // Side-by-side cards share a height; the footer sits at the bottom.
+    > .adminCard {
+        display: flex;
+        flex-direction: column;
+
+        .cardBody {
+            flex: 1;
+        }
+    }
+}
+
+.adminShell .tuWays {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem 1.25rem;
+    padding: .2rem .25rem 0;
+
+    li {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        font-size: .84rem;
+        line-height: 1.4;
+        color: var(--ad-muted);
+    }
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .1rem;
+        font-size: 1.05rem;
+        color: var(--ad-primary);
+    }
+
+    strong {
+        display: block;
+        color: var(--ad-text);
+        font-weight: 700;
+    }
+}
+
+// Hero: the headline and a ticket stub with what's left ====================>
+
+.adminShell .tuHero {
+    --tone: var(--tu-good);
+    --tone-soft: var(--tu-good-soft);
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1.25rem 2.25rem;
+    padding: 1.75rem 2rem;
+    overflow: hidden;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    background:
+        radial-gradient(circle at 0% 0%, var(--tone-soft), transparent 55%),
+        var(--ad-surface);
+    box-shadow: var(--ad-shadow);
+
+    // A big soft ring behind the badge.
+    &::before {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        left: -5rem;
+        top: -6rem;
+        width: 17rem;
+        height: 17rem;
+        border: 1.5px dashed var(--tone-soft);
+        border-radius: 50%;
+    }
+
+    &.tone-due {
+        --tone: var(--tu-due);
+        --tone-soft: var(--tu-due-soft);
+    }
+
+    &.tone-late {
+        --tone: var(--tu-late);
+        --tone-soft: var(--tu-late-soft);
+    }
+
+    .tuHeroMain {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        min-width: 0;
+    }
+
+    .tuHeroBadge {
+        display: grid;
+        place-items: center;
+        width: 4.2rem;
+        height: 4.2rem;
+        flex-shrink: 0;
+        border-radius: 22px;
+        background: linear-gradient(140deg, color-mix(in srgb, var(--tone) 82%, white), var(--tone));
+        color: #fff;
+        font-size: 1.9rem;
+        box-shadow: 0 14px 28px -14px var(--tone);
+
+        svg {
+            animation: pfFloat 4s ease-in-out infinite;
+        }
+    }
+
+    .tuHeroText {
+        min-width: 0;
+
+        h2 {
+            margin-top: .2rem;
+            font-family: var(--ad-display);
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.12;
+            color: var(--ad-text);
+        }
+
+        p {
+            margin-top: .4rem;
+            max-width: 38rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            color: var(--ad-muted);
+        }
+    }
+
+    // The stub: a dashed tear line with two notches, like a ticket.
+    .tuHeroSide {
+        position: relative;
+        display: grid;
+        justify-items: start;
+        align-content: center;
+        gap: .3rem;
+        align-self: stretch;
+        min-width: 14rem;
+        margin: -1.75rem 0;
+        padding: 1.75rem 0 1.75rem 2.25rem;
+        border-left: 2px dashed var(--ad-border);
+
+        &::before,
+        &::after {
+            content: '';
+            position: absolute;
+            left: calc(-.8rem - 1px);
+            width: 1.6rem;
+            height: 1.6rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 50%;
+            background: var(--ad-bg);
+        }
+
+        &::before {
+            top: -.8rem;
+        }
+
+        &::after {
+            bottom: -.8rem;
+        }
+    }
+
+    .tuHeroLabel {
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-muted);
+    }
+
+    .tuHeroAmount {
+        font-family: var(--ad-display);
+        font-size: 2.15rem;
+        font-weight: 700;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+        color: var(--ad-text);
+    }
+
+    .tuHeroPay {
+        margin-top: .5rem;
+    }
+
+    .tuHeroThanks {
+        font-size: .9rem;
+        color: var(--tu-good);
+        font-weight: 600;
+    }
+}
+
+// This month ====================>
+
+.adminShell .tuRows {
+    display: grid;
+    gap: .65rem;
+}
+
+.adminShell .tuRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: .55rem 1rem;
+    padding: .9rem 1rem;
+    border-radius: 18px;
+    background: var(--ad-surface-2);
+    transition: background-color .25s ease;
+
+    .tuRowMain {
+        min-width: 0;
+
+        strong {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .2rem .5rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+
+        small {
+            display: block;
+            margin-top: .15rem;
+            font-size: .85rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuRowTitle {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    // "K-pop Cover Cơ Bản · 8 sessions (3 held) · until Wed 18 Nov"
+    .tuCourseLine {
+        display: block;
+        margin-top: .1rem;
+        font-size: .85rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--ad-text);
+        opacity: .78;
+    }
+
+    .tuRowMonth {
+        display: inline-block;
+        padding: .1rem .5rem;
+        border-radius: 999px;
+        background: var(--tu-late-soft);
+        color: var(--tu-late);
+        font-size: .72rem;
+        font-weight: 700;
+
+        // "tháng 10 năm 2026" → "Tháng 10 năm 2026" (only the first letter).
+        &::first-letter {
+            text-transform: uppercase;
+        }
+    }
+
+    .tuRowEnd {
+        display: grid;
+        justify-items: end;
+        gap: .3rem;
+    }
+
+    .tuRowAmount {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+
+    .tuRowAction {
+        display: flex;
+        justify-content: flex-end;
+
+        &:empty {
+            display: none;
+        }
+    }
+
+    &.isMuted {
+        background: transparent;
+        border: 1px dashed var(--ad-border);
+
+        .pfThumb {
+            filter: grayscale(1);
+            opacity: .7;
+        }
+
+        .tuRowMain strong,
+        .tuRowAmount {
+            color: var(--ad-muted);
+        }
+
+        .tuRowAmount {
+            text-decoration: line-through;
+        }
+    }
+
+    // Moved to another class: the money went along, so nothing is crossed out.
+    &.isMoved .tuRowAmount {
+        text-decoration: none;
+    }
+
+    // A late join or a planned leave, in plain words.
+    .tuNoteLine {
+        display: flex;
+        align-items: flex-start;
+        gap: .35rem;
+        margin-top: .3rem;
+        font-size: .8rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--tu-due);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+
+    // A class between two courses: nothing billed, just a calm note.
+    &.isGap {
+        grid-template-columns: auto minmax(0, 1fr);
+        background: transparent;
+        border: 1px dashed var(--ad-border);
+    }
+
+    // "Switched from Breaking Kids" under the new class's course.
+    .tuFromLine {
+        display: flex;
+        align-items: flex-start;
+        gap: .35rem;
+        margin-top: .3rem;
+        font-size: .8rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--tu-calm);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+
+    // "Still dancing in November?" under an unanswered, unpaid month.
+    .tuAsk {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .35rem 1rem;
+        padding: .6rem .85rem;
+        border-radius: 12px;
+        background: var(--ad-surface);
+        border: 1px solid var(--ad-border);
+
+        p {
+            flex: 1 1 18rem;
+            font-size: .86rem;
+            line-height: 1.45;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuAskActions {
+        display: flex;
+        gap: .9rem;
+    }
+}
+
+// Session pips: one per session of the running course, the danced ones filled.
+.adminShell .tuPips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-width: 15rem;
+    margin: .45rem 0 .1rem;
+
+    i {
+        flex: 1 1 0;
+        min-width: .55rem;
+        height: .4rem;
+        border-radius: 999px;
+        background: var(--ad-border);
+        transform-origin: left center;
+        animation: tuPip .35s cubic-bezier(.22, 1, .36, 1) backwards;
+        animation-delay: calc(var(--i) * 40ms);
+
+        &.isDone {
+            background: var(--ad-primary);
+        }
+
+        // The next session: a soft outline, so "where we are" is visible without colour alone.
+        &.isNext {
+            background: var(--ad-primary-soft);
+            box-shadow: inset 0 0 0 1.5px var(--ad-primary);
+        }
+    }
+}
+
+@keyframes tuPip {
+    from {
+        opacity: 0;
+        transform: scaleX(.3);
+    }
+}
+
+// Renewal ====================>
+
+.adminShell .tuRule {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: .9rem;
+    padding: .75rem .9rem;
+    border-radius: 14px;
+    background: var(--ad-surface-2);
+    font-size: .86rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        color: var(--ad-primary);
+    }
+}
+
+.adminShell .tuRenewList {
+    display: grid;
+    gap: .65rem;
+}
+
+.adminShell .tuRenew {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: .9rem;
+    padding: .95rem 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+    transition: background-color .3s ease, border-color .3s ease;
+
+    .tuRenewBody {
+        min-width: 0;
+
+        > strong {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .25rem .5rem;
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        > small {
+            display: block;
+            margin-top: .15rem;
+            font-size: .85rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuRenewQ {
+        font-size: 1.02rem;
+    }
+
+    .tuRenewActions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem .75rem;
+        margin-top: .7rem;
+    }
+
+    .tuOffer {
+        margin-top: .6rem;
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--tu-good);
+    }
+
+    &.is-ask {
+        border-color: var(--ad-primary-tint);
+        background: linear-gradient(135deg, var(--ad-primary-soft), var(--ad-surface) 70%);
+    }
+
+    &.is-continuing,
+    &.is-settled {
+        background: linear-gradient(135deg, var(--tu-good-soft), var(--ad-surface) 70%);
+        border-color: hsl(150, 40%, 86%);
+    }
+
+    .tuFromLine {
+        display: flex;
+        align-items: flex-start;
+        gap: .35rem;
+        margin-top: .3rem;
+        font-size: .8rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--tu-calm);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+
+    &.is-cancelled,
+    &.is-moved {
+        border-style: dashed;
+        background: transparent;
+
+        .pfThumb {
+            filter: grayscale(1);
+            opacity: .7;
+        }
+
+        .tuRenewBody > strong {
+            color: var(--ad-muted);
+        }
+    }
+}
+
+// How renewal works (before it opens) ====================>
+
+.adminShell .tuTimeline {
+    position: relative;
+    display: grid;
+    gap: 1.1rem;
+
+    // The line joining the icons.
+    &::before {
+        content: '';
+        position: absolute;
+        left: 1.2rem;
+        top: 1.5rem;
+        bottom: 1.5rem;
+        border-left: 2px dashed var(--ad-border);
+    }
+
+    li {
+        position: relative;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: .85rem;
+    }
+
+    .tuTimelineIcon {
+        display: grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: 1.05rem;
+        box-shadow: 0 0 0 4px var(--ad-surface);
+    }
+
+    small {
+        display: block;
+        font-size: .74rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-primary);
+    }
+
+    strong {
+        display: block;
+        font-weight: 700;
+    }
+
+    span > span {
+        display: block;
+        margin-top: .1rem;
+        font-size: .86rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+    }
+}
+
+// History ====================>
+
+.adminShell .tuYearTotal {
+    display: grid;
+    justify-items: end;
+    padding: .45rem .9rem;
+    border-radius: 14px;
+    background: var(--tu-good-soft);
+
+    small {
+        font-size: .72rem;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--tu-good);
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.35rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .tuHistList {
+    display: grid;
+}
+
+.adminShell .tuHistRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: .75rem 1rem;
+    padding: .65rem 0;
+    border-bottom: 1px dashed var(--ad-border);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    .tuHistCourse {
+        display: grid;
+        min-width: 0;
+
+        small {
+            font-size: .8rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+        }
+    }
+
+    .pfThumb {
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 10px;
+        font-size: .95rem;
+    }
+
+    .tuHistClass {
+        min-width: 0;
+        overflow: hidden;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tuHistHow {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .84rem;
+        color: var(--ad-muted);
+        white-space: nowrap;
+
+        svg {
+            flex-shrink: 0;
+            color: var(--tu-good);
+        }
+
+        &.tuPill svg {
+            color: inherit;
+        }
+    }
+
+    .tuHistDate {
+        color: var(--ad-subtle);
+    }
+
+    .tuHistHow.isMoved svg {
+        color: var(--ad-muted);
+    }
+
+    .tuHistAmount {
+        min-width: 6.5rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    &.isMuted {
+        .pfThumb {
+            filter: grayscale(1);
+            opacity: .6;
+        }
+
+        .tuHistClass,
+        .tuHistAmount,
+        .tuHistCourse small {
+            color: var(--ad-subtle);
+        }
+    }
+}
+
+// Overview strip ====================>
+
+.adminShell .pfOverview > .adminCard.tuStrip {
+    --tone: var(--tu-good);
+    --tone-soft: var(--tu-good-soft);
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .9rem 1.25rem;
+    padding: 1.15rem 1.4rem;
+    background:
+        radial-gradient(circle at 0% 50%, var(--tone-soft), transparent 40%),
+        var(--ad-surface);
+
+    &.tone-due {
+        --tone: var(--tu-due);
+        --tone-soft: var(--tu-due-soft);
+    }
+
+    &.tone-late {
+        --tone: var(--tu-late);
+        --tone-soft: var(--tu-late-soft);
+    }
+
+    &.isLoading {
+        min-height: 6rem;
+        background: linear-gradient(90deg, var(--ad-surface) 0%, var(--ad-surface-2) 50%, var(--ad-surface) 100%) 0 0 / 200% 100%;
+        animation: tuShimmer 1.4s linear infinite;
+    }
+
+    .tuStripBadge {
+        display: grid;
+        place-items: center;
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 16px;
+        background: linear-gradient(140deg, color-mix(in srgb, var(--tone) 82%, white), var(--tone));
+        color: #fff;
+        font-size: 1.45rem;
+        box-shadow: 0 12px 22px -12px var(--tone);
+    }
+
+    .tuStripText {
+        min-width: 0;
+
+        h2 {
+            margin-top: .1rem;
+            font-family: var(--ad-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        p {
+            margin-top: .25rem;
+            font-size: .9rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .tuStripClasses {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem 1.1rem;
+        margin-top: .45rem;
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .88rem;
+            font-weight: 600;
+
+            small {
+                font-weight: 500;
+                color: var(--ad-muted);
+            }
+        }
+    }
+
+    .tuStripActions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .5rem;
+    }
+}
+
+@keyframes tuShimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
+
+// Class view line ====================>
+
+.adminShell .pfClassView > .tuClassLine {
+    grid-column: 1 / -1;
+}
+
+.adminShell .tuClassLine {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem .9rem;
+    padding: .6rem .7rem .6rem .75rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+
+    .tuClassLineIcon {
+        align-self: flex-start;
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 10px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    .tuClassLineText {
+        flex: 1 1 14rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .35rem .6rem;
+        min-width: 0;
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    .tuClassLineNext {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ad-primary);
+
+        &:is(a):hover {
+            text-decoration: underline;
+        }
+
+        &.isLeaving {
+            color: var(--tu-due);
+        }
+    }
+}
+
+// Pay dialog ====================>
+
+.tuPayModal {
+    border-radius: 26px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+
+    .tuModalClose {
+        top: 1rem;
+        right: 1rem;
+    }
+
+    .tuPayHead {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        padding: 1.3rem 1.5rem .5rem;
+    }
+
+    .tuPayHeadIcon {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: 1.25rem;
+    }
+
+    .tuPayTitle {
+        display: block;
+        font-family: var(--ad-display);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .tuPaySub {
+        display: block;
+        font-size: .9rem;
+        font-weight: 500;
+        color: var(--ad-muted);
+
+        &::first-letter {
+            text-transform: uppercase;
+        }
+    }
+
+    .tuPayBody {
+        padding: .75rem 1.5rem 1rem;
+    }
+
+    .tuPayFoot {
+        padding: .5rem 1.5rem 1.1rem;
+    }
+}
+
+.tuPayModal .tuPayGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 18.5rem) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+// The QR on a warm brand card.
+.tuPayModal .tuQrPanel {
+    display: grid;
+    justify-items: center;
+    gap: .55rem;
+    padding: 1.25rem 1.1rem 1.1rem;
+    border-radius: 22px;
+    background:
+        radial-gradient(circle at 85% 10%, hsla(352, 90%, 75%, .55), transparent 50%),
+        linear-gradient(150deg, hsl(0, 66%, 46%), hsl(345, 60%, 28%));
+    color: #fff;
+    text-align: center;
+
+    .tuQrFrame {
+        position: relative;
+        width: 100%;
+        max-width: 16rem;
+        aspect-ratio: 1;
+        overflow: hidden;
+        padding: .6rem;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 18px 34px -18px hsla(0, 70%, 10%, .8);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    }
+
+    // A "not real" ribbon across the code in the sandbox: readable at a glance, and it spoils
+    // the scan enough that nobody pays the fake account by accident.
+    .tuDemoBand {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 50%;
+        display: grid;
+        justify-items: center;
+        gap: .05rem;
+        padding: .5rem .75rem;
+        transform: translateY(-50%) rotate(-8deg) scale(1.08);
+        background: hsla(38, 100%, 52%, .95);
+        color: hsl(25, 80%, 14%);
+        line-height: 1.2;
+        box-shadow: 0 8px 18px -8px hsla(25, 80%, 14%, .6);
+
+        strong {
+            font-size: 1.15rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        span {
+            font-size: .78rem;
+            font-weight: 700;
+        }
+    }
+
+    .tuQrAmount {
+        margin-top: .35rem;
+        font-family: var(--ad-display);
+        font-size: 1.9rem;
+        font-weight: 700;
+        line-height: 1.1;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tuQrHint {
+        font-size: .86rem;
+        line-height: 1.4;
+        color: hsla(0, 0%, 100%, .85);
+        text-wrap: balance;
+
+        svg {
+            display: inline;
+            margin-right: .3rem;
+            vertical-align: -.15em;
+        }
+    }
+
+    // Only phones need it (you can't scan your own screen).
+    .tuQrOpen {
+        display: none;
+        align-items: center;
+        gap: .35rem;
+        margin-top: .15rem;
+        padding: .35rem .75rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .14);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 600;
+        transition: background-color .2s ease;
+
+        &:hover {
+            background: hsla(0, 0%, 100%, .24);
+        }
+    }
+
+    &.isDesk {
+        padding-top: 1.75rem;
+    }
+
+    .tuDeskArt {
+        display: grid;
+        place-items: center;
+        width: 5rem;
+        height: 5rem;
+        border-radius: 50%;
+        background: hsla(0, 0%, 100%, .16);
+        font-size: 2.2rem;
+    }
+
+    .tuDeskCode {
+        margin-top: .2rem;
+        padding: .5rem 1rem;
+        border-radius: 14px;
+        background: #fff;
+        color: var(--ad-primary);
+        font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+    }
+}
+
+.tuPayModal .tuPayLeft {
+    display: grid;
+    gap: .9rem;
+}
+
+.tuPayModal .tuPayInfo {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.tuPayModal .tuPartial {
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    background: var(--tu-due-soft);
+    color: var(--tu-due);
+    font-size: .88rem;
+    font-weight: 600;
+}
+
+.tuPayModal .tuCopyList {
+    display: grid;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+
+    // Not overflow: hidden, so the "Copied" tip can rise above the first row.
+    > :first-child {
+        border-radius: 15px 15px 0 0;
+    }
+
+    > :last-child {
+        border-radius: 0 0 15px 15px;
+    }
+}
+
+.tuPayModal .tuCopyRow {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: .75rem;
+    padding: .45rem .5rem .45rem .9rem;
+
+    + .tuCopyRow {
+        border-top: 1px solid var(--ad-border);
+    }
+
+    dt {
+        font-size: .82rem;
+        color: var(--ad-muted);
+    }
+
+    dd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        min-width: 0;
+    }
+
+    .tuCopyValue {
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 700;
+
+        &.isMono {
+            font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+            letter-spacing: .03em;
+            overflow-wrap: normal;
+            white-space: nowrap;
+        }
+    }
+
+    // The transfer content is the one detail that must be exact.
+    &.isKey {
+        background: var(--ad-primary-soft);
+
+        dt {
+            color: var(--ad-primary);
+            font-weight: 700;
+        }
+
+        .tuCopyValue {
+            color: var(--ad-primary);
+            font-size: 1.15rem;
+            letter-spacing: .08em;
+        }
+    }
+}
+
+.tuPayModal .tuCopyBtn {
+    position: relative;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 10px;
+    background: var(--ad-surface);
+    color: var(--ad-muted);
+    font-size: .95rem;
+    transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .2s var(--ad-ease);
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        color: var(--ad-primary);
+    }
+
+    &:active {
+        transform: scale(.92);
+    }
+
+    &.isDone {
+        border-color: transparent;
+        background: var(--tu-good-soft);
+        color: var(--tu-good);
+    }
+
+    // "Copied" pops up above the button for a moment.
+    .tuCopyTip {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + .35rem);
+        padding: .2rem .5rem;
+        border-radius: 8px;
+        background: var(--ad-text);
+        color: #fff;
+        font-size: .74rem;
+        font-weight: 700;
+        white-space: nowrap;
+        pointer-events: none;
+        animation: tuTip .2s var(--ad-ease);
+
+        &:empty {
+            display: none;
+        }
+    }
+}
+
+@keyframes tuTip {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+}
+
+.tuPayModal .tuSteps {
+    display: grid;
+    gap: .55rem;
+
+    li {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        gap: .7rem;
+    }
+
+    .tuStepNum {
+        display: grid;
+        place-items: center;
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 50%;
+        background: var(--ad-text);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 800;
+    }
+
+    strong {
+        display: block;
+        font-size: .92rem;
+        font-weight: 700;
+    }
+
+    small {
+        display: block;
+        font-size: .82rem;
+        line-height: 1.4;
+        color: var(--ad-muted);
+    }
+}
+
+.tuPayModal .tuWaiting {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .7rem .9rem;
+    border-radius: 14px;
+    background: var(--ad-surface-2);
+    color: var(--ad-primary);
+
+    strong {
+        display: block;
+        font-size: .9rem;
+        color: var(--ad-text);
+    }
+
+    small {
+        display: block;
+        font-size: .8rem;
+        line-height: 1.4;
+        color: var(--ad-muted);
+    }
+
+    &.isStopped {
+        color: var(--ad-muted);
+        font-size: .86rem;
+    }
+
+    // The breathing dot (same as the profile pages' "live" dot).
+    .pfPulse {
+        position: relative;
+        display: inline-block;
+        width: .55rem;
+        height: .55rem;
+        flex-shrink: 0;
+        margin: 0 .2rem;
+        border-radius: 50%;
+        background: currentColor;
+
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: currentColor;
+            animation: pfPulse 1.6s ease-out infinite;
+        }
+    }
+}
+
+.tuPayModal .tuSandbox {
+    display: grid;
+    justify-items: start;
+    gap: .45rem;
+    padding: .8rem .9rem;
+    border: 1.5px dashed hsl(38, 90%, 62%);
+    border-radius: 14px;
+    background: hsl(45, 100%, 96%);
+
+    p {
+        font-size: .84rem;
+        line-height: 1.45;
+        color: hsl(30, 40%, 30%);
+    }
+
+    .tuSandboxTag {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .15rem .55rem;
+        border-radius: 999px;
+        background: hsl(38, 100%, 52%);
+        color: hsl(25, 80%, 14%);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .tuSandboxBtn {
+        border-color: hsl(38, 90%, 55%);
+        background: #fff;
+        color: hsl(25, 80%, 20%);
+        font-weight: 700;
+    }
+}
+
+// The "paid" moment: a check that pops with a ring of little dots.
+.tuPayModal .tuPaidMoment {
+    display: grid;
+    justify-items: center;
+    gap: .5rem;
+    padding: 1.5rem 1rem 1.25rem;
+    text-align: center;
+
+    h3 {
+        margin-top: .6rem;
+        font-family: var(--ad-display);
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    p {
+        max-width: 26rem;
+        font-size: .98rem;
+        line-height: 1.5;
+        color: var(--ad-muted);
+    }
+
+    .tuPaidAmount {
+        padding: .3rem .9rem;
+        border-radius: 999px;
+        background: var(--tu-good-soft);
+        color: var(--tu-good);
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tuPaidDone {
+        margin-top: .75rem;
+        min-width: 9rem;
+        border-radius: 999px;
+        font-weight: 700;
+    }
+}
+
+.tuPayModal .tuPaidBurst {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 7rem;
+    height: 7rem;
+
+    i {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: .55rem;
+        height: .55rem;
+        margin: -.275rem;
+        border-radius: 50%;
+        background: hsl(calc(var(--i) * 36), 80%, 58%);
+        transform: rotate(calc(var(--i) * 36deg)) translateY(0);
+        animation: tuBurst .7s var(--ad-ease) forwards;
+        opacity: 0;
+    }
+}
+
+.tuPayModal .tuPaidCheck {
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: linear-gradient(140deg, hsl(152, 60%, 44%), hsl(160, 70%, 30%));
+    color: #fff;
+    font-size: 2.4rem;
+    box-shadow: 0 16px 30px -14px hsl(160, 70%, 25%);
+}
+
+@keyframes tuBurst {
+    0% {
+        opacity: 0;
+        transform: rotate(calc(var(--i) * 36deg)) translateY(0) scale(.4);
+    }
+
+    40% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: rotate(calc(var(--i) * 36deg)) translateY(-3.6rem) scale(1);
+    }
+}
+
+// Stop confirmation ====================>
+
+.tuStopModal {
+    border-radius: 24px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+
+    .tuStopHead {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        padding-right: 3rem;
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        line-height: 1.25;
+    }
+
+    .tuStopIcon {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: var(--tu-due-soft);
+        color: var(--tu-due);
+    }
+
+    p {
+        font-size: .95rem;
+        line-height: 1.55;
+    }
+
+    .tuStopSoft {
+        padding: .6rem .8rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .88rem;
+    }
+}
+
+// Responsive ====================>
+
+@media screen and (max-width: 1240px) {
+    .adminShell .tuPage > :is(.tuNowCard, .tuRenewCard) {
+        grid-column: 1 / -1;
+    }
+}
+
+@media screen and (max-width: 960px) {
+    .adminShell .tuWays {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+}
+
+@media screen and (max-width: 720px) {
+    .adminShell .tuPage {
+        gap: 1.1rem;
+    }
+
+    .adminShell .tuHero {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 1.3rem 1.2rem;
+
+        .tuHeroMain {
+            align-items: flex-start;
+            gap: .9rem;
+        }
+
+        .tuHeroBadge {
+            width: 3.2rem;
+            height: 3.2rem;
+            border-radius: 16px;
+            font-size: 1.45rem;
+        }
+
+        .tuHeroText h2 {
+            font-size: 1.5rem;
+        }
+
+        .tuHeroText p {
+            font-size: .92rem;
+        }
+
+        // The tear line runs across on a phone; the button takes the full width under the amount.
+        .tuHeroSide {
+            min-width: 0;
+            margin: 0 -1.2rem -1.3rem;
+            padding: 1.1rem 1.2rem 1.3rem;
+            border-left: none;
+            border-top: 2px dashed var(--ad-border);
+
+            &::before,
+            &::after {
+                top: calc(-.8rem - 1px);
+                bottom: auto;
+            }
+
+            &::before {
+                left: -.8rem;
+            }
+
+            &::after {
+                left: auto;
+                right: -.8rem;
+            }
+        }
+
+        .tuHeroAmount {
+            font-size: 1.7rem;
+        }
+
+        .tuHeroPay {
+            width: 100%;
+        }
+    }
+
+    // Name and details get the full width; amount and status go on their own line.
+    .adminShell .tuRow {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        padding: .8rem .85rem;
+
+        .tuRowEnd {
+            grid-column: 2;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .4rem .6rem;
+        }
+
+        .tuRowAction {
+            grid-column: 1 / -1;
+            justify-content: stretch;
+
+            .pfBtn {
+                width: 100%;
+            }
+        }
+    }
+
+    .adminShell .tuRenew {
+        gap: .75rem;
+        padding: .85rem;
+
+        .tuRenewActions .pfBtn {
+            flex: 1 1 auto;
+        }
+    }
+
+    .adminShell .tuHistRow {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: start;
+        gap: .35rem .75rem;
+
+        .tuHistHow {
+            grid-column: 2;
+            grid-row: 2;
+            white-space: normal;
+        }
+
+        .tuHistAmount {
+            grid-row: 1 / span 2;
+            grid-column: 3;
+            min-width: 0;
+        }
+
+        .pfThumb {
+            grid-row: 1 / span 2;
+        }
+    }
+
+    .adminShell .pfOverview > .adminCard.tuStrip {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: start;
+        padding: 1rem;
+
+        .tuStripBadge {
+            width: 2.6rem;
+            height: 2.6rem;
+            border-radius: 13px;
+            font-size: 1.2rem;
+        }
+
+        .tuStripClasses li {
+            flex-wrap: wrap;
+        }
+
+        .tuStripText h2 {
+            font-size: 1.15rem;
+        }
+
+        .tuStripActions {
+            grid-column: 1 / -1;
+            justify-content: space-between;
+        }
+    }
+
+    .tuPayModal {
+        .tuPayHead {
+            padding: 1.1rem 1.1rem .4rem;
+        }
+
+        .tuPayBody {
+            padding: .5rem 1.1rem 1rem;
+        }
+
+        .tuPayGrid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .tuQrPanel .tuQrFrame {
+            max-width: 15rem;
+        }
+
+        .tuQrPanel .tuQrOpen {
+            display: inline-flex;
+        }
+
+        .tuCopyRow {
+            grid-template-columns: minmax(0, 1fr);
+            gap: .1rem;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .tuHero .tuHeroBadge svg,
+    .adminShell .pfBtn.isGlow,
+    .adminShell .tuStrip.isLoading,
+    .tuPayModal .tuWaiting .pfPulse::after,
+    .tuPayModal .tuPaidBurst i,
+    .adminShell .tuPips i {
+        animation: none;
+    }
+}

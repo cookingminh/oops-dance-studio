@@ -120,21 +120,29 @@ const CLASSES = [
 
 // Monthly lessons: [class, months ago, title]. Every class has last month's piece; Hip-hop
 // Foundation and Breaking Kids have none for this month yet ("needs this month's lesson").
+// [class, months ago, title, end-of-month video] — last month's videos are real ones from the
+// studio's YouTube channel; Breaking Kids has none yet.
 const LESSONS = [
-  ["K-pop Cover Cơ Bản", 1, "Cupid — FIFTY FIFTY"], ["K-pop Cover Cơ Bản", 0, "Super Shy — NewJeans"],
-  ["K-pop Cover Nâng Cao", 1, "Seven — Jung Kook"], ["K-pop Cover Nâng Cao", 0, "Magnetic — ILLIT"],
-  ["Hip-hop Foundation", 1, "HUMBLE. — Kendrick Lamar"],
+  ["K-pop Cover Cơ Bản", 1, "HIT ’EM — MEOVV", "https://www.youtube.com/watch?v=tbDUtRdhfUI"], ["K-pop Cover Cơ Bản", 0, "Super Shy — NewJeans"],
+  ["K-pop Cover Nâng Cao", 1, "LIES & SUNSET GLOW — BIGBANG", "https://www.youtube.com/watch?v=D_UzYE3U81Y"], ["K-pop Cover Nâng Cao", 0, "Magnetic — ILLIT"],
+  ["Hip-hop Foundation", 1, "MANTRA (Remix) x HOOTIE FRUITTI", "https://www.youtube.com/watch?v=mxHD5wW5NuY"],
   ["Breaking Kids", 1, "Jump Around — House of Pain"],
-  ["Contemporary & Jazz", 1, "Someone You Loved — Lewis Capaldi"], ["Contemporary & Jazz", 0, "lovely — Billie Eilish & Khalid"],
-  ["Choreography Sáng Tạo", 1, "Levitating — Dua Lipa"], ["Choreography Sáng Tạo", 0, "Dynamite — BTS"],
+  ["Contemporary & Jazz", 1, "HANDLEBAR x DRACULA", "https://www.youtube.com/watch?v=tSZuWh-LMb4"], ["Contemporary & Jazz", 0, "lovely — Billie Eilish & Khalid"],
+  ["Choreography Sáng Tạo", 1, "WHISTLE x GOALS", "https://www.youtube.com/watch?v=iG2UbHqhIGg"], ["Choreography Sáng Tạo", 0, "Dynamite — BTS"],
 ];
 
-const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets"];
+const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", "receipts"];
 // Children first, so no foreign key blocks a delete. PostgREST needs a filter on
 // every DELETE, hence "<column> is not null".
 const APP_TABLES = [
+  // payslips before adjustments: a finalized month's adjustments can't be deleted while it is finalized.
+  ["expenses", "id"], ["recurring_expenses", "id"],
+  ["bank_transfers", "id"], ["tuition_invoices", "id"],
+  ["payslips", "profile_id"], ["payroll_adjustments", "id"], ["staff_salaries", "profile_id"], ["class_pay_rates", "class_id"],
   ["student_attendance", "id"], ["instructor_attendance", "id"], ["class_students", "class_id"],
   ["bookings", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"],
+  // Last: the wipe itself is logged (students leaving, accounts removed).
+  ["activity_log", "id"],
 ];
 
 const BOOKING_SLOTS = [["08:00", "10:00"], ["09:30", "11:30"], ["13:00", "15:00"],
@@ -239,16 +247,31 @@ async function upsertCatalogue(userIds, today) {
   const rooms = await must(db.from("rooms").upsert(ROOMS, { onConflict: "name" }).select("id, name, price"), "rooms");
   const roomByName = Object.fromEntries(rooms.map((r) => [r.name, r]));
 
+  // They have been running for months: sessions, roll calls and tuition reach back to starts_on.
   const classes = await must(db.from("classes").upsert(CLASSES.map((c) => ({
     name: c.name, instructor_id: userIds[c.instructor], room_id: roomByName[c.room].id,
-    price: c.price,
+    price: c.price, starts_on: monthStart(today, 4),
   })), { onConflict: "name" }).select("id, name, room_id"), "classes");
   const classByName = Object.fromEntries(classes.map((c) => [c.name, c]));
 
   // A trigger copies each class's latest lesson title into classes.lesson.
-  await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title]) =>
-    ({ class_id: classByName[name].id, month: monthStart(today, monthsAgo), title })),
-    { onConflict: "class_id,month" }), "class_lessons");
+  // Routines (courses): last month's ran the whole month (as many sessions as the class met), this
+  // month's are 8 sessions. A trigger copies the current routine's title into classes.lesson.
+  const sessionsIn = (name, month) => {
+    const days = CLASSES.find((c) => c.name === name).schedules.map(([dow]) => dow);
+    const [y, m] = month.split("-").map(Number);
+    let count = 0;
+    for (let d = 1; d <= new Date(Date.UTC(y, m, 0)).getUTCDate(); d += 1) {
+      const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay() || 7;
+      if (days.includes(dow)) count += 1;
+    }
+    return Math.max(count, 1);
+  };
+  await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title, videoUrl]) => {
+    const month = monthStart(today, monthsAgo);
+    return { class_id: classByName[name].id, month, starts_on: month, title, video_url: videoUrl ?? null,
+      session_count: monthsAgo === 0 ? 8 : sessionsIn(name, month) };
+  }), { onConflict: "class_id,starts_on" }), "class_lessons");
 
   const schedules = CLASSES.flatMap((c) => c.schedules.map(([day_of_week, start_time, end_time]) =>
     ({ class_id: classByName[c.name].id, day_of_week, start_time, end_time })));
@@ -393,6 +416,62 @@ async function assertDemoInstance() {
   }
 }
 
+// Payroll (same as seed.sql): the staff account's monthly salary, two advanced classes at
+// 350,000 a session, last month's bonuses/deductions, last month finalized and paid, and one
+// deduction in this month's draft. The payroll RPCs accept the service role.
+// Tuition: months of invoices, a few leavers, this month part paid, next month's renewal open
+// and a small bank-transfer inbox. seed_demo_tuition() (tuition migration) only runs on a
+// project marked as the demo, which is also what lets visitors simulate a QR payment.
+async function seedTuition() {
+  const { data: sandbox } = await db.rpc("tuition_sandbox");
+  if (!sandbox) {
+    console.log("• tuition: skipped (not marked as the demo: node seed-demo.mjs --mark-demo-project)");
+    return;
+  }
+  const result = await must(db.rpc("seed_demo_tuition"), "seed_demo_tuition");
+  console.log(`✓ tuition: ${result.invoices} invoices, ${result.transfers} bank transfers`);
+  // Past routines (and the older ones the tuition seed added) end inside their month: cancelled
+  // sessions (attendance history) don't count.
+  const fitted = await must(db.rpc("seed_demo_fit_routines"), "seed_demo_fit_routines");
+  console.log(`✓ routines: ${fitted} past routine(s) fitted to the sessions held`);
+  const finance = await must(db.rpc("seed_demo_finance"), "seed_demo_finance");
+  console.log(`✓ finance: ${finance.expenses} expenses (${finance.recurring} recurring), ${finance.switched} switched invoices`);
+  const classes = await must(db.rpc("seed_demo_classes"), "seed_demo_classes");
+  console.log(`✓ classes: one ended (#${classes.past_class}), one opening next month (#${classes.upcoming_class})`);
+}
+
+// The admin's Activity page: a believable last week and a half from the data above (check-ins, roll calls,
+// bookings answered, tuition received…). Replaces whatever seeding itself logged. Runs last.
+async function seedActivity() {
+  const { data: sandbox } = await db.rpc("tuition_sandbox");
+  if (!sandbox) return;
+  const rows = await must(db.rpc("seed_demo_activity"), "seed_demo_activity");
+  console.log(`✓ activity: ${rows} log entries`);
+}
+
+async function seedPayroll(userIds, classes, today) {
+  const monthStartOf = (monthsAgo) => monthStart(today, monthsAgo);
+  await must(db.from("payroll_settings").update({ default_session_rate: 300000 }).eq("id", 1), "payroll_settings");
+  await must(db.from("staff_salaries").upsert({ profile_id: userIds["staff@demo.oopsdance.test"], monthly_salary: 8000000 }), "staff_salaries");
+  const advanced = classes.filter((c) => ["K-pop Cover Nâng Cao", "Choreography Sáng Tạo"].includes(c.name));
+  await must(db.from("class_pay_rates").upsert(advanced.map((c) => ({ class_id: c.id, session_rate: 350000 }))), "class_pay_rates");
+  const admin = userIds["admin@demo.oopsdance.test"];
+  await must(db.from("payroll_adjustments").insert([
+    { profile_id: userIds["instructor2@demo.oopsdance.test"], month: monthStartOf(1), amount: -50000, reason: "Check-in trễ 15 phút", created_by: admin },
+    { profile_id: userIds["instructor@demo.oopsdance.test"], month: monthStartOf(1), amount: 200000, reason: "Dạy thay lớp Hip-hop Foundation", created_by: admin },
+    { profile_id: userIds["staff@demo.oopsdance.test"], month: monthStartOf(1), amount: 500000, reason: "Thưởng hỗ trợ sự kiện cuối tháng", created_by: admin },
+    { profile_id: userIds["instructor5@demo.oopsdance.test"], month: monthStartOf(0), amount: -30000, reason: "Về sớm 10 phút", created_by: admin },
+  ]), "payroll_adjustments");
+
+  const lastMonth = monthStartOf(1);
+  const people = await must(db.rpc("payroll_month", { p_month: lastMonth }), "payroll_month");
+  for (const person of people) {
+    await must(db.rpc("payroll_finalize", { p_profile: person.profile_id, p_month: lastMonth }), "payroll_finalize");
+    await must(db.rpc("payroll_set_paid", { p_profile: person.profile_id, p_month: lastMonth, p_paid: true }), "payroll_set_paid");
+  }
+  console.log(`✓ payroll: ${people.length} payslips paid for ${lastMonth.slice(0, 7)}, this month in draft`);
+}
+
 async function main() {
   if (MARK || UNMARK) {
     await must(db.rpc("set_demo_instance", { p_enabled: MARK }), "set_demo_instance");
@@ -412,7 +491,10 @@ async function main() {
   await upsertEnrolments(userIds, classes, today);
   await seedBookings(userIds, rooms, classes, schedules, today);
   await seedAttendance(schedules, today);
+  await seedPayroll(userIds, classes, today);
+  await seedTuition();
   await uploadDemoImages(db);
+  await seedActivity();
   console.log("Done. Demo logins: admin@ / staff@ / instructor@ / guest@demo.oopsdance.test with DEMO_PASSWORD.");
 }
 

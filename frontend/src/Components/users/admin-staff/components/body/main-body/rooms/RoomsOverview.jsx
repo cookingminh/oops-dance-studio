@@ -4,6 +4,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { listRooms } from '@/services/rooms';
 import { roomImageUrls } from '@/services/storage';
 import { formatVnd } from '@/lib/format';
+import { useI18n } from '@/i18n/i18nContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard, { CardFooterLink } from '../../../common/SectionCard';
 import studioPhoto from '@/assets/images/studio.webp';
@@ -11,6 +12,7 @@ import studioPhoto from '@/assets/images/studio.webp';
 const PREVIEW = 2;
 
 const RoomsOverview = () => {
+    const { t } = useI18n();
     const rooms = useAsync(listRooms, []);
     const count = rooms.data?.length ?? 0;
 
@@ -18,15 +20,15 @@ const RoomsOverview = () => {
         <SectionCard
             className="roomsCard"
             icon={LuDoorOpen}
-            title="Rooms"
-            subtitle="Spaces guests can book by the hour"
+            title={t('Rooms')}
+            subtitle={t('Spaces guests can book by the hour')}
             footer={
                 <CardFooterLink to="/admin/rooms">
-                    {count > PREVIEW ? `See all ${count} rooms` : 'Edit sizes and prices'}
+                    {count > PREVIEW ? t('See all {count} rooms', { count }) : t('Edit sizes and prices')}
                 </CardFooterLink>
             }
         >
-            <AsyncState state={rooms} emptyText="No rooms yet.">
+            <AsyncState state={rooms} emptyText={t('No rooms yet.')}>
                 {(list) => (
                     <div className="roomTiles">
                         {list.slice(0, PREVIEW).map((room) => (
@@ -37,7 +39,7 @@ const RoomsOverview = () => {
                                     <strong>{room.name}</strong>
                                     {room.size && <small>{room.size}</small>}
                                 </span>
-                                <span className="roomTilePrice">{formatVnd(room.price)}/h</span>
+                                <span className="roomTilePrice">{t('{price}/h', { price: formatVnd(room.price) })}</span>
                             </Link>
                         ))}
                     </div>

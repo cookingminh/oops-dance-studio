@@ -5,6 +5,7 @@ import { LuWallet } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { revenueMonthly } from '@/services/stats';
 import { formatVnd } from '@/lib/format';
+import { useI18n } from '@/i18n/i18nContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard from '../../../common/SectionCard';
 import { SERIES, barDataset, barOptions } from '../../../common/chartTheme';
@@ -15,6 +16,7 @@ const formatTick = (value) => `${compact.format(value)} ₫`;
 
 // Real income per month, stacked by room (approved + completed bookings, from v_revenue_monthly).
 const RevenueChart = () => {
+    const { t, dateLocale } = useI18n();
     const revenue = useAsync(revenueMonthly, []);
     const [view, setView] = useState('chart');
     const rows = revenue.data ?? [];
@@ -23,7 +25,7 @@ const RevenueChart = () => {
     // Rooms keep their slot (by id) whichever months are shown.
     const rooms = [...new Map(rows.map((row) => [row.room_id, row.room_name])).entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]), undefined, { numeric: true }));
     const chartData = {
-        labels: months.map((month) => format(parseISO(month), 'MMM yyyy')),
+        labels: months.map((month) => format(parseISO(month), 'MMM yyyy', { locale: dateLocale })),
         datasets: rooms.map(([roomId, roomName], index) =>
             barDataset(
                 roomName,
@@ -39,13 +41,13 @@ const RevenueChart = () => {
         <SectionCard
             className="chartCard isWide"
             icon={LuWallet}
-            title="Monthly Revenue"
-            subtitle={rows.length ? `Real income by room · ${formatVnd(total)} in total` : 'Real income by room'}
-            actions={<ViewToggle view={view} onChange={setView} label="Monthly revenue" />}
+            title={t('Monthly Revenue')}
+            subtitle={rows.length ? t('Real income by room · {total} in total', { total: formatVnd(total) }) : t('Real income by room')}
+            actions={<ViewToggle view={view} onChange={setView} label={t('Monthly revenue')} />}
         >
-            <AsyncState state={revenue} emptyText="No approved or completed bookings yet.">
+            <AsyncState state={revenue} emptyText={t('No approved or completed bookings yet.')}>
                 {view === 'table' ? (
-                    <ChartTable data={chartData} rowHeader="Month" format={formatVnd} />
+                    <ChartTable data={chartData} rowHeader={t('Month')} format={formatVnd} />
                 ) : (
                     <div className="chartCanvas">
                         <Bar data={chartData} options={barOptions({ stacked: true, formatTick, formatValue: formatVnd })} />

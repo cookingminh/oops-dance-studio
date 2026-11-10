@@ -1,0 +1,1822 @@
+// People page (/admin/users), its person sheet and the "Add a person" dialog.
+// Tokens --ad-* come from admin.scss (.adminShell; dialogs render in a portal with .adminPortal).
+
+$green: hsl(152, 60%, 30%);
+$amber-ink: hsl(30, 75%, 30%);
+$amber-soft: hsl(40, 95%, 93%);
+
+// Tones (role chips, overview tiles, role cards) ====================>
+
+:is(.adminShell, .adminPortal) [data-tone] {
+    --tone: var(--ad-primary);
+    --tone-soft: var(--ad-primary-soft);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='violet'] {
+    --tone: hsl(262, 52%, 50%);
+    --tone-soft: hsl(262, 80%, 96%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='slate'] {
+    --tone: hsl(215, 18%, 40%);
+    --tone-soft: hsl(215, 28%, 94.5%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='blue'] {
+    --tone: hsl(212, 72%, 42%);
+    --tone-soft: hsl(212, 90%, 95.5%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='emerald'] {
+    --tone: hsl(158, 64%, 28%);
+    --tone-soft: hsl(150, 60%, 93%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='rose'] {
+    --tone: hsl(0, 66%, 43%);
+    --tone-soft: hsl(0, 85%, 95.5%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='pink'] {
+    --tone: hsl(328, 62%, 44%);
+    --tone-soft: hsl(328, 85%, 96%);
+}
+
+:is(.adminShell, .adminPortal) [data-tone='amber'] {
+    --tone: hsl(30, 85%, 36%);
+    --tone-soft: hsl(40, 95%, 92%);
+}
+
+:is(.adminShell, .adminPortal) .roleChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .18rem .6rem .18rem .45rem;
+    border-radius: 999px;
+    background: var(--tone-soft);
+    color: var(--tone);
+    font-size: .78rem;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: nowrap;
+
+    svg {
+        flex-shrink: 0;
+        font-size: .85rem;
+    }
+}
+
+:is(.adminShell, .adminPortal) .youTag {
+    flex-shrink: 0;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: var(--ad-text);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+:is(.adminShell, .adminPortal) .isMissing {
+    color: $amber-ink;
+}
+
+// main.scss gives every <p> a small grey font; here paragraphs take their container's text style.
+// :where keeps this as weak as that rule (it loads later, so it wins), and utility classes still win.
+:where(.peopleCard, .personSheet, .addPersonModal) p {
+    font-size: inherit;
+    line-height: 1.5;
+    color: inherit;
+}
+
+// Page layout: the card body is a size container so the list adapts to the card, not the window.
+.adminShell .peopleCard .cardBody {
+    container: people / inline-size;
+}
+
+// Overview strip ====================>
+
+.adminShell .peopleStrip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: .6rem;
+    margin-bottom: 1.15rem;
+}
+
+.adminShell .stripTile {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    min-width: 0;
+    padding: .8rem .85rem .75rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .25s ease, transform .3s var(--ad-ease);
+
+    // A soft blob in the corner; it floods the tile when the filter is on.
+    &::after {
+        content: '';
+        position: absolute;
+        z-index: -1;
+        right: -26px;
+        bottom: -34px;
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        background: var(--tone-soft);
+        transition: transform .5s var(--ad-ease);
+    }
+
+    &:hover {
+        border-color: var(--tone-soft);
+        box-shadow: var(--ad-shadow);
+        transform: translateY(-2px);
+
+        &::after {
+            transform: scale(1.35);
+        }
+    }
+
+    &.isInsight {
+        border-style: dashed;
+    }
+
+    &[aria-pressed='true'] {
+        border-color: var(--tone);
+        border-style: solid;
+        box-shadow: 0 0 0 3px var(--tone-soft);
+
+        &::after {
+            transform: scale(5);
+        }
+
+        .tileIcon {
+            background: var(--tone);
+            color: #fff;
+        }
+
+        .tileLabel {
+            color: var(--tone);
+        }
+    }
+
+    .tileTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+    }
+
+    .tileIcon {
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        flex-shrink: 0;
+        border-radius: 10px;
+        background: var(--tone-soft);
+        color: var(--tone);
+        font-size: 1.05rem;
+        transition: background-color .25s ease, color .25s ease;
+    }
+
+    .tileValue {
+        font-family: var(--ad-display);
+        font-size: 1.65rem;
+        font-weight: 700;
+        line-height: 1;
+        color: var(--ad-text);
+    }
+
+    .tileLabel {
+        overflow: hidden;
+        font-size: .84rem;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--ad-muted);
+        transition: color .2s ease;
+    }
+}
+
+// Toolbar and summary ====================>
+
+.adminShell .peopleToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .8rem;
+}
+
+.adminShell .peopleSearch {
+    flex: 1 1 18rem;
+    max-width: 30rem;
+}
+
+.adminShell .peopleMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .6rem;
+    min-height: 1.9rem;
+    margin-bottom: .55rem;
+    font-size: .9rem;
+    color: var(--ad-muted);
+
+    .peopleSummary {
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    .filterChip {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .22rem .5rem .22rem .7rem;
+        border-radius: 999px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: .8rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color .2s ease;
+
+        &:hover {
+            background: var(--ad-primary-tint);
+        }
+    }
+}
+
+// People list ====================>
+
+$row-columns: 2.6rem minmax(0, 1.25fr) minmax(0, 1.3fr) minmax(0, 1.45fr) 7.5rem 1rem;
+
+.adminShell .peopleHead {
+    display: grid;
+    grid-template-columns: $row-columns;
+    gap: 1rem;
+    padding: 0 .95rem .45rem;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--ad-subtle);
+
+    > span:first-child {
+        grid-column: 1 / 3;
+    }
+
+    > span:last-child {
+        text-align: right;
+    }
+}
+
+.adminShell .peopleList {
+    display: grid;
+    gap: .45rem;
+}
+
+.adminShell .personRow {
+    display: grid;
+    grid-template-columns: $row-columns;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+    padding: .7rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .25s ease, transform .3s var(--ad-ease);
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+        transform: translateX(3px);
+
+        .personGo {
+            color: var(--ad-primary);
+            transform: translateX(3px);
+        }
+    }
+
+    &.isOpen {
+        border-color: var(--ad-primary);
+        box-shadow: 0 0 0 3px var(--ad-primary-soft);
+    }
+
+    .personAvatar {
+        width: 2.6rem;
+        height: 2.6rem;
+    }
+}
+
+.adminShell .personWho {
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        min-width: 0;
+        font-size: .98rem;
+        font-weight: 600;
+        color: var(--ad-text);
+    }
+
+    small {
+        overflow: hidden;
+        font-size: .82rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--ad-muted);
+
+        &.isMissing {
+            color: $amber-ink;
+        }
+    }
+}
+
+.adminShell .personName {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.adminShell .personContact {
+    min-width: 0;
+    display: grid;
+    gap: .15rem;
+    font-size: .86rem;
+    color: var(--ad-muted);
+
+    > span {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        min-width: 0;
+    }
+
+    svg {
+        flex-shrink: 0;
+        color: var(--ad-subtle);
+    }
+
+    .isMissing,
+    .isMissing svg {
+        color: $amber-ink;
+    }
+}
+
+.adminShell .personRole {
+    min-width: 0;
+    display: grid;
+    justify-items: start;
+    gap: .3rem;
+
+    small {
+        max-width: 100%;
+        overflow: hidden;
+        font-size: .82rem;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .personJoined {
+    display: grid;
+    justify-items: end;
+    line-height: 1.3;
+    text-align: right;
+
+    small {
+        display: none;
+    }
+
+    strong {
+        font-size: .88rem;
+        font-weight: 600;
+        color: var(--ad-text);
+        white-space: nowrap;
+    }
+}
+
+.adminShell .personGo {
+    color: var(--ad-subtle);
+    transition: transform .25s var(--ad-ease), color .2s ease;
+}
+
+// Loading placeholder
+.adminShell .personRow.isSkeleton {
+    cursor: default;
+
+    &:hover {
+        border-color: var(--ad-border);
+        box-shadow: none;
+        transform: none;
+    }
+}
+
+.adminShell .skelCircle,
+.adminShell .skelLines span {
+    background: linear-gradient(90deg, var(--ad-surface-2) 0%, hsl(20, 14%, 90%) 50%, var(--ad-surface-2) 100%);
+    background-size: 200% 100%;
+    animation: peopleShimmer 1.3s ease-in-out infinite;
+}
+
+.adminShell .skelCircle {
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 50%;
+}
+
+.adminShell .skelLines {
+    display: grid;
+    gap: .45rem;
+
+    span {
+        height: .7rem;
+        border-radius: 6px;
+
+        &:last-child {
+            width: 60%;
+        }
+    }
+}
+
+@keyframes peopleShimmer {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell :is(.skelCircle, .skelLines span) {
+        animation: none;
+    }
+
+    .adminShell :is(.stripTile, .stripTile::after, .personRow, .personGo) {
+        transition: none;
+    }
+
+    .adminShell :is(.stripTile, .personRow):hover {
+        transform: none;
+    }
+}
+
+.adminShell .peopleEmpty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .6rem;
+    padding: 2.5rem 1rem;
+    border: 1.5px dashed var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    color: var(--ad-muted);
+    text-align: center;
+
+    svg {
+        font-size: 1.8rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.adminShell .peopleMore {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ad-border);
+    font-size: .9rem;
+    color: var(--ad-muted);
+}
+
+// Narrower cards: drop the Joined column (it's in the person's panel), then switch to stacked cards.
+// Medium cards: the five roles on one row, the two insights side by side below as wide tiles.
+@container people (max-width: 1000px) {
+    .adminShell .peopleStrip {
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+    }
+
+    .adminShell .stripTile {
+        grid-column: span 2;
+
+        &.isInsight {
+            grid-column: span 5;
+            flex-direction: row;
+            align-items: center;
+            gap: .7rem;
+
+            .tileTop {
+                display: contents;
+            }
+
+            .tileLabel {
+                flex: 1;
+                order: 1;
+            }
+
+            .tileValue {
+                order: 2;
+                font-size: 1.4rem;
+            }
+        }
+    }
+}
+
+@container people (max-width: 900px) {
+    .adminShell .peopleHead,
+    .adminShell .personRow {
+        grid-template-columns: 2.6rem minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 1.3fr) 1rem;
+    }
+
+    .adminShell .peopleHead > span:last-child,
+    .adminShell .personJoined {
+        display: none;
+    }
+}
+
+@container people (max-width: 640px) {
+    // The strip scrolls sideways so the list stays in view.
+    .adminShell .peopleStrip {
+        display: flex;
+        margin: 0 -1.1rem 1rem;
+        padding: .2rem 1.1rem .5rem;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        scroll-padding: 0 1.1rem;
+        scrollbar-width: none;
+
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+
+    .adminShell .stripTile {
+        flex: 0 0 8.4rem;
+        scroll-snap-align: start;
+    }
+
+    .adminShell .peopleSearch {
+        max-width: none;
+    }
+
+    .adminShell .peopleHead {
+        display: none;
+    }
+
+    .adminShell .personRow {
+        grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+        grid-template-areas:
+            'avatar who chip'
+            '. context context'
+            '. contact contact'
+            '. joined joined';
+        align-items: start;
+        gap: .35rem .75rem;
+        padding: .85rem .9rem;
+
+        &:hover {
+            transform: none;
+        }
+
+        .personAvatar {
+            grid-area: avatar;
+        }
+    }
+
+    .adminShell .personWho {
+        grid-area: who;
+    }
+
+    .adminShell .personRole {
+        display: contents;
+
+        .roleChip {
+            grid-area: chip;
+            align-self: center;
+        }
+
+        small {
+            grid-area: context;
+            white-space: normal;
+        }
+    }
+
+    .adminShell .personContact {
+        grid-area: contact;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .15rem 1rem;
+    }
+
+    .adminShell .personJoined {
+        grid-area: joined;
+        display: flex;
+        gap: .3rem;
+        justify-items: start;
+        font-size: .8rem;
+        text-align: left;
+
+        small {
+            display: inline;
+            font-size: .8rem;
+            color: var(--ad-subtle);
+        }
+
+        strong {
+            font-size: .8rem;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .adminShell .personGo {
+        display: none;
+    }
+}
+
+// Person sheet (NextUI Modal restyled as a side sheet) ====================>
+
+.personSheetWrap.personSheetWrap {
+    justify-content: flex-end;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.personSheetBackdrop {
+    backdrop-filter: blur(2px);
+}
+
+.personSheet.personSheet {
+    width: 100%;
+    max-width: 34rem;
+    height: 100dvh;
+    max-height: none;
+    margin: 0;
+    overflow: hidden;
+    border-radius: 24px 0 0 24px;
+    background: var(--ad-bg);
+    box-shadow: -24px 0 60px -24px hsla(0, 0%, 0%, .35);
+    color: var(--ad-text);
+    font-family: 'Spartan', sans-serif;
+    text-align: left;
+
+    :where(h2, h3, h4) {
+        padding: 0;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.personSheet .sheetHead {
+    flex: none;
+    padding: 1.35rem 1.25rem 1.1rem 1.5rem;
+    border-bottom: 1px solid var(--ad-border);
+    background:
+        radial-gradient(circle at 100% 0%, hsla(0, 85%, 92%, .9), transparent 45%),
+        var(--ad-surface);
+}
+
+.personSheet .sheetIdentity {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.personSheet .sheetAvatar {
+    width: 4.2rem;
+    height: 4.2rem;
+    flex-shrink: 0;
+    font-size: 1.25rem;
+    box-shadow: 0 0 0 3px var(--ad-surface), 0 8px 20px -10px hsla(0, 0%, 0%, .4);
+}
+
+.personSheet .sheetTitles {
+    flex: 1;
+    min-width: 0;
+
+    h2 {
+        font-family: var(--ad-display);
+        font-size: 1.55rem;
+        font-weight: 700;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    p {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .35rem .55rem;
+        margin-top: .3rem;
+        font-size: .9rem;
+        color: var(--ad-muted);
+    }
+
+    small {
+        display: block;
+        margin-top: .3rem;
+        font-size: .8rem;
+        color: var(--ad-subtle);
+    }
+}
+
+.personSheet .sheetClose {
+    align-self: flex-start;
+    margin: -.4rem -.2rem 0 0;
+    font-size: 1.2rem;
+}
+
+.personSheet .sheetActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+.personSheet .sheetView,
+.personSheet .sheetForm {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.personSheet .sheetBody {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    padding: 1.1rem 1.25rem 1.6rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+// Forms read better on white.
+.personSheet .sheetForm .sheetBody {
+    gap: .8rem;
+    background: var(--ad-surface);
+}
+
+.personSheet .sheetFoot {
+    flex: none;
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+    padding: .85rem 1.25rem calc(.85rem + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--ad-border);
+    background: var(--ad-surface);
+}
+
+.personSheet .viewTitle {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin-left: -.4rem;
+
+    h3 {
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+}
+
+:is(.personSheet, .addPersonModal) .viewIntro {
+    font-size: .92rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+}
+
+.personSheet .sheetSection {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+
+    > h3,
+    .sectionHead h3 {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    > h3 {
+        margin-bottom: .7rem;
+    }
+}
+
+.personSheet .sectionHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-bottom: .7rem;
+}
+
+.personSheet .sectionLink {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    color: var(--ad-muted);
+    font-size: .84rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .2s ease, background-color .2s ease;
+
+    svg {
+        transition: transform .25s var(--ad-ease);
+    }
+
+    &:hover {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+
+        svg {
+            transform: translate(2px, -2px);
+        }
+    }
+}
+
+.personSheet .sectionEmpty {
+    font-size: .9rem;
+    line-height: 1.5;
+    color: var(--ad-subtle);
+}
+
+.personSheet .sectionNote {
+    margin-top: .65rem;
+    font-size: .85rem;
+    line-height: 1.45;
+    color: var(--ad-muted);
+}
+
+.personSheet .sheetLoading {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .75rem 1rem;
+    font-size: .9rem;
+    color: var(--ad-muted);
+}
+
+.personSheet .attentionNote {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .8rem .9rem .8rem 1rem;
+    border: 1px solid hsl(40, 85%, 82%);
+    border-radius: 16px;
+    background: $amber-soft;
+    color: $amber-ink;
+
+    > svg {
+        flex-shrink: 0;
+        font-size: 1.2rem;
+    }
+
+    p {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        line-height: 1.4;
+
+        strong {
+            font-size: .92rem;
+        }
+
+        span {
+            font-size: .84rem;
+        }
+    }
+}
+
+// Contact facts
+.personSheet .factList li {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .6rem 0;
+    border-bottom: 1px dashed var(--ad-border);
+
+    &:first-child {
+        padding-top: 0;
+    }
+
+    &:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+}
+
+.personSheet .factIcon {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+}
+
+.personSheet .factText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.4;
+
+    small {
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+
+    strong {
+        font-size: .95rem;
+        font-weight: 600;
+    }
+
+    em {
+        font-size: .92rem;
+        font-style: normal;
+        color: var(--ad-subtle);
+
+        &.isMissing {
+            color: $amber-ink;
+        }
+    }
+
+    .isBreakable {
+        overflow-wrap: anywhere;
+    }
+
+    .factSoft {
+        font-weight: 500;
+        color: var(--ad-muted);
+    }
+}
+
+.personSheet .factActions {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .3rem;
+}
+
+.personSheet .factLink {
+    display: inline-flex;
+    align-items: center;
+    height: 2rem;
+    padding: 0 .85rem;
+    border-radius: 999px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: .82rem;
+    font-weight: 700;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-primary-tint);
+    }
+}
+
+.personSheet .factAdd {
+    color: $amber-ink;
+    font-weight: 700;
+}
+
+// Classes
+.personSheet .classLines {
+    display: grid;
+    gap: .45rem;
+}
+
+.personSheet .classLine {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .5rem .6rem .5rem .5rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+
+    img {
+        width: 2.8rem;
+        height: 2.8rem;
+        flex-shrink: 0;
+        object-fit: cover;
+        border-radius: 10px;
+        background: var(--ad-surface-2);
+    }
+}
+
+.personSheet .classLineText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong,
+    small {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    strong {
+        font-size: .94rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+.personSheet .classLineAside {
+    flex-shrink: 0;
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ad-muted);
+    white-space: nowrap;
+}
+
+.personSheet .revealBox {
+    overflow: hidden;
+}
+
+.personSheet .sectionAdd {
+    margin-top: .7rem;
+}
+
+.personSheet .enrolBox {
+    display: grid;
+    gap: .6rem;
+    margin-top: .7rem;
+    padding: .8rem;
+    border: 1.5px dashed var(--ad-border);
+    border-radius: 14px;
+}
+
+.personSheet .enrolActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .4rem;
+}
+
+// Activity
+.personSheet .miniStats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .5rem;
+    margin: 0;
+
+    > div {
+        padding: .7rem .8rem;
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+    }
+
+    dt {
+        font-size: .76rem;
+        font-weight: 600;
+        line-height: 1.3;
+        color: var(--ad-muted);
+    }
+
+    dd {
+        margin: .15rem 0 0;
+        font-family: var(--ad-display);
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .is-good dd {
+        color: $green;
+    }
+
+    .is-bad dd {
+        color: var(--ad-primary);
+    }
+}
+
+.personSheet .payLine {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+
+    p {
+        display: grid;
+        gap: .1rem;
+        line-height: 1.45;
+
+        strong {
+            font-size: .98rem;
+        }
+
+        span {
+            font-size: .84rem;
+            color: var(--ad-muted);
+        }
+    }
+}
+
+.personSheet .payLineIcon {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: hsl(150, 60%, 93%);
+    color: hsl(158, 64%, 30%);
+}
+
+.personSheet .bookingLines li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .55rem 0;
+    border-bottom: 1px dashed var(--ad-border);
+
+    &:first-child {
+        padding-top: 0;
+    }
+
+    &:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+}
+
+.personSheet .bookingWhen {
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        font-size: .92rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+// Delete
+.personSheet .dangerZone {
+    border-color: hsl(0, 70%, 92%);
+    background: hsl(0, 100%, 99.4%);
+}
+
+.personSheet .dangerReason {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    font-size: .88rem;
+    line-height: 1.45;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .18rem;
+    }
+}
+
+.personSheet .dangerAsk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+
+    .sectionNote {
+        flex: 1 1 14rem;
+        margin: 0;
+    }
+}
+
+.personSheet .dangerConfirm {
+    display: grid;
+    gap: .7rem;
+    padding: .85rem 1rem;
+    border-radius: 14px;
+    background: var(--ad-primary-soft);
+
+    p {
+        display: grid;
+        gap: .2rem;
+        line-height: 1.45;
+
+        strong {
+            color: var(--ad-primary-strong);
+        }
+
+        span {
+            font-size: .86rem;
+        }
+    }
+}
+
+.personSheet .dangerActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .4rem;
+}
+
+// Notes inside forms
+:is(.personSheet, .addPersonModal) .inlineNote {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    background: hsl(217, 85%, 96%);
+    color: hsl(217, 50%, 30%);
+    font-size: .86rem;
+    line-height: 1.45;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .18rem;
+    }
+
+    a {
+        font-weight: 700;
+        text-decoration: underline;
+    }
+
+    &.isWarn {
+        background: $amber-soft;
+        color: $amber-ink;
+    }
+}
+
+.personSheet .adminWarning {
+    display: flex;
+    gap: .75rem;
+    padding: 1rem;
+    border: 1px solid var(--ad-primary-tint);
+    border-radius: 16px;
+    background: var(--ad-primary-soft);
+
+    > svg {
+        flex-shrink: 0;
+        font-size: 1.4rem;
+        color: var(--ad-primary);
+    }
+
+    strong {
+        color: var(--ad-primary-strong);
+    }
+
+    p {
+        margin: .2rem 0 .6rem;
+        font-size: .88rem;
+        line-height: 1.45;
+    }
+}
+
+// Role cards (Add a person, Change role) ====================>
+
+.adminPortal .roleCards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.personSheet .roleCards {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.adminPortal .roleCard {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .9rem 2.2rem .9rem .9rem;
+    border: 1.5px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .25s ease, background-color .2s ease;
+
+    // The real radio covers the card, invisible: it keeps the keyboard, screen reader and click
+    // behaviour, and the card is its picture.
+    input {
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    &:hover {
+        border-color: var(--tone);
+    }
+
+    &:has(input:focus-visible) {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    &.isChecked {
+        border-color: var(--tone);
+        background: linear-gradient(135deg, var(--tone-soft), var(--ad-surface) 80%);
+        box-shadow: 0 0 0 3px var(--tone-soft);
+
+        .roleCardIcon {
+            background: var(--tone);
+            color: #fff;
+        }
+
+        .roleCardCheck {
+            transform: scale(1);
+        }
+    }
+
+    .roleCardIcon {
+        display: grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        flex-shrink: 0;
+        border-radius: 11px;
+        background: var(--tone-soft);
+        color: var(--tone);
+        font-size: 1.15rem;
+        transition: background-color .25s ease, color .25s ease;
+    }
+
+    .roleCardText {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: .2rem;
+        line-height: 1.4;
+
+        strong {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .4rem;
+            font-size: .98rem;
+            font-weight: 700;
+        }
+
+        small {
+            font-size: .82rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .roleCardOpens {
+        display: flex;
+        align-items: flex-start;
+        gap: .35rem;
+        margin-top: .15rem;
+
+        &,
+        & span {
+            color: var(--ad-text);
+        }
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .18rem;
+            color: var(--tone);
+        }
+    }
+
+    .roleCardNote {
+        padding: .05rem .45rem;
+        border-radius: 999px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .66rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+    }
+
+    .roleCardCheck {
+        position: absolute;
+        top: .65rem;
+        right: .65rem;
+        display: grid;
+        place-items: center;
+        width: 1.3rem;
+        height: 1.3rem;
+        border-radius: 50%;
+        background: var(--tone);
+        color: #fff;
+        font-size: .78rem;
+        transform: scale(0);
+        transition: transform .3s var(--ad-ease);
+    }
+}
+
+// Add a person ====================>
+
+.addPersonModal {
+    font-family: 'Spartan', sans-serif;
+    color: var(--ad-text);
+
+    .addPersonHead {
+        padding-bottom: .4rem;
+        font-family: var(--ad-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+
+    .addPersonStep {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+}
+
+.addPersonModal .stepDots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem;
+    margin: 0;
+    padding: 0 1.5rem .9rem;
+    border-bottom: 1px solid var(--ad-border);
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .82rem;
+        font-weight: 600;
+        color: var(--ad-subtle);
+
+        & + li::before {
+            content: '';
+            width: 1.4rem;
+            height: 2px;
+            margin-right: .1rem;
+            border-radius: 2px;
+            background: var(--ad-border);
+        }
+    }
+
+    .stepDot {
+        display: grid;
+        place-items: center;
+        width: 1.5rem;
+        height: 1.5rem;
+        border: 1.5px solid var(--ad-border);
+        border-radius: 50%;
+        font-size: .74rem;
+        transition: background-color .25s ease, border-color .25s ease, color .25s ease;
+    }
+
+    .isCurrent {
+        color: var(--ad-text);
+
+        .stepDot {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary);
+            color: #fff;
+        }
+    }
+
+    .isDone {
+        color: var(--ad-muted);
+
+        .stepDot {
+            border-color: var(--ad-primary-tint);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+    }
+
+    .isDone + li::before {
+        background: var(--ad-primary-tint);
+    }
+}
+
+.addPersonModal .roleRecap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .6rem;
+    padding: .55rem .6rem .55rem .75rem;
+    border-radius: 14px;
+    background: var(--ad-surface-2);
+
+    > span:not(.roleChip) {
+        flex: 1 1 12rem;
+        font-size: .84rem;
+        line-height: 1.4;
+        color: var(--ad-muted);
+    }
+}
+
+.addPersonModal .formPair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+.addPersonModal .passwordTools {
+    display: flex;
+    gap: .1rem;
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 8px;
+        color: var(--ad-muted);
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: background-color .2s ease, color .2s ease;
+
+        &:hover {
+            background: hsl(20, 10%, 88%);
+            color: var(--ad-text);
+        }
+    }
+}
+
+// Next steps
+.addPersonModal .nextSteps {
+    display: grid;
+    gap: 1.1rem;
+    padding-bottom: .25rem;
+
+    h4 {
+        margin-bottom: .55rem;
+        padding: 0;
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+}
+
+.addPersonModal .readyBanner {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    padding: 1rem 1.1rem;
+    border-radius: 18px;
+    background: linear-gradient(135deg, hsl(150, 60%, 93%), hsl(150, 40%, 98%));
+
+    .readyIcon {
+        display: grid;
+        place-items: center;
+        width: 2.8rem;
+        height: 2.8rem;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background: hsl(152, 60%, 36%);
+        color: #fff;
+        font-size: 1.4rem;
+        box-shadow: 0 8px 18px -8px hsla(152, 60%, 30%, .7);
+    }
+
+    > div {
+        min-width: 0;
+    }
+
+    strong {
+        display: block;
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+        line-height: 1.25;
+    }
+
+    > div > span {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .3rem .5rem;
+        margin-top: .3rem;
+        font-size: .86rem;
+        color: var(--ad-muted);
+    }
+
+    .readyEmail {
+        overflow-wrap: anywhere;
+    }
+}
+
+.addPersonModal .signInCard {
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface-2);
+
+    dl {
+        margin: 0;
+    }
+
+    dl > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .45rem 0;
+        border-bottom: 1px dashed hsl(20, 10%, 86%);
+    }
+
+    dt {
+        flex-shrink: 0;
+        font-size: .86rem;
+        color: var(--ad-muted);
+    }
+
+    dd {
+        margin: 0;
+        min-width: 0;
+        font-weight: 600;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .isMono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        letter-spacing: .02em;
+    }
+
+    .signInFoot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+        margin-top: .8rem;
+
+        span {
+            flex: 1 1 14rem;
+            font-size: .82rem;
+            line-height: 1.45;
+            color: var(--ad-muted);
+        }
+    }
+}
+
+.addPersonModal .stepLinks {
+    display: grid;
+    gap: .45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.addPersonModal .stepLink {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    padding: .75rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+
+        .stepGo {
+            color: var(--ad-primary);
+            transform: translateX(3px);
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.addPersonModal .stepIcon {
+    display: grid;
+    place-items: center;
+    width: 2.3rem;
+    height: 2.3rem;
+    flex-shrink: 0;
+    border-radius: 10px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.1rem;
+}
+
+.addPersonModal .stepText {
+    flex: 1;
+    min-width: 0;
+    display: grid;
+    line-height: 1.35;
+
+    strong {
+        font-size: .95rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .82rem;
+        color: var(--ad-muted);
+    }
+}
+
+.addPersonModal .stepGo {
+    flex-shrink: 0;
+    color: var(--ad-subtle);
+    transition: transform .25s var(--ad-ease), color .2s ease;
+}
+
+// Phones ====================>
+
+@media screen and (max-width: 640px) {
+    .personSheet.personSheet {
+        max-width: none;
+        border-radius: 0;
+    }
+
+    .personSheet .sheetHead {
+        padding: 1.1rem 1rem 1rem 1.1rem;
+    }
+
+    .personSheet .sheetAvatar {
+        width: 3.4rem;
+        height: 3.4rem;
+    }
+
+    .personSheet .sheetTitles h2 {
+        font-size: 1.3rem;
+    }
+
+    .personSheet .sheetBody {
+        padding: 1rem .85rem 1.5rem;
+    }
+
+    .personSheet .sheetSection {
+        padding: .9rem .95rem;
+    }
+
+    .adminPortal .roleCards,
+    .addPersonModal .formPair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .addPersonModal .stepDots .stepLabel {
+        display: none;
+    }
+
+    .addPersonModal .stepDots .isCurrent .stepLabel {
+        display: inline;
+    }
+}

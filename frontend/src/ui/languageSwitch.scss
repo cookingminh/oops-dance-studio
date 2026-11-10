@@ -1,0 +1,80 @@
+// EN | VI toggle (src/ui/LanguageSwitch.jsx).
+.langSwitch {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid hsl(20, 10%, 88%);
+    border-radius: 999px;
+    background: #fff;
+
+    button {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-width: 2.3rem;
+        height: 1.9rem;
+        padding: 0 .55rem;
+        border-radius: 999px;
+        color: hsl(240, 4%, 44%);
+        font-family: 'Spartan', sans-serif;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        cursor: pointer;
+        transition: color .2s ease;
+
+        &:hover {
+            color: hsl(0, 0%, 12%);
+        }
+
+        &[aria-pressed='true'] {
+            color: #fff;
+        }
+    }
+
+    .langPill {
+        position: absolute;
+        inset: 0;
+        border-radius: 999px;
+        background: hsl(0, 66%, 43%);
+    }
+
+    .langLabel {
+        position: relative;
+    }
+
+    &.tone-dark {
+        border-color: hsla(0, 0%, 100%, .3);
+        background: hsla(0, 0%, 100%, .12);
+
+        button {
+            color: hsla(0, 0%, 100%, .8);
+
+            &[aria-pressed='true'] {
+                color: hsl(0, 66%, 43%);
+            }
+        }
+
+        .langPill {
+            background: #fff;
+        }
+    }
+}
+
+// Placement tweaks
+.navBar .atb {
+    align-items: center;
+    gap: .9rem;
+}
+
+.authPanel {
+    position: relative;
+
+    .authLang {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+    }
+}

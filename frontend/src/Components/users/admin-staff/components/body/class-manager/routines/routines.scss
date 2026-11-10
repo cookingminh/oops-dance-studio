@@ -1,0 +1,851 @@
+// Routines (a class's piece over N sessions = one course) and make-up sessions: the routines panel
+// (inside the Classes dialog — a portal with .adminPortal for the --ad-* tokens — or a page), its
+// dialogs, the progress pips and the "Make-up" tag used on the attendance pages.
+
+// The dialog is a portal outside .adminShell, so main.scss's global p / h4 / li rules reach it.
+:where(.rtDialog, .rtPanel) p,
+:where(.rtDialog, .rtPanel) h3,
+:where(.rtDialog, .rtPanel) h4 {
+    margin: 0;
+    padding: 0;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+}
+
+:where(.rtDialog, .rtPanel) li {
+    cursor: default;
+}
+
+:where(.rtDialog, .rtPanel) :is(ul, ol) {
+    margin: 0;
+    padding: 0;
+}
+
+// ---- Dialog chrome -------------------------------------------------------------------------
+
+.rtDialog {
+    font-family: 'Spartan', sans-serif;
+    color: var(--ad-text);
+    text-align: left;
+
+    > header {
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    > footer {
+        border-top: 1px solid var(--ad-border);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.rtDialogHead {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+
+    > span:last-child {
+        display: grid;
+        min-width: 0;
+        line-height: 1.25;
+    }
+
+    small {
+        font-size: .84rem;
+        font-weight: 500;
+        color: var(--ad-muted);
+    }
+}
+
+.rtDialogTitle {
+    font-family: var(--ad-display);
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.rtDialogIcon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 12px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.15rem;
+}
+
+.rtDialogBody {
+    padding-top: 1.1rem;
+    padding-bottom: 1.1rem;
+}
+
+.rtDialogLead {
+    font-size: .88rem;
+    line-height: 1.5;
+    color: var(--ad-muted);
+}
+
+// ---- Panel ---------------------------------------------------------------------------------
+
+.rtPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+    color: var(--ad-text);
+
+    > * {
+        flex-shrink: 0;
+    }
+}
+
+.rtEyebrow {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+
+// The routine the class is on: a warm card with a spinning record.
+.rtHero {
+    --rt-fill: hsl(340, 62%, 46%);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.1rem 1.15rem;
+    border: 1px solid hsl(340, 60%, 92%);
+    border-radius: 18px;
+    background: linear-gradient(135deg, hsl(340, 90%, 98%), hsl(352, 70%, 95%));
+
+    &.isPlanned {
+        --rt-fill: hsl(262, 45%, 55%);
+        border-color: hsl(262, 40%, 91%);
+        background: linear-gradient(135deg, hsl(262, 60%, 98%), hsl(250, 45%, 95%));
+    }
+
+    &.isEmpty {
+        border: 1px dashed hsl(38, 85%, 72%);
+        background: hsl(40, 95%, 96%);
+
+        .rtDisc {
+            background: hsl(40, 90%, 88%);
+            color: hsl(30, 80%, 36%);
+        }
+
+        .rtEyebrow {
+            color: hsl(30, 70%, 34%);
+        }
+    }
+
+    &.isEditing {
+        background: var(--ad-surface);
+        border-color: var(--ad-border);
+    }
+}
+
+.rtHeroTop {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+    min-width: 0;
+}
+
+.rtDisc {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle, var(--rt-fill, var(--ad-primary)) 0 22%, transparent 23%),
+        repeating-radial-gradient(circle, hsl(0, 0%, 12%) 0 2px, hsl(0, 0%, 19%) 2px 3.5px);
+    box-shadow: 0 8px 18px -10px hsla(0, 0%, 0%, .6);
+    color: transparent;
+    font-size: 1.2rem;
+
+    &.isPlaying {
+        animation: rtSpin 8s linear infinite;
+    }
+}
+
+@keyframes rtSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.rtHeroText {
+    display: grid;
+    flex: 1;
+    gap: .1rem;
+    min-width: 0;
+}
+
+.rtSong {
+    font-family: var(--ad-display);
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.rtArtist {
+    font-size: .92rem;
+    color: var(--ad-muted);
+}
+
+.rtHeroActions {
+    display: flex;
+    flex-shrink: 0;
+    align-self: flex-start;
+    gap: .1rem;
+}
+
+.rtHeroProgress {
+    display: grid;
+    gap: .45rem;
+
+    p {
+        font-size: .88rem;
+        color: var(--ad-muted);
+
+        strong {
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+    }
+}
+
+.rtFacts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+    gap: .6rem;
+    margin: 0;
+
+    > div {
+        min-width: 0;
+        padding: .6rem .75rem;
+        border-radius: 12px;
+        background: hsla(0, 0%, 100%, .75);
+    }
+
+    dt {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .76rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+
+        svg {
+            flex-shrink: 0;
+            color: var(--rt-fill, var(--ad-primary));
+        }
+    }
+
+    dd {
+        margin: .15rem 0 0;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .isShoot dd {
+        color: var(--rt-fill, var(--ad-primary));
+    }
+}
+
+.rtMakeUps {
+    display: grid;
+    gap: .35rem;
+
+    li {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .3rem .5rem;
+        font-size: .86rem;
+        color: var(--ad-muted);
+
+        strong {
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+
+        em {
+            font-style: normal;
+        }
+
+        &.isPast {
+            opacity: .65;
+        }
+    }
+}
+
+.rtHeroFoot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    padding-top: .85rem;
+    border-top: 1px dashed hsla(340, 40%, 50%, .25);
+
+    .lessonVideo,
+    .lessonVideoEdit {
+        flex: 1 1 260px;
+        min-width: 0;
+    }
+}
+
+.rtMakeUpBtn {
+    margin-left: auto;
+    background: hsla(0, 0%, 100%, .85);
+    font-weight: 600;
+}
+
+// Course fee and renewal of the next course.
+.rtCourse {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem .6rem;
+    font-size: .86rem;
+    color: var(--ad-muted);
+
+    > strong {
+        color: var(--ad-text);
+        font-weight: 700;
+    }
+}
+
+.rtRenewal {
+    display: flex;
+    color: var(--ad-text);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .75rem;
+    padding: .65rem .8rem;
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .8);
+    font-size: .86rem;
+
+    > svg {
+        flex-shrink: 0;
+        color: var(--rt-fill, var(--ad-primary));
+    }
+
+    > span {
+        flex: 1 1 200px;
+        min-width: 0;
+        line-height: 1.45;
+    }
+
+    strong {
+        font-weight: 700;
+    }
+
+    &.isList {
+        margin-top: .1rem;
+        background: var(--ad-surface-2);
+    }
+}
+
+.rtCounts {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    margin-left: .25rem;
+}
+
+.rtCount {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: .05rem .5rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-paid {
+        background: hsl(150, 60%, 92%);
+        color: hsl(156, 64%, 28%);
+    }
+
+    &.is-waiting {
+        background: hsl(40, 95%, 90%);
+        color: hsl(30, 80%, 30%);
+    }
+
+    &.is-stopping {
+        background: hsl(20, 12%, 92%);
+        color: var(--ad-muted);
+    }
+}
+
+// ---- Progress pips -------------------------------------------------------------------------
+
+.rtProgress {
+    --rt-pip-h: .55rem;
+    display: flex;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+
+    &.size-sm {
+        --rt-pip-h: .32rem;
+        gap: 3px;
+    }
+}
+
+.rtPip {
+    flex: 1;
+    height: var(--rt-pip-h);
+    border-radius: 999px;
+    background: hsla(0, 0%, 0%, .09);
+    transform-origin: center;
+
+    &.isHeld {
+        background: var(--rt-fill, var(--ad-primary));
+    }
+
+    &.isNext {
+        background: transparent;
+        box-shadow: inset 0 0 0 1.5px var(--rt-fill, var(--ad-primary));
+        animation: rtPulse 1.8s ease-in-out infinite;
+    }
+}
+
+@keyframes rtPulse {
+    50% {
+        opacity: .45;
+    }
+}
+
+.rtBar {
+    position: relative;
+    flex: 1;
+    height: var(--rt-pip-h);
+    overflow: hidden;
+    border-radius: 999px;
+    background: hsla(0, 0%, 0%, .09);
+}
+
+.rtBarFill {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--rt-fill, var(--ad-primary));
+    transform-origin: left;
+}
+
+// ---- Notices -------------------------------------------------------------------------------
+
+.rtNotice {
+    display: flex;
+    margin: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem .65rem;
+    padding: .7rem .9rem;
+    border-radius: 14px;
+    font-size: .88rem;
+    line-height: 1.45;
+
+    > svg {
+        flex-shrink: 0;
+        font-size: 1.05rem;
+    }
+
+    > p,
+    > span {
+        flex: 1 1 220px;
+        min-width: 0;
+    }
+
+    &.isWarn {
+        background: hsl(40, 95%, 94%);
+        color: hsl(30, 70%, 28%);
+    }
+
+    &.isGood {
+        background: hsl(150, 60%, 94%);
+        color: hsl(156, 64%, 24%);
+    }
+
+    &.isError {
+        background: hsl(0, 85%, 96%);
+        color: hsl(0, 66%, 36%);
+    }
+}
+
+// ---- Plan the next routine -----------------------------------------------------------------
+
+.rtPlan {
+    min-width: 0;
+}
+
+.rtPlanBody {
+    overflow: hidden;
+    padding: 1rem 1.05rem 1.05rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 18px;
+    background: var(--ad-surface);
+}
+
+.rtPlanOpen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    width: 100%;
+    padding: .75rem 1rem;
+    border: 1.5px dashed hsl(0, 55%, 82%);
+    border-radius: 16px;
+    color: var(--ad-primary);
+    font-size: .92rem;
+    font-weight: 700;
+    transition: background-color .2s ease, border-color .2s ease;
+
+    &:hover {
+        border-color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+    }
+}
+
+.rtForm {
+    display: flex;
+    flex-direction: column;
+    gap: .8rem;
+    min-width: 0;
+}
+
+// A new routine follows the one that is on: when that one ends, and that its students are asked.
+.rtFollows {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    margin: 0;
+    padding: .65rem .8rem;
+    border-radius: 12px;
+    background: hsl(210, 60%, 96%);
+    color: hsl(214, 45%, 26%);
+    font-size: .86rem;
+    line-height: 1.45;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        color: hsl(214, 60%, 45%);
+    }
+}
+
+.rtFormRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+// Number input with − / + buttons.
+.rtCountInput {
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+        margin: 0;
+        -webkit-appearance: none;
+    }
+}
+
+.rtStepper {
+    display: inline-flex;
+    gap: .2rem;
+
+    button {
+        display: grid;
+        place-items: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 8px;
+        background: var(--ad-surface-2, hsl(20, 14%, 95.5%));
+        color: var(--ad-text);
+        font-size: .85rem;
+        transition: background-color .15s ease, color .15s ease;
+
+        &:hover:not(:disabled) {
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+
+        &:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+    }
+}
+
+.rtPreview {
+    display: grid;
+    gap: .5rem;
+}
+
+.rtPreviewHint {
+    font-size: .86rem;
+    color: var(--ad-subtle);
+}
+
+.rtPreviewDates {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .65rem .85rem;
+    border-radius: 12px;
+    background: var(--ad-primary-soft);
+
+    > span {
+        display: grid;
+        min-width: 0;
+        line-height: 1.3;
+    }
+
+    > svg {
+        flex-shrink: 0;
+        color: var(--ad-primary);
+    }
+
+    small {
+        font-size: .74rem;
+        font-weight: 600;
+        color: var(--ad-muted);
+    }
+
+    strong {
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    > span:last-child strong {
+        color: var(--ad-primary);
+    }
+}
+
+.rtPreviewWarn {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    padding: .55rem .75rem;
+    border-radius: 12px;
+    background: hsl(40, 95%, 94%);
+    color: hsl(30, 70%, 28%);
+    font-size: .85rem;
+    line-height: 1.45;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+}
+
+.rtFormActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: .5rem;
+}
+
+// ---- Up next / earlier routines ------------------------------------------------------------
+
+.rtList {
+    min-width: 0;
+
+    > ul {
+        display: grid;
+        gap: .45rem;
+    }
+}
+
+.rtListTitle {
+    margin-bottom: .55rem;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ad-muted);
+}
+
+.rtRow {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    min-width: 0;
+    padding: .65rem .8rem .7rem;
+    border-radius: 14px;
+    background: var(--ad-surface-2);
+
+    &.is-planned {
+        background: hsl(262, 50%, 97%);
+    }
+
+    // Video and renewal line up under the title.
+    > .lessonVideoAdd,
+    > .lessonVideo,
+    > .rtRenewal {
+        margin-left: 3.65rem;
+    }
+}
+
+.rtRowMain {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    min-width: 0;
+}
+
+.rtRowDate {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    min-width: 2.9rem;
+    padding: .3rem .35rem;
+    white-space: nowrap;
+    border-radius: 10px;
+    background: var(--ad-surface);
+    line-height: 1.1;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .64rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--ad-muted);
+    }
+}
+
+.rtRowText {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.3;
+
+    strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: .95rem;
+        font-weight: 600;
+    }
+
+    small {
+        font-size: .8rem;
+        color: var(--ad-muted);
+    }
+}
+
+.rtRowArtist {
+    font-weight: 400;
+    color: var(--ad-muted);
+}
+
+.rtRowActions {
+    display: flex;
+    flex-shrink: 0;
+}
+
+// ---- Make-up dialog ------------------------------------------------------------------------
+
+.rtRoomHint {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    font-size: .85rem;
+    line-height: 1.45;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+
+    strong {
+        font-weight: 600;
+    }
+
+    &.isWarn {
+        color: hsl(30, 70%, 30%);
+    }
+}
+
+// ---- "Make-up" tag (attendance pages, check-in, panel) -------------------------------------
+
+.rtMakeUpTag {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .25rem;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: hsl(262, 60%, 94%);
+    color: hsl(262, 45%, 40%);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+    vertical-align: middle;
+
+    svg {
+        font-size: .8rem;
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .rtFormRow {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .rtHero {
+        padding: 1rem;
+    }
+
+    .rtSong {
+        font-size: 1.25rem;
+    }
+
+    .rtDisc {
+        width: 2.9rem;
+        height: 2.9rem;
+    }
+
+    .rtRow > .lessonVideoAdd,
+    .rtRow > .lessonVideo,
+    .rtRow > .rtRenewal {
+        margin-left: 0;
+    }
+
+    .rtMakeUpBtn {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rtDisc.isPlaying,
+    .rtPip.isNext {
+        animation: none;
+    }
+}
+
+// The tag next to a session's time on the attendance and check-in pages.
+.rtMakeUpTag.sessionTag {
+    margin-left: .45rem;
+}

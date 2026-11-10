@@ -1,10 +1,10 @@
 -- Monthly class lessons (api-contract §3 class_lessons):
 --   * public read, staff write
---   * one row per (class, month), month = first day of the month, title 1–120 chars
+--   * one routine per (class, start day); month = first day of its start month; title 1–120 chars
 --   * classes.lesson always mirrors the latest month's title
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(13);
+select plan(14);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -67,12 +67,15 @@ select is(tests.lesson_of(900071), 'Super Shy — NewJeans', 'an older month doe
 -- ---------------------------------------------------------------------------
 -- Constraints
 -- ---------------------------------------------------------------------------
-select throws_ok(
-  $$insert into public.class_lessons (class_id, month, title) values (900071, '2026-11-15', 'Mid-month')$$,
-  '23514', null, 'month must be the first day of a month');
+select lives_ok(
+  $$insert into public.class_lessons (class_id, starts_on, title) values (900071, '2026-11-15', 'Mid-month')$$,
+  'a routine can start mid-month');
+select is((select month from public.class_lessons where class_id = 900071 and title = 'Mid-month'), '2026-11-01'::date,
+          'and its month follows its start');
+delete from public.class_lessons where class_id = 900071 and title = 'Mid-month';
 select throws_ok(
   $$insert into public.class_lessons (class_id, month, title) values (900071, '2026-11-01', 'Second')$$,
-  '23505', null, 'one lesson per class and month');
+  '23505', null, 'one routine per class and start day');
 select throws_ok(
   $$insert into public.class_lessons (class_id, month, title) values (900071, '2026-12-01', '   ')$$,
   '23514', null, 'the title cannot be blank');

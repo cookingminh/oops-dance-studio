@@ -1,43 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { MotionConfig } from 'framer-motion';
+import { useAuth } from '@/auth/useAuth';
+import { ROLES } from '@/auth/roles';
 import SideBar from './components/sidebar/SideBar';
 import TopBar from './components/topbar/TopBar';
+import TaskBell from './components/topbar/TaskBell';
 import Body from './components/body/Body';
 import StaffTasksProvider from './tasks/StaffTasksProvider';
-import './admin.scss';
+import { useStaffTasks } from './tasks/staffTasks';
+import { ADMIN_NAV, findAdminPage } from './adminPages';
+import WorkspaceShell from './components/common/WorkspaceShell';
 
-const Admin = () => {
-    const { pathname } = useLocation();
-    const mainRef = useRef(null);
-    const [menuOpen, setMenuOpen] = useState(false);
-
-    // A new page starts at the top, with the mobile menu closed.
-    useEffect(() => {
-        setMenuOpen(false);
-        mainRef.current?.scrollTo({ top: 0 });
-    }, [pathname]);
-
-    useEffect(() => {
-        if (!menuOpen) return undefined;
-        const onKeyDown = (event) => event.key === 'Escape' && setMenuOpen(false);
-        window.addEventListener('keydown', onKeyDown);
-        return () => window.removeEventListener('keydown', onKeyDown);
-    }, [menuOpen]);
-
+// The admin sidebar: staff don't see admin-only pages; to-do counts show as badges.
+const AdminSideBar = (props) => {
+    const { role } = useAuth();
+    const badges = useStaffTasks().data?.counts ?? {};
+    const sections = ADMIN_NAV.map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.adminOnly || role === ROLES.admin),
+    })).filter((section) => section.items.length > 0);
     return (
-        <MotionConfig reducedMotion="user">
-            <StaffTasksProvider>
-                <div className="adminShell">
-                    <SideBar open={menuOpen} onClose={() => setMenuOpen(false)} />
-                    <div className="adminMain" ref={mainRef}>
-                        <TopBar onOpenMenu={() => setMenuOpen(true)} />
-                        <Body />
-                    </div>
-                </div>
-            </StaffTasksProvider>
-        </MotionConfig>
+        <SideBar
+            {...props}
+            sections={sections}
+            findPage={findAdminPage}
+            badges={badges}
+            workspaceLabel={`${role === ROLES.admin ? 'Admin' : 'Staff'} workspace`}
+            ariaLabel="Admin menu"
+        />
     );
 };
+
+const Admin = () => (
+    <StaffTasksProvider>
+        <WorkspaceShell
+            renderSideBar={(props) => <AdminSideBar {...props} />}
+            renderTopBar={(props) => <TopBar {...props} findPage={findAdminPage} settingsPath="/admin/settings" actions={<TaskBell />} />}
+        >
+            <Body />
+        </WorkspaceShell>
+    </StaffTasksProvider>
+);
 
 export default Admin;

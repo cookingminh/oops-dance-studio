@@ -3,6 +3,7 @@ import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent
 import { BOOKING_STATUSES, DEPOSIT_STATUSES, createBookingForGuest, updateBooking } from '@/services/bookings';
 import { TIME_OPTIONS, formatTime, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useI18n } from '@/i18n/i18nContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
 
 const MONEY_FIELDS = [
@@ -13,28 +14,30 @@ const MONEY_FIELDS = [
     ['cash', 'Cash'],
 ];
 
-const initialForm = (booking) => ({
+// `draft` prefills a new booking (a free slot picked on the calendar): { roomId, date, startTime, endTime }.
+const initialForm = (booking, draft) => ({
     guestId: booking?.guest_id ?? null,
-    roomId: booking ? String(booking.room_id) : '',
-    date: booking?.date ?? '',
-    startTime: formatTime(booking?.start_time),
-    endTime: formatTime(booking?.end_time),
+    roomId: booking ? String(booking.room_id) : draft?.roomId ? String(draft.roomId) : '',
+    date: booking?.date ?? draft?.date ?? '',
+    startTime: booking ? formatTime(booking.start_time) : draft?.startTime ?? '',
+    endTime: booking ? formatTime(booking.end_time) : draft?.endTime ?? '',
     status: booking?.status ?? 'approved',
     depositStatus: booking?.deposit_status ?? 'waiting',
     details: booking?.details ?? '',
     ...Object.fromEntries(MONEY_FIELDS.map(([key]) => [key, booking?.[key] ?? ''])),
 });
 
-// Staff create (for a guest) or edit a booking. `booking` = null means create.
-const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
+// Staff create (for a guest) or edit a booking. `booking` = null means create (prefilled from `draft`).
+const BookingForm = ({ booking, draft, rooms, guests, onClose, onSaved }) => {
     const toast = useToast();
-    const [form, setForm] = useState(() => initialForm(booking));
+    const { t } = useI18n();
+    const [form, setForm] = useState(() => initialForm(booking, draft));
     const [saving, setSaving] = useState(false);
     const isNew = !booking;
 
     const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
     const timeError = form.startTime && form.endTime && toMinutes(form.startTime) >= toMinutes(form.endTime)
-        ? 'End time must be after start time.'
+        ? t('End time must be after start time.')
         : '';
     const canSave = (!isNew || form.guestId) && form.roomId && form.date && form.startTime && form.endTime && !timeError;
 
@@ -61,18 +64,18 @@ const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
     return (
         <Modal isOpen size="2xl" scrollBehavior="inside" onOpenChange={(open) => !open && onClose()}>
             <ModalContent>
-                <ModalHeader>{isNew ? 'Add Booking' : `Edit Booking #${booking.id}`}</ModalHeader>
+                <ModalHeader>{isNew ? t('Add Booking') : t('Edit Booking #{id}', { id: booking.id })}</ModalHeader>
                 <ModalBody>
                     {isNew ? (
-                        <PersonAutocomplete label="Guest" people={guests} value={form.guestId} onChange={set('guestId')} isRequired />
+                        <PersonAutocomplete label={t('Guest')} people={guests} value={form.guestId} onChange={set('guestId')} isRequired />
                     ) : (
                         <p className="text-sm">
-                            Guest: <strong>{booking.guest?.full_name || booking.guest?.username || booking.guest?.email}</strong>
+                            {t('Guest:')} <strong>{booking.guest?.full_name || booking.guest?.username || booking.guest?.email}</strong>
                         </p>
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <Select
-                            label="Room"
+                            label={t('Room')}
                             isRequired
                             selectedKeys={form.roomId ? [form.roomId] : []}
                             onChange={(event) => set('roomId')(event.target.value)}
@@ -81,9 +84,9 @@ const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
                                 <SelectItem key={String(room.id)}>{room.name}</SelectItem>
                             ))}
                         </Select>
-                        <Input label="Date" type="date" isRequired value={form.date} onValueChange={set('date')} />
+                        <Input label={t('Date')} type="date" isRequired value={form.date} onValueChange={set('date')} />
                         <Select
-                            label="Start"
+                            label={t('Start')}
                             isRequired
                             selectedKeys={form.startTime ? [form.startTime] : []}
                             onChange={(event) => set('startTime')(event.target.value)}
@@ -93,7 +96,7 @@ const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
                             ))}
                         </Select>
                         <Select
-                            label="End"
+                            label={t('End')}
                             isRequired
                             selectedKeys={form.endTime ? [form.endTime] : []}
                             onChange={(event) => set('endTime')(event.target.value)}
@@ -105,27 +108,27 @@ const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
                             ))}
                         </Select>
                         <Select
-                            label="Status"
+                            label={t('Status')}
                             selectedKeys={[form.status]}
                             onChange={(event) => event.target.value && set('status')(event.target.value)}
                         >
                             {BOOKING_STATUSES.map((status) => (
-                                <SelectItem key={status} className="capitalize">{status}</SelectItem>
+                                <SelectItem key={status} className="capitalize">{t(status)}</SelectItem>
                             ))}
                         </Select>
                         <Select
-                            label="Deposit status"
+                            label={t('Deposit status')}
                             selectedKeys={[form.depositStatus]}
                             onChange={(event) => event.target.value && set('depositStatus')(event.target.value)}
                         >
                             {DEPOSIT_STATUSES.map((status) => (
-                                <SelectItem key={status} className="capitalize">{status}</SelectItem>
+                                <SelectItem key={status} className="capitalize">{t(status)}</SelectItem>
                             ))}
                         </Select>
                         {MONEY_FIELDS.map(([key, label]) => (
                             <Input
                                 key={key}
-                                label={`${label} (VND)`}
+                                label={`${t(label)} (VND)`}
                                 type="number"
                                 min={0}
                                 step={1000}
@@ -134,14 +137,14 @@ const BookingForm = ({ booking, rooms, guests, onClose, onSaved }) => {
                             />
                         ))}
                     </div>
-                    <Textarea label="Details" value={form.details} onValueChange={set('details')} />
+                    <Textarea label={t('Details')} value={form.details} onValueChange={set('details')} />
                 </ModalBody>
                 <ModalFooter>
                     <Button color="danger" variant="light" onPress={onClose} isDisabled={saving}>
-                        Close
+                        {t('Close')}
                     </Button>
                     <Button color="primary" onPress={handleSubmit} isLoading={saving} isDisabled={!canSave}>
-                        {isNew ? 'Add Booking' : 'Update Booking'}
+                        {isNew ? t('Add Booking') : t('Update Booking')}
                     </Button>
                 </ModalFooter>
             </ModalContent>

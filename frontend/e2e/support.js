@@ -125,6 +125,14 @@ export const staffJwt = async () => (await token('staff@demo.oopsdance.test')).j
 export const rooms = async () => (await rest(null, 'rooms?select=*&order=id')).data;
 export const publicClasses = async () => (await rpc(null, 'list_public_classes')).data;
 
+// How many class videos the /classes showcase should list: the latest finished month that has any.
+export async function lastMonthVideos() {
+    const today = (await rpc(null, 'studio_today')).data;
+    const thisMonth = `${today.slice(0, 7)}-01`;
+    const rows = (await rest(await staffJwt(), `class_lessons?select=month&video_url=not.is.null&month=lt.${thisMonth}&order=month.desc`)).data;
+    return rows.filter((row) => row.month === rows[0]?.month).length;
+}
+
 export async function people(role) {
     return (await rest(await staffJwt(), `profiles?select=id,email,full_name,avatar_path&role=eq.${role}&order=email`)).data;
 }

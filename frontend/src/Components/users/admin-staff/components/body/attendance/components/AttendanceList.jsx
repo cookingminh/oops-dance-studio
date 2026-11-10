@@ -1,28 +1,26 @@
 import { useState } from 'react';
-import { Input, Pagination, Select, SelectItem, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, Chip, User } from '@nextui-org/react';
-import { LuClipboardCheck, LuSearch } from 'react-icons/lu';
-import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import { INSTRUCTOR_ATTENDANCE_STATUSES } from '@/services/attendance';
+import { Button, Chip, Pagination, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow, User } from '@nextui-org/react';
+import { LuDownload, LuPanelRightOpen } from 'react-icons/lu';
+import { addDays, parseISO, startOfWeek } from 'date-fns';
 import { avatarUrl } from '@/services/storage';
 import { formatClock, toIsoDate } from '@/lib/format';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import AsyncState from '@/ui/feedback/AsyncState';
+import { useI18n } from '@/i18n/i18nContext';
 import { statusColorMap } from '../../../../../../Table/utils';
-import SectionCard from '../../../common/SectionCard';
 import Segmented from '../../../common/Segmented';
-import StatusSelect from '../../../common/StatusSelect';
-import { STATUS_COLORS } from '../../../common/chartTheme';
-import { sessionTimes } from '../../../../tasks/staffTasks';
-import { AttendanceMenu, NoteButton, ProofThumb } from './AttendanceParts';
+import MakeUpTag from '../../class-manager/routines/MakeUpTag';
+import { personName, teacherOf } from '../../../common/session-modal/sessionModel';
+import { NoteButton } from './AttendanceParts';
+import { downloadCsv } from './csv';
 
 const PAGE_SIZE = 10;
+// Labels are English (translated where shown).
 const SCOPES = [
     { key: 'week', label: 'This week' },
     { key: 'month', label: 'This month' },
     { key: 'all', label: 'All dates' },
 ];
-const STATUS_LABEL = (status) => (status === 'in_progress' ? 'In progress' : status[0].toUpperCase() + status.slice(1));
-const STATUS_DOT = { ...STATUS_COLORS, in_progress: '#2a78d6', waiting: '#eda100' };
 const COLUMNS = [
     { key: 'date', label: 'Date' },
     { key: 'instructor', label: 'Instructor' },
@@ -40,104 +38,90 @@ function inScope(date, scope, today) {
     return date >= toIsoDate(monday) && date <= toIsoDate(addDays(monday, 6));
 }
 
-// Every instructor session, newest first, filtered by period, instructor and status.
-const AttendanceList = ({ state, today, actions }) => {
-    const [scope, setScope] = useState('week');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [instructorId, setInstructorId] = useState('all');
-    const [query, setQuery] = useState('');
+// The list view of "All sessions": every recorded session (newest first) as a table, for searching
+// across dates and for a CSV export. `sessions` come filtered; the period is picked here.
+const AttendanceList = ({ state, sessions, today, onOpen }) => {
+    const { t, tn, formatDate } = useI18n();
+    const [scope, setScope] = useState('month');
     const [page, setPage] = useState(1);
 
-    const filterSetter = (setter) => (value) => {
-        setter(value);
-        setPage(1);
-    };
-
-    const rows = state.data ?? [];
-    const instructors = [...new Map(rows.map((row) => [row.instructor_id, row.instructor])).entries()]
-        .map(([id, person]) => ({ id, name: person?.full_name || person?.username || 'Instructor' }))
-        .sort((a, b) => a.name.localeCompare(b.name));
-
-    const term = query.trim().toLowerCase();
-    const base = rows.filter((row) => {
-        if (!inScope(row.date, scope, today)) return false;
-        if (instructorId !== 'all' && row.instructor_id !== instructorId) return false;
-        if (!term) return true;
-        return [row.date, row.instructor?.full_name, row.instructor?.username, row.instructor?.email, row.class?.name, row.room?.name, row.details]
-            .some((value) => String(value ?? '').toLowerCase().includes(term));
-    });
-    const statusCounts = new Map();
-    for (const row of base) statusCounts.set(row.status, (statusCounts.get(row.status) ?? 0) + 1);
-    const visible = base
-        .filter((row) => statusFilter === 'all' || row.status === statusFilter)
-        .sort((a, b) => b.date.localeCompare(a.date) || sessionTimes(b.class, b.date).start.localeCompare(sessionTimes(a.class, a.date).start));
-
+    const visible = sessions.filter((session) => inScope(session.date, scope, today));
     const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
     const currentPage = Math.min(page, pages);
     const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-    const statusOptions = [
-        { key: 'all', label: 'Any status', count: base.length },
-        ...INSTRUCTOR_ATTENDANCE_STATUSES.filter((status) => statusCounts.get(status) || status === statusFilter).map((status) => ({
-            key: status,
-            label: STATUS_LABEL(status),
-            count: statusCounts.get(status) ?? 0,
-            color: STATUS_DOT[status],
-        })),
-    ];
+    const statusText = (row) => t(row.status === 'in_progress' ? 'in progress' : row.status);
 
-    const renderCell = (row, key) => {
+    const exportCsv = () =>
+        downloadCsv(
+            `sessions-${scope === 'all' ? 'all' : today}.csv`,
+            [t('Date'), t('Start'), t('End'), t('Class'), t('Room'), t('Instructor'), t('Check-in'), t('Check-out'), t('Status'), t('Make-up'), t('Note')],
+            visible.map(({ date, start, end, cls, row, extra }) => [
+                date,
+                start,
+                end,
+                cls.name,
+                cls.room?.name ?? '',
+                personName(row.instructor),
+                row.checkin_at ? formatClock(row.checkin_at) : '',
+                row.checkout_at ? formatClock(row.checkout_at) : '',
+                statusText(row),
+                extra ? t('Yes') : '',
+                row.details ?? '',
+            ])
+        );
+
+    const renderCell = (session, key) => {
+        const { row, cls } = session;
         switch (key) {
-            case 'date': {
-                const { start, end } = sessionTimes(row.class, row.date);
+            case 'date':
                 return (
                     <div className="stackCell">
                         <strong>
-                            {format(parseISO(row.date), 'EEE d MMM')}
-                            {row.date === today && <span className="todayTag">Today</span>}
+                            {formatDate(session.date, 'short')}
+                            {session.date === today && <span className="todayTag">{t('Today')}</span>}
                         </strong>
-                        <span>{start && `${start} – ${end}`}</span>
+                        <span>
+                            {session.start && `${session.start} – ${session.end}`}
+                            {session.extra && <MakeUpTag className="sessionTag" />}
+                        </span>
                     </div>
                 );
-            }
             case 'instructor': {
-                const name = row.instructor?.full_name || row.instructor?.username || 'Instructor';
+                const teacher = teacherOf(session);
+                const name = personName(teacher) || t('Instructor');
                 return (
                     <User
-                        avatarProps={{ ...AVATAR_DEFAULTS, size: 'sm', src: avatarUrl(row.instructor?.avatar_path, row.instructor?.updated_at) ?? undefined, name }}
+                        avatarProps={{ ...AVATAR_DEFAULTS, size: 'sm', src: avatarUrl(teacher?.avatar_path, teacher?.updated_at) ?? undefined, name }}
                         name={name}
-                        description={row.instructor?.email}
+                        description={teacher?.email}
                     />
                 );
             }
             case 'class':
                 return (
                     <div className="stackCell">
-                        <strong>{row.class?.name}</strong>
-                        <span>{row.room?.name}</span>
+                        <strong>{cls.name}</strong>
+                        <span>{cls.room?.name}</span>
                     </div>
                 );
             case 'checkin':
             case 'checkout': {
                 const at = key === 'checkin' ? row.checkin_at : row.checkout_at;
-                const proof = key === 'checkin' ? row.checkin_proof_url : row.checkout_proof_url;
-                return (
-                    <div className="proofCell">
-                        <ProofThumb url={proof} label={key === 'checkin' ? 'Check-in proof' : 'Check-out proof'} onView={actions.viewProof} />
-                        <span className={at ? undefined : 'isMuted'}>{at ? formatClock(at) : '—'}</span>
-                    </div>
-                );
+                return <span className={at ? undefined : 'isMuted'}>{at ? formatClock(at) : '—'}</span>;
             }
             case 'status':
                 return (
                     <Chip className="capitalize" color={statusColorMap[row.status] ?? 'default'} size="sm" variant="flat">
-                        {row.status.replace('_', ' ')}
+                        {statusText(row)}
                     </Chip>
                 );
             case 'actions':
                 return (
                     <div className="rowActions">
                         {row.details ? <NoteButton record={row} /> : <span className="actionSlot" aria-hidden="true" />}
-                        <AttendanceMenu record={row} actions={actions} />
+                        <Button isIconOnly size="sm" variant="light" aria-label={t('Open the session: {name}, {time}', { name: cls.name, time: formatDate(session.date, 'short') })} onPress={() => onOpen(session)}>
+                            <LuPanelRightOpen className="text-default-500" aria-hidden="true" />
+                        </Button>
                     </div>
                 );
             default:
@@ -149,67 +133,45 @@ const AttendanceList = ({ state, today, actions }) => {
     const to = Math.min(currentPage * PAGE_SIZE, visible.length);
 
     return (
-        <SectionCard
-            className="bookingsCard"
-            icon={LuClipboardCheck}
-            title="All sessions"
-            subtitle={state.data ? `${visible.length} session${visible.length === 1 ? '' : 's'} · check-in and check-out with proof photos` : 'Loading sessions…'}
-            actions={
-                <Input
-                    isClearable
-                    aria-label="Search sessions"
-                    placeholder="Search..."
-                    className="bookingSearch"
-                    startContent={<LuSearch className="text-default-400" aria-hidden="true" />}
-                    value={query}
-                    onValueChange={filterSetter(setQuery)}
-                    onClear={() => filterSetter(setQuery)('')}
+        <div className="atList">
+            <div className="atListBar">
+                <Segmented
+                    label={t('Period')}
+                    options={SCOPES.map((option) => ({ ...option, label: t(option.label) }))}
+                    value={scope}
+                    onChange={(value) => {
+                        setScope(value);
+                        setPage(1);
+                    }}
                 />
-            }
-        >
-            <div className="bookingToolbar">
-                <Select
-                    aria-label="Instructor"
-                    className="instructorPicker"
-                    classNames={{ trigger: 'statusSelectTrigger', popoverContent: 'adminPortal' }}
-                    selectedKeys={[instructorId]}
-                    disallowEmptySelection
-                    onChange={(event) => filterSetter(setInstructorId)(event.target.value || 'all')}
-                    items={[{ id: 'all', name: 'All instructors' }, ...instructors]}
-                >
-                    {(item) => <SelectItem key={item.id}>{item.name}</SelectItem>}
-                </Select>
-                <div className="toolbarGroup">
-                    <StatusSelect options={statusOptions} value={statusFilter} onChange={filterSetter(setStatusFilter)} />
-                    <Segmented label="Period" options={SCOPES} value={scope} onChange={filterSetter(setScope)} />
-                </div>
+                <span className="atListCount">{tn(visible.length, '{count} session', '{count} sessions')}</span>
+                <Button size="sm" variant="flat" startContent={<LuDownload aria-hidden="true" />} isDisabled={visible.length === 0} onPress={exportCsv}>
+                    {t('Export CSV')}
+                </Button>
             </div>
-
             <AsyncState state={state} isEmpty={false}>
                 <div className="tableScroll">
-                    <Table aria-label="Instructor attendance" removeWrapper className="bookingTable">
+                    <Table aria-label={t('Instructor attendance')} removeWrapper className="bookingTable">
                         <TableHeader columns={COLUMNS}>
                             {(column) => (
                                 <TableColumn key={column.key} align={column.key === 'actions' ? 'end' : 'start'}>
-                                    {column.label}
+                                    {t(column.label)}
                                 </TableColumn>
                             )}
                         </TableHeader>
-                        <TableBody items={pageRows} emptyContent={<div className="tableEmpty">No sessions match these filters.</div>}>
-                            {(row) => <TableRow key={row.id}>{(key) => <TableCell>{renderCell(row, key)}</TableCell>}</TableRow>}
+                        <TableBody items={pageRows} emptyContent={<div className="tableEmpty">{t('No sessions match these filters.')}</div>}>
+                            {(session) => <TableRow key={session.key}>{(key) => <TableCell>{renderCell(session, key)}</TableCell>}</TableRow>}
                         </TableBody>
                     </Table>
                 </div>
                 {visible.length > 0 && (
                     <div className="tableFooter">
-                        <span>
-                            {from}–{to} of {visible.length}
-                        </span>
+                        <span>{t('{from}–{to} of {total}', { from, to, total: visible.length })}</span>
                         {pages > 1 && <Pagination isCompact showControls color="danger" page={currentPage} total={pages} onChange={setPage} />}
                     </div>
                 )}
             </AsyncState>
-        </SectionCard>
+        </div>
     );
 };
 

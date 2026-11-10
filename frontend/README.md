@@ -8,11 +8,13 @@ React 18 + Vite, Tailwind CSS + NextUI + SCSS, talking directly to **Supabase** 
 
 | Role | Area | Highlights |
 |---|---|---|
-| Visitor | `/home` | Class slider and weekly timetable, room availability search, sign up / log in, password reset |
-| Guest | `/profile` | Book a room, cancel pending bookings, see enrolled classes and own attendance |
-| Instructor | `/profile` | Today's sessions, check in / out with a proof photo, own classes and students |
-| Staff | `/admin` | Dashboard, rooms, bookings (approve, payments), classes & schedules, enrolments, attendance, charts |
-| Admin | `/admin` | Everything staff can do, plus users: create, delete, change role or login email |
+| Visitor | `/home`, `/classes`, `/rooms`, `/about` | Home (perks, class teaser, next class), classes (weekly timetable, all classes, last month's class videos from YouTube, instructors), rooms (availability search and booking), About us (Oops! Crew story), sign up / log in, password reset |
+| Guest | `/profile` | Overview of the week, one page per class (current routine: sessions held, shoot day), tuition **per course** (pay by VietQR — marked paid automatically by the bank webhook — renew or stop the next course, history), attendance calendar, book a room, cancel pending bookings |
+| Instructor | `/profile` | Today's sessions (make-ups with their own times), check in / out with a proof photo, one page per class (routine progress, roster with recent attendance, joining/leaving dates) |
+| Staff | `/admin` | Dashboard, **class hub** `/admin/classes` (today / this month / upcoming / past; one page per class: students, sessions & roll calls, substitutes, make-up sessions, tuition by course, routines, setup, end / reopen), bookings, rooms, students, instructor attendance, tuition (by course, renewals, bank-transfer inbox, switches between courses), their own expenses, charts |
+| Admin | `/admin` | Everything staff can do, plus users, payroll, tuition payment settings (bank account, renewal rules, SePay webhook), all expenses (recurring, receipts, class-tied) and the finance report (revenue − payroll − expenses, per-class margin, per-person student movement) |
+
+Every screen is available in English and Vietnamese (EN | VI switch in the navbar, the auth pages and the workspace top bar).
 
 Access is enforced twice: route guards in the app, and RLS / role checks in the database. The role always comes from the user's `profiles` row, never from the client.
 
@@ -38,6 +40,7 @@ Demo accounts (admin, staff, instructor, guest) and their password are listed in
 | `VITE_SUPABASE_ANON_KEY` | `eyJ…` / `sb_publishable_…` | Anon (publishable) key. **Never** put the service-role / secret key in the frontend. |
 | `VITE_DEMO_MODE` | `true` | Public demo only: one-click demo logins, a "Demo data, resets every 6 hours" banner, and `@demo.oopsdance.test` accounts can't change their password or email. Unset = normal app. |
 | `VITE_DEMO_PASSWORD` | | Public demo only: the shared demo password the one-click logins use (public on purpose: demo accounts, fake data). |
+| `VITE_AUTH_PROVIDERS` | `google,facebook` | "Continue with Google / Facebook" buttons on the login and sign-up pages, in this order. Only list a provider once it is switched on in Supabase Auth ([Enable Google / Facebook sign-in](../supabase/README.md#enable-google--facebook-sign-in)). Unset = email and password only, no buttons. |
 
 `.env.local` is git-ignored; only `.env.example` is committed.
 
@@ -58,14 +61,27 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 
 | Spec | Covers |
 |---|---|
-| `anon.spec.js` | homepage data (classes, rooms, photos, timetable), visitor booking prompt, route guards |
-| `guest.spec.js` | book from the homepage and cancel, profile settings, RLS on bookings / profiles / attendance |
+| `anon.spec.js` | public pages and navbar, classes, rooms, photos, timetable, About page, visitor booking prompt, route guards |
+| `guest.spec.js` | book from /rooms and cancel, profile settings, RLS on bookings / profiles / attendance |
 | `instructor.spec.js` | check-in / check-out with a proof photo, signed proof URLs, no access to others' sessions |
-| `staff.spec.js` | dashboard, rooms, bookings (overlap → `SLOT_TAKEN`), classes with images, schedules, enrolments, attendance, charts |
+| `staff.spec.js` | dashboard, rooms, bookings (overlap → `SLOT_TAKEN`), classes with images, schedules, enrolments, the Attendance page, charts |
 | `admin.spec.js` | user management through the `admin-users` Edge Function and `admin_set_role` |
 | `auth.spec.js` | sign-up (always guest), taken username, wrong password, password reset through Mailpit, change password |
 | `clash.spec.js` | schedule and room-move forms explain clashes with bookings |
 | `demo-mode.spec.js` | the `VITE_DEMO_MODE` build on port 5174: banner, one-click logins, locked demo accounts |
+| `i18n.spec.js` | the EN / VI switch on the public site and in the workspace |
+| `payroll.spec.js` | payroll is admin only; a deduction, finalize and reopen |
+| `tuition-student.spec.js` | a student's tuition: VietQR dialog, sandbox transfer marks it paid, renewal stop / continue |
+| `tuition-staff.spec.js` | staff record cash and undo, assign / ignore bank transfers, payment settings are admin only |
+| `finance.spec.js` | the admin finance report matches `finance_monthly` / `finance_by_class`; staff are refused; CSV exports |
+| `expenses.spec.js` | expenses with class + receipt, staff see only their own, recurring costs |
+| `class-switch.spec.js` | joining another class's upcoming course: finish the paid course, leave after it |
+| `routines.spec.js` | routines by sessions, renewal opening, make-up session with roll call |
+| `class-hub.spec.js` | the class hub: views, new-class wizard, students, make-up, end / reopen, delete guard |
+| `routine-order.spec.js` | the next routine starts after the current one's shoot day (form + server); a routine to-do opens the class's Routines tab |
+| `bookings-calendar.spec.js` | the bookings calendar: class sessions behind, a free-slot click prefills a booking, pending style and chip, dialog actions, month / list |
+| `attendance.spec.js` | the one Attendance page: today, review queue and badge, roll call and session actions in the modal, calendar / list, deep link |
+| `activity.spec.js` | the admin's Activity log: day groups, collapsed bursts, filters in the URL, a staff action shows up, staff have no access |
 
 ```bash
 # from the repository root, once per stack reset
@@ -89,13 +105,15 @@ src/
                           schedules, bookings, attendance, stats, storage, studio, errors
   auth/                   AuthProvider (session + profile), RequireRole, PublicOnly, roles
   hooks/useAsync.js       loading / error / reload state for service calls
+  i18n/                   English / Vietnamese: provider, t()/tn(), date formatting, vi/*.js dictionaries
   ui/                     shared UI: toasts, loading/empty/error states, pickers, avatars, demo banner
   assets/                 compressed images (WebP) and videos (720p MP4); room*.webp are not
                           bundled — ../scripts/demo-images.mjs uploads them to site-assets for the seed
   Components/
-    HomePage/             public site
+    HomePage/             public site: PublicLayout (navbar, footer, page transitions), pages/ (one per
+                          route), Components/ (sections; About/aboutContent.js holds the About copy)
     Login, Register, ResetPassword, Logout
-    Table, SmallTable     table templates
+    Table                 table template
     users/admin-staff/    /admin area
     users/instructor-guest/  /profile area
 e2e/                      Playwright specs + fixtures (see above)
@@ -105,6 +123,12 @@ Conventions:
 - Components never import the Supabase client; they call `src/services/*`.
 - Service errors are `AppError`s with a stable `code` (`SLOT_TAKEN`, `FORBIDDEN`, `PAST_DATE`, …) and a message that is safe to show. RPC error prefixes and Postgres codes are mapped in `src/services/errors.js`.
 - Dates that mean "today" come from the `studio_today()` RPC (Asia/Ho_Chi_Minh), not the browser clock. Weekdays are ISO (1 = Monday … 7 = Sunday).
+- UI text is written in English and passed through `t()` from `useI18n()` (`src/i18n/i18nContext.js`); the English
+  text is the key into the Vietnamese dictionaries in `src/i18n/vi/` (one file per area, glossary in `common.js`).
+  Use `{placeholders}` for values (`t('Booking #{id} is now {status}.', { id, status })`), `tn()` for plurals and
+  `formatDate()` / `dayName()` / `monthName()` for dates. Data (class, room and people names, songs) is not translated.
+  In development, `window.__i18nMissing` lists Vietnamese lookups that have no translation yet. The EN | VI switch
+  is stored in `localStorage` (`oops-lang`); first-time visitors get Vietnamese if their browser language is Vietnamese.
 - Images are stored as Storage paths. Public buckets use `getPublicUrl`; attendance proofs are private and shown through signed URLs. Room photos come from `rooms.image_paths` (bucket `site-assets`); a room without photos shows the studio photo.
 
 ## Deploy
@@ -112,7 +136,7 @@ Conventions:
 Any static host works; `vercel.json` already rewrites every route to `index.html`.
 
 1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the hosted project in the host's environment settings (plus `VITE_DEMO_MODE=true` and `VITE_DEMO_PASSWORD` for the public demo).
-2. In Supabase → Authentication → URL configuration, set the site URL to the deployed origin and add `<origin>/reset-password` to the redirect URLs.
+2. In Supabase → Authentication → URL configuration, set the site URL to the deployed origin and add `<origin>/reset-password` (and `<origin>/login` if Google / Facebook sign-in is on) to the redirect URLs.
 3. `npm run build` and publish `dist/`.
 
 Bundle (gzip): the homepage loads about 400 KB of JS (React, NextUI, supabase-js and the app). The admin and profile areas, the charts and the HEIC converter are separate chunks loaded on demand. Bundled media is about 11 MB, mostly the three background videos; they can move to the public `site-assets` bucket if the build should be smaller.
@@ -121,4 +145,4 @@ Bundle (gzip): the homepage loads about 400 KB of JS (React, NextUI, supabase-js
 
 - Upgrade NextUI 2.4 → HeroUI; then drop the Avatar workaround in `src/ui/PlainImg.jsx`.
 - Upload / reorder room photos from the admin Rooms page (staff upload to `site-assets/rooms/{room_id}/` and update `rooms.image_paths`; no backend change needed).
-- UI redesign (the login/register pages squeeze their photo on wide screens; dashboards still have decorative search boxes and message/notification icons; footer links are placeholders).
+- UI redesign (dashboards still have decorative search boxes and message/notification icons; footer links are placeholders).

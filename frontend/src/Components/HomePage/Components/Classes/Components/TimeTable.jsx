@@ -1,116 +1,104 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@nextui-org/react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { TiSocialFacebook } from 'react-icons/ti';
 import { getStudioToday } from '@/services/studio';
 import { avatarUrl } from '@/services/storage';
-import { WEEKDAYS, formatTime } from '@/lib/format';
+import { WEEKDAYS, formatTime, isoWeekdayOf } from '@/lib/format';
+import { useI18n } from '@/i18n/i18nContext';
 import timetable_bg from '@/assets/images/timetable-bg.webp';
-import class_bg from '@/assets/images/timetable-class-bg.webp';
+import brush from '@/assets/images/timetable-class-bg.webp';
+import { SOCIALS } from '../../NavBar/contactInfo';
 
-// Weekly timetable built from every class's schedules (ISO weekday 1–7).
-const TimeTable = ({ classes }) => {
+// Vietnamese month names are lowercase ("tháng 11 năm 2026"); this one starts a line.
+const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
+
+// The week at a glance: one column per day (ISO weekday 1–7), sessions in time order.
+// Compact on purpose; on small screens the columns scroll sideways. `onPick(classId)` makes each
+// session a button that shows that class's card.
+const TimeTable = ({ classes, onPick }) => {
+    const { t, formatDate, dayName } = useI18n();
     const [today, setToday] = useState(null);
 
     useEffect(() => {
-        getStudioToday().then((iso) => setToday(parseISO(iso))).catch(() => setToday(new Date()));
+        getStudioToday().then(setToday).catch(() => setToday(format(new Date(), 'yyyy-MM-dd')));
     }, []);
 
-    const { days, rows } = useMemo(() => {
+    const { days, count } = useMemo(() => {
         const sessions = (classes.data ?? []).flatMap((item) =>
-            (item.schedules ?? []).map((s) => ({ ...s, start: formatTime(s.start_time), cls: item }))
+            (item.schedules ?? []).map((s) => ({ ...s, start: formatTime(s.start_time), end: formatTime(s.end_time), cls: item }))
         );
-        const hasSunday = sessions.some((s) => s.day_of_week === 7);
-        const shownDays = WEEKDAYS.filter((d) => d.value !== 7 || hasSunday);
-        const starts = [...new Set(sessions.map((s) => s.start))].sort();
         return {
-            days: shownDays,
-            rows: starts.map((start) => ({
-                start,
-                cells: shownDays.map((d) => sessions.filter((s) => s.start === start && s.day_of_week === d.value)),
+            count: sessions.length,
+            days: WEEKDAYS.map((day) => ({
+                ...day,
+                sessions: sessions.filter((s) => s.day_of_week === day.value).sort((a, b) => a.start.localeCompare(b.start)),
             })),
         };
     }, [classes.data]);
 
+    const todayDow = today ? isoWeekdayOf(today) : null;
+
     return (
-        <div className="classes section flex">
-            <div className="sectionContainer flex">
-                <div className="background">
-                    <img src={timetable_bg} alt="" />
-                </div>
-                <div className="titlesDiv">
-                    <h1>Our weekly timetable</h1>
-                    {today && (
-                        <>
-                            <h1>{format(today, 'MMMM')}</h1>
-                            <span>{format(today, 'yyyy')}</span>
-                        </>
-                    )}
-                </div>
+        <section id="timetable" className="hpTimetable">
+            <div className="hpTimetableCard" style={{ backgroundImage: `url(${timetable_bg})` }}>
+                <header className="hpTimetableHead" data-aos="fade-up">
+                    <div>
+                        <h2>{t('Our weekly timetable')}</h2>
+                        <p>
+                            {today ? capitalize(formatDate(today, 'monthYear')) : '…'}
+                            {count > 0 && ` · ${t('{count} classes a week', { count })}`}
+                        </p>
+                    </div>
+                    <a className="hpFacebook" href={SOCIALS.facebook} target="_blank" rel="noopener noreferrer">
+                        <TiSocialFacebook aria-hidden="true" /> {t('News on our fanpage')}
+                    </a>
+                </header>
 
-                <div className="timeTableDiv flex">
-                    {rows.length === 0 ? (
-                        <p className="z-10">{classes.loading ? 'Loading the timetable…' : 'The timetable will be published soon.'}</p>
-                    ) : (
-                        <table>
-                            <thead>
-                                <tr className="days">
-                                    <th></th>
-                                    {days.map((d) => (
-                                        <th key={d.value} title={d.label}>{d.short}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row) => (
-                                    <tr key={row.start}>
-                                        <td className="time">{row.start}</td>
-                                        {row.cells.map((sessions, index) => (
-                                            <td key={days[index].value}>
-                                                {sessions.map((s) => (
-                                                    <div
-                                                        className="dance-class !h-auto min-h-12 py-2"
-                                                        key={s.cls.id}
-                                                        title={`${s.cls.name} with ${s.cls.instructor_name}`}
-                                                    >
-                                                        <img src={class_bg} className="class-bg w-full h-full" alt="" />
-                                                        {/* Small avatar on the badge corner so it never covers the class name. */}
-                                                        {s.cls.instructor_avatar_path && (
-                                                            <img
-                                                                src={avatarUrl(s.cls.instructor_avatar_path)}
-                                                                className="instructor !w-9 !h-9 !left-auto !-right-3 !-top-3 rounded-full object-cover object-top bg-white ring-2 ring-white"
-                                                                alt={s.cls.instructor_name}
-                                                            />
-                                                        )}
-                                                        {/* Class names from the DB can be long; keep them inside the badge. */}
-                                                        <span className="!text-[11px] !leading-tight !w-[85%] !ml-4 !text-left [overflow-wrap:normal]">{s.cls.name}</span>
-                                                    </div>
-                                                ))}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
-                </div>
-
-                <div className="infoDiv mt-4 flex flex-col gap-2 text-center">
-                    <h1>Go to our fanpage to get more information</h1>
-                    <Button
-                        as="a"
-                        className="facebook-button"
-                        aria-label="Facebook"
-                        variant="bordered"
-                        href="https://www.facebook.com/oopsdancestudio"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <TiSocialFacebook className="icon" /> Facebook
-                    </Button>
-                </div>
+                {count === 0 ? (
+                    <p className="hpTimetableEmpty">{classes.loading ? t('Loading the timetable…') : t('The timetable will be published soon.')}</p>
+                ) : (
+                    <div className="timeTableDiv" role="list" aria-label={t('Weekly timetable')}>
+                        {days.map((day, index) => (
+                            <div
+                                key={day.value}
+                                role="listitem"
+                                className={`weekDay${day.value === todayDow ? ' isToday' : ''}`}
+                                data-aos="fade-up"
+                                data-aos-delay={index * 50}
+                            >
+                                <div className="weekDayHead">
+                                    <strong>{day.short}</strong>
+                                    <span>{day.value === todayDow ? t('Today') : dayName(day.value)}</span>
+                                </div>
+                                {day.sessions.length === 0 && <span className="weekDayOff">{t('Rest day')}</span>}
+                                {day.sessions.map((s) => {
+                                    const label = t('{name} with {instructor}, {start}–{end}', { name: s.cls.name, instructor: s.cls.instructor_name, start: s.start, end: s.end });
+                                    const Slot = onPick ? 'button' : 'div';
+                                    return (
+                                        <Slot
+                                            key={`${s.cls.id}-${s.start}`}
+                                            className="weekSlot"
+                                            title={label}
+                                            {...(onPick ? { type: 'button', onClick: () => onPick(s.cls.id) } : {})}
+                                        >
+                                            <span className="weekSlotTime">
+                                                {s.start} – {s.end}
+                                            </span>
+                                            <span className="weekSlotBadge" style={{ '--brush': `url(${brush})` }}>
+                                                <span className="weekSlotName">{s.cls.name}</span>
+                                                {s.cls.instructor_avatar_path && (
+                                                    <img className="instructor" src={avatarUrl(s.cls.instructor_avatar_path)} alt={s.cls.instructor_name} loading="lazy" />
+                                                )}
+                                            </span>
+                                        </Slot>
+                                    );
+                                })}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
-        </div>
+        </section>
     );
 };
 

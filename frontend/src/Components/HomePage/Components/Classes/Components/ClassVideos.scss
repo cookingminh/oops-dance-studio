@@ -1,0 +1,539 @@
+// /classes: end-of-month class videos — a dark "screening room" card between the class grid and the coaches.
+
+.hpVideos {
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+    padding: 5rem 0 1rem;
+    scroll-margin-top: 5.5rem;
+}
+
+.hpVideosCard {
+    position: relative;
+    overflow: hidden;
+    padding: clamp(1.6rem, 3.5vw, 2.8rem);
+    border-radius: 2rem;
+    background:
+        radial-gradient(60rem 26rem at 110% -10%, hsla(0, 70%, 42%, .45), transparent 60%),
+        radial-gradient(40rem 22rem at -10% 120%, hsla(38, 95%, 60%, .14), transparent 60%),
+        hsl(0, 14%, 8%);
+    color: #fff;
+    isolation: isolate;
+
+    // Film-strip perforations along the top edge.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto;
+        height: .55rem;
+        background: repeating-linear-gradient(90deg, hsla(0, 0%, 100%, .08) 0 1.1rem, transparent 1.1rem 1.9rem);
+        z-index: -1;
+    }
+
+    .hpSectionHead.isDark {
+        h2 {
+            color: #fff;
+        }
+
+        p {
+            color: hsla(0, 0%, 100%, .66);
+        }
+
+        .hpEyebrow {
+            background: hsla(0, 80%, 60%, .18);
+            color: hsl(0, 90%, 78%);
+        }
+    }
+
+    // AsyncState's spinner / empty text on the dark card.
+    > p,
+    [role='alert'] p {
+        color: hsla(0, 0%, 100%, .7);
+    }
+}
+
+.hpYoutubeBtn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .6rem;
+    height: 3rem;
+    padding: 0 1.15rem 0 1.05rem;
+    border-radius: 999px;
+    background: #ff0033;
+    color: #fff;
+    font-size: .98rem;
+    font-weight: 700;
+    box-shadow: 0 12px 30px -12px hsla(350, 100%, 50%, .7);
+    transition: transform .3s var(--hp-ease), box-shadow .3s ease, background .2s ease;
+
+    > svg:first-child {
+        font-size: 1.35rem;
+    }
+
+    > svg:last-child {
+        transition: transform .3s var(--hp-ease);
+    }
+
+    &:hover {
+        background: #e6002e;
+        transform: translateY(-2px);
+        box-shadow: 0 18px 36px -14px hsla(350, 100%, 50%, .8);
+
+        > svg:last-child {
+            transform: translate(2px, -2px);
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+    }
+}
+
+// Player + playlist ====================>
+
+.hpVideoStage {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+    gap: 1.4rem;
+}
+
+.hpVideoMain {
+    display: flex;
+    flex-direction: column;
+    gap: .9rem;
+    min-width: 0;
+}
+
+.hpVideoPlayer {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 1.25rem;
+    background: #000;
+    box-shadow: 0 30px 60px -30px #000, 0 0 0 1px hsla(0, 0%, 100%, .08);
+}
+
+.hpVideoFrame {
+    position: absolute;
+    inset: 0;
+
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+}
+
+.hpVideoPoster {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .7s var(--hp-ease), filter .4s ease;
+    }
+
+    &:hover img {
+        transform: scale(1.03);
+        filter: saturate(1.1);
+    }
+
+    &:hover .hpPlayBtn {
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+
+    &:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: -3px;
+    }
+}
+
+.hpVideoShade {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, hsla(0, 0%, 0%, .45), transparent 35%, transparent 60%, hsla(0, 0%, 0%, .35));
+}
+
+.hpVideoTag {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .4rem .8rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 0%, .5);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    font-size: .82rem;
+    font-weight: 600;
+
+    svg {
+        color: var(--hp-gold);
+    }
+}
+
+.hpPlayBtn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 50%;
+    background: var(--hp-red);
+    color: #fff;
+    font-size: 1.9rem;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 .6rem hsla(0, 66%, 43%, .28), 0 18px 40px -10px #000;
+    transition: transform .35s var(--hp-ease);
+
+    svg {
+        margin-left: .2rem;
+        fill: currentColor;
+    }
+
+    // Soft ripple inviting a click.
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        border: 2px solid hsla(0, 0%, 100%, .55);
+        animation: hpPlayRipple 2.4s ease-out infinite;
+    }
+}
+
+@keyframes hpPlayRipple {
+    from {
+        transform: scale(1);
+        opacity: .8;
+    }
+
+    to {
+        transform: scale(1.7);
+        opacity: 0;
+    }
+}
+
+.hpVideoMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1.25rem;
+    padding: 0 .25rem;
+}
+
+.hpVideoMetaText {
+    display: flex;
+    flex: 1 1 14rem;
+    flex-direction: column;
+    gap: .15rem;
+    min-width: 0;
+
+    strong {
+        font-family: var(--hp-display);
+        font-size: 1.35rem;
+        line-height: 1.15;
+    }
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        color: hsla(0, 0%, 100%, .7);
+        font-size: .95rem;
+
+        svg {
+            flex-shrink: 0;
+            color: var(--hp-gold);
+        }
+    }
+}
+
+.hpVideoCoach {
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    color: hsla(0, 0%, 100%, .75);
+    font-size: .92rem;
+
+    img {
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        object-fit: cover;
+        box-shadow: 0 0 0 2px hsla(0, 0%, 100%, .25);
+    }
+
+    strong {
+        color: #fff;
+    }
+}
+
+.hpVideoOpen {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .45rem .9rem;
+    border: 1px solid hsla(0, 0%, 100%, .2);
+    border-radius: 999px;
+    color: #fff;
+    font-size: .88rem;
+    font-weight: 600;
+    transition: background .2s ease, border-color .2s ease;
+
+    &:hover {
+        border-color: hsla(0, 0%, 100%, .45);
+        background: hsla(0, 0%, 100%, .08);
+    }
+}
+
+// The playlist matches the player's height: its content is taken out of the grid row's sizing.
+.hpVideoListWrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.hpVideoListHead {
+    margin-bottom: .6rem;
+    color: hsla(0, 0%, 100%, .55);
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.hpVideoList {
+    position: absolute;
+    inset: 1.6rem 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0 .2rem 0 0;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: hsla(0, 0%, 100%, .2) transparent;
+}
+
+.hpVideoItem {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    width: 100%;
+    padding: .55rem;
+    border-radius: 1rem;
+    color: #fff;
+    text-align: left;
+    transition: background .2s ease;
+
+    &:hover:not(.isActive) {
+        background: hsla(0, 0%, 100%, .06);
+    }
+
+    &:focus-visible {
+        outline: 2px solid hsl(0, 90%, 78%);
+        outline-offset: 1px;
+    }
+
+    &:hover .hpVideoItemThumb img {
+        transform: scale(1.06);
+    }
+}
+
+.hpVideoItemBg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: hsla(0, 0%, 100%, .1);
+    box-shadow: inset 0 0 0 1px hsla(0, 80%, 70%, .35);
+}
+
+.hpVideoItemThumb {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    width: 8.2rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: .7rem;
+    background: #000;
+
+    img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .5s var(--hp-ease);
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: hsla(0, 0%, 0%, .28);
+    }
+}
+
+.hpVideoItemPlay {
+    position: relative;
+    z-index: 1;
+    font-size: 1.15rem;
+    fill: currentColor;
+    filter: drop-shadow(0 2px 6px hsla(0, 0%, 0%, .6));
+}
+
+// "Now playing" equaliser bars.
+.hpEq {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 1.1rem;
+
+    i {
+        width: 4px;
+        height: 100%;
+        border-radius: 2px;
+        background: #fff;
+        transform-origin: bottom;
+        animation: hpEq 0.9s ease-in-out infinite;
+
+        &:nth-child(2) {
+            animation-delay: -.3s;
+        }
+
+        &:nth-child(3) {
+            animation-delay: -.6s;
+        }
+    }
+}
+
+@keyframes hpEq {
+    0%,
+    100% {
+        transform: scaleY(.3);
+    }
+
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+.hpVideoItemText {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+    min-width: 0;
+
+    strong,
+    small,
+    em {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    strong {
+        font-size: .98rem;
+        font-weight: 700;
+    }
+
+    small {
+        color: hsla(0, 0%, 100%, .7);
+        font-size: .85rem;
+    }
+
+    em {
+        color: hsla(0, 0%, 100%, .45);
+        font-size: .78rem;
+        font-style: normal;
+    }
+
+    .isActive & em {
+        color: hsl(0, 90%, 78%);
+        font-weight: 600;
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .hpVideoStage {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    // Phones and tablets: the playlist becomes a swipeable row under the player.
+    .hpVideoList {
+        position: static;
+        flex-direction: row;
+        gap: .6rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        margin-inline: -.25rem;
+        padding: .25rem .25rem .5rem;
+        scroll-snap-type: x mandatory;
+
+        li {
+            flex: 0 0 min(15rem, 72%);
+            scroll-snap-align: start;
+        }
+    }
+
+    .hpVideoItem {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .55rem;
+        height: 100%;
+    }
+
+    .hpVideoItemThumb {
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .hpVideos {
+        padding-top: 3.5rem;
+    }
+
+    .hpVideosCard {
+        border-radius: 1.5rem;
+    }
+
+    .hpYoutubeBtn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .hpPlayBtn {
+        width: 4rem;
+        height: 4rem;
+        font-size: 1.5rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hpPlayBtn::after,
+    .hpEq i {
+        animation: none;
+    }
+}

@@ -1,0 +1,71 @@
+// The routine card in the class views (base look: .pfLesson in profile.scss) and make-up days.
+
+.adminShell .pfRoutine {
+    --rt-fill: hsl(var(--hue), 55%, 44%);
+
+    .pfRoutineProgress {
+        display: grid;
+        gap: .45rem;
+
+        p {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .88rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+
+            svg {
+                flex-shrink: 0;
+                color: var(--rt-fill);
+            }
+        }
+    }
+
+    .pfRoutineNext {
+        display: flex;
+        align-items: flex-start;
+        gap: .45rem;
+        font-size: .88rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .2rem;
+            color: var(--rt-fill);
+        }
+
+        strong {
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+    }
+
+    &.isStale {
+        --rt-fill: hsl(32, 88%, 42%);
+    }
+}
+
+// A make-up day in the coming week strip.
+.adminShell .pfDay.isMakeUp .pfDayTime {
+    box-shadow: inset 0 0 0 1.5px hsl(262, 45%, 55%);
+}
+
+.adminShell .pfNextFacts .rtMakeUpTag {
+    margin-left: .35rem;
+}
+
+// Roster: a member joining later or leaving after a date.
+.adminShell .pfRosterWhen {
+    display: inline-block;
+    margin-left: .4rem;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: hsl(40, 95%, 92%);
+    color: hsl(30, 75%, 30%);
+    font-size: .7rem;
+    font-weight: 700;
+    vertical-align: middle;
+    white-space: nowrap;
+}

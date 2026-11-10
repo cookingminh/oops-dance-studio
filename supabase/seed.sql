@@ -92,32 +92,39 @@ select setval(pg_get_serial_sequence('public.rooms', 'id'), 2);
 --            Sat      K-pop NC 09:00–10:30 · Choreography 13:00–14:30
 --            Sun      K-pop NC 09:00–10:30 · Breaking Kids 16:00–17:00
 -- -----------------------------------------------------------------------------
-insert into public.classes (id, name, instructor_id, room_id, price) values
-  (1, 'K-pop Cover Cơ Bản',    '00000000-0000-4000-a000-000000000011', 1,  900000),
-  (2, 'K-pop Cover Nâng Cao',  '00000000-0000-4000-a000-000000000011', 2, 1200000),
-  (3, 'Hip-hop Foundation',    '00000000-0000-4000-a000-000000000012', 1, 1000000),
-  (4, 'Breaking Kids',         '00000000-0000-4000-a000-000000000015', 2,  800000),
-  (5, 'Contemporary & Jazz',   '00000000-0000-4000-a000-000000000013', 1, 1100000),
-  (6, 'Choreography Sáng Tạo', '00000000-0000-4000-a000-000000000014', 2, 1200000);
+-- They have been running for months (starts_on: sessions, roll calls and tuition reach back that far).
+insert into public.classes (id, name, instructor_id, room_id, price, starts_on)
+select v.id, v.name, v.instructor_id::uuid, v.room_id, v.price, public.studio_today() - 120
+  from (values
+    (1, 'K-pop Cover Cơ Bản',    '00000000-0000-4000-a000-000000000011', 1,  900000),
+    (2, 'K-pop Cover Nâng Cao',  '00000000-0000-4000-a000-000000000011', 2, 1200000),
+    (3, 'Hip-hop Foundation',    '00000000-0000-4000-a000-000000000012', 1, 1000000),
+    (4, 'Breaking Kids',         '00000000-0000-4000-a000-000000000015', 2,  800000),
+    (5, 'Contemporary & Jazz',   '00000000-0000-4000-a000-000000000013', 1, 1100000),
+    (6, 'Choreography Sáng Tạo', '00000000-0000-4000-a000-000000000014', 2, 1200000)
+  ) as v (id, name, instructor_id, room_id, price);
 select setval(pg_get_serial_sequence('public.classes', 'id'), 6);
 
 -- Monthly lessons (the piece each class learns). Every class has last month's; Hip-hop
 -- Foundation and Breaking Kids have no lesson for this month yet, so the admin UI shows them
 -- as "needs this month's lesson". A trigger copies the latest title into classes.lesson.
-insert into public.class_lessons (class_id, month, title)
-select v.class_id, (date_trunc('month', public.studio_today()) + make_interval(months => v.months_ago * -1))::date, v.title
+-- Last month's lessons carry the end-of-month class video (real videos from the studio's
+-- YouTube channel); Breaking Kids has none yet, so its card asks for it.
+insert into public.class_lessons (class_id, month, title, video_url)
+select v.class_id, (date_trunc('month', public.studio_today()) + make_interval(months => v.months_ago * -1))::date, v.title, v.video_url
   from (values
-    (1, 1, 'Cupid — FIFTY FIFTY'),
-    (1, 0, 'Super Shy — NewJeans'),
-    (2, 1, 'Seven — Jung Kook'),
-    (2, 0, 'Magnetic — ILLIT'),
-    (3, 1, 'HUMBLE. — Kendrick Lamar'),
-    (4, 1, 'Jump Around — House of Pain'),
-    (5, 1, 'Someone You Loved — Lewis Capaldi'),
-    (5, 0, 'lovely — Billie Eilish & Khalid'),
-    (6, 1, 'Levitating — Dua Lipa'),
-    (6, 0, 'Dynamite — BTS')
-  ) as v (class_id, months_ago, title);
+    (1, 1, 'HIT ’EM — MEOVV', 'https://www.youtube.com/watch?v=tbDUtRdhfUI'),
+    (1, 0, 'Super Shy — NewJeans', null),
+    (2, 1, 'LIES & SUNSET GLOW — BIGBANG', 'https://www.youtube.com/watch?v=D_UzYE3U81Y'),
+    (2, 0, 'Magnetic — ILLIT', null),
+    (3, 1, 'MANTRA (Remix) x HOOTIE FRUITTI', 'https://www.youtube.com/watch?v=mxHD5wW5NuY'),
+    (4, 1, 'Jump Around — House of Pain', null),
+    (5, 1, 'HANDLEBAR x DRACULA', 'https://www.youtube.com/watch?v=tSZuWh-LMb4'),
+    (5, 0, 'lovely — Billie Eilish & Khalid', null),
+    (6, 1, 'WHISTLE x GOALS', 'https://www.youtube.com/watch?v=iG2UbHqhIGg'),
+    (6, 0, 'Dynamite — BTS', null)
+  ) as v (class_id, months_ago, title, video_url);
+
 
 insert into public.class_schedules (class_id, day_of_week, start_time, end_time) values
   (1, 1, '18:00', '19:30'), (1, 3, '18:00', '19:30'), (1, 5, '18:00', '19:30'),
@@ -126,6 +133,15 @@ insert into public.class_schedules (class_id, day_of_week, start_time, end_time)
   (4, 1, '17:00', '18:00'), (4, 3, '17:00', '18:00'), (4, 7, '16:00', '17:00'),
   (5, 1, '19:30', '21:00'), (5, 3, '19:30', '21:00'), (5, 6, '10:00', '11:30'),
   (6, 5, '18:00', '19:30'), (6, 6, '13:00', '14:30');
+
+-- Routines last a number of sessions: last month's ran the whole month; this month's are 8-session
+-- routines (so some finish mid-month and ask for the next one).
+update public.class_lessons l
+   set session_count = greatest(1, (
+         select count(*)::int
+           from generate_series(l.month, (l.month + interval '1 month' - interval '1 day')::date, interval '1 day') d
+           join public.class_schedules s on s.class_id = l.class_id and s.day_of_week = extract(isodow from d)))
+ where l.month < date_trunc('month', public.studio_today())::date;
 
 -- Enrolments: each guest in 1–3 classes, joined 60–100 days ago.
 insert into public.class_students (class_id, student_id, joined_at)
@@ -292,5 +308,52 @@ update public.student_attendance sa
      select 1 from public.instructor_attendance a
      where a.class_id = sa.class_id and a.date = sa.date and a.status = 'cancelled'
    );
+
+-- -----------------------------------------------------------------------------
+-- Payroll: a monthly salary for the staff account, two advanced classes paid 350,000 a
+-- session (the rest use the 300,000 default), last month's bonuses and deductions, last
+-- month finalized and paid; this month stays a live draft with one deduction in it.
+-- (Runs without a signed-in user, which the payroll RPCs accept as a service context.)
+-- -----------------------------------------------------------------------------
+insert into public.staff_salaries (profile_id, monthly_salary) values
+  ('00000000-0000-4000-a000-000000000002', 8000000);
+
+insert into public.class_pay_rates (class_id, session_rate)
+select c.id, 350000 from public.classes c where c.name in ('K-pop Cover Nâng Cao', 'Choreography Sáng Tạo');
+
+insert into public.payroll_adjustments (profile_id, month, amount, reason, created_by)
+select v.pid, (date_trunc('month', public.studio_today()) - make_interval(months => v.months_ago))::date, v.amount, v.reason,
+       '00000000-0000-4000-a000-000000000001'
+  from (values
+    ('00000000-0000-4000-a000-000000000012'::uuid, 1, -50000,  'Check-in trễ 15 phút'),
+    ('00000000-0000-4000-a000-000000000011'::uuid, 1, 200000,  'Dạy thay lớp Hip-hop Foundation'),
+    ('00000000-0000-4000-a000-000000000002'::uuid, 1, 500000,  'Thưởng hỗ trợ sự kiện cuối tháng'),
+    ('00000000-0000-4000-a000-000000000015'::uuid, 0, -30000,  'Về sớm 10 phút')
+  ) as v (pid, months_ago, amount, reason);
+
+select public.payroll_finalize(m.profile_id, (date_trunc('month', public.studio_today()) - interval '1 month')::date)
+  from public.payroll_month((date_trunc('month', public.studio_today()) - interval '1 month')::date) m;
+select public.payroll_set_paid(s.profile_id, s.month, true)
+  from public.payslips s
+ where s.month = (date_trunc('month', public.studio_today()) - interval '1 month')::date;
+
+-- -----------------------------------------------------------------------------
+-- Tuition: the local stack is a payment sandbox (the QR dialog can simulate the bank's
+-- webhook), with a demo bank account and months of invoices — see seed_demo_tuition().
+-- -----------------------------------------------------------------------------
+insert into private.payment_sandbox default values on conflict do nothing;
+select public.seed_demo_tuition();
+-- Past routines (and the older ones the tuition seed added) last as many sessions as their month held
+-- (cancelled ones don't count), so each ends inside its month and the next one starts after it.
+select public.seed_demo_fit_routines();
+-- Expenses (recurring rent, internet, ads; the monthly shoot; a few one-offs) and one class switch.
+select public.seed_demo_finance();
+-- A summer class that ran three months and ended, and one opening next month.
+select public.seed_demo_classes();
+update public.class_lessons set session_count = 4
+ where class_id = (select id from public.classes where name = 'Hip-hop Summer Camp');
+
+-- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
+select public.seed_demo_activity();
 
 drop table seed_users;

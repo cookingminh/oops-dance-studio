@@ -3,8 +3,9 @@ import { unwrap } from './errors';
 import { signProofUrls, uploadProof } from './storage';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
+// start_time / end_time / is_extra: a make-up session's own times (regular sessions take theirs from the schedule).
 const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, date, checkin_at, checkout_at, status,
-    checkin_proof_path, checkout_proof_path, details,
+    checkin_proof_path, checkout_proof_path, details, start_time, end_time, is_extra,
     class:classes!class_id(id, name, image_path, schedules:class_schedules(id, day_of_week, start_time, end_time)),
     room:rooms!room_id(id, name)`;
 
@@ -122,6 +123,20 @@ export async function listClassAttendanceHistory(classId, { until } = {}) {
         .select('id, date, status, student_id')
         .eq('class_id', classId)
         .order('date', { ascending: false });
+    if (until) query = query.lte('date', until);
+    return unwrap(await query);
+}
+
+// Roll-call rows of several classes, newest first; `from` / `until` inclusive ('yyyy-MM-dd').
+// RLS: an instructor gets the rows of their own classes, staff get everything.
+export async function listStudentAttendanceForClasses(classIds, { from, until } = {}) {
+    if (classIds.length === 0) return [];
+    let query = supabase
+        .from('student_attendance')
+        .select('id, class_id, student_id, date, status')
+        .in('class_id', classIds)
+        .order('date', { ascending: false });
+    if (from) query = query.gte('date', from);
     if (until) query = query.lte('date', until);
     return unwrap(await query);
 }

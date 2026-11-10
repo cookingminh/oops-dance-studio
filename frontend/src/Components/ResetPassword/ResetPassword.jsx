@@ -1,20 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { MdMarkEmailRead } from 'react-icons/md';
-import { BsFillShieldLockFill } from 'react-icons/bs';
-import { AiOutlineSwapRight } from 'react-icons/ai';
-import { authRedirectError } from '@/lib/supabase';
-import { requestPasswordReset, updatePassword } from '@/services/auth';
+import { LuKeyRound, LuMail, LuMailCheck } from 'react-icons/lu';
+import { authRedirectErrorFor, clearAuthRedirect, requestPasswordReset, updatePassword } from '@/services/auth';
 import { useAuth } from '@/auth/useAuth';
+import { useI18n } from '@/i18n/i18nContext';
 import { homePathFor } from '@/auth/roles';
 import { useToast } from '@/ui/feedback/toastContext';
 import { Loading } from '@/ui/feedback/AsyncState';
 import AuthInput from '../Login/AuthInput';
 import AuthLayout from '../Login/AuthLayout';
+import AuthNotice from '../Login/AuthNotice';
+import FormAlert from '../Login/FormAlert';
+import PasswordInput from '../Login/PasswordInput';
+import SubmitButton from '../Login/SubmitButton';
+import { MIN_PASSWORD_LENGTH, toAlert } from '../Login/authShared';
 
-import loginImg from '@/assets/images/studio.webp';
-
-const MIN_PASSWORD_LENGTH = 8;
+const EXPIRED_LINK = { text: 'This reset link is invalid or has expired. Please request a new one.' };
 
 // Step 1 (no recovery session): ask for the email and send the reset link.
 // Step 2 (opened from that link): set a new password.
@@ -22,27 +23,31 @@ const ResetPassword = () => {
     const { recovering, isAuthenticated, loading, role, finishRecovery } = useAuth();
     const navigate = useNavigate();
     const toast = useToast();
+    const { t } = useI18n();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
-    const [status, setStatus] = useState(
-        authRedirectError ? 'This reset link is invalid or has expired. Please request a new one.' : ''
-    );
+    // A reset link that failed comes back here with an error in the URL.
+    const [alert, setAlert] = useState(() => (authRedirectErrorFor('/reset-password') ? EXPIRED_LINK : null));
     const [sent, setSent] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const settingNewPassword = recovering && isAuthenticated;
 
+    useEffect(() => {
+        if (authRedirectErrorFor('/reset-password')) clearAuthRedirect();
+    }, []);
+
     const onRequestLink = async (event) => {
         event.preventDefault();
-        setStatus('');
+        setAlert(null);
         setSubmitting(true);
         try {
             await requestPasswordReset(email);
             setSent(true);
         } catch (error) {
-            setStatus(error.message);
+            setAlert(toAlert(error));
         } finally {
             setSubmitting(false);
         }
@@ -50,13 +55,13 @@ const ResetPassword = () => {
 
     const onSetPassword = async (event) => {
         event.preventDefault();
-        setStatus('');
+        setAlert(null);
         if (password.length < MIN_PASSWORD_LENGTH) {
-            setStatus(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH } });
             return;
         }
         if (password !== confirm) {
-            setStatus('The two passwords don’t match.');
+            setAlert({ text: 'The two passwords don’t match.' });
             return;
         }
         setSubmitting(true);
@@ -66,64 +71,93 @@ const ResetPassword = () => {
             toast.success('Your password has been updated.');
             navigate(homePathFor(role), { replace: true });
         } catch (error) {
-            setStatus(error.message);
+            setAlert(toAlert(error));
             setSubmitting(false);
         }
     };
 
-    const renderBody = () => {
-        if (recovering && loading) return <Loading />;
-        if (settingNewPassword) {
-            return (
-                <form className="form grid" onSubmit={onSetPassword}>
-                    <span role="alert" className={status ? 'showMessage' : 'message'}>{status}</span>
-                    <AuthInput
+    if (recovering && loading) {
+        return (
+            <AuthLayout step="loading" title={t('Choose a new password')}>
+                <Loading />
+            </AuthLayout>
+        );
+    }
+
+    if (settingNewPassword) {
+        const matches = confirm.length > 0 && confirm === password;
+        return (
+            <AuthLayout step="new-password" title={t('Choose a new password')} subtitle={t('Pick something you’ll remember. You’ll use it the next time you log in.')}>
+                <FormAlert alert={alert} />
+                <form className="authForm" onSubmit={onSetPassword}>
+                    <PasswordInput
                         id="new-password"
-                        label="New password"
-                        icon={BsFillShieldLockFill}
-                        type="password"
+                        label={t('New password')}
+                        icon={LuKeyRound}
                         autoComplete="new-password"
-                        placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
                         required
                         minLength={MIN_PASSWORD_LENGTH}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
+                        rule={{
+                            text: t('At least {count} characters', { count: MIN_PASSWORD_LENGTH }),
+                            met: password.length >= MIN_PASSWORD_LENGTH,
+                        }}
                     />
-                    <AuthInput
+                    <PasswordInput
                         id="confirm-password"
-                        label="Confirm new password"
-                        icon={BsFillShieldLockFill}
-                        type="password"
+                        label={t('Confirm new password')}
+                        icon={LuKeyRound}
                         autoComplete="new-password"
                         required
                         value={confirm}
                         onChange={(event) => setConfirm(event.target.value)}
+                        rule={matches ? { text: t('The passwords match.'), met: true } : undefined}
                     />
-                    <button type="submit" className="btn flex" disabled={submitting}>
-                        <span>{submitting ? 'Saving…' : 'Save new password'}</span>
-                        <AiOutlineSwapRight className="icon" />
-                    </button>
+                    <SubmitButton busy={submitting} busyLabel={t('Saving…')}>
+                        {t('Save new password')}
+                    </SubmitButton>
                 </form>
-            );
-        }
-        if (sent) {
-            return (
-                <div className="form grid">
-                    <p className="text-center">
-                        If an account exists for <strong>{email}</strong>, a reset link is on its way.
-                        Check your inbox and open the link on this device.
-                    </p>
-                    <Link to="/login" className="btn flex">Back to login</Link>
-                </div>
-            );
-        }
+            </AuthLayout>
+        );
+    }
+
+    if (sent) {
         return (
-            <form className="form grid" onSubmit={onRequestLink}>
-                <span role="alert" className={status ? 'showMessage' : 'message'}>{status}</span>
+            <AuthLayout step="sent" title={t('Check your inbox')}>
+                <AuthNotice
+                    icon={LuMailCheck}
+                    action={
+                        <Link to="/login" className="authSubmit">
+                            {t('Back to login')}
+                        </Link>
+                    }
+                    tip={t('Can’t find it? Check your spam folder.')}
+                >
+                    {t('If an account exists for')}
+                    <strong className="authNoticeEmail">{email}</strong>
+                    {t('a reset link is on its way. Check your inbox and open the link on this device.')}
+                </AuthNotice>
+            </AuthLayout>
+        );
+    }
+
+    return (
+        <AuthLayout
+            title={t('Reset your password')}
+            subtitle={t('Enter your account email and we’ll send you a link to reset it.')}
+            footer={
+                <>
+                    {t('Remembered it?')} <Link to="/login">{t('Back to login')}</Link>
+                </>
+            }
+        >
+            <FormAlert alert={alert} />
+            <form className="authForm" onSubmit={onRequestLink}>
                 <AuthInput
                     id="email"
-                    label="Email"
-                    icon={MdMarkEmailRead}
+                    label={t('Email')}
+                    icon={LuMail}
                     type="email"
                     autoComplete="email"
                     placeholder="you@example.com"
@@ -131,24 +165,10 @@ const ResetPassword = () => {
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                 />
-                <button type="submit" className="btn flex" disabled={submitting}>
-                    <span>{submitting ? 'Sending…' : 'Send reset link'}</span>
-                    <AiOutlineSwapRight className="icon" />
-                </button>
+                <SubmitButton busy={submitting} busyLabel={t('Sending…')}>
+                    {t('Send reset link')}
+                </SubmitButton>
             </form>
-        );
-    };
-
-    const askingForEmail = !(recovering && loading) && !settingNewPassword && !sent;
-
-    return (
-        <AuthLayout
-            media={<img src={loginImg} alt="" />}
-            title={settingNewPassword ? 'Choose a new password' : 'Reset your password'}
-            subtitle={askingForEmail && 'Enter your account email and we’ll send you a link to reset it.'}
-            footer={askingForEmail && <>Remembered it? <Link to="/login">Back to login</Link></>}
-        >
-            {renderBody()}
         </AuthLayout>
     );
 };

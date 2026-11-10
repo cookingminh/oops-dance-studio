@@ -5,6 +5,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { listInstructorAttendance } from '@/services/attendance';
 import { monthRange } from '@/lib/format';
 import AsyncState from '@/ui/feedback/AsyncState';
+import { useI18n } from '@/i18n/i18nContext';
 import MonthYearSelect from '@/ui/MonthYearSelect';
 import SectionCard from '../../../common/SectionCard';
 import { STATUS_COLORS, barDataset, barOptions } from '../../../common/chartTheme';
@@ -12,6 +13,7 @@ import { ChartTable, ViewToggle } from '../../../common/ChartViews';
 
 // Completed vs cancelled sessions per instructor for one month.
 const AttendanceChart = () => {
+    const { t } = useI18n();
     const now = new Date();
     const [period, setPeriod] = useState({ month: now.getMonth() + 1, year: now.getFullYear() });
     const [view, setView] = useState('chart');
@@ -19,7 +21,7 @@ const AttendanceChart = () => {
 
     const byInstructor = new Map();
     for (const row of records.data ?? []) {
-        const name = row.instructor?.full_name || row.instructor?.username || 'Unknown';
+        const name = row.instructor?.full_name || row.instructor?.username || t('Unknown');
         const counts = byInstructor.get(row.instructor_id) ?? { name, completed: 0, cancelled: 0 };
         if (row.status === 'completed') counts.completed += 1;
         if (row.status === 'cancelled') counts.cancelled += 1;
@@ -30,26 +32,26 @@ const AttendanceChart = () => {
     const chartData = {
         labels: series.map((s) => s.name),
         datasets: [
-            barDataset('Completed', series.map((s) => s.completed), STATUS_COLORS.completed),
-            barDataset('Cancelled', series.map((s) => s.cancelled), STATUS_COLORS.cancelled),
+            barDataset(t('Completed'), series.map((s) => s.completed), STATUS_COLORS.completed),
+            barDataset(t('Cancelled'), series.map((s) => s.cancelled), STATUS_COLORS.cancelled),
         ],
     };
 
     return (
         <SectionCard
             icon={LuBarChart3}
-            title="Sessions per instructor"
-            subtitle="Completed and cancelled sessions in the selected month"
+            title={t('Sessions per instructor')}
+            subtitle={t('Completed and cancelled sessions in the selected month')}
             actions={
                 <>
                     <MonthYearSelect month={period.month} year={period.year} onChange={setPeriod} className="monthYearSelect" selectClassName="" />
-                    <ViewToggle view={view} onChange={setView} label="Sessions per instructor" />
+                    <ViewToggle view={view} onChange={setView} label={t('Sessions per instructor')} />
                 </>
             }
         >
             <AsyncState state={records} isEmpty={!records.loading && series.length === 0} emptyText="No sessions in this month.">
                 {view === 'table' ? (
-                    <ChartTable data={chartData} rowHeader="Instructor" />
+                    <ChartTable data={chartData} rowHeader={t('Instructor')} />
                 ) : (
                     <div className="chartCanvas">
                         <Bar data={chartData} options={barOptions()} />

@@ -1,0 +1,229 @@
+// Public footer (Footer.jsx): a compact dark band that closes every public page.
+
+.pubFooter {
+    position: relative;
+    overflow: hidden;
+    margin-top: 2rem;
+    background:
+        radial-gradient(circle at 8% 0%, hsla(0, 66%, 43%, .28), transparent 38%),
+        radial-gradient(circle at 100% 100%, hsla(40, 100%, 60%, .1), transparent 40%),
+        hsl(0, 10%, 9%);
+    color: hsla(0, 0%, 100%, .72);
+
+    a {
+        color: inherit;
+    }
+
+    :focus-visible {
+        outline-color: #fff;
+    }
+}
+
+.pubFooterInner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr));
+    gap: 2.5rem;
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+    padding: 3.6rem 0 2.6rem;
+}
+
+.pubFooterBrand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+
+    p {
+        max-width: 32ch;
+        font-size: .95rem;
+        font-style: italic;
+        line-height: 1.55;
+        color: hsla(0, 0%, 100%, .62);
+    }
+
+    .pubBrandName strong {
+        color: #fff;
+    }
+
+    .pubBrandName small {
+        color: hsla(0, 0%, 100%, .6);
+    }
+}
+
+.pubFooterLogo {
+    border-radius: 14px;
+
+    &:hover .pubBrandMark {
+        transform: rotate(-8deg) scale(1.06);
+    }
+}
+
+.pubSocials {
+    display: flex;
+    gap: .5rem;
+    margin: .2rem 0 0;
+
+    li {
+        cursor: default;
+    }
+
+    a {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border: 1px solid hsla(0, 0%, 100%, .14);
+        border-radius: 13px;
+        background: hsla(0, 0%, 100%, .05);
+        font-size: 1.1rem;
+        color: hsla(0, 0%, 100%, .85);
+        transition: transform .3s var(--hp-ease), background-color .2s ease, border-color .2s ease, color .2s ease;
+
+        &:hover {
+            border-color: var(--hp-red);
+            background: var(--hp-red);
+            color: #fff;
+            transform: translateY(-3px) rotate(-6deg);
+        }
+    }
+}
+
+.pubFooterCol {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .9rem;
+
+    h2 {
+        padding: 0;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--hp-gold);
+    }
+
+    ul {
+        display: grid;
+        gap: .55rem;
+        margin: 0;
+    }
+
+    li {
+        cursor: default;
+    }
+
+    ul:not(.pubFooterInfo) a {
+        position: relative;
+        display: inline-block;
+        font-size: .98rem;
+        color: hsla(0, 0%, 100%, .8);
+        transition: color .2s ease, transform .3s var(--hp-ease);
+
+        &:hover {
+            color: #fff;
+            transform: translateX(4px);
+        }
+    }
+}
+
+.pubFooterInfo {
+    li {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        font-size: .92rem;
+        line-height: 1.45;
+    }
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        color: var(--hp-red);
+        filter: brightness(1.5);
+    }
+
+    a:hover {
+        color: #fff;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+}
+
+.pubFooterContact {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    height: 2.5rem;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    background: #fff;
+    color: var(--hp-red);
+    font-size: .92rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform .2s var(--hp-ease), box-shadow .3s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px -14px hsla(0, 0%, 0%, .8);
+    }
+
+    &:active {
+        transform: scale(.97);
+    }
+}
+
+.pubFooterBottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .4rem 1.5rem;
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+    padding: 1.1rem 0 1.4rem;
+    border-top: 1px solid hsla(0, 0%, 100%, .1);
+
+    p {
+        font-size: .85rem;
+        line-height: 1.5;
+        color: hsla(0, 0%, 100%, .5);
+    }
+
+    a {
+        display: inline-flex;
+        align-items: center;
+        gap: .15rem;
+        font-weight: 600;
+        color: hsla(0, 0%, 100%, .78);
+
+        &:hover {
+            color: #fff;
+        }
+    }
+}
+
+@media screen and (max-width: 900px) {
+    .pubFooterInner {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2rem 1.5rem;
+    }
+
+    .pubFooterBrand {
+        grid-column: 1 / -1;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .pubFooterInner {
+        padding-top: 2.8rem;
+    }
+
+    // Address column gets the full width; the two link lists sit side by side.
+    .pubFooterCol:nth-child(3) {
+        grid-column: 1 / -1;
+        grid-row: 3;
+    }
+}

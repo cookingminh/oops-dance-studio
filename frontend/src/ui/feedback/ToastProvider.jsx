@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { ToastContext } from './toastContext';
+import { useI18n } from '@/i18n/i18nContext';
 
 const STYLES = {
     success: 'bg-emerald-600',
@@ -7,7 +8,9 @@ const STYLES = {
     info: 'bg-gray-800',
 };
 
+// Messages are English source text (static toasts, service errors) and are translated when shown.
 export function ToastProvider({ children }) {
+    const { t } = useI18n();
     const [toasts, setToasts] = useState([]);
     const nextId = useRef(0);
 
@@ -36,8 +39,8 @@ export function ToastProvider({ children }) {
                         role={toast.type === 'error' ? 'alert' : 'status'}
                         className={`${STYLES[toast.type]} text-white text-sm rounded-xl shadow-lg px-4 py-3 flex items-start gap-3`}
                     >
-                        <span className="flex-1">{toast.message}</span>
-                        <button type="button" aria-label="Dismiss" className="opacity-80 hover:opacity-100" onClick={() => dismiss(toast.id)}>
+                        <span className="flex-1">{t(toast.message)}</span>
+                        <button type="button" aria-label={t('Dismiss')} className="opacity-80 hover:opacity-100" onClick={() => dismiss(toast.id)}>
                             ×
                         </button>
                     </div>

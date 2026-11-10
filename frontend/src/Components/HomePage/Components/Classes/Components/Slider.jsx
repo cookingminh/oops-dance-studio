@@ -1,68 +1,63 @@
+import { Link } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation, Pagination } from 'swiper/modules';
+import { A11y, Autoplay, Keyboard, Navigation, Pagination } from 'swiper/modules';
+import { LuArrowRight, LuChevronLeft, LuChevronRight } from 'react-icons/lu';
 import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
 import AsyncState from '@/ui/feedback/AsyncState';
-import { avatarUrl, classImageUrl } from '@/services/storage';
-import { formatTimeRange, formatVnd, weekdayLabel } from '@/lib/format';
-import placeholder from '@/assets/images/timetable-class-bg.webp';
+import { useI18n } from '@/i18n/i18nContext';
+import ClassCard from './ClassCard';
 
-// Classes carousel fed by list_public_classes().
-const Slider = ({ classes }) => (
-    <div className="container section flex flex-col gap-6 px-4">
-        <h2 className="text-3xl font-bold text-center">Explore our dance classes</h2>
-        <AsyncState state={classes} emptyText="New classes are coming soon.">
-            {(list) => (
-                <Swiper
-                    modules={[Autoplay, Navigation, Pagination]}
-                    navigation
-                    pagination={{ clickable: true }}
-                    autoplay={{ delay: 6000, disableOnInteraction: true }}
-                    spaceBetween={24}
-                    slidesPerView={1}
-                    breakpoints={{ 768: { slidesPerView: 2 }, 1200: { slidesPerView: 3 } }}
-                    className="w-full pb-10"
-                >
-                    {list.map((item) => (
-                        <SwiperSlide key={item.id}>
-                            <article className="bg-white rounded-2xl shadow-md overflow-hidden h-full flex flex-col">
-                                <img
-                                    src={classImageUrl(item.image_path) ?? placeholder}
-                                    alt={item.name}
-                                    loading="lazy"
-                                    className="w-full h-56 object-cover"
-                                />
-                                <div className="p-4 flex flex-col gap-2 flex-1">
-                                    <h3 className="text-xl font-bold">{item.name}</h3>
-                                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        {item.instructor_avatar_path && (
-                                            <img
-                                                src={avatarUrl(item.instructor_avatar_path)}
-                                                alt=""
-                                                className="w-8 h-8 rounded-full object-cover"
-                                            />
-                                        )}
-                                        <span>with {item.instructor_name}</span>
-                                        {item.room_name && <span>· {item.room_name}</span>}
-                                    </div>
-                                    {item.lesson && <p className="text-sm text-gray-700">{item.lesson}</p>}
-                                    <ul className="text-sm text-gray-700">
-                                        {(item.schedules ?? []).map((s) => (
-                                            <li key={`${s.day_of_week}-${s.start_time}`}>
-                                                {weekdayLabel(s.day_of_week)}: {formatTimeRange(s.start_time, s.end_time)}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                    <p className="mt-auto font-semibold text-red-700">{formatVnd(item.price)}</p>
-                                </div>
-                            </article>
-                        </SwiperSlide>
-                    ))}
-                </Swiper>
-            )}
-        </AsyncState>
-    </div>
-);
+// /home teaser: the classes carousel (list_public_classes()), leading on to /classes for the full
+// timetable. The arrows sit left and right of the cards (outside them, never on top); the dots under them.
+const Slider = ({ classes }) => {
+    const { t } = useI18n();
+    return (
+        <section className="hpClasses">
+            <header className="hpSectionHead" data-aos="fade-up">
+                <div>
+                    <span className="hpEyebrow">{t('Classes')}</span>
+                    <h2>{t('Explore our dance classes')}</h2>
+                    <p>{t('From K-pop covers to breaking for kids: every class, who teaches it and when it meets.')}</p>
+                </div>
+                <Link to="/classes#timetable" className="hpHeadLink">
+                    {t('See the timetable')} <LuArrowRight aria-hidden="true" />
+                </Link>
+            </header>
+
+            <AsyncState state={classes} emptyText="New classes are coming soon.">
+                {(list) => (
+                    <div data-aos="fade-up" data-aos-delay="80">
+                        <div className="hpCarousel">
+                            <button type="button" className="hpNavBtn hpClassesPrev" aria-label={t('Previous classes')}>
+                                <LuChevronLeft />
+                            </button>
+                            <Swiper
+                                modules={[A11y, Autoplay, Keyboard, Navigation, Pagination]}
+                                navigation={{ prevEl: '.hpClassesPrev', nextEl: '.hpClassesNext' }}
+                                pagination={{ el: '.hpClassesDots', clickable: true }}
+                                keyboard={{ enabled: true }}
+                                autoplay={{ delay: 6000, disableOnInteraction: true, pauseOnMouseEnter: true }}
+                                spaceBetween={24}
+                                slidesPerView={1.08}
+                                breakpoints={{ 640: { slidesPerView: 2 }, 1100: { slidesPerView: 3 } }}
+                                className="hpClassesSwiper"
+                            >
+                                {list.map((item) => (
+                                    <SwiperSlide key={item.id}>
+                                        <ClassCard item={item} />
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
+                            <button type="button" className="hpNavBtn hpClassesNext" aria-label={t('Next classes')}>
+                                <LuChevronRight />
+                            </button>
+                        </div>
+                        <div className="hpClassesDots" />
+                    </div>
+                )}
+            </AsyncState>
+        </section>
+    );
+};
 
 export default Slider;

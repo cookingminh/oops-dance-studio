@@ -214,10 +214,12 @@
         }
     }
 
+    // Equal rows too, so a card with an extra line (the admin's profit) keeps the grid even.
     .studioStats {
         flex: 1;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: 1fr;
         gap: 1rem;
     }
 }
@@ -312,6 +314,16 @@
         font-size: .92rem;
         font-weight: 500;
         color: var(--ad-muted);
+    }
+
+    .statNote {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--tone);
+
+        &.isLoss {
+            color: hsl(0, 66%, 40%);
+        }
     }
 
     &.tone-rose {

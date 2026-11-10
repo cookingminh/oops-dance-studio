@@ -1,68 +1,71 @@
-import { useEffect } from 'react';
-import Aos from 'aos';
-import 'aos/dist/aos.css';
 import AsyncState from '@/ui/feedback/AsyncState';
-import { avatarUrl, classImageUrl } from '@/services/storage';
-import placeholder from '@/assets/images/timetable-class-bg.webp';
+import { avatarUrl } from '@/services/storage';
+import { useI18n } from '@/i18n/i18nContext';
 import defaultAvatar from '@/assets/images/avatar-placeholder.webp';
 
-// Classes and their instructors (public data only; students are never shown here).
+// One soft colour per instructor card, in a fixed order.
+const TONES = ['rose', 'amber', 'violet', 'teal', 'sky', 'coral'];
+
+// Instructors from the public class list (no profile data is exposed): each one once, with
+// the classes they teach and how many sessions a week. `fallbackName` names a class without one.
+function instructorsOf(classes, fallbackName) {
+    const byName = new Map();
+    for (const item of classes) {
+        const key = item.instructor_name ?? fallbackName;
+        const entry = byName.get(key) ?? { name: key, avatarPath: item.instructor_avatar_path, classes: [], sessions: 0 };
+        entry.avatarPath ??= item.instructor_avatar_path;
+        entry.classes.push(item.name);
+        entry.sessions += (item.schedules ?? []).length;
+        byName.set(key, entry);
+    }
+    return [...byName.values()].sort((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name));
+}
+
 const Participants = ({ classes }) => {
-    useEffect(() => {
-        Aos.init({ duration: 2000 });
-    }, []);
-
+    const { t, tn } = useI18n();
     return (
-        <div className="participants section bg-gradient-to-l from-yellow-500 to-red-500 p-4">
-            <div className="sectionContainer">
-                <h2
-                    data-aos="fade-down"
-                    data-aos-duration="2500"
-                    className="text-6xl font-bold"
-                    style={{
-                        background: 'linear-gradient(to right, #1976D2, #F45E53)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                    }}
-                >
-                    MEET OUR INSTRUCTORS
-                </h2>
-                <h2 data-aos="fade-down" data-aos-duration="2500" className="text-2xl font-semibold">
-                    The people behind every class
-                </h2>
+        <section id="instructors" className="hpInstructors">
+            <header className="hpSectionHead isCentered" data-aos="fade-up">
+                <div>
+                    <span className="hpEyebrow">{t('The team')}</span>
+                    <h2>{t('Meet our instructors')}</h2>
+                    <p>{t('Every instructor is a member of Oops! Crew, one of Hanoi’s best-known dance crews, and teaches the routines they perform.')}</p>
+                </div>
+            </header>
 
-                <AsyncState state={classes} emptyText="Our instructors will be introduced soon.">
-                    {(list) => (
-                        <div className="participantsContainer grid">
-                            {list.map((item) => (
-                                <div data-aos="fade-up" data-aos-duration="2500" key={item.id} className="singleparticipant">
-                                    <img
-                                        className="destinationImage"
-                                        src={classImageUrl(item.image_path) ?? placeholder}
-                                        alt={item.name}
-                                        loading="lazy"
-                                    />
-                                    <div className="participantDetails">
-                                        <div className="participantPicture">
-                                            <img
-                                                src={avatarUrl(item.instructor_avatar_path) ?? defaultAvatar}
-                                                className="participantImage"
-                                                alt={item.instructor_name}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                        <div className="participantName">
-                                            <span>{item.instructor_name}</span>
-                                            <p>{item.name}</p>
-                                        </div>
-                                    </div>
+            <AsyncState state={classes} emptyText="Our instructors will be introduced soon.">
+                {(list) => (
+                    <div className="hpCoachGrid">
+                        {instructorsOf(list, t('Instructor')).map((coach, index) => (
+                            <article
+                                key={coach.name}
+                                className={`hpCoach tone-${TONES[index % TONES.length]}`}
+                                data-aos="fade-up"
+                                data-aos-delay={index * 70}
+                            >
+                                <div className="hpCoachPhoto">
+                                    <span className="hpCoachBlob" aria-hidden="true" />
+                                    <span className="hpCrewBadge">Oops! Crew</span>
+                                    <img src={avatarUrl(coach.avatarPath) ?? defaultAvatar} alt={coach.name} loading="lazy" />
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </AsyncState>
-            </div>
-        </div>
+                                <div className="hpCoachInfo">
+                                    <h3>{coach.name}</h3>
+                                    <p>
+                                        {tn(coach.classes.length, '{count} class', '{count} classes')} ·{' '}
+                                        {tn(coach.sessions, '{count} session a week', '{count} sessions a week')}
+                                    </p>
+                                    <ul>
+                                        {coach.classes.map((name) => (
+                                            <li key={name}>{name}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </AsyncState>
+        </section>
     );
 };
 

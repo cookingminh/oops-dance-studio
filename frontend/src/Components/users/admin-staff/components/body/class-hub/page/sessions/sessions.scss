@@ -1,0 +1,15 @@
+// The class page's Sessions tab: the calendar card and the attendance history card under it.
+
+.adminShell .hubHistoryCard .historyPager {
+    flex-wrap: wrap;
+}
+
+@media screen and (max-width: 640px) {
+    .adminShell .hubSessionsCard .cardActions {
+        width: 100%;
+
+        > * {
+            flex: 1 1 auto;
+        }
+    }
+}

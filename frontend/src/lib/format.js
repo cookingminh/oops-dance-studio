@@ -42,12 +42,12 @@ export function formatDateTime(timestamp) {
 }
 
 // Current hour (0–23) and 'HH:mm' in the studio's timezone, e.g. for greetings and "live now" badges.
-const studioClock = (options) => new Intl.DateTimeFormat('en-GB', { timeZone: STUDIO_TIME_ZONE, hourCycle: 'h23', ...options }).format(new Date());
+const studioClock = (options, locale = 'en-GB') => new Intl.DateTimeFormat(locale, { timeZone: STUDIO_TIME_ZONE, hourCycle: 'h23', ...options }).format(new Date());
 export const studioHour = () => Number(studioClock({ hour: '2-digit' }));
 export const studioTimeNow = () => studioClock({ hour: '2-digit', minute: '2-digit' });
 
-// 'Sunday, 8 November' for today in the studio's timezone.
-export const studioDateLabel = () => studioClock({ weekday: 'long', day: 'numeric', month: 'long' });
+// 'Sunday 8 November' for today in the studio's timezone; pass useI18n().intl for other languages.
+export const studioDateLabel = (locale = 'en-GB') => studioClock({ weekday: 'long', day: 'numeric', month: 'long' }, locale);
 
 // timestamptz → 'HH:mm' in the studio's timezone.
 export function formatClock(timestamp) {

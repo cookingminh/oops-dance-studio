@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-    PROOF, deleteBookingsOn, ensureProofToday, expectToast, freeDate, login, pathname, people, pickOption,
+    PROOF, addDays, deleteBookingsOn, ensureProofToday, expectToast, freeDate, isoWeekday, login, pathname, people, pickOption,
     rest, rooms, rpc, staffJwt, studioToday, token,
 } from './support.js';
 
@@ -23,7 +23,13 @@ test.beforeAll(async ({ browser }) => {
     guests = await people('guest');
     instructors = await people('instructor');
     today = await studioToday();
-    bookingDate = await freeDate(23);
+    // Room B from 20:30 to 22:00 must be free of classes that weekday (the booking tests use it);
+    // seeded classes can meet in the evening, so move on a day until it is.
+    const roomBSlots = (await rest(await staffJwt(), 'class_schedules?select=day_of_week,start_time,end_time,class:classes!class_id(room_id)')).data
+        .filter((slot) => slot.class?.room_id === roomB.id);
+    let offset = 23;
+    while (roomBSlots.some((slot) => slot.day_of_week === isoWeekday(addDays(today, offset)) && slot.start_time < '22:00' && slot.end_time > '20:30')) offset += 1;
+    bookingDate = await freeDate(offset);
     await deleteBookingsOn(bookingDate);
     await rest(await staffJwt(), `classes?name=eq.${encodeURIComponent(CLASS_NAME)}`, { method: 'DELETE' });
     await ensureProofToday();
@@ -70,7 +76,8 @@ test('updates a room', async () => {
 
 test('creates a booking for a guest (create_booking with p_guest_id)', async () => {
     await page.goto('/admin/bookings');
-    await expect(page.getByRole('grid', { name: 'Bookings' })).toBeVisible();
+    // The calendar is the default view; "New booking" works from it as well as from the list.
+    await expect(page.getByRole('region', { name: 'Bookings calendar' })).toBeVisible();
     await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[1]));
     await page.getByRole('option').first().click();
@@ -104,6 +111,7 @@ async function bookingAction(item) {
 
 test('a booking created by staff is approved', async () => {
     await page.goto('/admin/bookings');
+    await page.getByRole('button', { name: 'List', exact: true }).click(); // the searchable table
     await expect(page.getByRole('grid', { name: 'Bookings' })).toBeVisible();
     await page.getByPlaceholder('Search...').fill(bookingDate);
     await expect(bookingRow().getByText('approved', { exact: true })).toHaveCount(1);
@@ -119,71 +127,117 @@ test('deletes the booking', async () => {
     await expectToast(page, 'Booking deleted.');
 });
 
+// The class hub (/admin/classes): the "New class" wizard, then the class's own page.
+const classPage = () => page.locator('.hubHeader');
+let classId;
+
 test('creates a class with an image (classes insert + class-images upload)', async () => {
     await page.goto('/admin/classes');
-    await expect(page.locator('.classCard').first()).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Show classes' })).toBeVisible();
     await page.getByRole('button', { name: 'New class' }).click();
     await dialog.getByLabel('Class Name').fill(CLASS_NAME);
     await pickOption(page, dialog, 'Instructor', instructors[0].full_name);
     await dialog.getByLabel('Price (VND)').fill('500000');
+    await dialog.getByRole('button', { name: 'Create class' }).click();
+    await expectToast(page, `${CLASS_NAME} created.`);
+    // Weekly sessions and the routine come later, from the class page.
+    await dialog.getByRole('button', { name: 'Skip for now' }).click();
+    await dialog.getByRole('button', { name: 'Skip for now' }).click();
     await dialog.locator('input[type=file]').setInputFiles(PROOF);
     await expect(dialog.getByText(/proof\.\w+ \(/)).toBeVisible();
-    await dialog.getByRole('button', { name: 'Add Class' }).click();
-    await expectToast(page, 'Class added.');
+    await dialog.getByRole('button', { name: 'Upload image' }).click();
+    await expect(dialog.getByRole('heading', { name: `${CLASS_NAME} is ready` })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Close' }).last().click();
+    const res = await rest(await staffJwt(), `classes?select=id,image_path&name=eq.${encodeURIComponent(CLASS_NAME)}`);
+    expect(res.data[0].image_path).toMatch(new RegExp(`^${res.data[0].id}/.+\\.\\w+$`));
+    classId = res.data[0].id;
 });
 
-const classRow = () => page.locator('.classCard').filter({ hasText: CLASS_NAME });
-
 test('adds a schedule to the class (ISO weekday)', async () => {
-    await page.goto('/admin/classes');
+    // Running from today, with no session yet: listed under "This month", not "Today".
+    await page.goto('/admin/classes?view=month');
+    await page.getByRole('textbox', { name: 'Search classes' }).fill('E2E Test');
+    await page.getByRole('link', { name: CLASS_NAME }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/classes/${classId}$`));
+    await page.getByRole('tab', { name: 'Setup' }).click();
     await page.getByRole('button', { name: 'Add session' }).click();
-    await pickOption(page, dialog, 'Class', CLASS_NAME);
     await pickOption(page, dialog, 'Day of the Week', 'Tuesday');
     await pickOption(page, dialog, 'Start Time', '08:00');
     await pickOption(page, dialog, 'End Time', '09:00');
     await dialog.getByRole('button', { name: 'Add Schedule' }).click();
     await expectToast(page, 'Schedule added.');
-    await page.locator('.classListDiv').getByPlaceholder('Search...').fill('E2E');
-    await expect(classRow().getByText(/Tue\s*08:00/)).toBeVisible();
+    await expect(classPage().getByText(/Tue\s*08:00/)).toBeVisible();
+    const res = await rest(await staffJwt(), `class_schedules?select=day_of_week,start_time&class_id=eq.${classId}`);
+    expect(res.data).toEqual([{ day_of_week: 2, start_time: '08:00:00' }]);
 });
 
-test('the class card shows the uploaded image', async () => {
-    await expect(classRow().locator('img').first()).toBeVisible();
+test('the class page shows the uploaded image', async () => {
+    await expect(classPage().locator('img.hubImage')).toBeVisible();
 });
 
 test('replaces the class image', async () => {
-    await classRow().getByRole('button', { name: /Actions for/ }).click();
-    await page.getByRole('menuitem', { name: 'Change class image' }).click();
+    await classPage().getByRole('button', { name: `More for ${CLASS_NAME}` }).click();
+    await page.getByRole('menuitem', { name: 'Change image' }).click();
     await dialog.locator('input[type=file]').setInputFiles(PROOF);
     await dialog.getByRole('button', { name: 'Change Image' }).click();
     await expectToast(page, 'Class image updated.');
 });
 
-test('a new class asks for this month\'s lesson', async () => {
-    await expect(classRow().getByText(/No lesson for/)).toBeVisible();
+test('a new class asks for its first routine', async () => {
+    await page.getByRole('tab', { name: 'Overview' }).click();
+    // The class's to-do list says so and takes you to its Routines tab.
+    const todo = page.locator('.hubTodos').getByRole('button', { name: /Plan a routine/ });
+    await expect(todo).toBeVisible();
+    await todo.click();
+    await expect(page).toHaveURL(/tab=routines/);
 });
 
-test('sets this month\'s lesson (class_lessons upsert → classes.lesson)', async () => {
-    await classRow().getByRole('button', { name: /No lesson for/ }).click();
-    await dialog.getByLabel('Lesson').fill('Super Shy — NewJeans');
-    await dialog.getByRole('button', { name: 'Save lesson' }).click();
-    await expectToast(page, 'Lesson saved');
-    await expect(classRow().getByText('Super Shy — NewJeans')).toBeVisible();
+// The E2E class meets on Tuesdays from today: the routine starts on the next Tuesday.
+const nextTuesday = () => {
+    let day = today;
+    while (isoWeekday(day) !== 2) day = addDays(day, 1);
+    return day;
+};
+const routines = () => page.locator('.rtPanel');
+
+test('plans the first routine (class_lessons insert → classes.lesson)', async () => {
+    await routines().getByLabel('Routine', { exact: true }).fill('Super Shy — NewJeans');
+    await expect(routines().getByLabel('Sessions', { exact: true })).toHaveValue('8');
+    await expect(routines().getByLabel('Starts on', { exact: true })).toHaveValue(nextTuesday());
+    await routines().getByRole('button', { name: 'Plan routine' }).click();
+    await expectToast(page, 'is planned');
+    await expect(routines().getByText('Super Shy — NewJeans').first()).toBeVisible();
     const jwt = (await token('staff@demo.oopsdance.test')).jwt;
-    const res = await rest(jwt, `classes?select=lesson&name=eq.${encodeURIComponent(CLASS_NAME)}`);
-    expect(res.data).toEqual([{ lesson: 'Super Shy — NewJeans' }]);
+    const res = await rest(jwt, `classes?select=lesson,lessons:class_lessons(starts_on,session_count,price)&name=eq.${encodeURIComponent(CLASS_NAME)}`);
+    expect(res.data).toEqual([{ lesson: 'Super Shy — NewJeans', lessons: [{ starts_on: nextTuesday(), session_count: 8, price: null }] }]);
 });
 
+test('adds the class video: YouTube links only (class_lessons.video_url)', async () => {
+    await routines().getByRole('button', { name: /^Add the class video/ }).click();
+    await routines().getByLabel('YouTube link').fill('https://vimeo.com/123456');
+    await expect(routines().getByText('Paste a YouTube video link (youtube.com or youtu.be).')).toBeVisible();
+    await expect(routines().getByRole('button', { name: 'Save video' })).toBeDisabled();
+    await routines().getByLabel('YouTube link').fill('youtu.be/tbDUtRdhfUI');
+    await routines().getByRole('button', { name: 'Save video' }).click();
+    await expectToast(page, /Video saved/);
+    await expect(routines().getByRole('link', { name: /Watch the class video of/ })).toBeVisible();
+    const jwt = (await token('staff@demo.oopsdance.test')).jwt;
+    const res = await rest(jwt, `classes?select=lessons:class_lessons(video_url)&name=eq.${encodeURIComponent(CLASS_NAME)}`);
+    expect(res.data).toEqual([{ lessons: [{ video_url: 'https://youtu.be/tbDUtRdhfUI' }] }]);
+});
+
+// Attendance (/admin/attendance): today's roll calls and check-ins; class members live on the class page.
 test('generates today\'s student attendance from the UI', async () => {
-    await page.goto('/admin/students');
-    await expect(page.getByText('Student Attendance Today')).toBeVisible();
+    await page.goto('/admin/attendance');
+    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
     await page.getByRole('button', { name: /Create today/ }).click();
     await expectToast(page, /attendance records for today|already exist/);
 });
 
-test('enrols a student', async () => {
-    await pickOption(page, page, 'Class', CLASS_NAME);
-    await page.getByRole('button', { name: 'Add New' }).click();
+test('enrols a student (the class members link opens the class page)', async () => {
+    await page.locator('.atMembersCard').getByRole('link', { name: new RegExp(CLASS_NAME) }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/classes/${classId}\\?tab=students`));
+    await classPage().getByRole('button', { name: 'Add student' }).click();
     await dialog.getByLabel('Student').fill('@demo');
     await page.getByRole('option').first().click();
     await dialog.getByRole('button', { name: 'Add Student' }).click();
@@ -191,29 +245,38 @@ test('enrols a student', async () => {
 });
 
 test('removes the student', async () => {
-    await page.getByRole('button', { name: 'Remove student' }).first().click();
-    await expectToast(page, 'Student removed.');
+    await page.locator('.hubStudent').first().getByRole('button', { name: /^More for / }).click();
+    await page.getByRole('menuitem', { name: 'Remove from class' }).click();
+    await expectToast(page, `left ${CLASS_NAME}.`);
+    expect((await rest(await staffJwt(), `class_students?select=student_id&class_id=eq.${classId}`)).data).toEqual([]);
 });
 
 test('deletes the class (cascade + image removed)', async () => {
-    await page.goto('/admin/classes');
-    await page.locator('.classListDiv').getByPlaceholder('Search...').fill('E2E');
-    await classRow().getByRole('button', { name: /Actions for/ }).click();
+    // Created by mistake: no sessions taught, roll calls or payments, so the page offers Delete.
+    await page.goto(`/admin/classes/${classId}`);
+    await classPage().getByRole('button', { name: `More for ${CLASS_NAME}` }).click();
     await page.getByRole('menuitem', { name: 'Delete class' }).click();
     await expectToast(page, 'Class deleted.');
+    await expect(page).toHaveURL(/\/admin\/classes$/);
+    expect((await rest(await staffJwt(), `classes?select=id&id=eq.${classId}`)).data).toEqual([]);
 });
 
 test('generates this week\'s instructor attendance from the UI', async () => {
+    // The old page's address still works.
     await page.goto('/admin/attendance-records');
-    await expect(page.getByRole('grid', { name: 'Instructor attendance' })).toBeVisible();
+    await expect(page).toHaveURL(/\/admin\/attendance$/);
+    await expect(page.getByRole('region', { name: 'Sessions calendar' })).toBeVisible();
     await page.getByRole('button', { name: /Create this week/ }).click();
     await expectToast(page, /records for this week|already exist/);
 });
 
 test('staff sees proof photos through signed URLs', async () => {
-    await page.getByPlaceholder('Search...').fill(today);
-    const proof = page.locator('button[aria-label="View proof photo"] img').first();
-    await expect(proof).toHaveAttribute('src', /\/object\/sign\/attendance-proofs\//);
+    // Today's check-in proofs, on the session row and in the session dialog.
+    const row = page.locator('.atTodayRow').filter({ has: page.locator('button[aria-label="View proof photo"]') }).first();
+    await expect(row.locator('button[aria-label="View proof photo"] img').first()).toHaveAttribute('src', /\/object\/sign\/attendance-proofs\//);
+    await row.locator('.atTodayOpen').click();
+    await expect(dialog.locator('button[aria-label="View proof photo"] img').first()).toHaveAttribute('src', /\/object\/sign\/attendance-proofs\//);
+    await dialog.getByRole('button', { name: 'Close' }).last().click();
 });
 
 test('charts render', async () => {

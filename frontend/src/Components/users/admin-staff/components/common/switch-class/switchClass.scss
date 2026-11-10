@@ -1,0 +1,577 @@
+// "Switch class": the dialog (Students and Tuition pages, a portal with .adminPortal for the
+// tokens) and the inline version inside the person panel (.swInline).
+
+.swDialog {
+    font-family: 'Spartan', sans-serif;
+    color: var(--ad-text);
+    text-align: left;
+
+    > header {
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    > footer {
+        border-top: 1px solid var(--ad-border);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.swHead {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+}
+
+.swHeadText {
+    min-width: 0;
+    display: grid;
+    gap: .1rem;
+    line-height: 1.25;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    small {
+        font-size: .84rem;
+        font-weight: 500;
+        color: var(--ad-muted);
+    }
+}
+
+.swEyebrow {
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ad-primary);
+}
+
+:is(.swDialog, .swInline) {
+    // A column whose parts never shrink: in the scrolling modal body a grid or flex item with
+    // overflow: hidden (the reveal) would otherwise be squeezed instead of scrolling.
+    .swBody {
+        display: flex;
+        flex-direction: column;
+        gap: 1.1rem;
+        padding-top: 1.1rem;
+        padding-bottom: 1rem;
+
+        > * {
+            flex-shrink: 0;
+        }
+    }
+
+    .swStep {
+        min-width: 0;
+        display: grid;
+        gap: .7rem;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    .swStepLabel {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        margin: 0 0 .15rem;
+        padding: 0;
+        font-size: .92rem;
+        font-weight: 700;
+        line-height: 1.3;
+        color: var(--ad-text);
+    }
+
+    .swStepNo {
+        flex: none;
+        display: inline-grid;
+        place-items: center;
+        width: 1.45rem;
+        height: 1.45rem;
+        border-radius: 999px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: .74rem;
+        font-weight: 800;
+    }
+
+    // Class cards (radio)
+    .swCards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(15.5rem, 1fr));
+        gap: .6rem;
+    }
+
+    .swCard {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        padding: .75rem .85rem;
+        border: 1.5px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface);
+        cursor: pointer;
+        transition: border-color .18s, background-color .18s, box-shadow .18s, transform .2s var(--ad-ease);
+
+        // The real radio: invisible but focusable, so the card is keyboard-friendly.
+        input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        img {
+            flex: none;
+            width: 3rem;
+            height: 3rem;
+            object-fit: cover;
+            border-radius: 12px;
+            background: var(--ad-surface-2);
+        }
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+            box-shadow: var(--ad-shadow);
+            transform: translateY(-1px);
+        }
+
+        &:has(input:focus-visible) {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+
+        &.isPicked {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            box-shadow: 0 0 0 3px hsla(0, 66%, 43%, .12);
+        }
+    }
+
+    .swCardText {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        gap: .3rem;
+
+        strong {
+            padding-right: 1.5rem;
+            font-size: .95rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+    }
+
+    .swCardFacts {
+        display: grid;
+        gap: .22rem;
+        font-size: .8rem;
+        line-height: 1.35;
+        color: var(--ad-muted);
+
+        > span {
+            min-width: 0;
+            display: flex;
+            align-items: flex-start;
+            gap: .35rem;
+        }
+
+        svg {
+            flex: none;
+            margin-top: .12rem;
+            font-size: .85rem;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .swCardPrice.swCardPrice {
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .2rem .4rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+
+    .swDelta {
+        padding: .05rem .45rem;
+        border-radius: 999px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .72rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.isUp {
+            background: hsl(35, 90%, 92%);
+            color: hsl(28, 80%, 30%);
+        }
+
+        &.isDown {
+            background: hsl(155, 60%, 91%);
+            color: hsl(158, 70%, 24%);
+        }
+    }
+
+    .swCardCheck {
+        position: absolute;
+        top: .65rem;
+        right: .65rem;
+        display: grid;
+        place-items: center;
+        width: 1.35rem;
+        height: 1.35rem;
+        border: 1.5px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: transparent;
+        font-size: .8rem;
+        transition: background-color .18s, border-color .18s, color .18s, transform .25s var(--ad-ease);
+    }
+
+    .swCard.isPicked .swCardCheck {
+        border-color: var(--ad-primary);
+        background: var(--ad-primary);
+        color: #fff;
+        transform: scale(1.08);
+    }
+
+    // Money preview
+    .swReveal {
+        overflow: hidden;
+        display: grid;
+        gap: 1rem;
+    }
+
+    // "From → to": the course they finish and the course they join.
+    .swPath {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+        align-items: stretch;
+        gap: .5rem;
+    }
+
+    .swEnd {
+        min-width: 0;
+        display: grid;
+        align-content: start;
+        gap: .2rem;
+        padding: .75rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+        line-height: 1.35;
+
+        > small {
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+        }
+
+        > strong {
+            font-size: .95rem;
+            font-weight: 700;
+        }
+
+        .swResult {
+            justify-self: start;
+            margin-top: .3rem;
+        }
+
+        &.isTo {
+            border-color: var(--ad-primary-tint);
+            background: linear-gradient(140deg, var(--ad-primary-soft), var(--ad-surface) 75%);
+        }
+    }
+
+    .swEndCourse {
+        font-size: .84rem;
+        font-weight: 600;
+        color: var(--ad-text);
+        overflow-wrap: anywhere;
+    }
+
+    .swEndDate {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .8rem;
+        color: var(--ad-muted);
+
+        svg {
+            flex: none;
+        }
+    }
+
+    .swArrow {
+        align-self: center;
+        display: grid;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        background: var(--ad-primary);
+        color: #fff;
+        font-size: 1rem;
+        box-shadow: 0 6px 14px -8px var(--ad-primary);
+    }
+
+    .swLines {
+        display: grid;
+        gap: .4rem;
+        margin: 0;
+        padding: .7rem .85rem;
+        border-radius: 14px;
+        border: 1px solid var(--ad-border);
+        list-style: none;
+    }
+
+    // The new class has nothing to join yet: plan a course first.
+    .swBlocked {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        padding: .8rem .95rem;
+        border: 1.5px dashed hsl(40, 85%, 70%);
+        border-radius: 14px;
+        background: hsl(40, 100%, 96%);
+        color: hsl(30, 80%, 28%);
+
+        > svg {
+            flex: none;
+            margin-top: .15rem;
+        }
+
+        p {
+            display: grid;
+            gap: .25rem;
+            margin: 0;
+            font-size: .86rem;
+            line-height: 1.45;
+        }
+
+        span {
+            color: var(--ad-muted);
+        }
+    }
+
+    .swPlanLink {
+        justify-self: start;
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        margin-top: .2rem;
+        font-weight: 700;
+        color: var(--ad-primary);
+
+        &:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+    }
+
+    // "Joins from Armageddon — aespa · Sun 15 Nov" on a class card (amber when there is none).
+    .swCardFacts .swCardNext {
+        font-weight: 600;
+        color: var(--ad-text);
+
+        &.isMissing {
+            color: hsl(30, 80%, 32%);
+
+            svg {
+                color: inherit;
+            }
+        }
+    }
+
+    .swResult {
+        padding: .15rem .6rem;
+        border-radius: 999px;
+        font-size: .78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .tone-due .swResult {
+        background: hsl(212, 80%, 93%);
+        color: hsl(212, 70%, 32%);
+    }
+
+    .tone-good .swResult {
+        background: hsl(155, 60%, 91%);
+        color: hsl(158, 70%, 23%);
+    }
+
+    .tone-extra .swResult {
+        background: hsl(248, 70%, 95%);
+        color: hsl(248, 55%, 42%);
+    }
+
+    .swLine {
+        display: flex;
+        align-items: flex-start;
+        gap: .5rem;
+        margin: 0;
+        font-size: .86rem;
+        line-height: 1.5;
+        color: var(--ad-text);
+
+        svg {
+            flex: none;
+            margin-top: .24rem;
+            color: var(--ad-muted);
+        }
+
+        strong {
+            font-weight: 700;
+        }
+    }
+
+    .swSummary {
+        margin: 0;
+        font-size: .86rem;
+        line-height: 1.5;
+        color: var(--ad-muted);
+
+        strong {
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+    }
+
+    .swFine,
+    .swNotChurn {
+        display: flex;
+        align-items: flex-start;
+        gap: .45rem;
+        margin: 0;
+        font-size: .8rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+
+        svg {
+            flex: none;
+            margin-top: .14rem;
+        }
+    }
+
+    .swNotChurn {
+        padding: .55rem .75rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+    }
+
+    .swLoading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .6rem;
+        padding: 1.6rem 0;
+        font-size: .88rem;
+        color: var(--ad-muted);
+    }
+
+    .swEmpty {
+        margin: 0;
+        padding: 1.2rem 0;
+        text-align: center;
+        color: var(--ad-muted);
+    }
+
+    .swFoot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .6rem 1rem;
+    }
+
+    .swFoot .swFootButtons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: .5rem;
+    }
+}
+
+// Inside the person panel: one column, no modal chrome.
+.swInline {
+    display: grid;
+    gap: .8rem;
+    margin-top: .7rem;
+    padding: .9rem;
+    border: 1.5px dashed var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+
+    .swInlineTitle {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        margin: 0;
+        font-size: .9rem;
+        font-weight: 700;
+        line-height: 1.35;
+        color: var(--ad-text);
+
+        svg {
+            flex: none;
+            color: var(--ad-primary);
+        }
+    }
+
+    .swBody {
+        padding: 0;
+    }
+
+    .swCards {
+        grid-template-columns: 1fr;
+    }
+
+    .swPath {
+        grid-template-columns: minmax(0, 1fr);
+
+        .swArrow {
+            justify-self: center;
+            transform: rotate(90deg);
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .swDialog .swCards {
+        grid-template-columns: 1fr;
+    }
+
+    // Phones: the two ends stack, the arrow turns down.
+    :is(.swDialog, .swInline) .swPath {
+        grid-template-columns: minmax(0, 1fr);
+
+        .swArrow {
+            justify-self: center;
+            transform: rotate(90deg);
+        }
+    }
+
+    // Phones: the main button full width on top, Cancel under it.
+    .swDialog .swFoot .swFootButtons {
+        width: 100%;
+        flex-direction: column-reverse;
+
+        > button {
+            width: 100%;
+        }
+    }
+}

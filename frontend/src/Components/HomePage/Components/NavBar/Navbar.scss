@@ -1,0 +1,456 @@
+// Public navbar (Navbar.jsx, MobileMenu.jsx). main.scss still has legacy `.navBar` rules (fixed,
+// full width); everything inside uses its own pub* classes, and the overrides here are scoped under
+// .homePage so they win whatever order the stylesheets load in.
+
+.homePage .navBar.pubNav {
+    // Tone: dark text on a clear bar (top of a light page) or a frosted light bar (scrolled) …
+    --nav-ink: var(--hp-ink);
+    --nav-muted: hsl(240, 4%, 38%);
+    --nav-line: hsl(20, 10%, 86%);
+    --nav-track: hsla(20, 16%, 92%, .75);
+    --nav-btn: hsla(0, 0%, 100%, .7);
+
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: block;
+    width: 100%;
+    padding: .8rem 0;
+    border-bottom: 1px solid transparent;
+    transition: background-color .3s ease, border-color .3s ease, box-shadow .3s ease, padding .3s var(--hp-ease);
+
+    &.isSolid {
+        border-bottom-color: hsla(20, 10%, 40%, .08);
+        background: hsla(30, 25%, 99%, .82);
+        backdrop-filter: saturate(1.5) blur(14px);
+    }
+
+    &.isScrolled {
+        padding: .45rem 0;
+        box-shadow: 0 12px 30px -24px hsla(0, 30%, 20%, .5);
+    }
+
+    // … or transparent with light text over a dark hero (a soft scrim keeps it legible on bright frames).
+    &.isOverHero {
+        --nav-ink: #fff;
+        --nav-muted: hsla(0, 0%, 100%, .86);
+        --nav-line: hsla(0, 0%, 100%, .32);
+        --nav-track: hsla(0, 0%, 100%, .12);
+        --nav-btn: hsla(0, 0%, 100%, .1);
+
+        // border-box origin: otherwise the gradient tile repeats under the transparent border as a dark line.
+        background: linear-gradient(to bottom, hsla(0, 30%, 6%, .55), hsla(0, 30%, 6%, 0)) border-box;
+    }
+}
+
+.pubNavBar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+    width: min(1240px, calc(100% - 2.5rem));
+    margin-inline: auto;
+}
+
+// Brand ====================>
+
+.pubNavLogo {
+    justify-self: start;
+    border-radius: 14px;
+
+    &:hover .pubBrandMark {
+        transform: rotate(-8deg) scale(1.06);
+    }
+}
+
+.pubBrand {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+}
+
+// logo-mark.webp has white margins and a caption; crop to the red square.
+.pubBrandMark {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+    width: 2.65rem;
+    height: 2.65rem;
+    overflow: hidden;
+    border-radius: 12px;
+    background: hsl(355, 68%, 45%);
+    box-shadow: 0 8px 18px -10px hsla(0, 66%, 30%, .8);
+    transition: transform .4s var(--hp-ease);
+
+    img {
+        position: absolute;
+        left: -27.6%;
+        top: -20.3%;
+        width: 155.2%;
+        max-width: none;
+        height: auto;
+    }
+}
+
+.pubBrandName {
+    display: grid;
+    line-height: 1;
+
+    strong {
+        font-family: var(--hp-display);
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -.01em;
+        color: var(--nav-ink, var(--hp-ink));
+        transition: color .3s ease;
+    }
+
+    small {
+        margin-top: .1rem;
+        font-size: .6rem;
+        font-weight: 700;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--nav-muted, var(--hp-muted));
+        transition: color .3s ease;
+    }
+}
+
+// Page links: a pill track; the white pill slides to the current page ====================>
+
+.pubNavLinks ul {
+    display: flex;
+    gap: .15rem;
+    margin: 0;
+    padding: .28rem;
+    border-radius: 999px;
+    background: var(--nav-track);
+    transition: background-color .3s ease;
+
+    li {
+        cursor: default;
+    }
+}
+
+.homePage .navPageLink {
+    position: relative;
+    display: block;
+    padding: .55rem 1.1rem;
+    border-radius: 999px;
+    color: var(--nav-muted);
+    font-size: .95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .2s ease;
+
+    &:hover {
+        color: var(--nav-ink);
+    }
+
+    &:active .pubNavLabel {
+        transform: scale(.96);
+    }
+
+    &.active {
+        color: var(--hp-red);
+    }
+}
+
+.pubNavPill {
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 6px 16px -8px hsla(0, 40%, 20%, .45);
+}
+
+.pubNavLabel {
+    position: relative;
+    display: inline-block;
+    transition: transform .15s ease;
+}
+
+// Right side ====================>
+
+.pubNavActions {
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    gap: .6rem;
+}
+
+.pubNavContact,
+.pubNavSignIn,
+.pubNavBurger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    height: 2.55rem;
+    border-radius: 999px;
+    font-size: .92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s var(--hp-ease), box-shadow .3s ease;
+
+    &:active {
+        transform: scale(.96);
+    }
+}
+
+.pubNavContact {
+    padding: 0 1rem;
+    border: 1px solid var(--nav-line);
+    background: var(--nav-btn);
+    color: var(--nav-ink);
+
+    svg {
+        font-size: 1rem;
+    }
+
+    &:hover {
+        border-color: var(--hp-red);
+        color: var(--hp-red);
+    }
+
+    .isOverHero &:hover {
+        border-color: #fff;
+        background: #fff;
+    }
+}
+
+.pubNavSignIn {
+    padding: 0 1.2rem;
+    background: var(--hp-red);
+    color: #fff;
+    box-shadow: 0 10px 22px -12px hsla(0, 66%, 30%, .9);
+
+    &:hover {
+        background: hsl(0, 66%, 37%);
+        transform: translateY(-1px);
+    }
+}
+
+.pubNavBurger {
+    display: none;
+    width: 2.65rem;
+    border: 1px solid var(--nav-line);
+    border-radius: 13px;
+    background: var(--nav-btn);
+    color: var(--nav-ink);
+    font-size: 1.35rem;
+
+    span {
+        display: grid;
+    }
+}
+
+// Phone menu ====================>
+
+.pubMenuBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: hsla(0, 25%, 8%, .4);
+    backdrop-filter: blur(2px);
+}
+
+.pubMenu {
+    position: absolute;
+    top: calc(100% + .5rem);
+    left: .75rem;
+    right: .75rem;
+    max-height: calc(100dvh - 6rem);
+    padding: .7rem;
+    overflow-y: auto;
+    border: 1px solid var(--hp-border);
+    border-radius: 24px;
+    background: #fff;
+    box-shadow: 0 30px 60px -24px hsla(0, 30%, 12%, .5);
+    transform-origin: top center;
+}
+
+.pubMenuLinks {
+    display: grid;
+    gap: .2rem;
+    margin: 0;
+
+    li {
+        cursor: default;
+    }
+}
+
+.pubMenuLink {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    padding: .65rem .75rem;
+    border-radius: 16px;
+    color: var(--hp-ink);
+    font-size: 1.08rem;
+    font-weight: 600;
+    transition: background-color .2s ease, color .2s ease;
+
+    &:hover {
+        background: var(--hp-surface-2);
+    }
+
+    &.active {
+        background: var(--hp-red-soft);
+        color: var(--hp-red);
+
+        .pubMenuIcon {
+            background: var(--hp-red);
+            color: #fff;
+        }
+    }
+}
+
+.pubMenuIcon {
+    display: grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: var(--hp-surface-2);
+    color: var(--hp-red);
+    font-size: 1.1rem;
+    transition: background-color .2s ease, color .2s ease;
+}
+
+.pubMenuGo {
+    margin-left: auto;
+    color: hsl(240, 4%, 65%);
+}
+
+.pubMenuActions {
+    display: flex;
+    gap: .5rem;
+    margin-top: .6rem;
+    padding-top: .7rem;
+    border-top: 1px solid var(--hp-border);
+}
+
+.pubMenuBtn {
+    display: inline-flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    height: 3rem;
+    border: 1px solid var(--hp-border);
+    border-radius: 15px;
+    background: #fff;
+    color: var(--hp-ink);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform .15s ease, background-color .2s ease;
+
+    &:active {
+        transform: scale(.97);
+    }
+
+    &.isPrimary {
+        border-color: var(--hp-red);
+        background: var(--hp-red);
+        color: #fff;
+    }
+}
+
+.pubMenuPromo {
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+    margin-top: .6rem;
+    padding: .8rem .9rem;
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 100% 0%, hsla(0, 0%, 100%, .5), transparent 50%),
+        linear-gradient(135deg, hsl(44, 100%, 74%), hsl(36, 100%, 62%));
+    color: hsl(25, 45%, 22%);
+
+    strong {
+        display: block;
+        font-family: var(--hp-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+
+    small {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .88rem;
+        font-weight: 700;
+        color: var(--hp-red);
+    }
+}
+
+.pubMenuPromoIcon {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    flex-shrink: 0;
+    border-radius: 13px;
+    background: hsla(0, 0%, 100%, .6);
+    color: var(--hp-red);
+    font-size: 1.25rem;
+}
+
+// Responsive ====================>
+
+// Medium screens: the logo keeps only its mark, Contact only its icon (the label stays for screen readers).
+@media screen and (max-width: 1140px) {
+    .pubNavBar .pubBrandName {
+        display: none;
+    }
+
+    .pubNavContact {
+        width: 2.55rem;
+        padding: 0;
+
+        span {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+    }
+
+    .homePage .navPageLink {
+        padding-inline: .85rem;
+    }
+}
+
+@media screen and (max-width: 899px) {
+    .pubNavBar {
+        grid-template-columns: minmax(0, 1fr) auto;
+        width: calc(100% - 2rem);
+
+        .pubBrandName {
+            display: grid;
+        }
+    }
+
+    .pubNavLinks,
+    .pubNavContact,
+    .pubNavSignIn {
+        display: none;
+    }
+
+    .pubNavBurger {
+        display: inline-flex;
+    }
+
+    .pubNavActions {
+        gap: .5rem;
+    }
+}

@@ -6,6 +6,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { listRooms } from '@/services/rooms';
 import { formatVnd } from '@/lib/format';
 import { roomImageUrls } from '@/services/storage';
+import { useI18n } from '@/i18n/i18nContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard from '../../../common/SectionCard';
 import { fadeUp, stagger } from '../../../common/motion';
@@ -16,16 +17,17 @@ import studioPhoto from '@/assets/images/studio.webp';
 const featuresOf = (size) => (size ?? '').split('·').map((part) => part.trim()).filter(Boolean);
 
 const RoomDetails = () => {
+    const { t } = useI18n();
     const rooms = useAsync(listRooms, []);
     const [editing, setEditing] = useState(null);
 
     return (
         <SectionCard
             icon={LuDoorOpen}
-            title="Room details"
-            subtitle="Sizes, features and the hourly price guests see when they book."
+            title={t('Room details')}
+            subtitle={t('Sizes, features and the hourly price guests see when they book.')}
         >
-            <AsyncState state={rooms} emptyText="No rooms yet.">
+            <AsyncState state={rooms} emptyText={t('No rooms yet.')}>
                 {(list) => (
                     <motion.div className="roomGrid" variants={stagger} initial="hidden" animate="show">
                         {list.map((room) => {
@@ -37,7 +39,7 @@ const RoomDetails = () => {
                                         <img src={photos[0] ?? studioPhoto} alt={room.name} />
                                         {photos.length > 1 && (
                                             <span className="photoCount">
-                                                <LuImage aria-hidden="true" /> {photos.length} photos
+                                                <LuImage aria-hidden="true" /> {t('{count} photos', { count: photos.length })}
                                             </span>
                                         )}
                                     </div>
@@ -49,7 +51,7 @@ const RoomDetails = () => {
                                                 size="sm"
                                                 variant="flat"
                                                 radius="full"
-                                                aria-label={`Edit ${room.name}`}
+                                                aria-label={t('Edit {name}', { name: room.name })}
                                                 onPress={() => setEditing(room)}
                                             >
                                                 <LuPencil />
@@ -64,7 +66,7 @@ const RoomDetails = () => {
                                         )}
                                         <div className="roomPrice">
                                             <strong>{formatVnd(room.price)}</strong>
-                                            <span>per hour</span>
+                                            <span>{t('per hour')}</span>
                                         </div>
                                     </div>
                                 </motion.article>

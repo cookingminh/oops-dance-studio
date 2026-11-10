@@ -1,0 +1,98 @@
+// One-time banner on the profile overview after a Google / Facebook sign-up (CompleteProfileNudge).
+.adminShell .pfNudge {
+    position: relative;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1rem;
+    padding: .9rem 3.4rem .9rem 1rem; // right: room for the close button
+    border: 1px solid var(--ad-primary-tint);
+    border-radius: var(--ad-radius-lg);
+    background: linear-gradient(120deg, var(--ad-primary-soft), hsl(30, 95%, 96%));
+    box-shadow: var(--ad-shadow);
+}
+
+.adminShell .pfNudgeIcon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 14px;
+    background: var(--ad-primary);
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.adminShell .pfNudgeText {
+    display: grid;
+    flex: 1 1 16rem;
+    gap: .15rem;
+    min-width: 0;
+    line-height: 1.4;
+
+    strong {
+        font-size: 1rem;
+        color: var(--ad-text);
+    }
+
+    span {
+        font-size: .92rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .pfNudgeGo {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    height: 2.6rem;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    background: var(--ad-primary);
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background-color .2s ease, transform .3s var(--ad-ease);
+
+    &:hover {
+        background: var(--ad-primary-strong);
+        transform: translateY(-1px);
+    }
+}
+
+.adminShell .pfNudgeClose {
+    position: absolute;
+    top: 50%;
+    right: .7rem;
+    transform: translateY(-50%);
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    color: var(--ad-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease;
+
+    &:hover {
+        background: hsla(0, 0%, 100%, .7);
+        color: var(--ad-text);
+    }
+}
+
+// Narrow: the button wraps under the text (lined up with it), the close button sits top right.
+@media screen and (max-width: 640px) {
+    .adminShell .pfNudgeGo {
+        margin-left: 3.6rem;
+    }
+
+    .adminShell .pfNudgeClose {
+        top: .55rem;
+        transform: none;
+    }
+}
