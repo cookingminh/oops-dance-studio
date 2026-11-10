@@ -1053,3 +1053,29 @@
         transform: none;
     }
 }
+
+// A flagged item: 'owing' = a booking not fully paid. A red border that glows, so it stands out.
+@keyframes calOwingGlow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .5), 0 0 6px 1px hsla(0, 85%, 55%, .3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .9), 0 0 14px 3px hsla(0, 85%, 55%, .55);
+    }
+}
+
+:is(.calItem, .calChip, .calRow).flag-owing {
+    z-index: 3;
+    border-color: hsl(0, 78%, 50%);
+    border-left-color: hsl(0, 78%, 50%);
+    animation: calOwingGlow 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :is(.calItem, .calChip, .calRow).flag-owing {
+        animation: none;
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .7), 0 0 10px 2px hsla(0, 85%, 55%, .45);
+    }
+}

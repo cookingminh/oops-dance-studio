@@ -3,9 +3,11 @@ import { itemLabel, minutesOf, statusText, toneOf } from './calendarModel';
 
 const NEUTRAL = 'hsl(240, 4%, 60%)';
 
+// `item.flag` (e.g. 'owing': a booking not fully paid) adds flag-<name>: a glowing red border (calendar.scss).
 const classesOf = (item, base) => {
     const status = item.status ? ` status-${String(item.status).replace(/[^\w-]/g, '')}` : '';
-    return `${base} tone-${toneOf(item)}${status}`;
+    const flag = item.flag ? ` flag-${String(item.flag).replace(/[^\w-]/g, '')}` : '';
+    return `${base} tone-${toneOf(item)}${status}${flag}`;
 };
 
 // A clickable item is a button; context-only ('background') items and items without onSelect are plain boxes.

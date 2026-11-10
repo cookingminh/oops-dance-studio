@@ -1,6 +1,7 @@
 import { addMinutes, endOfMonth, format, parse, startOfMonth } from 'date-fns';
 import { formatTime, toMinutes } from '@/lib/format';
 import { asDate, calendarRange, toIso } from '../../common/calendar/calendarModel';
+import { bookingBalance } from '@/services/bookingPayments';
 
 // Pure helpers of the bookings page (filters, counts, calendar items).
 
@@ -52,7 +53,9 @@ export function bookingItem(booking, { roomColor, t, withRoom = true }) {
         color: roomColor.get(booking.room_id),
         lane: String(booking.room_id),
         status: booking.status,
-        statusLabel: t(booking.status),
+        // Not fully paid: a glowing red border on the calendar (flag 'owing'), said in words too.
+        statusLabel: bookingBalance(booking) > 0 ? `${t(booking.status)} · ${t('Not fully paid')}` : t(booking.status),
+        flag: bookingBalance(booking) > 0 ? 'owing' : undefined,
         tone: TONES[booking.status] ?? 'solid',
         // A request waiting for approval, or a cancelled booking with money still to give back.
         badge: booking.status === 'pending' ? t('Awaiting approval') : owesRefund(booking) ? t('Refund due') : undefined,

@@ -185,4 +185,6 @@ export default {
     '{actor} changed {name}’s booking price {from} → {to}': '{actor} đã đổi giá lượt đặt phòng của {name} {from} → {to}',
     Refunded: 'Đã hoàn tiền',
     'Payment removed': 'Đã xoá khoản thanh toán',
+    // The bookings calendar: a booking with money still to pay glows red.
+    'Not fully paid': 'Chưa trả đủ',
 };
