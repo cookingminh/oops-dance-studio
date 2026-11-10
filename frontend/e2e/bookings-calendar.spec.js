@@ -121,7 +121,7 @@ test('a pending booking is dashed, badged and counted in the header', async () =
     await expect(page.locator('.bookingsCard .cardTitles p')).toContainText('1 awaiting approval');
 
     // The quick filter shows only pending requests.
-    const chip = page.locator('.awaitChip');
+    const chip = page.locator('.awaitChip').first(); // "Owes money" / "To refund" may follow it
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'true');
     await expect(block()).toBeVisible();
@@ -141,11 +141,19 @@ test('clicking the booking opens its dialog; approve from there', async () => {
     await expect(block()).toHaveClass(/tone-solid/);
 });
 
-test('cancelling from the dialog mutes the booking', async () => {
+test('cancelling from the dialog asks who cancels, then mutes the booking', async () => {
     await block().click();
     await expect(dialog.getByRole('button', { name: 'Mark completed' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Cancel booking' }).click();
+    // The cancel dialog on top: who asked and what goes back (nothing was paid for this one).
+    const cancel = page.locator('.scCancelDialog');
+    await expect(cancel).toContainText('Nothing was paid, so there’s nothing to refund.');
+    await cancel.getByRole('button', { name: 'Cancel booking' }).click();
     await expectToast(page, 'is now cancelled');
+    await expect(cancel).toHaveCount(0);
+    // The booking dialog stays open on its refund block; close it to see the calendar.
+    await expect(dialog).toContainText('The booking is cancelled');
+    await closeDialogs();
     await expect(block()).toHaveClass(/tone-muted/);
     await expect(block()).toHaveClass(/status-cancelled/);
 });

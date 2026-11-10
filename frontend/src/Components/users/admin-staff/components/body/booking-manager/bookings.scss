@@ -72,9 +72,10 @@
     }
 }
 
-// Calendar: a pending request's badge is amber; context class sessions stay quiet.
+// Calendar: a pending request's badge is amber, and so is "Refund due" on a cancelled booking; context
+// class sessions stay quiet.
 .bookingCalendar {
-    .status-pending .calBadge {
+    :is(.status-pending, .status-cancelled, .status-rejected) .calBadge {
         border-color: hsl(40, 90%, 72%);
         background: hsl(45, 100%, 93%);
         color: hsl(30, 88%, 30%);
@@ -288,15 +289,35 @@
         }
     }
 
-    // The quick filter and the status filter share one row.
+    // The quick filter and the status filter share one row; "Owes money" / "To refund" (when there is
+    // something) wrap onto the next one rather than off the screen.
     .adminShell .bookingsCard .bookingToolbar .toolbarGroup {
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         width: 100%;
 
+        .awaitChip {
+            flex: 0 0 auto;
+        }
+
         .statusSelect {
-            flex: 1 1 auto;
+            flex: 1 1 8rem;
             width: auto;
             min-width: 0;
+        }
+    }
+
+    // The header's "Cancellation policy" shrinks to its icon (the label stays for screen readers).
+    .adminShell .bookingsCard .bookingPolicyBtn {
+        min-width: 0;
+        padding: 0 .8rem;
+
+        .bookingPolicyLabel {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
         }
     }
 

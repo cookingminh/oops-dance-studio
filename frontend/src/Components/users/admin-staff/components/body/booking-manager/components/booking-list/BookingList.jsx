@@ -89,6 +89,9 @@ const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, ac
                             {t('Deposit {amount}', { amount: formatVnd(booking.deposit) })} ·{' '}
                             <span className={`depositState is-${booking.deposit_status}`}>{t(DEPOSIT_LABELS[booking.deposit_status] ?? booking.deposit_status)}</span>
                         </span>
+                        {/* A cancelled booking: what still goes back, what went back. */}
+                        {Number(booking.refund_due) > 0 && <span className="bkRefund isDue">{t('To refund {amount}', { amount: formatVnd(booking.refund_due) })}</span>}
+                        {Number(booking.refund_paid) > 0 && <span className="bkRefund isPaid">{t('Refunded {amount}', { amount: formatVnd(booking.refund_paid) })}</span>}
                     </div>
                 );
             case 'status':

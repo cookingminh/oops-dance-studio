@@ -229,7 +229,8 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
     - chuyển khoản → QR *Phần còn lại*, tiền tự cộng;
     - tiền mặt (hoặc chuyển khoản mà hệ thống không tự thấy) → *Ghi nhận thanh toán*: số tiền điền sẵn phần còn lại,
       ghi rõ ai thu, lúc nào.
-  - **Hoàn tiền**: cũng ở *Ghi nhận thanh toán* → chọn *Hoàn tiền*, bắt buộc ghi lý do.
+  - **Hoàn tiền lẻ** (trả lại một phần khi lượt đặt vẫn giữ): ở *Ghi nhận thanh toán* → chọn *Hoàn tiền*, bắt buộc
+    ghi lý do. Hoàn tiền khi **huỷ** thì theo chính sách huỷ bên dưới.
   - **Đổi giá** (giảm giá, thêm / bớt giờ, phụ thu): *Đổi giá* → nhập tổng mới + **lý do** (bắt buộc), vd. "Khách
     quen giảm 10%". Giá gốc (giá phòng × số giờ) vẫn giữ. Hoá đơn ghi: *Giá gốc 375.000 → Khách quen giảm 10% →
     337.500*. Đổi giờ / đổi phòng thì giá tự tính lại, trừ khi giá đã chỉnh tay.
@@ -244,6 +245,15 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
     hoạt động ghi ai làm.
   - Chuyển khoản thiếu hoặc sai mã nằm trong hộp *Chuyển khoản* (trang Học phí) → staff *gán cho lượt đặt phòng* (theo
     #số hoặc mã), hoặc *gỡ ra* nếu gán nhầm. Lượt đặt đã huỷ / bị từ chối thì tiền không tự cộng (để hoàn tiền).
+- **Chính sách huỷ & hoàn tiền** (admin chỉnh ở nút *Chính sách huỷ* trang Đặt phòng; mặc định):
+  - huỷ trước giờ đặt **từ 24 giờ trở lên** → hoàn **50%** số đã đóng; **dưới 24 giờ** → không hoàn;
+  - có thể bật thêm mốc **hoàn 100%** (ví dụ huỷ trước 72 giờ);
+  - lượt **chưa được duyệt**, hoặc **studio huỷ / từ chối** → hoàn toàn bộ.
+  - Khách tự huỷ được cả lượt **đã duyệt** (trước giờ bắt đầu) ở trang *Phòng đã đặt*: trước khi xác nhận thấy rõ được
+    hoàn bao nhiêu, và có thể ghi tài khoản nhận tiền. Chính sách cũng hiện khi đặt phòng.
+  - Staff huỷ: chọn *Khách xin huỷ* (theo chính sách) hoặc *Studio huỷ* (hoàn hết); muốn hoàn số khác thì ghi lý do.
+  - Số tiền cần hoàn nằm trên lượt đặt (*Cần hoàn …*) và trong chuông việc cần làm cho tới khi staff bấm *Đã hoàn*
+    (chuyển khoản hoặc tiền mặt). Phần studio giữ lại được tính vào doanh thu.
 - Lịch lớp và buổi học bù tự chặn phòng, nhưng chỉ trong thời gian lớp chạy. **Buổi lớp đã huỷ thì phòng trống** và
   có thể cho đặt; khi đó buổi huỷ không mở lại được nữa (báo trùng phòng).
 
@@ -305,8 +315,9 @@ Ai đăng nhập vào `/profile` mà còn khoản cần đóng sẽ được nh�
 - **Chuông thông báo** trên thanh trên cùng: liệt kê từng khoản (quá hạn → sắp đến hạn → sắp tới), mỗi khoản có nút
   **Đóng …** mở ngay mã QR chuyển khoản. Bấm vào dòng thì sang trang Học phí / Phòng đã đặt.
 - **Số đỏ trên menu** *Học phí* và *Phòng đã đặt*.
-- **Lời nhắc nhẹ** ở góc màn hình, **mỗi ngày một lần**, khi có khoản quá hạn hoặc đến hạn trong 3 ngày: một câu
-  thân thiện, nút **Đóng …** (mở QR) và **Để sau** (hôm đó không hiện lại). Không hiện ở trang Học phí / Phòng đã đặt.
+- **Lời nhắc nhẹ** ở góc trang **Dashboard** (trang vào đầu tiên sau khi đăng nhập), **mỗi ngày một lần**, khi có
+  khoản quá hạn hoặc đến hạn trong 3 ngày: một câu thân thiện, nút **Đóng …** (mở QR) và **Để sau** (hôm đó không hiện
+  lại). Chỉ hiện ở Dashboard để không che nút của các form.
 
 Những khoản được nhắc: học phí khoá đang học (hoặc đã xong) chưa đóng; khoá tiếp theo chưa trả lời (*Học tiếp
 không?*) hoặc đã chọn học tiếp nhưng chưa đóng; tiền cọc của lượt đặt phòng sắp tới (lượt chờ duyệt: cọc xong
@@ -391,5 +402,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Mỗi lúc một bài, miễn → mở lại | `20261117000100_routine_order_and_waive.sql` | `check_routine_order`, `tuition_waive`, `tuition_reopen` |
 | Nhật ký hoạt động | `20261117000200_activity_log.sql` | `log_activity`, `activity_summary`, `seed_demo_activity` |
 | Promo bài tiếp theo | `20261117000700_routine_promos.sql` | `lesson_set_promo`, bucket `class-promos` |
+| Huỷ đặt phòng & hoàn tiền | `20261117000800_booking_refunds.sql` | `cancel_booking`, `booking_cancel_quote`, `booking_refund`, `booking_settings` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

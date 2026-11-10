@@ -1,0 +1,212 @@
+// Cancellation policy and refunds, shared by the guest's My bookings, the staff booking pages and the public
+// booking form. Workspace tokens (--ad-*) where they exist, plain values on the public site.
+
+.rfPolicy {
+    display: grid;
+    gap: .35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: baseline;
+        gap: .5rem;
+        font-size: .86rem;
+        line-height: 1.4;
+        color: var(--ad-muted, hsl(240, 4%, 40%));
+    }
+
+    .rfPolicyDot {
+        flex-shrink: 0;
+        width: .42rem;
+        height: .42rem;
+        border-radius: 999px;
+        background: var(--ad-border, hsl(20, 10%, 85%));
+        transform: translateY(-.08rem);
+    }
+
+    .isCurrent {
+        color: var(--ad-text, hsl(0, 0%, 12%));
+        font-weight: 700;
+
+        .rfPolicyDot {
+            background: var(--ad-primary, hsl(0, 66%, 43%));
+        }
+    }
+
+    .rfApplies {
+        flex-shrink: 0;
+        margin-left: auto;
+        padding: .05rem .5rem;
+        border-radius: 999px;
+        background: var(--ad-primary-soft, hsl(0, 85%, 96%));
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+        font-size: .72rem;
+        font-style: normal;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+}
+
+// The quiet box the policy sits in (cancel dialogs).
+.rfPolicyBox {
+    display: grid;
+    gap: .5rem;
+    padding: .8rem .95rem;
+    border: 1px solid var(--ad-border, hsl(20, 10%, 91%));
+    border-radius: 14px;
+    background: var(--ad-surface-2, hsl(20, 14%, 96%));
+
+    .rfPolicyTitle {
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--ad-subtle, hsl(240, 4%, 55%));
+    }
+}
+
+// What comes back, said big: green when money comes back, amber when nothing does, grey when nothing was paid.
+.rfHero {
+    display: grid;
+    gap: .2rem;
+    margin: 0;
+    padding: 1rem 1.1rem;
+    border-radius: 16px;
+    background: var(--ad-surface-2, hsl(20, 14%, 96%));
+    color: var(--ad-text, hsl(0, 0%, 12%));
+
+    .rfHeroStep {
+        font-size: .76rem;
+        font-weight: 800;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .rfHeroAmount {
+        font-family: var(--ad-display, inherit);
+        font-size: 1.75rem;
+        font-weight: 800;
+        line-height: 1.15;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rfHeroText {
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.35;
+    }
+
+    small {
+        font-size: .86rem;
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+    }
+
+    &.isBack {
+        background: hsl(150, 60%, 94%);
+
+        .rfHeroStep,
+        .rfHeroAmount {
+            color: hsl(156, 64%, 28%);
+        }
+    }
+
+    &.isNone {
+        background: hsl(40, 95%, 92%);
+
+        .rfHeroStep,
+        .rfHeroText {
+            color: hsl(30, 90%, 30%);
+        }
+    }
+
+    &.isIdle {
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+        font-weight: 600;
+    }
+
+    &.isLoading {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        min-height: 5.2rem;
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+    }
+}
+
+// One refund line on a booking (guest rows and cards; staff table).
+.rfLine {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: .35rem;
+    // The account can be long: wrap instead of widening the table.
+    max-width: 19rem;
+    margin-top: .2rem;
+    font-size: .8rem !important;
+    font-weight: 700;
+    line-height: 1.35;
+    white-space: normal;
+    overflow-wrap: anywhere;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .12rem;
+        font-size: .9rem;
+        color: currentColor;
+    }
+
+    &.isDue {
+        color: hsl(30, 90%, 34%) !important;
+    }
+
+    &.isPaid {
+        color: hsl(156, 64%, 30%) !important;
+    }
+
+}
+
+// "Cancellation policy" pop-over.
+.rfPopover {
+    max-width: min(26rem, calc(100vw - 2rem));
+}
+
+.rfPopoverBody {
+    display: grid;
+    gap: .6rem;
+    align-items: start;
+    justify-items: stretch;
+    padding: .9rem 1rem 1rem;
+
+    .rfPopoverTitle {
+        font-size: .95rem;
+        font-weight: 700;
+        color: var(--ad-text, hsl(0, 0%, 12%));
+    }
+}
+
+.rfPolicyBtn svg {
+    font-size: 1rem;
+    color: currentColor;
+}
+
+// The guest's cancel dialog.
+.rfCancelModal {
+    .rfCancelBody {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .rfCancelFoot {
+        display: flex;
+        flex-wrap: wrap-reverse;
+        justify-content: flex-end;
+        gap: .5rem;
+    }
+
+    @media (max-width: 480px) {
+        .rfCancelFoot > button {
+            flex: 1 1 100%;
+        }
+    }
+}

@@ -144,8 +144,8 @@ select results_eq($$select status::text from public.cancel_booking(900031)$$, $$
   'cancel_booking: owner cancels a pending booking');
 select throws_like($$select public.cancel_booking(900031)$$, 'INVALID_STATE:%',
   'cancel_booking: already cancelled → INVALID_STATE');
-select throws_like($$select public.cancel_booking(900032)$$, 'INVALID_STATE:%',
-  'cancel_booking: owner cannot cancel an approved booking');
+select is(public.booking_cancel_quote(900032) ->> 'tier', 'partial',
+  'cancel_booking: an approved booking ahead can be cancelled by its owner, refunded on the policy (booking_refunds)');
 
 select tests.login_as('c0000000-0000-4000-8000-000000000004');
 select lives_ok($$select public.create_booking(900021, tests.next_week(4), '10:00', '12:00')$$,

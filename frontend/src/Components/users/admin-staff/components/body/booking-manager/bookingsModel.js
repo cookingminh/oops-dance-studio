@@ -54,7 +54,8 @@ export function bookingItem(booking, { roomColor, t, withRoom = true }) {
         status: booking.status,
         statusLabel: t(booking.status),
         tone: TONES[booking.status] ?? 'solid',
-        badge: booking.status === 'pending' ? t('Awaiting approval') : undefined,
+        // A request waiting for approval, or a cancelled booking with money still to give back.
+        badge: booking.status === 'pending' ? t('Awaiting approval') : owesRefund(booking) ? t('Refund due') : undefined,
         data: booking,
     };
 }
@@ -118,6 +119,10 @@ export function listPriceFor(room, startTime, endTime) {
     const hours = (toMinutes(endTime) - toMinutes(startTime)) / 60;
     return hours > 0 ? Math.round(Number(room.price ?? 0) * hours) : null;
 }
+
+// A cancelled or rejected booking with money still to give back (the "To refund" filter, like
+// listRefundsDue() behind the staff to-do).
+export const owesRefund = (booking) => Number(booking.refund_due ?? 0) > 0;
 
 // A past booking (approved or completed, within the last 60 days) whose balance is still open — the
 // "Owes money" filter, like listOwingBookings() behind the staff to-do.

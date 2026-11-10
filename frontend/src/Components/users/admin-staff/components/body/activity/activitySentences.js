@@ -1,5 +1,6 @@
 import { formatTime, formatVnd } from '@/lib/format';
 import { categoryOf } from '@/lib/expenseCategories';
+import { refundPolicyLines } from '@/services/bookingRefunds';
 import { VOID_REASONS } from '../tuition/tuitionModel';
 import { ROLE_LABELS, changedFields } from './activityFields';
 import { actionLabel, areaOf, isSelf } from './activityModel';
@@ -48,16 +49,32 @@ const BOOKINGS = (row, fmt) => {
                 ? '{actor} recorded a {amount} transfer for {name}’s booking'
                 : '{actor} recorded {amount} cash for {name}’s booking',
         refunded: '{actor} refunded {amount} to {name}',
+        refund_changed: '{actor} changed the refund for {name}’s booking to {amount}',
         payment_removed: '{actor} removed a {amount} payment from {name}’s booking',
         price_changed: '{actor} changed {name}’s booking price {from} → {to}',
+        // The studio's cancellation policy (entity booking_settings, no guest).
+        refund_policy: '{actor} changed the cancellation policy',
     };
+    if (row.action === 'refund_policy') {
+        // The new policy, as guests read it (without the fixed "not approved yet" line).
+        const settings = { refund_full_hours: m.full_hours ?? null, refund_partial_hours: m.partial_hours, refund_partial_percent: m.partial_percent };
+        const lines = refundPolicyLines(settings).slice(0, -1).map((line) => fmt.t(line.key, line.vars));
+        return { key: keys.refund_policy, facts: lines };
+    }
     if (row.action === 'updated') facts.push(fieldsFact(row, fmt));
+    // A cancellation through cancel_booking: who cancelled, what goes back, why it differs from the policy.
+    if (row.action === 'cancelled' && m.refund !== undefined) {
+        if (m.by_studio) facts.unshift(fmt.t('Cancelled by the studio'));
+        // Nothing back because it was late says so; nothing back because nothing was paid needs no fact.
+        facts.push(Number(m.refund) > 0 ? fmt.t('{amount} to refund', { amount: money(m.refund) }) : m.tier === 'none' ? fmt.t('No refund') : '', quote(m.note));
+    }
+    if (row.action === 'refund_changed') facts.unshift(quote(m.note));
     if (['paid', 'refunded', 'payment_removed'].includes(row.action)) {
         facts.unshift(m.method === 'cash' ? fmt.t('Cash') : fmt.t('Bank transfer'));
         facts.push(quote(m.note));
     }
     if (row.action === 'price_changed') facts.unshift(quote(m.note));
-    return keys[row.action] && { key: keys[row.action], vars: { amount, from: money(m.from), to: money(m.to) }, facts };
+    return keys[row.action] && { key: keys[row.action], vars: { amount: row.action === 'refund_changed' ? money(m.refund) : amount, from: money(m.from), to: money(m.to) }, facts };
 };
 
 const CLASSES = (row, fmt) => {

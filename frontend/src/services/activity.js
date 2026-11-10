@@ -9,6 +9,11 @@ import { unwrap } from './errors';
 // Areas and their actions (meta keys in brackets):
 //   bookings   created · approved · rejected · cancelled · completed · reopened · payment_updated · updated · deleted
 //              [room, date, start, end, status]
+//              paid · refunded [received (negative = given back), method, bank, note] · payment_removed
+//              price_changed [from, to, note]
+//              cancelled through cancel_booking also [refund, percent, tier, by_studio, note]
+//              refund_changed [refund, note] (booking_set_refund)
+//              refund_policy (entity booking_settings, no guest) [full_hours, partial_hours, partial_percent]
 //   classes    created · updated · ended [last_day, reason] · reopened · instructor_changed [instructor, from] · deleted
 //              schedule_added · schedule_changed · schedule_removed [day (1 = Mon), start, end, from]
 //   routines   planned · updated · deleted · video_added · video_changed · video_removed [class, starts_on, sessions, price]

@@ -5,7 +5,6 @@ import { LuAlarmClock, LuQrCode, LuX } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { duesText } from './duesText';
-import { DUES_PAGES } from './myDues';
 import { useMyDues } from './myDuesContext';
 import DuePay from './DuePay';
 import './dues.scss';
@@ -29,9 +28,10 @@ function markSeen(userId, today) {
     }
 }
 
-// Once a day, a friendly card in the corner when something is overdue or due within a few days: the most
-// urgent item in one sentence, a QR button that opens the payment, and "Later" (not again today). Not on
-// the tuition and bookings pages, which show all of it already.
+// Once a day, a friendly card in the corner of the Dashboard (/profile, where people land after signing in)
+// when something is overdue or due within a few days: the most urgent item in one sentence, a QR button that
+// opens the payment, and "Later" (not again today). Only there, so it never sits on a form's buttons; the
+// bell and the menu badges carry it on every other page.
 const PayNudge = () => {
     const i18n = useI18n();
     const { t, tn } = i18n;
@@ -44,9 +44,9 @@ const PayNudge = () => {
 
     const pressing = (data?.items ?? []).filter((item) => item.tone !== 'due');
     const item = pressing[0];
-    const onDuesPage = Object.values(DUES_PAGES).some((page) => pathname.startsWith(page));
+    const onDashboard = pathname.replace(/\/+$/, '') === '/profile';
     const today = data?.today;
-    const eligible = Boolean(item && today && user && !onDuesPage && !seenToday(user.id, today));
+    const eligible = Boolean(item && today && user && onDashboard && !seenToday(user.id, today));
 
     useEffect(() => {
         if (!eligible) return undefined;

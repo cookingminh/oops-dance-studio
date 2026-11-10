@@ -4,15 +4,18 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { parseISO } from 'date-fns';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
-import { LuCalendarDays, LuCheck, LuCircleSlash, LuClock, LuLogIn, LuPartyPopper, LuRuler, LuSearch, LuSparkles, LuX } from 'react-icons/lu';
+import { LuCalendarDays, LuCheck, LuChevronDown, LuCircleSlash, LuClock, LuLogIn, LuPartyPopper, LuRuler, LuSearch, LuShieldCheck, LuSparkles, LuX } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { DASHBOARD_ROLES } from '@/auth/roles';
 import { createBooking, getAvailableSlots } from '@/services/bookings';
+import { getBookingSettings } from '@/services/bookingRefunds';
 import { getStudioToday } from '@/services/studio';
 import { roomImageUrls } from '@/services/storage';
 import { useToast } from '@/ui/feedback/toastContext';
 import LinkButton from '@/ui/LinkButton';
+import PolicyLines from '@/ui/refunds/PolicyLines';
+import { policyLines } from '@/ui/refunds/refundText';
 import { TIME_OPTIONS, formatTime, formatVnd, toIsoDate, toMinutes } from '@/lib/format';
 import { ALL_ROOMS, lowestPrice } from './rooms';
 import studioPhoto from '@/assets/images/studio.webp';
@@ -104,6 +107,41 @@ const DayBar = ({ windows, start, end }) => {
     );
 };
 
+// The cancellation policy under the booking summary: its main step on one line, the other steps one tap
+// away ("Details"). Nothing shows when the policy can't be read.
+const BookingPolicy = ({ settings }) => {
+    const { t } = useI18n();
+    const [open, setOpen] = useState(false);
+    if (!settings) return null;
+    const [first, ...rest] = policyLines(settings);
+    return (
+        <div className="hpBookPolicy" role="group" aria-label={t('Cancellation policy')}>
+            <p>
+                <LuShieldCheck aria-hidden="true" />
+                <span>{t(first.key, first.vars)}</span>
+                <button type="button" aria-expanded={open} aria-controls="hp-book-policy" onClick={() => setOpen((value) => !value)} className={open ? 'isOpen' : undefined}>
+                    {t('Details')} <LuChevronDown aria-hidden="true" />
+                </button>
+            </p>
+            <AnimatePresence initial={false}>
+                {open && (
+                    <motion.div
+                        id="hp-book-policy"
+                        key="policy"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.22, ease: EASE }}
+                        style={{ overflow: 'hidden' }}
+                    >
+                        <PolicyLines lines={rest} className="hpBookPolicyLines" />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 // /rooms: pick a room, a day and the hours, see live availability, then book. `rooms` is the page's
 // useAsync(listRooms) result; the selected room is lifted to the page so the room cards can pick one.
 const Search = ({ rooms, selectedRoom, onSelectRoom }) => {
@@ -121,6 +159,14 @@ const Search = ({ rooms, selectedRoom, onSelectRoom }) => {
     const [bookingRoom, setBookingRoom] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [confirmed, setConfirmed] = useState(null);
+    const [policy, setPolicy] = useState(null); // the cancellation policy (shown before confirming)
+
+    useEffect(() => {
+        // Public (booking_settings is readable by visitors); the booking works without it.
+        getBookingSettings()
+            .then(setPolicy)
+            .catch(() => {});
+    }, []);
 
     useEffect(() => {
         // The studio's "today" (Asia/Ho_Chi_Minh), not the visitor's clock.
@@ -449,6 +495,7 @@ const Search = ({ rooms, selectedRoom, onSelectRoom }) => {
                                         </>
                                     )}
                                 </dl>
+                                <BookingPolicy settings={policy} />
                             </ModalBody>
                             <ModalFooter>
                                 <Button variant="light" onPress={() => setBookingRoom(null)} isDisabled={submitting}>

@@ -98,7 +98,6 @@ export default {
     Past: 'Đã qua',
     All: 'Tất cả',
     Dates: 'Thời gian',
-    'Cancel booking #{id}?': 'Huỷ lượt đặt phòng #{id}?',
     'Booking cancelled.': 'Đã huỷ lượt đặt phòng.',
     '{count} booking in total': 'Tổng cộng {count} lượt đặt phòng',
     '{count} bookings in total': 'Tổng cộng {count} lượt đặt phòng',

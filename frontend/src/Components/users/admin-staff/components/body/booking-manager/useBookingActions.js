@@ -13,21 +13,47 @@ export const QUICK_ACTIONS = {
 export const DEPOSIT_LABELS = { waiting: 'waiting', completed: 'paid', cancelled: 'cancelled' };
 
 // Status changes and deletes shared by the list and the calendar. `onChanged` reloads the bookings.
-// Each returns true when it worked (so a dialog can close).
+// Each returns true when it worked (so a dialog can close). Cancelling doesn't happen at once: it opens the
+// cancel dialog (`cancelling` = that booking's id), which asks who cancels and how much goes back, then
+// calls confirmCancel. Rejecting stays a plain status change (the database makes all the money due back).
 export function useBookingActions(onChanged) {
     const toast = useToast();
     const { t } = useI18n();
     const { refresh: refreshTasks } = useStaffTasks();
     const [busyId, setBusyId] = useState(null);
+    const [cancelling, setCancelling] = useState(null);
+
+    const done = (id, status) => {
+        toast.success(t('Booking #{id} is now {status}.', { id, status: t(status) }));
+        onChanged();
+        refreshTasks();
+    };
 
     const setStatus = async (id, status) => {
+        if (status === 'cancelled') {
+            setCancelling(id);
+            return false;
+        }
         setBusyId(id);
         try {
-            if (status === 'cancelled') await cancelBooking(id);
-            else await updateBooking(id, { status });
-            toast.success(t('Booking #{id} is now {status}.', { id, status: t(status) }));
-            onChanged();
-            refreshTasks();
+            await updateBooking(id, { status });
+            done(id, status);
+            return true;
+        } catch (error) {
+            toast.error(error);
+            return false;
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    // { byStudio, refund (null = the policy's amount), note } → cancel_booking.
+    const confirmCancel = async (id, choice) => {
+        setBusyId(id);
+        try {
+            await cancelBooking(id, choice);
+            done(id, 'cancelled');
+            setCancelling(null);
             return true;
         } catch (error) {
             toast.error(error);
@@ -51,5 +77,5 @@ export function useBookingActions(onChanged) {
         }
     };
 
-    return { busyId, setStatus, remove };
+    return { busyId, setStatus, remove, cancelling, confirmCancel, closeCancel: () => setCancelling(null) };
 }

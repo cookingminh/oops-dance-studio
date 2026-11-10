@@ -27,9 +27,14 @@ export async function createBooking({ roomId, date, startTime, endTime, details,
     );
 }
 
-// Owner while pending; staff while pending or approved.
-export async function cancelBooking(id) {
-    return unwrap(await supabase.rpc('cancel_booking', { p_booking_id: id }));
+// Cancel a booking (supabase/migrations/20261117000800_booking_refunds.sql). The guest: their own pending or
+// approved booking before it starts; the refund follows the cancellation policy, `refundTo` says where to send
+// it. Staff: `byStudio` = the studio cancels (everything back); `refund` overrides the amount with a `note`.
+// The money due back stays on the booking (refund_due) until staff pay it (services/bookingRefunds.js).
+export async function cancelBooking(id, { byStudio = false, refund = null, note = null, refundTo = null } = {}) {
+    return unwrap(
+        await supabase.rpc('cancel_booking', { p_booking_id: id, p_by_studio: byStudio, p_refund: refund, p_note: note, p_refund_to: refundTo })
+    );
 }
 
 export async function listMyBookings(guestId) {

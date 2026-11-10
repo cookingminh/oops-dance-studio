@@ -176,6 +176,9 @@ export function recordLink(row, lookups) {
             // The bookings page opens that booking's dialog, on its week in the calendar.
             if (row.action === 'deleted') return null;
             return { to: `/admin/bookings?booking=${row.entity_id}${row.meta?.date ? `&date=${row.meta.date}` : ''}`, page: 'Bookings' };
+        case 'booking_settings':
+            // The cancellation policy opens over the bookings page.
+            return { to: '/admin/bookings?policy=1', page: 'Bookings' };
         case 'classes':
             return inClass('overview');
         case 'class_schedules':

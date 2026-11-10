@@ -10,6 +10,7 @@ import { useToast } from '@/ui/feedback/toastContext';
 import { LEGACY_ENTRY, bookingHours, hourlyRate, paymentState, priceChange } from '@/ui/payment/bookingMoney';
 import { transferNote } from '../../../tuition/tuitionModel';
 import { DEPOSIT_LABELS } from '../../useBookingActions';
+import RefundBlock from '../refunds/RefundBlock';
 import PriceDialog from './PriceDialog';
 import RecordPaymentDialog from './RecordPaymentDialog';
 
@@ -52,7 +53,8 @@ const HistoryLine = ({ payment, busy, onTakeBack, onRemove }) => {
 };
 
 // The money of one booking (staff): the list price and any agreed change, the deposit, what came in, what
-// is due now; the actions (QR, record a payment or refund, change the price, receipt); then every payment.
+// is due now (or, once cancelled, what goes back); the actions (QR, record a payment or refund, change the
+// price, receipt); then every payment.
 // Money only changes through these actions, so every amount has a line. onChanged reloads the booking.
 const BookingPayment = ({ booking, onPay, onReceipt, onChanged }) => {
     const { t, tn } = useI18n();
@@ -107,9 +109,10 @@ const BookingPayment = ({ booking, onPay, onReceipt, onChanged }) => {
             </header>
 
 
-            {/* The balance is the number that matters; an open deposit is what to pay first. Three ways to settle it. */}
+            {/* The balance is the number that matters; an open deposit is what to pay first. Three ways to settle it.
+                A cancelled or rejected booking shows its refund instead. */}
             {closed ? (
-                <p className="bdDueHero isClosed">{t('The booking is {status}', { status: t(booking.status) })}</p>
+                <RefundBlock booking={booking} onChanged={onChanged} />
             ) : balance > 0 ? (
                 <div className="bdDueHero isDue">
                     <span className="bdDueLabel">{t('Still to pay')}</span>

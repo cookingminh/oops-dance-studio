@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button, Input } from '@nextui-org/react';
-import { LuPlus, LuSearch, LuTicket } from 'react-icons/lu';
+import { LuPlus, LuSearch, LuShieldCheck, LuTicket } from 'react-icons/lu';
+import { useAuth } from '@/auth/useAuth';
+import { ROLES } from '@/auth/roles';
 import { useAsync } from '@/hooks/useAsync';
 import { listBookings } from '@/services/bookings';
 import { listRoomSessions } from '@/services/bookingsExtra';
@@ -10,6 +12,7 @@ import { getProfile, listGuests } from '@/services/users';
 import { getStudioToday } from '@/services/studio';
 import { getTuitionSettings, isPaymentSandbox } from '@/services/tuition';
 import { bookingBalance } from '@/services/bookingPayments';
+import { getBookingSettings } from '@/services/bookingRefunds';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import SectionCard from '../../common/SectionCard';
@@ -22,7 +25,9 @@ import BookingForm from './components/booking-list/BookingForm';
 import BookingCalendar from './components/booking-calendar/BookingCalendar';
 import BookingDetails from './components/booking-calendar/BookingDetails';
 import CompleteDialog from './components/booking-calendar/CompleteDialog';
-import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, isOwing, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
+import StaffCancelDialog from './components/refunds/StaffCancelDialog';
+import RefundPolicyDialog from './components/refunds/RefundPolicyDialog';
+import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, isOwing, owesRefund, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
 import { useBookingActions } from './useBookingActions';
 import './bookings.scss';
 
@@ -30,10 +35,11 @@ const inRange = ({ from, until }) => (booking) => booking.date >= from && bookin
 
 // /admin/bookings: every room booking as a calendar (default; week or month, with the rooms' class
 // sessions behind) or as the searchable table. Room and status filters apply to both; the header
-// counts what is shown. `?view=list|month`, `?status=pending`, `?date=yyyy-MM-dd` and `?booking=<id>`
-// open it pre-set.
+// counts what is shown. `?view=list|month`, `?status=pending`, `?date=yyyy-MM-dd`, `?booking=<id>`,
+// `?owing=1` / `?refunds=1` (list) and `?policy=1` (the cancellation policy) open it pre-set.
 const BookingsManager = () => {
     const toast = useToast();
+    const { role } = useAuth();
     const { t, tn, formatDate, monthName } = useI18n();
     const [params, setParams] = useSearchParams();
     const bookings = useAsync(listBookings, []);
@@ -42,6 +48,9 @@ const BookingsManager = () => {
     const today = useAsync(getStudioToday, []);
     // The bank account for the QR code, and whether simulated transfers work (local stack, demo).
     const payment = useAsync(() => Promise.all([getTuitionSettings(), isPaymentSandbox()]), []);
+    // The cancellation policy (admins change it from the header button).
+    const policy = useAsync(getBookingSettings, []);
+    const [policyOpen, setPolicyOpen] = useState(() => params.get('policy') === '1');
     const todayIso = today.data ?? studioTodayIso();
 
     // Layout: the URL keeps it, so a reload (or a link) opens the same view.
@@ -64,8 +73,10 @@ const BookingsManager = () => {
             },
             { replace: true }
         );
-    // "Owes money" (?owing=1, list only): past bookings that still have a balance.
+    // "Owes money" (?owing=1, list only): past bookings that still have a balance. "To refund" (?refunds=1,
+    // list only): cancelled bookings with money still to give back. One at a time.
     const owing = isList && params.get('owing') === '1';
+    const refunds = isList && !owing && params.get('refunds') === '1';
 
     const [calDate, setCalDate] = useState(() => asDate(/^\d{4}-\d{2}-\d{2}$/.test(params.get('date') ?? '') ? params.get('date') : studioTodayIso()));
     const [roomFilter, setRoomFilter] = useState('all');
@@ -81,7 +92,11 @@ const BookingsManager = () => {
 
     const setOwing = (on) => {
         setPage(1);
-        setView(on ? 'list' : view, { owing: on ? '1' : null });
+        setView(on ? 'list' : view, { owing: on ? '1' : null, refunds: null });
+    };
+    const setRefunds = (on) => {
+        setPage(1);
+        setView(on ? 'list' : view, { refunds: on ? '1' : null, owing: null });
     };
 
     const baseActions = useBookingActions(bookings.reload);
@@ -98,14 +113,23 @@ const BookingsManager = () => {
         },
     };
 
-    // ?booking=<id> without ?date: show that booking's week behind its dialog, once it is loaded.
-    const linkedWeek = useRef(!params.get('date') && Number(params.get('booking')));
+    // ?booking=<id> without ?date: show that booking's week behind its dialog, once it is loaded. A link
+    // followed while already on this page (a to-do) opens its booking too.
+    const linkedId = Number(params.get('booking')) || null;
+    const linkedWeek = useRef(!params.get('date') && linkedId);
+    const lastLinked = useRef(linkedId);
+    useEffect(() => {
+        if (!linkedId || linkedId === lastLinked.current) return;
+        lastLinked.current = linkedId;
+        linkedWeek.current = params.get('date') ? null : linkedId;
+        setOpenId(linkedId);
+    }, [linkedId, params]);
     useEffect(() => {
         const linked = linkedWeek.current && bookings.data?.find((booking) => booking.id === linkedWeek.current);
         if (!linked) return;
         linkedWeek.current = null;
         setCalDate(asDate(linked.date));
-    }, [bookings.data]);
+    }, [bookings.data, linkedId]);
 
     // Class sessions behind the calendar, for the days it shows.
     const shown = calendarRange(calView, calDate);
@@ -127,8 +151,11 @@ const BookingsManager = () => {
     const period = periodOf(calView, calDate);
     const all = bookings.data ?? [];
     const owingCount = today.data ? all.filter((booking) => isOwing(booking, todayIso)).length : 0;
+    const refundCount = all.filter(owesRefund).length;
     const base = owing
         ? all.filter((booking) => isOwing(booking, todayIso))
+        : refunds
+        ? all.filter(owesRefund)
         : isList
         ? all.filter((booking) => {
             if (today.data && scope === 'upcoming' && booking.date < todayIso) return false;
@@ -189,6 +216,8 @@ const BookingsManager = () => {
     if (bookings.data) {
         summary = owing
             ? tn(visible.length, '{count} past booking still owes money', '{count} past bookings still owe money')
+            : refunds
+            ? tn(visible.length, '{count} cancelled booking to refund', '{count} cancelled bookings to refund')
             : isList
                 ? listSummary(visible.length)
                 : calendarSummary(visible.length);
@@ -261,6 +290,9 @@ const BookingsManager = () => {
                         value={isList ? 'list' : 'calendar'}
                         onChange={(key) => setView(key === 'list' ? 'list' : lastCalendar.current)}
                     />
+                    <Button variant="flat" className="bookingPolicyBtn" startContent={<LuShieldCheck aria-hidden="true" />} onPress={() => setPolicyOpen(true)}>
+                        <span className="bookingPolicyLabel">{t('Cancellation policy')}</span>
+                    </Button>
                     <Button color="danger" startContent={<LuPlus aria-hidden="true" />} onPress={() => newBooking()}>
                         {t('New booking')}
                     </Button>
@@ -278,7 +310,10 @@ const BookingsManager = () => {
                 owingCount={owingCount}
                 owing={owing}
                 onOwing={setOwing}
-                scope={isList && !owing ? scope : null}
+                refundCount={refundCount}
+                refunds={refunds}
+                onRefunds={setRefunds}
+                scope={isList && !owing && !refunds ? scope : null}
                 onScope={filterSetter(setScope)}
             />
 
@@ -332,6 +367,32 @@ const BookingsManager = () => {
                     onClose={() => {
                         setOpenId(null);
                         setOpenOn(null);
+                        // Drop ?booking= so the same link (a to-do) opens it again.
+                        if (linkedId) {
+                            lastLinked.current = null;
+                            setView(view, { booking: null });
+                        }
+                    }}
+                />
+            )}
+
+            {actions.cancelling && all.some((booking) => booking.id === actions.cancelling) && (
+                <StaffCancelDialog
+                    key={`cancel-${actions.cancelling}`}
+                    booking={all.find((booking) => booking.id === actions.cancelling)}
+                    onClose={actions.closeCancel}
+                    onConfirm={actions.confirmCancel}
+                />
+            )}
+
+            {policyOpen && policy.data && (
+                <RefundPolicyDialog
+                    settings={policy.data}
+                    isAdmin={role === ROLES.admin}
+                    onSaved={policy.reload}
+                    onClose={() => {
+                        setPolicyOpen(false);
+                        if (params.get('policy')) setView(view, { policy: null });
                     }}
                 />
             )}

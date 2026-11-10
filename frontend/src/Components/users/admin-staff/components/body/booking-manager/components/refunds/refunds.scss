@@ -1,0 +1,375 @@
+// Staff refunds: the cancel dialog (who asked, the quote), the refund block in the booking dialog, and the
+// cancellation policy editor. Dialogs render outside the shell, hence .adminPortal for the tokens.
+
+// Cancel dialog --------------------------------------------------------------------------------
+
+.scCancelDialog {
+    .scWho {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+
+        button {
+            display: flex;
+            align-items: flex-start;
+            gap: .6rem;
+            padding: .75rem .85rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 14px;
+            background: var(--ad-surface);
+            text-align: left;
+            cursor: pointer;
+            transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+
+            > svg {
+                flex-shrink: 0;
+                margin-top: .1rem;
+                font-size: 1.1rem;
+                color: var(--ad-subtle);
+            }
+
+            span {
+                display: grid;
+                gap: .1rem;
+            }
+
+            strong {
+                font-size: .92rem;
+                font-weight: 700;
+                color: var(--ad-text);
+            }
+
+            small {
+                font-size: .8rem;
+                color: var(--ad-muted);
+            }
+
+            &:hover {
+                border-color: var(--ad-primary-tint);
+            }
+
+            &[aria-pressed='true'] {
+                border-color: var(--ad-primary);
+                background: var(--ad-primary-soft);
+                box-shadow: inset 0 0 0 1px var(--ad-primary);
+
+                > svg {
+                    color: var(--ad-primary);
+                }
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--ad-primary);
+                outline-offset: 2px;
+            }
+        }
+    }
+
+    .scLoading {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        min-height: 6.5rem;
+        margin: 0;
+        font-size: .88rem;
+        color: var(--ad-muted);
+    }
+
+    .scQuote {
+        display: grid;
+        margin: 0;
+        padding: .35rem .9rem;
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+
+        > div {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .45rem 0;
+            border-bottom: 1px solid var(--ad-border);
+
+            &:last-child {
+                border-bottom: 0;
+            }
+        }
+
+        dt {
+            min-width: 0;
+            font-size: .88rem;
+            color: var(--ad-muted);
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .isStep {
+            dt {
+                font-weight: 700;
+                color: var(--ad-text);
+            }
+
+            dd {
+                font-family: var(--ad-display);
+                font-size: 1.2rem;
+                color: hsl(156, 64%, 30%);
+            }
+        }
+
+        &.isEmpty {
+            padding: .8rem .9rem;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--ad-muted);
+        }
+    }
+
+    @media (max-width: 420px) {
+        .scWho {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}
+
+// Refund block (booking dialog, cancelled / rejected) -------------------------------------------------
+
+.bookingDetails .rbBlock {
+    gap: .55rem;
+
+    .rbHead {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        margin: 0;
+        color: var(--ad-text);
+
+        > svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+            font-size: 1.05rem;
+            color: var(--ad-muted);
+        }
+
+        span {
+            display: grid;
+        }
+
+        strong {
+            font-size: .95rem;
+            font-weight: 700;
+        }
+
+        small {
+            font-size: .82rem;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .rbDue {
+        display: grid;
+        gap: .2rem;
+        padding-top: .55rem;
+        border-top: 1px dashed var(--ad-primary-tint);
+    }
+
+    .rbTo {
+        margin: .15rem 0 0;
+        font-size: .9rem;
+        font-weight: 600;
+        color: var(--ad-text);
+        overflow-wrap: anywhere;
+
+        &.isMissing {
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .rbNote {
+        margin: 0;
+        font-size: .86rem;
+        font-style: italic;
+        color: var(--ad-muted);
+        overflow-wrap: anywhere;
+    }
+
+    .rbFacts {
+        display: grid;
+        gap: .3rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: .45rem;
+            font-size: .9rem;
+            font-weight: 600;
+            color: var(--ad-muted);
+
+            svg {
+                flex-shrink: 0;
+                font-size: 1rem;
+                color: currentColor;
+            }
+        }
+
+        .isPaid {
+            color: hsl(156, 64%, 28%);
+        }
+    }
+
+    .rbChange {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        justify-self: start;
+        margin-left: 0;
+        color: var(--ad-muted);
+
+        svg {
+            font-size: .95rem;
+            color: currentColor;
+        }
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+    }
+
+    &.isClosed {
+        border: 1px solid var(--ad-border);
+        background: var(--ad-surface);
+        font-weight: 500;
+    }
+}
+
+// Cancellation policy editor ----------------------------------------------------------------------
+
+.rpDialog {
+    .rpHead {
+        display: flex;
+        align-items: center;
+        gap: .8rem;
+
+        > span:last-child {
+            display: grid;
+            gap: .1rem;
+        }
+
+        small {
+            font-size: .86rem;
+            font-weight: 500;
+            color: var(--ad-muted);
+        }
+    }
+
+    .rpHeadIcon {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        flex-shrink: 0;
+        border-radius: 12px;
+        background: hsl(150, 60%, 93%);
+        color: hsl(156, 64%, 30%);
+        font-size: 1.2rem;
+    }
+
+    .rpTitle {
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    .rpBody {
+        gap: 1rem;
+    }
+
+    .rpStep {
+        display: grid;
+        gap: .6rem;
+        padding: .85rem .95rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+    }
+
+    .rpStepTitle {
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+
+    .rpSwitch {
+        max-width: none;
+    }
+
+    .rpHours {
+        max-width: 16rem;
+    }
+
+    .rpPair {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .6rem;
+    }
+
+    .rpHint {
+        font-size: .82rem;
+        color: var(--ad-muted);
+    }
+
+    .rpDefault {
+        gap: .4rem;
+    }
+
+    .rpReadOnly {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+
+        svg {
+            color: currentColor;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .rpPair {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .rpHours {
+            max-width: none;
+        }
+    }
+}
+
+// Bookings page: the table's refund lines and the "To refund" chip ------------------------------------
+
+.adminShell .bookingsCard {
+    .bkRefund {
+        font-size: .8rem !important;
+        font-weight: 700;
+
+        &.isDue {
+            color: hsl(30, 90%, 34%) !important;
+        }
+
+        &.isPaid {
+            color: hsl(156, 64%, 30%) !important;
+        }
+    }
+}

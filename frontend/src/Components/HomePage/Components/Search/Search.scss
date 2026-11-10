@@ -596,3 +596,60 @@
         font-size: 1.7rem;
     }
 }
+
+// The cancellation policy under the booking summary: one line, the rest on demand.
+.hpBookPolicy {
+    display: grid;
+    gap: .5rem;
+    padding: .7rem .85rem;
+    border-radius: 14px;
+    background: hsl(20, 14%, 96%);
+
+    p {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .35rem .5rem;
+        margin: 0;
+        font-size: .86rem;
+        line-height: 1.4;
+        color: hsl(240, 4%, 30%);
+
+        > svg {
+            flex-shrink: 0;
+            font-size: 1rem;
+            color: hsl(156, 64%, 32%);
+        }
+    }
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        margin-left: auto;
+        padding: .1rem .2rem;
+        border-radius: 6px;
+        font-size: .82rem;
+        font-weight: 700;
+        color: hsl(0, 66%, 43%);
+        cursor: pointer;
+
+        svg {
+            font-size: .9rem;
+            transition: transform .2s ease;
+        }
+
+        &.isOpen svg {
+            transform: rotate(180deg);
+        }
+
+        &:focus-visible {
+            outline: 2px solid hsl(0, 66%, 43%);
+            outline-offset: 2px;
+        }
+    }
+
+    .hpBookPolicyLines {
+        padding: .2rem 0 .1rem;
+    }
+}

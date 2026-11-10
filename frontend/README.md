@@ -62,7 +62,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | Spec | Covers |
 |---|---|
 | `anon.spec.js` | public pages and navbar, classes, rooms, photos, timetable, About page, visitor booking prompt, route guards |
-| `guest.spec.js` | book from /rooms and cancel, profile settings, RLS on bookings / profiles / attendance |
+| `guest.spec.js` | book from /rooms and cancel (the cancel dialog), profile settings, RLS on bookings / profiles / attendance |
 | `instructor.spec.js` | check-in / check-out with a proof photo, signed proof URLs, no access to others' sessions |
 | `staff.spec.js` | dashboard, rooms, bookings (overlap → `SLOT_TAKEN`), classes with images, schedules, enrolments, the Attendance page, charts |
 | `admin.spec.js` | user management through the `admin-users` Edge Function and `admin_set_role` |
@@ -85,6 +85,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `dues.spec.js` | reminders to pay: an approved booking waiting for its deposit shows in the guest's bell (QR one tap away), as a menu badge and once a day as a reminder ("Later" = not again today); nothing owed says so |
 | `promos.spec.js` | routine promos: staff reminder, the instructor uploads a clip from the overview nudge, students watch it in their class and on the renewal question, /classes "Coming next", staff swap it for a YouTube Short (old files deleted) and remove it, other instructors can't |
 | `booking-payments.spec.js` | booking QR / transfer content with its code, sandbox payment, still-to-pay vs deposit, cash and refunds, price change with a reason, receipt, the new add-booking form, inbox assign to a booking |
+| `booking-refunds.spec.js` | cancellation policy and refunds: the policy on the booking form, a guest cancels an approved booking ahead (50 % quoted, "the studio will refund …"), the refund to-do and "Refunded by transfer", staff cancel as the studio (everything back; another amount needs a reason; change the refund), the "To refund" list, the admin's policy editor (staff read only) |
 
 ```bash
 # from the repository root, once per stack reset

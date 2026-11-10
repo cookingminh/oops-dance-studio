@@ -26,11 +26,14 @@ export function priceChange(booking) {
 // Entries recorded before the history existed carry this note (an i18n key).
 export const LEGACY_ENTRY = 'Recorded before payment history';
 
-// Where the money stands, as a pill: { label, tone: 'good' | 'due' | 'idle' }.
+// Where the money stands, as a pill: { label, tone: 'good' | 'due' | 'late' | 'idle' }. A cancelled booking
+// says where its refund stands (booking_refunds: refund_due still to give back, refund_paid given back).
 export function paymentState(booking) {
     const received = bookingReceived(booking);
     const total = money(booking.full_payment);
     if (['rejected', 'cancelled'].includes(booking.status)) {
+        if (money(booking.refund_due) > 0) return { label: 'Refund due', tone: 'due' };
+        if (money(booking.refund_paid) > 0) return { label: 'Refunded', tone: 'good' };
         return received > 0 ? { label: 'Paid, booking cancelled', tone: 'late' } : { label: 'Nothing to pay', tone: 'idle' };
     }
     if (total > 0 && received >= total) return { label: 'Fully paid', tone: 'good' };

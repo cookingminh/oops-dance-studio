@@ -79,6 +79,10 @@ test('cancels the pending booking from My Bookings (cancel_booking)', async () =
     await page.waitForURL('**/profile/my-bookings');
     // The new booking is the only one on its date (Awaiting Deposit + All Bookings both list it).
     await page.getByRole('row').filter({ hasText: bookingDate }).getByRole('button', { name: 'Cancel' }).first().click();
+    // The cancel dialog says what comes back first (nothing was paid for this request).
+    const dialog = page.locator('.rfCancelModal');
+    await expect(dialog).toContainText('You haven’t paid anything, so there’s nothing to refund.');
+    await dialog.getByRole('button', { name: 'Cancel the booking' }).click();
     await expectToast(page, 'Booking cancelled.');
     const res = await rest(me.jwt, `bookings?select=status&date=eq.${bookingDate}`);
     expect(res.data).toEqual([{ status: 'cancelled' }]);

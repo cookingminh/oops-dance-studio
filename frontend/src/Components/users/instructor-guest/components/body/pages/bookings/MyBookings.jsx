@@ -4,17 +4,20 @@ import { LuInfo, LuPlus, LuQrCode, LuReceipt, LuTicket } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useAsync } from '@/hooks/useAsync';
-import { cancelBooking, listMyBookings } from '@/services/bookings';
+import { listMyBookings } from '@/services/bookings';
+import { getBookingSettings } from '@/services/bookingRefunds';
 import { getStudioToday } from '@/services/studio';
 import { getTuitionSettings, isPaymentSandbox } from '@/services/tuition';
-import { formatTimeRange, formatVnd } from '@/lib/format';
-import { useToast } from '@/ui/feedback/toastContext';
+import { formatTimeRange, formatVnd, studioTimeNow } from '@/lib/format';
 import AsyncState from '@/ui/feedback/AsyncState';
 import LinkButton from '@/ui/LinkButton';
 import BookingPayDialog from '@/ui/payment/BookingPayDialog';
 import BookingReceipt from '@/ui/payment/BookingReceipt';
 import { payLabel, paymentState } from '@/ui/payment/bookingMoney';
 import { bookingBalance } from '@/services/bookingPayments';
+import PolicyPopover from '@/ui/refunds/PolicyPopover';
+import RefundLine from '@/ui/refunds/RefundLine';
+import { guestCanCancel } from '@/ui/refunds/refundText';
 import { statusColorMap } from '../../../../../../Table/utils';
 import SectionCard from '../../../../../admin-staff/components/common/SectionCard';
 import Segmented from '../../../../../admin-staff/components/common/Segmented';
@@ -22,6 +25,7 @@ import StatusSelect from '../../../../../admin-staff/components/common/StatusSel
 import { STATUS_COLORS } from '../../../../../admin-staff/components/common/chartTheme';
 import { useIsPhone } from '../../profileHelpers';
 import BookingCards from './BookingCards';
+import CancelBookingDialog from './CancelBookingDialog';
 import './myBookings.scss';
 
 const PAGE_SIZE = 8;
@@ -34,28 +38,31 @@ const SCOPES = [
 const STATUSES = ['all', 'pending', 'approved', 'completed', 'rejected', 'cancelled'];
 const DEPOSIT_LABELS = { waiting: 'waiting', completed: 'paid', cancelled: 'cancelled' };
 
-// The bank account for the QR code and the sandbox flag are extras: the list still shows without them.
+// The bank account for the QR code, the sandbox flag and the cancellation policy are extras: the list
+// still shows without them.
 async function load(userId) {
-    const [today, bookings, settings, sandbox] = await Promise.all([
+    const [today, bookings, settings, sandbox, policy] = await Promise.all([
         getStudioToday(),
         listMyBookings(userId),
         getTuitionSettings().catch(() => null),
         isPaymentSandbox().catch(() => false),
+        getBookingSettings().catch(() => null),
     ]);
-    return { today, bookings, settings, sandbox };
+    return { today, bookings, settings, sandbox, policy };
 }
 
-// The signed-in user's room bookings; a pending one can be cancelled from its row (a card on phones).
-// A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each has a receipt.
+// The signed-in user's room bookings. A pending or approved one can be cancelled from its row (a card on
+// phones) until it starts: the dialog says what comes back under the cancellation policy, and the row then
+// shows the refund. A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each
+// has a receipt.
 const MyBookings = () => {
     const { user } = useAuth();
-    const toast = useToast();
     const { t, tn, formatDate } = useI18n();
     const data = useAsync(() => load(user.id), [user.id]);
     const [scope, setScope] = useState('upcoming');
     const [status, setStatus] = useState('all');
     const [page, setPage] = useState(1);
-    const [busyId, setBusyId] = useState(null);
+    const [cancelling, setCancelling] = useState(null); // booking id in the cancel dialog
     const [paying, setPaying] = useState(null); // booking id in the pay dialog
     const [receipt, setReceipt] = useState(null); // booking id in the receipt
     const isPhone = useIsPhone();
@@ -73,6 +80,9 @@ const MyBookings = () => {
     const pageRows = visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
     const payingBooking = all.find((b) => b.id === paying);
     const receiptBooking = all.find((b) => b.id === receipt);
+    const cancellingBooking = all.find((b) => b.id === cancelling);
+    const now = studioTimeNow();
+    const cancellable = (b) => guestCanCancel(b, today, now);
     const awaitingDeposit = all.filter((b) => b.deposit_status === 'waiting' && ['pending', 'approved'].includes(b.status) && (!today || b.date >= today));
 
     const statusOptions = STATUSES.map((key) => ({
@@ -96,20 +106,6 @@ const MyBookings = () => {
         </div>
     );
 
-    const handleCancel = async (id) => {
-        if (!window.confirm(t('Cancel booking #{id}?', { id }))) return;
-        setBusyId(id);
-        try {
-            await cancelBooking(id);
-            toast.success('Booking cancelled.');
-            data.reload();
-        } catch (error) {
-            toast.error(error);
-        } finally {
-            setBusyId(null);
-        }
-    };
-
     return (
         <SectionCard
             className="bookingsCard"
@@ -117,9 +113,12 @@ const MyBookings = () => {
             title={t('My bookings')}
             subtitle={data.data ? tn(all.length, '{count} booking in total', '{count} bookings in total') : t('Loading…')}
             actions={
-                <LinkButton to="/rooms" startContent={<LuPlus aria-hidden="true" />}>
-                    {t('Book a room')}
-                </LinkButton>
+                <>
+                    <PolicyPopover settings={data.data?.policy} variant="flat" size="md" portalClassName="adminPortal" />
+                    <LinkButton to="/rooms" startContent={<LuPlus aria-hidden="true" />}>
+                        {t('Book a room')}
+                    </LinkButton>
+                </>
             }
         >
             {awaitingDeposit.length > 0 && (
@@ -142,7 +141,7 @@ const MyBookings = () => {
 
             <AsyncState state={data} isEmpty={false}>
                 {isPhone ? (
-                    <BookingCards bookings={pageRows} today={today} busyId={busyId} onCancel={handleCancel} onPay={setPaying} onReceipt={setReceipt} empty={emptyContent} />
+                    <BookingCards bookings={pageRows} today={today} cancellable={cancellable} onCancel={setCancelling} onPay={setPaying} onReceipt={setReceipt} empty={emptyContent} />
                 ) : (
                     <div className="tableScroll">
                         <Table aria-label={t('My bookings')} removeWrapper className="bookingTable">
@@ -187,6 +186,7 @@ const MyBookings = () => {
                                                 </span>
                                                 <span className={`payState tone-${paymentState(b).tone}`}>{t(paymentState(b).label)}</span>
                                                 {bookingBalance(b) > 0 && <span className="payLeft">{t('Still to pay {amount}', { amount: formatVnd(bookingBalance(b)) })}</span>}
+                                                <RefundLine booking={b} />
                                             </div>
                                         </TableCell>
                                         <TableCell>
@@ -204,8 +204,8 @@ const MyBookings = () => {
                                                 <Button size="sm" variant="light" startContent={<LuReceipt aria-hidden="true" />} onPress={() => setReceipt(b.id)} aria-label={t('Receipt for booking #{id}', { id: b.id })}>
                                                     {t('Receipt')}
                                                 </Button>
-                                                {b.status === 'pending' && (
-                                                    <Button size="sm" color="danger" variant="flat" isLoading={busyId === b.id} onPress={() => handleCancel(b.id)}>
+                                                {cancellable(b) && (
+                                                    <Button size="sm" color="danger" variant="flat" onPress={() => setCancelling(b.id)}>
                                                         {t('Cancel')}
                                                     </Button>
                                                 )}
@@ -233,6 +233,9 @@ const MyBookings = () => {
                     onClose={() => setPaying(null)}
                     onChanged={data.reload}
                 />
+            )}
+            {cancellingBooking && (
+                <CancelBookingDialog booking={cancellingBooking} settings={data.data?.policy} onClose={() => setCancelling(null)} onCancelled={data.reload} />
             )}
             {receiptBooking && (
                 <BookingReceipt

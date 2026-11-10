@@ -4,6 +4,7 @@ import { listClasses, listLessonProgress } from '@/services/classes';
 import { listInstructorAttendance, listOpenInstructorAttendance, listStudentAttendance } from '@/services/attendance';
 import { listPendingBookings } from '@/services/bookings';
 import { listOwingBookings } from '@/services/bookingPayments';
+import { listRefundsDue } from '@/services/bookingRefunds';
 import { getStudioToday } from '@/services/studio';
 import { hasPromo } from '@/services/promos';
 import { loadTuitionTodo } from '@/services/tuitionStaff';
@@ -147,7 +148,7 @@ export async function loadStaffTasks() {
     const today = await getStudioToday();
     const now = studioTimeNow();
     const weekday = isoWeekdayOf(today);
-    const [open, todayRecords, { classes, progress }, students, pending, owing, tuition] = await Promise.all([
+    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition] = await Promise.all([
         // Make-up sessions carry their own times (withOwnTimes), regular ones the weekly slot.
         listOpenInstructorAttendance({ until: today }).then(withOwnTimes),
         listInstructorAttendance({ date: today }).then(withOwnTimes),
@@ -160,6 +161,8 @@ export async function loadStaffTasks() {
         listPendingBookings({ from: today, limit: 1 }),
         // Booking payments are newer: if they can't load, the other tasks still show.
         listOwingBookings(today).catch(() => []),
+        // Refunds of cancelled bookings are newer still: same.
+        listRefundsDue().catch(() => []),
         // Tuition is a newer feature: if it can't load, the other tasks still show.
         loadTuitionTodo(today).catch(() => null),
     ]);
@@ -294,6 +297,25 @@ export async function loadStaffTasks() {
         });
     }
 
+    // Cancelled bookings with money still to give back: one → open it (the refund block); several → the
+    // "To refund" list.
+    if (refunds.length) {
+        const total = refunds.reduce((sum, row) => sum + Number(row.refund_due), 0);
+        const one = refunds.length === 1 ? refunds[0] : null;
+        bookingTasks.push({
+            id: 'bookings-refunds',
+            kind: 'bookings',
+            tone: 'normal',
+            title: one
+                ? msg('Refund {amount} to {guest}', { amount: formatVnd(one.refund_due), guest: personName(one.guest) ?? `#${one.id}` })
+                : count(refunds.length, '{count} booking to refund', '{count} bookings to refund'),
+            detail: one
+                ? msg('Cancelled booking · {room} on {date}', { room: one.room?.name ?? '', date: one.date })
+                : msg('{amount} to give back', { amount: formatVnd(total) }),
+            to: one ? `/admin/bookings?booking=${one.id}` : '/admin/bookings?view=list&refunds=1',
+        });
+    }
+
     const tuitionTasks = tuition ? buildTuitionTasks(tuition) : [];
 
     return {
@@ -303,7 +325,7 @@ export async function loadStaffTasks() {
         // Sidebar badges.
         counts: {
             [ATTENDANCE_PAGE]: attendance.length + studentTasks.length,
-            '/admin/bookings': pending.total + owing.length,
+            '/admin/bookings': pending.total + owing.length + refunds.length,
             '/admin/classes': lessonTasks.length,
             // Invoices to chase and transfers to sort (renewal answers are a reminder, not a count).
             [TUITION_PAGE]: tuition ? new Set(tuition.overdue.map((row) => row.student_id)).size + tuition.unmatched.length : 0,
