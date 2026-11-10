@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LuPlus } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { deleteClassLesson } from '@/services/classes';
+import { hasPromo } from '@/services/promos';
 import { routineIssues, routineState, suggestedStart } from '@/lib/lessons';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
@@ -52,6 +53,8 @@ const RoutinePanel = ({ cls, today, onChanged }) => {
         current: state.current,
         renewals: data.data?.renewals,
         opensAt: data.data?.renewalOpensAt ?? 2,
+        // Who films the promos.
+        teacher: cls.instructor?.full_name || cls.instructor?.username || null,
     };
 
     const changed = async () => {
@@ -60,12 +63,12 @@ const RoutinePanel = ({ cls, today, onChanged }) => {
     };
 
     const remove = async (routine) => {
-        const question = routine.video_url
-            ? t('Delete the routine “{title}”? Its class video link goes too.', { title: routine.title })
-            : t('Delete the routine “{title}”?', { title: routine.title });
+        let question = t('Delete the routine “{title}”?', { title: routine.title });
+        if (hasPromo(routine)) question = t('Delete the routine “{title}”? Its promo clip goes too.', { title: routine.title });
+        else if (routine.video_url) question = t('Delete the routine “{title}”? Its class video link goes too.', { title: routine.title });
         if (!window.confirm(question)) return;
         try {
-            await deleteClassLesson(routine.lesson_id);
+            await deleteClassLesson(routine);
             toast.success('Routine deleted.');
             setEditingId(null);
             changed();

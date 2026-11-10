@@ -85,6 +85,28 @@ Mỗi **khoá** là một bài: *tên bài*, *số buổi* (mặc định 8), *n
 - Cuối mỗi khoá: quay video, dán **link YouTube** vào khoá (tab Bài nhảy) → video hiện ở trang `/classes` (phần
   "lên hình") và trong trang lớp của học viên.
 
+### Promo bài tiếp theo (giáo viên tự quay)
+
+Khi studio đã lên **bài tiếp theo** cho lớp, giáo viên của lớp quay một **clip promo** ngắn (15–60 giây: một đoạn nhảy
+và vài lời giới thiệu) để học viên biết sắp học gì và quyết định học tiếp, còn khách biết lớp sắp học bài nào.
+
+- **Nơi làm**: giáo viên vào *Lớp của tôi* → khối **Promo bài tiếp theo** (trang *Tổng quan* có thẻ "Quay N promo" dẫn
+  thẳng tới đó). Có hai cách:
+  - **Tải clip lên** từ điện thoại hoặc máy tính: MP4/MOV/WebM, tối đa 50 MB (khoảng 1 phút), tối đa 3 phút. Hệ thống
+    kiểm tra clip phát được, lấy một khung hình làm ảnh bìa, có thanh % khi tải lên.
+  - **Dán link YouTube**: Shorts hay video thường đều được; để chế độ *công khai* hoặc *không công khai* (không để
+    *riêng tư*). Không tốn dung lượng của studio, không giới hạn độ dài.
+  - Thêm **một câu gửi học viên** (không bắt buộc, ≤ 200 ký tự). Sau đó có thể *Thay clip*, *Sửa câu*, *Gỡ*.
+- **Hạn**: trước khi **mở gia hạn** khoá mới (khi khoá đang học còn 2 buổi) — lúc học viên được hỏi có học tiếp không.
+  Thẻ ghi *Hạn …*, hoặc *Cần ngay* khi học viên đang trả lời rồi.
+- **Ai xem**: học viên của lớp (trang lớp: *Bài tiếp theo* + nút *Xem promo*; trang Học phí: nút *Xem promo* ngay cạnh
+  câu hỏi "Học tiếp khoá …?"), khách ở trang `/classes` (phần **Bài tiếp theo**, kèm nút *Nhận buổi học miễn phí*).
+  Trang công khai hiện promo của bài sắp tới, và bài vừa bắt đầu trong 7 ngày.
+- **Staff**: tab *Bài nhảy* của lớp hiện promo của từng bài (ai đăng, ngày, xem/thay/gỡ, staff cũng tải lên thay được);
+  chuông việc cần làm nhắc "*Lớp X chưa có promo cho bài tiếp theo*" khi bài mới bắt đầu trong 14 ngày.
+- **Dọn dẹp**: mỗi lớp chỉ giữ promo của bài đang học và bài sắp tới; khi đăng promo mới, file promo của các bài đã
+  xong tự bị xoá. Xoá một bài cũng xoá clip promo của bài đó.
+
 ---
 
 ## 4. Học phí — thu theo khoá
@@ -272,7 +294,7 @@ Lãi của lớp = học phí lớp thu được − lương giáo viên dạy l
 ## 11. Việc cần làm & thông báo (chuông, staff/admin)
 
 Hệ thống tự nhắc: yêu cầu đặt phòng chờ duyệt, check-in cần duyệt, lớp chưa điểm danh, lớp cần chọn bài tiếp theo,
-học viên trễ học phí, chuyển khoản chưa gán, học viên chưa trả lời gia hạn khoá. Số đỏ cạnh mục menu là số việc.
+bài sắp bắt đầu mà chưa có promo, học viên trễ học phí, chuyển khoản chưa gán, học viên chưa trả lời gia hạn khoá. Số đỏ cạnh mục menu là số việc.
 
 ---
 
@@ -352,5 +374,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Webhook ngân hàng | `supabase/functions/bank-webhook` | `tuition_record_transfer` |
 | Mỗi lúc một bài, miễn → mở lại | `20261117000100_routine_order_and_waive.sql` | `check_routine_order`, `tuition_waive`, `tuition_reopen` |
 | Nhật ký hoạt động | `20261117000200_activity_log.sql` | `log_activity`, `activity_summary`, `seed_demo_activity` |
+| Promo bài tiếp theo | `20261117000700_routine_promos.sql` | `lesson_set_promo`, bucket `class-promos` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

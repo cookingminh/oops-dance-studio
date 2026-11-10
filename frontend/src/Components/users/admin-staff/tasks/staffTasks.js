@@ -1,9 +1,11 @@
 import { createContext, useContext } from 'react';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { listClasses, listLessonProgress } from '@/services/classes';
 import { listInstructorAttendance, listOpenInstructorAttendance, listStudentAttendance } from '@/services/attendance';
 import { listPendingBookings } from '@/services/bookings';
 import { listOwingBookings } from '@/services/bookingPayments';
 import { getStudioToday } from '@/services/studio';
+import { hasPromo } from '@/services/promos';
 import { loadTuitionTodo } from '@/services/tuitionStaff';
 import { withOwnTimes } from '@/services/sessions';
 import { formatTime, formatVnd, isoWeekdayOf, studioTimeNow } from '@/lib/format';
@@ -80,13 +82,36 @@ function buildTuitionTasks({ overdue, unmatched, unanswered }) {
     return tasks;
 }
 
-// Routines: a class whose routine is nearly done with nothing planned next, or that has none.
+// A next routine starting within this many days should have its promo by now (services/promos.js).
+const PROMO_TASK_DAYS = 14;
+
+// The class's next routine has no promo yet and starts soon: its instructor should film one.
+function promoTask(cls, state, today) {
+    const next = state.next;
+    if (!next) return null;
+    const lesson = (cls.lessons ?? []).find((row) => row.id === next.lesson_id);
+    const days = differenceInCalendarDays(parseISO(next.starts_on), parseISO(today));
+    if (!lesson || hasPromo(lesson) || days > PROMO_TASK_DAYS) return null;
+    return {
+        id: `promo-${cls.id}`,
+        kind: 'lessons',
+        tone: days <= 7 ? 'normal' : 'later',
+        title: msg('{cls} has no promo for its next routine', { cls: cls.name }),
+        detail: msg('“{title}” starts {date} · {who} films it', { title: next.title, date: next.starts_on, who: personName(cls.instructor) }),
+        to: `/admin/classes/${cls.id}?tab=routines`,
+    };
+}
+
+// Routines: a class whose routine is nearly done with nothing planned next, or that has none; and a
+// next routine starting soon without its promo.
 function buildRoutineTasks(classes, progress, today) {
     if (!progress) return [];
     const byClass = routinesByClass(progress);
     const tasks = [];
     for (const cls of classes) {
         const state = routineState(byClass.get(cls.id));
+        const promo = promoTask(cls, state, today);
+        if (promo) tasks.push(promo);
         const bare = sessionWithoutRoutine(cls, state, today);
         if (!state.needsNext && !bare) continue;
         // Straight to the class's Routines tab, where the next routine is planned.

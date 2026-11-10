@@ -1,0 +1,103 @@
+// Routine promos: the clip an instructor films of their class's next routine (ui/promo, PromoCard,
+// RoutinePromo, the /classes "Coming next" section, tasks and the activity log).
+export default {
+    // Uploading
+    'Upload a video: MP4, MOV or WebM.': 'Hãy chọn một video: MP4, MOV hoặc WebM.',
+    'That clip is over 50 MB. Trim it to under a minute or record at 1080p, then try again.': 'Clip này nặng hơn 50 MB. Cắt còn dưới một phút hoặc quay ở 1080p rồi thử lại.',
+    'A promo can be up to 3 minutes. Trim the clip and try again.': 'Promo dài tối đa 3 phút. Cắt bớt clip rồi thử lại.',
+    'This browser can’t play that clip. Save it as MP4 and try again.': 'Trình duyệt này không phát được clip đó. Lưu lại dạng MP4 rồi thử lại.',
+    'The clip didn’t finish uploading. Please choose it again.': 'Clip chưa tải lên xong. Hãy chọn lại clip.',
+    'Upload cancelled.': 'Đã huỷ tải lên.',
+    '15–60 seconds: a bit of the dance and a word about it': '15–60 giây: một đoạn nhảy và vài lời giới thiệu',
+    'Phone upright or sideways, both work': 'Quay dọc hay ngang đều được',
+    'Good light, and the music loud enough to hear': 'Đủ sáng, nhạc nghe rõ',
+    'Up to {mb} MB (about a minute from a phone)': 'Tối đa {mb} MB (khoảng một phút quay bằng điện thoại)',
+    'Promo published for “{title}”.': 'Đã đăng promo cho “{title}”.',
+    'Checking the clip…': 'Đang kiểm tra clip…',
+    'Choose a video': 'Chọn video',
+    'MP4, MOV or WebM · up to {mb} MB': 'MP4, MOV hoặc WebM · tối đa {mb} MB',
+    'Your clip': 'Clip của bạn',
+    'A line for students (optional)': 'Một câu gửi học viên (không bắt buộc)',
+    'e.g. Lots of footwork, beginners welcome!': 'VD: Nhiều footwork, người mới vẫn theo được!',
+    'Uploading the promo': 'Đang tải promo lên',
+    'Uploading… {done} of {total}': 'Đang tải lên… {done} / {total}',
+    'Almost done…': 'Sắp xong…',
+    'Cancel upload': 'Huỷ tải lên',
+    'Publish promo': 'Đăng promo',
+    'Another clip': 'Chọn clip khác',
+    Upload: 'Tải lên',
+    'Saved.': 'Đã lưu.',
+
+    // Watching
+    Promo: 'Promo',
+    'Promo of “{title}”': 'Promo “{title}”',
+    'Watch the promo': 'Xem promo',
+    'Watch the promo of “{title}”': 'Xem promo “{title}”',
+    'Coming next': 'Bài tiếp theo',
+    'from {date} · {count} session': 'từ {date} · {count} buổi',
+    'from {date} · {count} sessions': 'từ {date} · {count} buổi',
+    'From {date} · with {teacher}': 'Từ {date} · cùng {teacher}',
+
+    // The instructor's card and overview
+    'Promo for the next routine': 'Promo bài tiếp theo',
+    'Once the studio plans the next routine, you upload its promo here: a short clip that shows students what they’ll learn.':
+        'Khi studio lên bài tiếp theo, bạn tải promo của bài đó ở đây: một clip ngắn cho học viên thấy sắp học gì.',
+    'Remove the promo of “{title}”? Students and visitors won’t see it any more.': 'Gỡ promo của “{title}”? Học viên và khách sẽ không xem được nữa.',
+    'Promo removed.': 'Đã gỡ promo.',
+    'starts {date}': 'bắt đầu {date}',
+    Published: 'Đã đăng',
+    'Needed now': 'Cần ngay',
+    'Students are deciding whether to continue now. Film a short clip of the new routine and upload it as soon as you can: it helps them say yes.':
+        'Học viên đang quyết định có học tiếp hay không. Quay một clip ngắn của bài mới và tải lên sớm nhất có thể: clip giúp các bạn ấy quyết định ở lại.',
+    'Film a short clip of the new routine and upload it before {date}: that’s when students are asked whether they continue.':
+        'Quay một clip ngắn của bài mới và tải lên trước {date}: đó là lúc học viên được hỏi có học tiếp hay không.',
+    'Uploaded {date}': 'Tải lên {date}',
+    'No line for students yet.': 'Chưa có câu nào gửi học viên.',
+    'Your students see it in their class and when they renew. Visitors see it on the Classes page.':
+        'Học viên của bạn xem được trong trang lớp và khi gia hạn. Khách xem được ở trang Lớp học.',
+    'Replace clip': 'Thay clip',
+    'Edit line': 'Sửa câu giới thiệu',
+    'Film {count} promo': 'Quay {count} promo',
+    'Film {count} promos': 'Quay {count} promo',
+    'A short clip of the next routine, so students know what’s coming and stay on.': 'Một clip ngắn của bài tiếp theo, để học viên biết sắp học gì và học tiếp.',
+    'Upload the promo of “{title}”': 'Tải promo “{title}” lên',
+
+    // Staff: the routines panel, tasks and the activity log
+    'No promo yet': 'Chưa có promo',
+    '{teacher} films a short clip of it for students.': '{teacher} sẽ quay một clip ngắn của bài cho học viên.',
+    'The instructor films a short clip of it for students.': 'Giáo viên sẽ quay một clip ngắn của bài cho học viên.',
+    'Uploaded by {name}': '{name} tải lên',
+    'Replace the promo of “{title}”': 'Thay promo “{title}”',
+    'Remove the promo of “{title}”': 'Gỡ promo “{title}”',
+    'Delete the routine “{title}”? Its promo clip goes too.': 'Xoá bài nhảy “{title}”? Clip promo của bài cũng bị xoá.',
+    '{cls} has no promo for its next routine': '{cls} chưa có promo cho bài tiếp theo',
+    '“{title}” starts {date} · {who} films it': '“{title}” bắt đầu {date} · {who} quay',
+    'Promo uploaded': 'Tải promo',
+    'Promo replaced': 'Thay promo',
+    'Promo line edited': 'Sửa câu promo',
+    'Promo removed': 'Gỡ promo',
+    '{actor} uploaded the promo for {title}': '{actor} đã tải promo cho {title}',
+    '{actor} replaced the promo for {title}': '{actor} đã thay promo của {title}',
+    '{actor} edited the promo line for {title}': '{actor} đã sửa câu giới thiệu promo của {title}',
+    '{actor} removed the promo for {title}': '{actor} đã gỡ promo của {title}',
+
+    // /classes
+    'Started {date}': 'Đã bắt đầu {date}',
+    'Next routines, from the coaches': 'Bài sắp học, do chính các coach giới thiệu',
+    'Every coach films a short clip of the routine their class learns next. Join before it starts and learn it from the very first session.':
+        'Mỗi coach quay một clip ngắn về bài lớp mình sắp học. Vào lớp trước khi bài bắt đầu để học ngay từ buổi đầu tiên.',
+    'Play the promo of {name}: {title}': 'Phát promo của {name}: {title}',
+    '{when} · with {teacher}': '{when} · cùng {teacher}',
+    'See the class': 'Xem lớp',
+
+    // A YouTube link instead of an upload
+    'Paste a YouTube link: a Short or a video.': 'Dán link YouTube: Shorts hoặc video.',
+    'How to add the promo': 'Cách thêm promo',
+    'Upload a clip': 'Tải clip lên',
+    'YouTube link': 'Link YouTube',
+    'Post it on YouTube as public or unlisted, then paste the link. Shorts work.': 'Đăng lên YouTube ở chế độ công khai hoặc không công khai, rồi dán link vào đây. Shorts cũng được.',
+    'YouTube Short': 'YouTube Shorts',
+    'YouTube video': 'Video YouTube',
+    'Added {date}': 'Thêm {date}',
+    'Added by {name}': '{name} thêm',
+};

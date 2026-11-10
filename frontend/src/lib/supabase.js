@@ -3,6 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 const url = import.meta.env.VITE_SUPABASE_URL;
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// For the few requests supabase-js can't make (an upload with progress: services/promos.js).
+export const supabaseUrl = url;
+export const supabaseAnonKey = anonKey;
+
 if (!url || !anonKey) {
     throw new Error(
         'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY. Copy .env.example to .env.local and fill them in.'

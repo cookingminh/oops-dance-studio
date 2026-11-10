@@ -692,9 +692,10 @@
         background: hsl(262, 50%, 97%);
     }
 
-    // Video and renewal line up under the title.
+    // Video, promo and renewal line up under the title.
     > .lessonVideoAdd,
     > .lessonVideo,
+    > .rtPromo,
     > .rtRenewal {
         margin-left: 3.65rem;
     }
@@ -828,6 +829,7 @@
 
     .rtRow > .lessonVideoAdd,
     .rtRow > .lessonVideo,
+    .rtRow > .rtPromo,
     .rtRow > .rtRenewal {
         margin-left: 0;
     }
@@ -835,6 +837,62 @@
     .rtMakeUpBtn {
         width: 100%;
         margin-left: 0;
+    }
+}
+
+// A routine's promo (RoutinePromo): the clip the instructor filmed, or that it's still missing.
+.rtPromo {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    min-width: 0;
+    padding: .5rem .65rem;
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .8);
+
+    > svg {
+        flex-shrink: 0;
+        color: var(--ad-subtle);
+        font-size: 1.05rem;
+    }
+
+    .rtPromoText {
+        display: grid;
+        flex: 1;
+        gap: .05rem;
+        min-width: 0;
+        font-size: .82rem;
+        line-height: 1.35;
+
+        strong {
+            font-weight: 600;
+        }
+
+        small {
+            overflow: hidden;
+            color: var(--ad-muted);
+            font-size: .78rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .rtPromoCaption {
+        font-style: italic;
+    }
+
+    &.isMissing {
+        border: 1px dashed hsl(32, 80%, 75%);
+        background: hsl(40, 95%, 96%);
+
+        > svg {
+            color: hsl(32, 92%, 42%);
+        }
+    }
+
+    &.isUploading {
+        display: block;
+        padding: .8rem;
     }
 }
 

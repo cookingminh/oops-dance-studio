@@ -6,10 +6,12 @@ import { formatVnd } from '@/lib/format';
 import { splitSong } from '@/lib/lessons';
 import LessonVideo from '../components/lessons/LessonVideo';
 import RenewalLine from './RenewalLine';
+import RoutinePromo from './RoutinePromo';
 
 // "Up next" or "Earlier routines": one row per routine (= course) with its dates, fee, how far it
-// got, edit / delete, its class video and, for a planned course, its renewal. `renderEditor(routine)`
-// replaces the row while it is being edited. `course` is { classPrice, current, renewals, opensAt }.
+// got, edit / delete, its promo and class video and, for a planned course, its renewal.
+// `renderEditor(routine)` replaces the row while it is being edited. `course` is { classPrice, current,
+// renewals, opensAt, teacher }.
 const RoutineList = ({ title, routines, course, editingId, renderEditor, onEdit, onRemove, onVideoSaved, onRenewalOpened }) => {
     const { t, tn, formatDate } = useI18n();
     if (routines.length === 0) return null;
@@ -81,6 +83,7 @@ const RoutineList = ({ title, routines, course, editingId, renderEditor, onEdit,
                                                 onOpened={onRenewalOpened}
                                             />
                                         )}
+                                        <RoutinePromo routine={routine} teacher={course.teacher} onSaved={onVideoSaved} />
                                         <LessonVideo lesson={routine} onSaved={onVideoSaved} />
                                     </>
                                 )}

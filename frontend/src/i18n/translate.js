@@ -24,9 +24,20 @@ const DATE_STYLES = {
 
 // Dev aid: Vietnamese lookups that found no translation (window.__i18nMissing in the console).
 const missing = import.meta.env?.DEV && typeof window !== 'undefined' ? (window.__i18nMissing ??= new Set()) : null;
-// Text that is already Vietnamese (a message translated once and passed on, e.g. to a toast) isn't missing.
+// Text that is already Vietnamese (a message translated once and passed on, e.g. to a toast) isn't missing,
+// also when its {placeholders} were filled in ("Đã đăng promo cho “Armageddon”.").
 let translatedTexts = null;
-const isTranslated = (text) => (translatedTexts ??= new Set(Object.values(VI))).has(text);
+let translatedShapes = null;
+const shapeOf = (value) => new RegExp(`^${value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{\w+\\\}/g, '.+')}$`, 's');
+const isTranslated = (text) => {
+    translatedTexts ??= new Set(Object.values(VI));
+    if (translatedTexts.has(text)) return true;
+    // Only templates with words of their own: "{held}/{total}" would look like anything.
+    translatedShapes ??= Object.values(VI)
+        .filter((value) => /\{\w+\}/.test(value) && value.replace(/\{\w+\}/g, '').replace(/[^\p{L}]/gu, '').length >= 4)
+        .map(shapeOf);
+    return translatedShapes.some((shape) => shape.test(text));
+};
 
 const fill = (text, vars) => (vars ? text.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? String(vars[name]) : match)) : text);
 

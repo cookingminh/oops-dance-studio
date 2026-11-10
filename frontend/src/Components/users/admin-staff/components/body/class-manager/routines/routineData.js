@@ -1,6 +1,7 @@
 import { listClassLessons, listLessonProgress } from '@/services/classes';
 import { listClassSessionChanges } from '@/services/sessions';
 import { getTuitionSettings, listClassInvoices } from '@/services/tuition';
+import { promoFields } from '@/services/promos';
 
 const RENEWAL_OPENS_AT = 2; // tuition_settings.renewal_open_sessions when it can't be read
 
@@ -27,14 +28,15 @@ export async function loadRoutines(classId) {
     };
 }
 
-// A progress row with what LessonVideo and the fee need from its class_lessons row
-// ({ id, month, video_url, price: the course fee, null = the class price }).
+// A progress row with what LessonVideo, RoutinePromo and the fee need from its class_lessons row
+// ({ id, month, video_url, price: the course fee, null = the class price, promo_* }).
 export const withLesson = (row, lesson) => ({
     ...row,
     id: row.lesson_id,
     month: lesson?.month ?? row.starts_on,
     video_url: lesson?.video_url ?? null,
     price: lesson?.price ?? null,
+    ...promoFields(lesson),
 });
 
 // How a course's renewal stands from its invoices: { open, paid, waiting, stopping }.

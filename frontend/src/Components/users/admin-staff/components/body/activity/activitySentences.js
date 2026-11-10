@@ -85,11 +85,20 @@ const ROUTINES = (row, fmt) => {
         video_added: '{actor} added the video for {title}',
         video_changed: '{actor} changed the video for {title}',
         video_removed: '{actor} removed the video for {title}',
+        promo_added: '{actor} uploaded the promo for {title}',
+        promo_changed: '{actor} replaced the promo for {title}',
+        promo_caption: '{actor} edited the promo line for {title}',
+        promo_removed: '{actor} removed the promo for {title}',
     };
-    const facts =
-        row.action === 'planned'
-            ? [m.starts_on && fmt.t('Starts {date}', { date: day(fmt, m.starts_on) }), m.sessions && fmt.tn(m.sessions, '{count} session', '{count} sessions'), money(m.price)]
-            : [m.class, row.action === 'updated' ? fieldsFact(row, fmt) : ''];
+    let facts;
+    if (row.action === 'planned') {
+        facts = [m.starts_on && fmt.t('Starts {date}', { date: day(fmt, m.starts_on) }), m.sessions && fmt.tn(m.sessions, '{count} session', '{count} sessions'), money(m.price)];
+    } else if (row.action.startsWith('promo_')) {
+        // The teacher's line is their words: shown as written.
+        facts = [m.class, m.caption && row.action !== 'promo_removed' ? `“${m.caption}”` : ''];
+    } else {
+        facts = [m.class, row.action === 'updated' ? fieldsFact(row, fmt) : ''];
+    }
     return keys[row.action] && { key: keys[row.action], facts };
 };
 

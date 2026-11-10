@@ -37,9 +37,10 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261117000400_activity_seed_lint.sql` | the demo activity seed without a temporary table (db lint) |
 | `migrations/20261117000500_booking_payments.sql` | room bookings paid by transfer: payment code, webhook matching, payment history, assign / take back, sandbox |
 | `migrations/20261117000600_invoice_notes.sql` | staff write a note on an invoice on its own (`tuition_set_note`) |
+| `migrations/20261117000700_routine_promos.sql` | a routine's promo: the instructor's clip (bucket `class-promos`) or a YouTube link, set with `lesson_set_promo` |
 | `functions/bank-webhook/` | Edge Function: SePay webhook → `tuition_record_transfer` (API key in `BANK_WEBHOOK_KEY`). `handler_test.ts` unit-tests it |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users (and names the admin in the activity log). `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
-| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments) |
+| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments, routine promos) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
 | `../scripts/demo-images.mjs` | uploads demo photos to Storage (instructor avatars, class photo, room photos) and sets `avatar_path` / `image_path` / `image_paths` |
 | `../scripts/demo-assets/` | the demo photos, WebP (instructor cut-outs keep their transparency) |

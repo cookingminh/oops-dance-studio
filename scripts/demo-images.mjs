@@ -10,6 +10,7 @@
 //   scripts/demo-assets/<name>_rmbg.webp           → avatars/{instructor_id}/avatar.webp    (profiles.avatar_path)
 //   scripts/demo-assets/dolinh_class_*.webp        → class-images/{class_id}/{uuid}.webp    (classes.image_path = first)
 //   frontend/src/assets/images/room{N}-*.webp      → site-assets/rooms/{room_id}/{file}     (rooms.image_paths, in order)
+//   scripts/demo-assets/promo_*.mp4 / .jpg         → class-promos/{class_id}/{lesson_id}/…  (class_lessons.promo_*)
 // Missing sources are skipped with a note. Idempotent: deterministic object
 // names, uploaded with upsert.
 
@@ -44,7 +45,13 @@ const ROOM_PHOTOS = [
   ["Phòng B", "room2-"],
 ];
 
-const CONTENT_TYPES = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp" };
+// A planned routine (by title) → its instructor's promo clip, poster frame, length and line for students.
+// The demo instructor's own next routine gets none, so their overview asks them to film it.
+const PROMOS = [
+  ["Vogue — Madonna", "promo_vogue.mp4", "promo_vogue.jpg", 8, "Arms, poses and attitude. New to waacking? Perfect, we start from zero."],
+];
+
+const CONTENT_TYPES = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp4": "video/mp4" };
 
 // Stable uuid-shaped name, so re-runs overwrite instead of piling up copies.
 function stableUuid(seed) {
@@ -120,9 +127,36 @@ async function uploadRoomPhotos(db, log) {
   log(`✓ images: ${photos} room photos`);
 }
 
+async function uploadPromos(db, log) {
+  let promos = 0;
+  for (const [title, clip, poster, seconds, caption] of PROMOS) {
+    const { data: lesson } = await db.from("class_lessons").select("id, class_id, classes(instructor_id)")
+      .eq("title", title).gt("starts_on", new Date().toISOString().slice(0, 10)).order("starts_on").limit(1).maybeSingle();
+    const clipSrc = resolve(DEMO_ASSETS_DIR, clip);
+    const posterSrc = resolve(DEMO_ASSETS_DIR, poster);
+    if (!lesson || !existsSync(clipSrc)) { log(`  skip promo of "${title}" (${lesson ? "no file" : "no planned routine"})`); continue; }
+    const folder = `${lesson.class_id}/${lesson.id}`;
+    const clipPath = `${folder}/${stableUuid(`oops-demo:${clip}`)}.mp4`;
+    await upload(db, "class-promos", clipPath, clipSrc);
+    let posterPath = null;
+    if (existsSync(posterSrc)) {
+      posterPath = `${folder}/${stableUuid(`oops-demo:${poster}`)}.jpg`;
+      await upload(db, "class-promos", posterPath, posterSrc);
+    }
+    const { error } = await db.from("class_lessons").update({
+      promo_path: clipPath, promo_poster_path: posterPath, promo_caption: caption, promo_seconds: seconds,
+      promo_by: lesson.classes?.instructor_id ?? null, promo_at: new Date().toISOString(),
+    }).eq("id", lesson.id);
+    if (error) throw new Error(`class_lessons.promo_* (${title}): ${error.message}`);
+    promos++;
+  }
+  log(`✓ promos: ${promos} promo clip${promos === 1 ? "" : "s"}`);
+}
+
 export async function uploadDemoImages(db, { log = console.log } = {}) {
   await uploadAvatarsAndClassPhotos(db, log);
   await uploadRoomPhotos(db, log);
+  await uploadPromos(db, log);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import { amountDue, invoiceState } from '@/services/tuition';
 import { routineState, routinesByClass } from '@/lib/lessons';
 import { isSwitchedAway, isSwitchedIn } from '../../common/switch-class/switchNotes';
+import { promoFields } from '@/services/promos';
 
 // Helpers for the staff tuition page: invoice states, the page's lists (to do, by class, search),
 // money, courses, transfer suggestions and the CSV export. Labels are English i18n keys. Tuition is
@@ -41,7 +42,8 @@ export const monthOf = (isoDate) => `${isoDate.slice(0, 7)}-01`;
 
 // The course an invoice pays for, with its progress (a listLessonProgress row) when known:
 //   { id, title, starts_on, session_count, sessions_held, ends_on (last session), next_session, price,
-//     phase: 'planned' (not started) | 'current' (running) | 'done' (finished, or its class ended) }
+//     phase: 'planned' (not started) | 'current' (running) | 'done' (finished, or its class ended),
+//     promo_* (services/promos.js) }
 // Without a progress row (a class that has ended, or progress didn't load) the dates decide.
 export function courseFacts(invoice, row, today) {
     const embedded = invoice.course ?? {};
@@ -60,6 +62,7 @@ export function courseFacts(invoice, row, today) {
         next_session: row?.next_session ?? null,
         price: embedded.price ?? null,
         phase,
+        ...promoFields(embedded), // the course's promo clip, when the invoice query read it
     };
 }
 

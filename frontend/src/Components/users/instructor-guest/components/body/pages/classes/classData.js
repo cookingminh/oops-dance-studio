@@ -3,20 +3,25 @@ import { getStudioToday } from '@/services/studio';
 import { listClassLessons, listInstructorClasses, listLessonProgress, listMyEnrolledClasses } from '@/services/classes';
 import { listMyInstructorAttendance, listMyStudentAttendance, listStudentAttendanceForClasses } from '@/services/attendance';
 import { listMakeUpSessions, withOwnTimes } from '@/services/sessions';
+import { getTuitionSettings } from '@/services/tuition';
 import { avatarUrl } from '@/services/storage';
+import { promoFields } from '@/services/promos';
 import { toIsoDate } from '@/lib/format';
 
 // Both roles' classes in one shape, so the class views don't care who is looking:
 //   { id, name, image_path, instructorName, instructorAvatar, roomName, schedules, lessons,
-//     routines (lesson_progress rows + video_url: the routine now, next and before),
+//     routines (lesson_progress rows + video_url and promo_*: the routine now, next and before),
 //     joinedAt?, attendance? (student: own roll calls),
 //     students? ({ …profile, joinedAt, leavesAfter }), rollCalls?, todaySession?,
-//     makeUps? (instructor: make-up sessions this coming week) }
+//     makeUps? (instructor: make-up sessions this coming week),
+//     renewalOpensAt? (instructor: sessions left when the next course's renewal opens, null = unknown) }
 
-// Progress rows of one class with each routine's class video.
+// Progress rows of one class with each routine's class video and promo clip.
 const routinesOf = (progress, lessons, classId) => {
-    const videos = new Map(lessons.map((lesson) => [lesson.id, lesson.video_url]));
-    return progress.filter((row) => row.class_id === classId).map((row) => ({ ...row, video_url: videos.get(row.lesson_id) ?? null }));
+    const byId = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+    return progress
+        .filter((row) => row.class_id === classId)
+        .map((row) => ({ ...row, id: row.lesson_id, video_url: byId.get(row.lesson_id)?.video_url ?? null, ...promoFields(byId.get(row.lesson_id)) }));
 };
 
 const byName = (a, b) => (a.full_name || a.username).localeCompare(b.full_name || b.username, 'vi');
@@ -51,7 +56,14 @@ export async function loadStudentClasses(userId) {
 // (instructor_attendance rows, for one-tap check-in; make-ups with their own times), the make-up
 // sessions of the coming week and every routine's progress.
 export async function loadInstructorClasses(userId) {
-    const [today, classes] = await Promise.all([getStudioToday(), listInstructorClasses(userId)]);
+    const [today, classes, renewalOpensAt] = await Promise.all([
+        getStudioToday(),
+        listInstructorClasses(userId),
+        // When the next course's renewal opens: the promo is due before then (PromoCard).
+        getTuitionSettings()
+            .then((settings) => settings?.renewal_open_sessions ?? null)
+            .catch(() => null),
+    ]);
     const ids = classes.map((cls) => cls.id);
     const [sessions, rollCalls, makeUps, progress] = await Promise.all([
         listMyInstructorAttendance(userId, { date: today }).then(withOwnTimes),
@@ -72,6 +84,7 @@ export async function loadInstructorClasses(userId) {
             schedules: cls.schedules ?? [],
             lessons: cls.lessons ?? [],
             routines: routinesOf(progress, cls.lessons ?? [], cls.id),
+            renewalOpensAt,
             makeUps: makeUps.filter((row) => row.class_id === cls.id),
             // Members with when they join (may be later) and their last day, if they are leaving.
             students: (cls.students ?? [])

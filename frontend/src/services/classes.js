@@ -2,16 +2,19 @@ import { supabase } from '@/lib/supabase';
 import { getStudioToday } from './studio';
 import { unwrap } from './errors';
 import { BUCKETS, removeFiles, uploadClassImage } from './storage';
+import { PROMO_BUCKET, PROMO_COLUMNS } from './promos';
 
 // Column hints (!instructor_id, !room_id, …) are required: classes and profiles are also linked
 // through class_students / attendance, so PostgREST can't pick the relationship on its own.
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
+// A routine (class_lessons) with its class video and its promo (services/promos.js).
+const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, title, video_url, ${PROMO_COLUMNS}`;
 const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, created_at,
     starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
     schedules:class_schedules(id, day_of_week, start_time, end_time),
-    lessons:class_lessons(id, month, starts_on, session_count, price, title, video_url)`;
+    lessons:class_lessons(${LESSON_COLUMNS})`;
 const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
     student:profiles!student_id(${PERSON}, contact_number, date_of_birth))`;
 
@@ -95,13 +98,13 @@ export async function listMyEnrolledClasses(studentId) {
         .map((item) => ({ ...item, joined_at: joinedAt.get(item.id) }));
 }
 
-// Monthly lessons of the given classes (public read), newest month first.
+// Routines of the given classes (public read) with their video and promo, newest month first.
 export async function listClassLessons(classIds) {
     if (classIds.length === 0) return [];
     return unwrap(
         await supabase
             .from('class_lessons')
-            .select('id, class_id, month, starts_on, session_count, price, title, video_url')
+            .select(LESSON_COLUMNS)
             .in('class_id', classIds)
             .order('month', { ascending: false })
     );
@@ -176,7 +179,7 @@ export async function saveRoutine({ id, classId, title, startsOn, sessionCount, 
     const query = id
         ? supabase.from('class_lessons').update(row).eq('id', id)
         : supabase.from('class_lessons').insert({ class_id: classId, ...row });
-    return unwrap(await query.select('id, class_id, month, starts_on, session_count, price, title, video_url').single());
+    return unwrap(await query.select(LESSON_COLUMNS).single());
 }
 
 // Older monthly API: the routine starting in `month` ('yyyy-MM-01') gets this title (created on the 1st if missing).
@@ -231,6 +234,8 @@ export async function listLatestClassVideos() {
     return rows.filter((row) => row.month === month);
 }
 
-export async function deleteClassLesson(id) {
-    unwrap(await supabase.from('class_lessons').delete().eq('id', id));
+// `routine` is a class_lessons row (or a progress row merged with it): its promo files go with it.
+export async function deleteClassLesson(routine) {
+    unwrap(await supabase.from('class_lessons').delete().eq('id', routine.id ?? routine.lesson_id));
+    await removeFiles(PROMO_BUCKET, [routine.promo_path, routine.promo_poster_path]);
 }

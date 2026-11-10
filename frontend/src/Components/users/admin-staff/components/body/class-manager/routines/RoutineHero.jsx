@@ -7,11 +7,12 @@ import LessonVideo from '../components/lessons/LessonVideo';
 import RoutineProgress from './RoutineProgress';
 import MakeUpTag from './MakeUpTag';
 import RenewalLine from './RenewalLine';
+import RoutinePromo from './RoutinePromo';
 
 // The routine the class is on now (or, between routines, the next one): song, sessions held, the next
 // session and the projected last one (the shoot day), its course fee, the make-up sessions that count
-// for it, its class video and — for a planned course — its renewal. `course` is { classPrice, current,
-// invoices (planned course), opensAt }.
+// for it, its class video and promo and — for a planned course — its renewal. `course` is { classPrice,
+// current, invoices (planned course), opensAt, teacher }.
 export const RoutineHero = ({ routine, makeUps, today, course, actions, offerMakeUp = true }) => {
     const { t, tn, formatDate } = useI18n();
     const { song, artist } = splitSong(routine.title);
@@ -80,6 +81,7 @@ export const RoutineHero = ({ routine, makeUps, today, course, actions, offerMak
             {!isCurrent && (
                 <RenewalLine routine={routine} invoices={course.invoices} current={course.current} opensAt={course.opensAt} onOpened={actions.renewalOpened} />
             )}
+            <RoutinePromo routine={routine} teacher={course.teacher} onSaved={actions.videoSaved} />
 
             {makeUps.length > 0 && (
                 <ul className="rtMakeUps" aria-label={t('Make-up sessions')}>

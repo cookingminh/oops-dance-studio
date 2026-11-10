@@ -21,7 +21,8 @@ import { unwrap } from './errors';
 
 export const INVOICE = `id, student_id, class_id, lesson_id, lesson_title, sessions, student_name, class_name, month, amount,
     paid_amount, status, renewal, method, payment_code, due_date, paid_at, void_reason, switched_from, note, created_at, updated_at`;
-const COURSE = 'course:class_lessons!lesson_id(id, title, starts_on, session_count, price, video_url)';
+// The course (routine) of an invoice, with its promo clip (services/promos.js) for the renewal question.
+const COURSE = 'course:class_lessons!lesson_id(id, class_id, title, starts_on, session_count, price, video_url, promo_path, promo_poster_path, promo_url, promo_caption, promo_seconds)';
 const PERSON = 'id, username, full_name, email, contact_number, avatar_path, updated_at';
 const CLASS = 'id, name, image_path, price, instructor_id';
 

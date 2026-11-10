@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LuCheck, LuInfo, LuQrCode, LuRepeat, LuUndo2 } from 'react-icons/lu';
+import { LuCheck, LuInfo, LuPlay, LuQrCode, LuRepeat, LuUndo2 } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { formatVnd } from '@/lib/format';
 import { amountDue } from '@/services/tuition';
+import { clipLength, promoOf } from '@/services/promos';
+import PromoDialog from '@/ui/promo/PromoDialog';
 import SectionCard from '../../../../../admin-staff/components/common/SectionCard';
 import { EASE_OUT } from '../../../../../admin-staff/components/common/motion';
 import { isSwitchedAway } from '../../../../../admin-staff/components/common/switch-class/switchNotes';
@@ -13,7 +16,7 @@ import { canRejoin, canStop, invoiceClass, songOf } from './tuitionData';
 const swap = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -6 }, transition: { duration: 0.22, ease: EASE_OUT } };
 
 // One upcoming course: the question, or the answer and what's next.
-const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop, onDismissOffer }) => {
+const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop, onDismissOffer, onWatch }) => {
     const { t, tn, formatDate } = useI18n();
     const title = invoice.course.title || invoice.class_name;
     const vars = {
@@ -30,6 +33,15 @@ const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop
     else if (isSwitchedAway(invoice)) state = 'moved';
     else if (invoice.status === 'void') state = 'cancelled';
     const sessions = invoice.course.session_count;
+    // The teacher's clip of the course, to help decide (ask) or to look forward to (continuing).
+    const promo = promoOf(invoice.course);
+    const watch = promo && (state === 'ask' || state === 'continuing') && (
+        <button type="button" className="tuPromoBtn" onClick={() => onWatch(invoice)}>
+            <LuPlay aria-hidden="true" />
+            {t('Watch the promo')}
+            {promo.seconds ? <span>{clipLength(promo.seconds)}</span> : null}
+        </button>
+    );
 
     return (
         <li className={`tuRenew is-${state}`}>
@@ -44,6 +56,7 @@ const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop
                                 {sessions != null && ` · ${tn(sessions, '{count} session', '{count} sessions')}`} · {t('{amount} · answer by {date}', vars)}
                             </small>
                             <SwitchedFromLine invoice={invoice} invoices={all} />
+                            {watch}
                             <div className="tuRenewActions">
                                 <button type="button" className="pfBtn isPrimary isSmall" onClick={() => onAnswer(invoice, 'continue')} disabled={busy}>
                                     <LuCheck aria-hidden="true" /> {t('Continue')}
@@ -69,6 +82,7 @@ const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop
                             </small>
                             <small>{t('{amount} to pay by {date}', vars)}</small>
                             <SwitchedFromLine invoice={invoice} invoices={all} />
+                            {watch}
                             {offer && (
                                 <p className="tuOffer" role="status">
                                     {t('Lovely! Want to pay now? It takes one scan.')}
@@ -155,6 +169,7 @@ const RenewalItem = ({ invoice, all, today, busy, offer, onPay, onAnswer, onStop
 // deadline rule spelled out.
 const RenewalCard = ({ invoices, all, today, busyId, offerId, onPay, onAnswer, onStop, onDismissOffer }) => {
     const { t, tn, formatDate } = useI18n();
+    const [watching, setWatching] = useState(null); // the invoice whose course promo is playing
     const open = invoices.filter((invoice) => invoice.status === 'unpaid');
     const waiting = open.filter((invoice) => !invoice.renewal).length;
     const deadline = open.map((invoice) => invoice.due_date).sort()[0];
@@ -186,9 +201,20 @@ const RenewalCard = ({ invoices, all, today, busyId, offerId, onPay, onAnswer, o
                         onAnswer={onAnswer}
                         onStop={onStop}
                         onDismissOffer={onDismissOffer}
+                        onWatch={setWatching}
                     />
                 ))}
             </ul>
+            {watching && (
+                <PromoDialog
+                    promo={promoOf(watching.course)}
+                    portalClass="adminPortal"
+                    eyebrow={`${t('Your next course')} · ${watching.class_name}`}
+                    title={watching.course.title || watching.class_name}
+                    meta={t('From {date}', { date: formatDate(watching.course.starts_on, 'short') })}
+                    onClose={() => setWatching(null)}
+                />
+            )}
         </SectionCard>
     );
 };

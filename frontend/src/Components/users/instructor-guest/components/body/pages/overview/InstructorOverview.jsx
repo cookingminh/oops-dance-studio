@@ -20,6 +20,7 @@ import { CheckAction } from '../classes/ClassNext';
 import { AvatarStack } from '../classes/ClassRoster';
 import { NoClasses } from '../classes/ClassView';
 import { Hero, StatGrid, UpNext } from './OverviewParts';
+import PromoNudge from './PromoNudge';
 
 async function load(userId) {
     const [classData, stats, history] = await Promise.all([loadInstructorClasses(userId), myStats(), listMyInstructorAttendance(userId)]);
@@ -102,6 +103,8 @@ const InstructorOverview = () => {
                     { label: 'Classes', value: classes.length, icon: LuMusic, tone: 'rose', hint: tn(classes.reduce((sum, cls) => sum + cls.schedules.length, 0), '{count} session a week', '{count} sessions a week'), to: '/profile/my-classes' },
                 ]}
             />
+
+            <PromoNudge classes={classes} />
 
             <SectionCard
                 className="pfTodayCard"

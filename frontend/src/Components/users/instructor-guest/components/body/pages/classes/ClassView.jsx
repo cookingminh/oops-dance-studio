@@ -5,17 +5,20 @@ import { ClassBanner, LessonCard, WeekStrip } from './ClassParts';
 import { NextSessionCard } from './ClassNext';
 import { StudentProgress } from './ClassProgress';
 import { ClassRoster } from './ClassRoster';
+import PromoCard from './PromoCard';
 import ClassTuitionLine from '../tuition/ClassTuitionLine';
 
 // Everything about one class on one screen: who/where, (students) tuition, the routine it is
-// learning (sessions held, shoot day), the next session (instructors check in from here), the
-// coming week and attendance (own, or the students').
-export const ClassView = ({ cls, today, now, isInstructor, onCheck }) => (
+// learning (sessions held, shoot day), the next session (instructors check in from here), the next
+// routine's promo (instructors upload it, students watch it), the coming week and attendance (own,
+// or the students'). onChanged() reloads the classes.
+export const ClassView = ({ cls, today, now, isInstructor, onCheck, onChanged }) => (
     <div className={`pfClassView${isInstructor ? ' isInstructor' : ''}`}>
         <ClassBanner cls={cls} today={today} isInstructor={isInstructor} />
         {!isInstructor && <ClassTuitionLine classId={cls.id} />}
         <LessonCard cls={cls} today={today} isInstructor={isInstructor} />
         <NextSessionCard cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={onCheck} />
+        <PromoCard cls={cls} isInstructor={isInstructor} onChanged={onChanged} />
         <WeekStrip cls={cls} today={today} now={now} />
         {isInstructor ? <ClassRoster cls={cls} today={today} /> : <StudentProgress cls={cls} />}
     </div>

@@ -131,7 +131,7 @@ const LESSONS = [
   ["Choreography Sáng Tạo", 1, "WHISTLE x GOALS", "https://www.youtube.com/watch?v=iG2UbHqhIGg"], ["Choreography Sáng Tạo", 0, "Dynamite — BTS"],
 ];
 
-const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", "receipts"];
+const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", "receipts", "class-promos"];
 // Children first, so no foreign key blocks a delete. PostgREST needs a filter on
 // every DELETE, hence "<column> is not null".
 const APP_TABLES = [

@@ -1,0 +1,247 @@
+// /classes "Coming next": each class's next-routine promo as an upright card in a sideways row.
+
+.hpPromos {
+    width: min(1200px, calc(100% - 2.5rem));
+    margin-inline: auto;
+    padding: 5rem 0 1rem;
+    scroll-margin-top: 5.5rem;
+}
+
+.hpPromoRow {
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: .25rem .25rem 1.25rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: .25rem;
+    list-style: none;
+    scrollbar-width: thin;
+
+    > li {
+        flex: 0 0 auto;
+        scroll-snap-align: start;
+    }
+}
+
+.hpPromoCard {
+    --hue: 352;
+    position: relative;
+    isolation: isolate;
+    display: block;
+    width: clamp(11.5rem, 21vw, 14.5rem);
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border-radius: 1.4rem;
+    background: linear-gradient(155deg, hsl(var(--hue), 62%, 46%), hsl(calc(var(--hue) - 30), 58%, 20%));
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 18px 40px -24px hsla(0, 40%, 15%, .55);
+    transition: transform .45s var(--hp-ease), box-shadow .45s var(--hp-ease);
+
+    > img,
+    .hpPromoArt {
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .8s var(--hp-ease);
+    }
+
+    .hpPromoArt {
+        display: grid;
+        place-items: center;
+        font-size: 2.6rem;
+        opacity: .3;
+    }
+
+    .hpPromoShade {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background:
+            linear-gradient(to top, hsla(0, 0%, 0%, .82) 0%, hsla(0, 0%, 0%, .25) 45%, transparent 62%),
+            linear-gradient(to bottom, hsla(0, 0%, 0%, .35), transparent 22%);
+    }
+
+    .hpPromoTop {
+        position: absolute;
+        inset: .7rem .7rem auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .4rem;
+    }
+
+    .hpPromoWhen,
+    .hpPromoTime {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .25rem .55rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 100%, .92);
+        color: var(--hp-ink);
+        font-size: .74rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .hpPromoWhen svg {
+        color: var(--hp-red);
+    }
+
+    .hpPromoWhen.isStarted {
+        background: var(--hp-gold);
+    }
+
+    .hpPromoTime {
+        background: hsla(0, 0%, 0%, .55);
+        color: #fff;
+        font-variant-numeric: tabular-nums;
+
+        &.isYoutube {
+            padding: .25rem .4rem;
+            font-size: .9rem;
+        }
+    }
+
+    .hpPromoPlay {
+        position: absolute;
+        top: 42%;
+        left: 50%;
+        display: grid;
+        place-items: center;
+        width: 3.4rem;
+        height: 3.4rem;
+        border-radius: 50%;
+        background: hsla(0, 0%, 100%, .94);
+        color: var(--hp-red);
+        font-size: 1.25rem;
+        box-shadow: 0 10px 26px -10px hsla(0, 0%, 0%, .6);
+        transform: translate(-50%, -50%);
+        transition: transform .4s var(--hp-ease);
+
+        svg {
+            margin-left: 3px;
+            fill: currentColor;
+        }
+    }
+
+    .hpPromoText {
+        position: absolute;
+        inset: auto .9rem 1rem;
+        display: grid;
+        gap: .2rem;
+
+        strong {
+            font-family: var(--hp-display);
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1.12;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .hpPromoClass {
+        color: hsla(0, 0%, 100%, .85);
+        font-size: .84rem;
+        font-weight: 600;
+    }
+
+    .hpPromoCoach {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        margin-top: .25rem;
+        color: hsla(0, 0%, 100%, .78);
+        font-size: .8rem;
+
+        img {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            object-fit: cover;
+            background: hsla(0, 0%, 100%, .2);
+        }
+    }
+
+    &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 28px 50px -26px hsla(0, 50%, 20%, .7);
+
+        > img {
+            transform: scale(1.05);
+        }
+
+        .hpPromoPlay {
+            transform: translate(-50%, -50%) scale(1.08);
+        }
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--hp-red);
+        outline-offset: 3px;
+    }
+}
+
+// The dialog lives outside .homePage: its own copy of the tokens it uses.
+.hpPromoDialog {
+    --hp-red: hsl(0, 66%, 43%);
+    --hp-ink: hsl(0, 0%, 12%);
+    --hp-border: hsl(20, 10%, 90%);
+    --hp-ease: cubic-bezier(.22, 1, .36, 1);
+
+    .prDialogFoot {
+        flex-wrap: wrap;
+    }
+
+    .hpPromoBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        height: 2.6rem;
+        padding: 0 1.1rem;
+        border: 1px solid var(--hp-border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--hp-ink);
+        font-size: .92rem;
+        font-weight: 600;
+        transition: transform .3s var(--hp-ease), background-color .2s ease;
+
+        &:hover {
+            transform: translateY(-2px);
+        }
+
+        &.isPrimary {
+            border-color: var(--hp-red);
+            background: var(--hp-red);
+            color: #fff;
+        }
+    }
+}
+
+@media (max-width: 640px) {
+    .hpPromos {
+        width: calc(100% - 2rem);
+        padding-top: 3.5rem;
+    }
+
+    .hpPromoCard {
+        width: 62vw;
+        max-width: 15rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hpPromoCard,
+    .hpPromoCard > img,
+    .hpPromoCard .hpPromoPlay {
+        transition: none;
+    }
+}

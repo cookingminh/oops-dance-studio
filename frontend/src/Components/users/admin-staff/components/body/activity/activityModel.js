@@ -82,6 +82,10 @@ export const ACTIONS = {
         video_added: 'Video added',
         video_changed: 'Video changed',
         video_removed: 'Video removed',
+        promo_added: 'Promo uploaded',
+        promo_changed: 'Promo replaced',
+        promo_caption: 'Promo line edited',
+        promo_removed: 'Promo removed',
     },
     students: { enrolled: 'Enrolled', removed: 'Left the class', leaving: 'Set to leave', staying: 'Staying on', updated: 'Edited' },
     sessions: {

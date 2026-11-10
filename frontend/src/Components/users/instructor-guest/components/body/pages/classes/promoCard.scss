@@ -1,0 +1,282 @@
+// The next routine's promo in a class view (PromoCard). Player and uploader: ui/promo/promo.scss.
+
+.adminShell .pfClassView > .pfPromo {
+    grid-column: 1 / -1;
+}
+
+.adminShell .pfPromo {
+    --hue: 352;
+    display: grid;
+    gap: .9rem;
+    scroll-margin-top: 6rem;
+
+    .pfPromoHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .5rem 1rem;
+
+        > div {
+            display: grid;
+            gap: .15rem;
+            min-width: 0;
+        }
+    }
+
+    .pfSong {
+        font-family: var(--ad-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+    }
+
+    .pfPromoWhen,
+    .pfPromoMeta {
+        color: var(--ad-muted);
+        font-size: .88rem;
+    }
+
+    .pfPromoMeta {
+        margin: 0;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .pfPromoChip {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        font-size: .8rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.tone-good {
+            background: var(--pf-good-soft);
+            color: var(--pf-good);
+        }
+
+        &.tone-due {
+            background: var(--pf-warn-soft);
+            color: var(--pf-warn);
+        }
+
+        &.tone-urgent {
+            background: var(--pf-bad-soft);
+            color: var(--pf-bad);
+        }
+    }
+
+    .pfPromoLead {
+        margin: 0;
+        max-width: 62ch;
+        color: var(--ad-text);
+        font-size: .95rem;
+        line-height: 1.55;
+    }
+
+    .pfPromoBody {
+        display: grid;
+        grid-template-columns: 11rem minmax(0, 1fr);
+        align-items: start;
+        gap: 1.1rem;
+
+        // A regular (16:9) YouTube video.
+        &.isWide {
+            grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+        }
+    }
+
+    .pfPromoSide {
+        display: grid;
+        align-content: start;
+        justify-items: start;
+        gap: .55rem;
+        min-width: 0;
+    }
+
+    .pfPromoCaption {
+        margin: 0;
+        color: var(--ad-text);
+        font-size: .98rem;
+        line-height: 1.5;
+
+        &.isEmpty {
+            color: var(--ad-subtle);
+            font-style: italic;
+        }
+    }
+
+    .pfPromoCaptionEdit {
+        display: grid;
+        gap: .5rem;
+        width: 100%;
+    }
+
+    .pfPromoWho {
+        margin: 0;
+        color: var(--ad-muted);
+        font-size: .84rem;
+        line-height: 1.45;
+    }
+
+    .pfPromoQuote {
+        margin: .15rem 0 .2rem;
+        color: var(--ad-text);
+        font-size: .95rem;
+        line-height: 1.5;
+
+        span {
+            color: var(--ad-muted);
+            white-space: nowrap;
+        }
+    }
+
+    .pfBtn.isSmall {
+        height: 2.3rem;
+        padding: 0 .95rem;
+        font-size: .88rem;
+    }
+
+    // Before a next routine is planned: one quiet line.
+    &.isQuiet {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: .85rem;
+
+        strong {
+            font-size: .95rem;
+        }
+
+        p {
+            margin: .15rem 0 0;
+        }
+    }
+
+    .pfPromoIcon {
+        display: grid;
+        place-items: center;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 12px;
+        background: var(--ad-surface);
+        color: var(--ad-subtle);
+        font-size: 1.15rem;
+    }
+
+    // Students: the poster beside what's coming.
+    &.isStudent {
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 1.1rem;
+        background:
+            radial-gradient(circle at 0% 0%, hsla(var(--hue), 80%, 80%, .28), transparent 55%),
+            var(--ad-surface-2);
+
+        .prThumb {
+            width: 7rem;
+        }
+    }
+}
+
+@media (max-width: 560px) {
+    .adminShell .pfPromo {
+        .pfPromoBody {
+            grid-template-columns: minmax(0, 1fr);
+
+            .pfPromoPlayer {
+                max-width: 12rem;
+                margin: 0 auto;
+
+                &.isWide {
+                    max-width: none;
+                }
+            }
+        }
+
+        &.isStudent .prThumb {
+            width: 5.75rem;
+        }
+    }
+}
+
+// Instructor overview: promos still to film (PromoNudge).
+.adminShell .pfOverview > .pfPromoNudge {
+    grid-column: 1 / -1;
+}
+
+.adminShell .pfPromoNudge {
+    .pfNudgeList {
+        display: grid;
+        gap: .6rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            padding: .7rem .85rem;
+            border-radius: 16px;
+            background: var(--ad-surface-2);
+        }
+    }
+
+    .pfNudgeText {
+        display: grid;
+        flex: 1;
+        gap: .1rem;
+        min-width: 0;
+
+        strong {
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        span {
+            color: var(--ad-muted);
+            font-size: .86rem;
+        }
+    }
+
+    .pfNudgeDue {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .7rem;
+        border-radius: 999px;
+        background: var(--pf-warn-soft);
+        color: var(--pf-warn);
+        font-size: .8rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.isUrgent {
+            background: var(--pf-bad-soft);
+            color: var(--pf-bad);
+        }
+    }
+
+    .pfNudgeGo {
+        height: 2.3rem;
+        padding: 0 1rem;
+        font-size: .88rem;
+    }
+}
+
+@media (max-width: 560px) {
+    .adminShell .pfPromoNudge .pfNudgeList li {
+        flex-wrap: wrap;
+
+        .pfNudgeText {
+            flex-basis: calc(100% - 4.5rem);
+        }
+
+        .pfNudgeGo {
+            margin-left: auto;
+        }
+    }
+}

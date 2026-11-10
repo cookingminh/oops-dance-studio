@@ -1,0 +1,533 @@
+// Routine promos (ui/promo): player, poster thumb, watch dialog and uploader. Used on admin and profile
+// pages (tokens --ad-*) and on /classes, so every token has a fallback.
+
+.prPlayer {
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border-radius: 18px;
+    background: hsl(0, 0%, 8%);
+
+    .prPlayerBlur {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(22px) brightness(.55);
+        transform: scale(1.15);
+    }
+
+    video {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    &.isPreview {
+        width: 100%;
+        max-width: 12.5rem;
+    }
+
+    // YouTube: a Short keeps 9:16, a regular video is 16:9; the player loads on press.
+    &.isWide {
+        aspect-ratio: 16 / 9;
+
+        &.isPreview {
+            max-width: 22rem;
+        }
+    }
+
+    iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+    }
+
+    .prPlayerPoster {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .prThumbPlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            width: 3.2rem;
+            height: 3.2rem;
+            margin: auto;
+            border-radius: 50%;
+            background: hsla(0, 0%, 100%, .92);
+            color: var(--ad-primary, hsl(0, 66%, 43%));
+            font-size: 1.2rem;
+
+            svg {
+                margin-left: 3px;
+                fill: currentColor;
+            }
+        }
+
+        &:focus-visible {
+            outline: 3px solid var(--ad-primary, hsl(0, 66%, 43%));
+            outline-offset: -3px;
+        }
+    }
+
+    .prPlayerYt {
+        position: absolute;
+        right: .6rem;
+        bottom: .6rem;
+        color: #fff;
+        font-size: 1.5rem;
+        filter: drop-shadow(0 1px 3px hsla(0, 0%, 0%, .6));
+    }
+}
+
+// Poster as a play button ====================>
+
+.prThumb {
+    --hue: 352;
+    position: relative;
+    isolation: isolate;
+    display: block;
+    flex-shrink: 0;
+    width: 6.5rem;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border-radius: 14px;
+    background: linear-gradient(150deg, hsl(var(--hue), 66%, 46%), hsl(calc(var(--hue) - 25), 60%, 22%));
+    color: #fff;
+    cursor: pointer;
+    transition: transform .35s var(--ad-ease, cubic-bezier(.22, 1, .36, 1)), box-shadow .35s var(--ad-ease, ease);
+
+    &.is-sm {
+        width: 2.75rem;
+        border-radius: 9px;
+
+        .prThumbPlay {
+            width: 1.5rem;
+            height: 1.5rem;
+            font-size: .7rem;
+        }
+
+        .prThumbTime {
+            display: none;
+        }
+    }
+
+    &.is-lg {
+        width: 100%;
+        border-radius: 20px;
+
+        .prThumbPlay {
+            width: 3.6rem;
+            height: 3.6rem;
+            font-size: 1.35rem;
+        }
+    }
+
+    img,
+    .prThumbArt {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform .6s var(--ad-ease, ease);
+    }
+
+    .prThumbArt {
+        display: grid;
+        place-items: center;
+        font-size: 1.6rem;
+        opacity: .35;
+    }
+
+    .prThumbShade {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, hsla(0, 0%, 0%, .55), transparent 45%);
+    }
+
+    .prThumbPlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        margin: auto;
+        border-radius: 50%;
+        background: hsla(0, 0%, 100%, .92);
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+        font-size: .95rem;
+        box-shadow: 0 6px 18px -6px hsla(0, 0%, 0%, .5);
+        transition: transform .35s var(--ad-ease, ease);
+
+        svg {
+            margin-left: 2px; // the triangle's visual centre
+            fill: currentColor;
+        }
+    }
+
+    .prThumbTime.isYoutube {
+        padding: .15rem .3rem;
+        font-size: .85rem;
+        line-height: 1;
+    }
+
+    .prThumbTime {
+        position: absolute;
+        right: .4rem;
+        bottom: .4rem;
+        padding: .1rem .4rem;
+        border-radius: 6px;
+        background: hsla(0, 0%, 0%, .6);
+        font-size: .72rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px -14px hsla(0, 30%, 20%, .45);
+
+        img {
+            transform: scale(1.04);
+        }
+
+        .prThumbPlay {
+            transform: scale(1.08);
+        }
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--ad-primary, hsl(0, 66%, 43%));
+        outline-offset: 3px;
+    }
+}
+
+// Watching it ====================>
+
+.prDialog {
+    max-width: min(26rem, calc(100vw - 2rem));
+
+    .prDialogHead {
+        flex-direction: column;
+        gap: .15rem;
+        padding-right: 3rem;
+
+        h2 {
+            padding: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.3;
+        }
+
+        p {
+            color: var(--ad-muted, hsl(240, 4%, 44%));
+            font-size: .88rem;
+            font-weight: 500;
+        }
+    }
+
+    .prDialogBody {
+        padding-bottom: 1.25rem;
+
+        .prPlayer {
+            width: min(100%, calc(min(64vh, 620px) * 9 / 16));
+            margin: 0 auto;
+
+            &.isWide {
+                width: 100%;
+            }
+        }
+    }
+
+    .prDialogFoot {
+        justify-content: center;
+    }
+}
+
+.prEyebrow {
+    line-height: 1.45;
+    color: var(--ad-primary, hsl(0, 66%, 43%));
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.prCaption {
+    display: flex;
+    gap: .55rem;
+    margin: 0;
+    color: var(--ad-text, hsl(0, 0%, 12%));
+    font-size: .95rem;
+    line-height: 1.5;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .2rem;
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+    }
+}
+
+.prOpenYt {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    justify-self: start;
+    width: fit-content;
+    color: var(--ad-muted, hsl(240, 4%, 44%));
+    font-size: .84rem;
+    font-weight: 600;
+
+    &:hover {
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+    }
+}
+
+// Uploading ====================>
+
+.prUploader {
+    display: grid;
+    gap: .8rem;
+
+    &.isReady {
+        grid-template-columns: 12.5rem minmax(0, 1fr);
+        align-items: start;
+        gap: 1.1rem;
+    }
+
+    .prReadySide {
+        display: grid;
+        gap: .75rem;
+        min-width: 0;
+    }
+
+    // A regular (16:9) YouTube video: the preview goes above the caption.
+    &.isReady.isWideReady {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+// Upload a clip | YouTube link.
+.prSource {
+    display: inline-flex;
+    justify-self: start;
+    gap: .2rem;
+    padding: .2rem;
+    border-radius: 999px;
+    background: var(--ad-surface, #fff);
+    box-shadow: inset 0 0 0 1px var(--ad-border, hsl(20, 10%, 91%));
+
+    button {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        padding: .4rem .85rem;
+        border-radius: 999px;
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+        font-size: .86rem;
+        font-weight: 600;
+        transition: background-color .2s ease, color .2s ease;
+
+        &[aria-pressed='true'] {
+            background: var(--ad-primary, hsl(0, 66%, 43%));
+            color: #fff;
+        }
+
+        &:not([aria-pressed='true']):hover {
+            color: var(--ad-text, hsl(0, 0%, 12%));
+        }
+
+        &:disabled {
+            opacity: .6;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary, hsl(0, 66%, 43%));
+            outline-offset: 2px;
+        }
+    }
+}
+
+.prDrop {
+    display: grid;
+    justify-items: center;
+    gap: .25rem;
+    width: 100%;
+    padding: 1.4rem 1rem;
+    border: 1.5px dashed var(--ad-primary-tint, hsl(0, 70%, 88%));
+    border-radius: var(--ad-radius, 14px);
+    background: var(--ad-primary-soft, hsl(0, 85%, 96%));
+    color: var(--ad-text, hsl(0, 0%, 12%));
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, transform .3s var(--ad-ease, ease);
+
+    svg {
+        font-size: 1.6rem;
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+    }
+
+    strong {
+        font-size: .98rem;
+    }
+
+    small {
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+        font-size: .82rem;
+    }
+
+    &:hover,
+    &.isOver {
+        border-color: var(--ad-primary, hsl(0, 66%, 43%));
+        transform: translateY(-1px);
+    }
+
+    &:disabled {
+        cursor: progress;
+        opacity: .75;
+    }
+
+    &:focus-visible {
+        outline: 3px solid var(--ad-primary, hsl(0, 66%, 43%));
+        outline-offset: 2px;
+    }
+}
+
+.prTips {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .45rem 1rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--ad-muted, hsl(240, 4%, 44%));
+    font-size: .84rem;
+    line-height: 1.4;
+
+    li {
+        display: flex;
+        gap: .45rem;
+    }
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        color: var(--ad-subtle, hsl(240, 4%, 60%));
+    }
+}
+
+.prFile {
+    display: grid;
+    gap: .1rem;
+    margin: 0;
+    min-width: 0;
+
+    strong {
+        overflow: hidden;
+        font-size: .92rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    span {
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+        font-size: .82rem;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.prProgress {
+    display: grid;
+    gap: .4rem;
+
+    p {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        margin: 0;
+        color: var(--ad-muted, hsl(240, 4%, 44%));
+        font-size: .85rem;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.prProgressBar {
+    height: .5rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--ad-surface-2, hsl(20, 14%, 95.5%));
+
+    span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--ad-primary, hsl(0, 66%, 43%));
+        transition: width .25s ease;
+    }
+}
+
+.prError {
+    display: flex;
+    gap: .4rem;
+    margin: 0;
+    color: hsl(0, 72%, 45%);
+    font-size: .86rem;
+    font-weight: 600;
+    line-height: 1.4;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+}
+
+.prActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+@media (max-width: 640px) {
+    .prUploader.isReady {
+        grid-template-columns: minmax(0, 1fr);
+
+        .prPlayer.isPreview {
+            max-width: 11rem;
+            margin: 0 auto;
+        }
+    }
+
+    .prTips {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .prThumb,
+    .prThumb img,
+    .prThumb .prThumbPlay,
+    .prDrop {
+        transition: none;
+    }
+}

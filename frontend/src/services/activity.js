@@ -12,6 +12,7 @@ import { unwrap } from './errors';
 //   classes    created · updated · ended [last_day, reason] · reopened · instructor_changed [instructor, from] · deleted
 //              schedule_added · schedule_changed · schedule_removed [day (1 = Mon), start, end, from]
 //   routines   planned · updated · deleted · video_added · video_changed · video_removed [class, starts_on, sessions, price]
+//              promo_added · promo_changed · promo_caption · promo_removed [class, starts_on, seconds, caption]
 //   students   enrolled · removed (system = left after their course) · leaving · staying · updated [class, joined_at, leaves_after]
 //   sessions   checked_in · checked_out · approved · cancelled · reopened · substituted [from] · note [note]
 //              make_up_added · make_up_removed [date, start, make_up, instructor]

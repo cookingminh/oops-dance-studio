@@ -613,6 +613,43 @@
         margin-top: .7rem;
     }
 
+    // The course's promo clip (ui/promo).
+    .tuPromoBtn {
+        display: flex;
+        align-items: center;
+        width: fit-content;
+        gap: .4rem;
+        margin-top: .55rem;
+        padding: .3rem .75rem .3rem .4rem;
+        border-radius: 999px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: .85rem;
+        font-weight: 700;
+        transition: background-color .2s ease, transform .3s var(--ad-ease);
+
+        > svg {
+            box-sizing: content-box;
+            padding: .3rem;
+            border-radius: 50%;
+            background: var(--ad-primary);
+            color: #fff;
+            fill: currentColor;
+            font-size: .7rem;
+        }
+
+        span {
+            color: var(--ad-muted);
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &:hover {
+            background: var(--ad-primary-tint);
+            transform: translateY(-1px);
+        }
+    }
+
     .tuOffer {
         margin-top: .6rem;
         font-size: .88rem;
