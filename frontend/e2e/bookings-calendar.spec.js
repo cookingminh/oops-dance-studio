@@ -153,8 +153,10 @@ test('cancelling from the dialog asks who cancels, then mutes the booking', asyn
     await cancel.getByRole('button', { name: 'Cancel booking' }).click();
     await expectToast(page, 'is now cancelled');
     await expect(cancel).toHaveCount(0);
-    // The booking dialog stays open on its refund block; close it to see the calendar.
+    // The booking dialog stays open on its refund block, with the focus back in it (keyboard still works);
+    // close it to see the calendar.
     await expect(dialog).toContainText('The booking is cancelled');
+    await expect.poll(() => page.evaluate(() => Boolean(document.activeElement?.closest('.bookingDetails')))).toBe(true);
     await closeDialogs();
     await expect(block()).toHaveClass(/tone-muted/);
     await expect(block()).toHaveClass(/status-cancelled/);

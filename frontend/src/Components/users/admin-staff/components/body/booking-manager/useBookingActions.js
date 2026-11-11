@@ -62,6 +62,10 @@ export function useBookingActions(onChanged, today) {
         }
     };
 
+    // The booking dialog underneath loses the button that opened the cancel dialog once the booking is
+    // cancelled, so the focus would drop to the page and Esc / Tab stop working: hand it back to the dialog.
+    const refocusDetails = () => setTimeout(() => document.querySelector('.bookingDetails')?.focus(), 60);
+
     // { byStudio, refund (null = the policy's amount), note } → cancel_booking.
     const confirmCancel = async (id, choice) => {
         setBusyId(id);
@@ -69,6 +73,7 @@ export function useBookingActions(onChanged, today) {
             await cancelBooking(id, choice);
             done(id, 'cancelled');
             setCancelling(null);
+            refocusDetails();
             return true;
         } catch (error) {
             toast.error(error);
@@ -94,5 +99,10 @@ export function useBookingActions(onChanged, today) {
 
     const quick = (booking) => quickActionsOf(booking, today);
 
-    return { busyId, setStatus, remove, quick, cancelling, confirmCancel, closeCancel: () => setCancelling(null) };
+    const closeCancel = () => {
+        setCancelling(null);
+        refocusDetails();
+    };
+
+    return { busyId, setStatus, remove, quick, cancelling, confirmCancel, closeCancel };
 }
