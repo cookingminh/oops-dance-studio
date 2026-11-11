@@ -4,7 +4,7 @@
 --   * a completed booking ahead still holds its room; it can still be cancelled (and refunded) before it starts
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(13);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -61,8 +61,11 @@ select tests.logout();
 select public.tuition_record_transfer('sepay', 'paid-1', 200000, 'CK ' || (select payment_code from public.bookings where id = 900203) || ' dat phong');
 select is(tests.status(900203), 'completed', 'a transfer of the whole price completes it too');
 
--- By hand, a past booking stays completed even if unpaid.
-update public.bookings set status = 'completed' where id = 900202;
+-- By hand (staff's own role, as the booking form does), a past booking stays completed even if unpaid.
+select tests.login_as('00000000-0000-4000-b000-000000000201');
+select lives_ok($$ update public.bookings set status = 'completed' where id = 900202 $$,
+  'staff update a booking directly (the triggers run with their rights)');
+select tests.logout();
 select is(tests.status(900202), 'completed', 'staff mark a past booking completed by hand');
 
 -- A completed booking ahead still holds its room.

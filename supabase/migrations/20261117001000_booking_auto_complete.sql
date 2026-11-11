@@ -22,7 +22,7 @@ declare
 begin
   if new.status = 'approved' and v_paid then
     new.status := 'completed';
-  elsif new.status = 'completed' and not v_paid and private.booking_starts_at(new) > now() then
+  elsif new.status = 'completed' and not v_paid and (new.date + new.start_time) at time zone 'Asia/Ho_Chi_Minh' > now() then
     -- Ahead of its time, completed means paid in full: anything less is approved (money taken back, or the
     -- status picked by hand in the booking form). Once it has started staff may complete it as they like.
     new.status := 'approved';
