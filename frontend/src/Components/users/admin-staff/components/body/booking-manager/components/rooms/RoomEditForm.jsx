@@ -4,7 +4,8 @@ import { updateRoom } from '@/services/rooms';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
 
-const EditForm = ({ room, onClose, onSaved }) => {
+// A room's name, size / features ("80 m² · gương 2 mặt") and the hourly price guests are charged.
+const RoomEditForm = ({ room, onClose, onSaved }) => {
     const toast = useToast();
     const { t } = useI18n();
     const [form, setForm] = useState({ name: room.name, size: room.size ?? '', price: String(room.price) });
@@ -27,7 +28,7 @@ const EditForm = ({ room, onClose, onSaved }) => {
     };
 
     return (
-        <Modal isOpen onOpenChange={(open) => !open && onClose()}>
+        <Modal isOpen placement="center" onOpenChange={(open) => !open && onClose()} classNames={{ base: 'adminPortal' }}>
             <ModalContent>
                 <ModalHeader>{t('Edit Room')}</ModalHeader>
                 <ModalBody>
@@ -58,4 +59,4 @@ const EditForm = ({ room, onClose, onSaved }) => {
     );
 };
 
-export default EditForm;
+export default RoomEditForm;

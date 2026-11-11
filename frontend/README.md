@@ -10,8 +10,8 @@ React 18 + Vite, Tailwind CSS + NextUI + SCSS, talking directly to **Supabase** 
 |---|---|---|
 | Visitor | `/home`, `/classes`, `/rooms`, `/about` | Home (perks, class teaser, next class), classes (weekly timetable, all classes, last month's class videos from YouTube, instructors), rooms (availability search and booking), About us (Oops! Crew story), sign up / log in, password reset |
 | Guest | `/profile` | Overview of the week, one page per class (current routine: sessions held, shoot day), tuition **per course** (pay by VietQR — marked paid automatically by the bank webhook — renew or stop the next course, history), attendance calendar, book a room, cancel pending bookings |
-| Instructor | `/profile` | Today's sessions (make-ups with their own times), check in / out with a proof photo, one page per class (routine progress, roster with recent attendance, joining/leaving dates) |
-| Staff | `/admin` | Dashboard, **class hub** `/admin/classes` (today / this month / upcoming / past; one page per class: students, sessions & roll calls, substitutes, make-up sessions, tuition by course, routines, setup, end / reopen), bookings, rooms, students, instructor attendance, tuition (by course, renewals, bank-transfer inbox, switches between courses), their own expenses, charts |
+| Instructor | `/profile` | Today's sessions (make-ups with their own times), check in / out with a proof photo (check-in opens 15 minutes before a session and closes at its end; a check-out more than 10 minutes after the end is marked late), one page per class (routine progress, roster with recent attendance, joining/leaving dates) |
+| Staff | `/admin` | Dashboard, **class hub** `/admin/classes` (today / this month / upcoming / past; one page per class: students, sessions & roll calls, substitutes, make-up sessions, tuition by course, routines, setup, end / reopen), bookings (calendar, list, and rooms & prices with the cancellation policy), students, instructor attendance (correct check-in / check-out times with a reason), tuition (by course, renewals, bank-transfer inbox, switches between courses), their own expenses, charts |
 | Admin | `/admin` | Everything staff can do, plus users, payroll, tuition payment settings (bank account, renewal rules, SePay webhook), all expenses (recurring, receipts, class-tied) and the finance report (revenue − payroll − expenses, per-class margin, per-person student movement) |
 
 Every screen is available in English and Vietnamese (EN | VI switch in the navbar, the auth pages and the workspace top bar).
@@ -64,7 +64,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `anon.spec.js` | public pages and navbar, classes, rooms, photos, timetable, About page, visitor booking prompt, route guards |
 | `guest.spec.js` | book from /rooms and cancel (the cancel dialog), profile settings, RLS on bookings / profiles / attendance |
 | `instructor.spec.js` | check-in / check-out with a proof photo, signed proof URLs, no access to others' sessions |
-| `staff.spec.js` | dashboard, rooms, bookings (overlap → `SLOT_TAKEN`), classes with images, schedules, enrolments, the Attendance page, charts |
+| `staff.spec.js` | dashboard, rooms (`/admin/rooms` → Bookings → Rooms & prices), bookings (overlap → `SLOT_TAKEN`; a booking ahead offers Cancel, not Mark completed), classes with images, schedules, enrolments, the Attendance page, charts |
 | `admin.spec.js` | user management through the `admin-users` Edge Function and `admin_set_role` |
 | `auth.spec.js` | sign-up (always guest), taken username, wrong password, password reset through Mailpit, change password |
 | `clash.spec.js` | schedule and room-move forms explain clashes with bookings |
@@ -80,12 +80,15 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `class-hub.spec.js` | the class hub: views, new-class wizard, students, make-up, end / reopen, delete guard |
 | `routine-order.spec.js` | the next routine starts after the current one's shoot day (form + server); a routine to-do opens the class's Routines tab |
 | `bookings-calendar.spec.js` | the bookings calendar: class sessions behind, a free-slot click prefills a booking, pending style and chip, dialog actions, month / list |
-| `attendance.spec.js` | the one Attendance page: today, review queue and badge, roll call and session actions in the modal, calendar / list, deep link |
+| `attendance.spec.js` | the one Attendance page: today, review queue and badge, roll call and session actions in the modal (call off with a reason, reopen), calendar / list, deep link |
 | `activity.spec.js` | the admin's Activity log: day groups, collapsed bursts, filters in the URL, a staff action shows up, staff have no access |
-| `dues.spec.js` | reminders to pay: an approved booking waiting for its deposit shows in the guest's bell (QR one tap away), as a menu badge and once a day as a reminder ("Later" = not again today); nothing owed says so |
+| `dues.spec.js` | reminders to pay: an approved booking waiting for its deposit shows in the guest's bell (QR one tap away), as a menu badge and once a day as a reminder ("Later" = not again today); nothing new says so |
 | `promos.spec.js` | routine promos: staff reminder, the instructor uploads a clip from the overview nudge, students watch it in their class and on the renewal question, /classes "Coming next", staff swap it for a YouTube Short (old files deleted) and remove it, other instructors can't |
-| `booking-payments.spec.js` | booking QR / transfer content with its code, sandbox payment, still-to-pay vs deposit, cash and refunds, price change with a reason, receipt, the new add-booking form, inbox assign to a booking |
-| `booking-refunds.spec.js` | cancellation policy and refunds: the policy on the booking form, a guest cancels an approved booking ahead (50 % quoted, "the studio will refund …"), the refund to-do and "Refunded by transfer", staff cancel as the studio (everything back; another amount needs a reason; change the refund), the "To refund" list, the admin's policy editor (staff read only) |
+| `booking-payments.spec.js` | booking QR / transfer content with its code, sandbox payment, still-to-pay vs deposit, cash and refunds (paid in full → completed, money taken back → approved again), price change with a reason, receipt, the "still unpaid" prompt when marking a booking that happened completed, the new add-booking form, inbox assign to a booking |
+| `session-changes.spec.js` | session changes: staff call a session off with a reason and move it to a free day in one step (the calendar shows the day off with its reason and the make-up tagged with the day it replaces); a member student sees "Called off" and the make-up in My Classes and in the bell (counted until seen); call a session off first and schedule its make-up later (also for a day already past); close the studio for a day (preview of classes and bookings with the money back, summary with a make-up per class) |
+| `booking-refunds.spec.js` | cancellation policy and refunds: the policy on the booking form, a guest cancels an approved booking ahead (50 % quoted, "the studio will refund …"), the refund to-do and "Refunded by transfer", staff cancel a booking paid in full (completed) as the studio (everything back; another amount needs a reason; change the refund), the "To refund" list, the admin's policy editor on its card beside the room prices (staff read only) |
+| `booking-rooms.spec.js` | rooms inside Bookings: `/admin/rooms` → Rooms & prices (no Rooms item in the menu), each room's price and booking facts, the cancellation policy card, change a room's price and put it back, "See this room's calendar"; a booking ahead paid in full is completed by itself (solid, "Paid up", no Mark completed) and still cancellable by the guest and the studio |
+| `checkin-window.spec.js` | the instructor check-in window and late check-out: a session in 30 minutes says "Check-in opens at …" (and the server refuses), one that is over says to ask the studio, a check-out more than 10 minutes after the end warns and is marked late; staff correct a forgotten check-out with a reason in the session dialog (late mark from the times, then excused), today's board badge, the activity log entries with before → after |
 
 ```bash
 # from the repository root, once per stack reset
@@ -148,5 +151,5 @@ Bundle (gzip): the homepage loads about 400 KB of JS (React, NextUI, supabase-js
 ## Known follow-ups
 
 - Upgrade NextUI 2.4 → HeroUI; then drop the Avatar workaround in `src/ui/PlainImg.jsx`.
-- Upload / reorder room photos from the admin Rooms page (staff upload to `site-assets/rooms/{room_id}/` and update `rooms.image_paths`; no backend change needed).
+- Upload / reorder room photos from Bookings → Rooms & prices (staff upload to `site-assets/rooms/{room_id}/` and update `rooms.image_paths`; no backend change needed).
 - UI redesign (dashboards still have decorative search boxes and message/notification icons; footer links are placeholders).

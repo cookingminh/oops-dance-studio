@@ -132,8 +132,6 @@ export default {
     'Booking updated.': 'Đã cập nhật lượt đặt phòng.',
 
     // Rooms page
-    'Room details': 'Thông tin phòng',
-    'Sizes, features and the hourly price guests see when they book.': 'Diện tích, tiện ích và giá theo giờ khách thấy khi đặt phòng.',
     '{count} photos': '{count} ảnh',
     'Edit {name}': 'Sửa {name}',
     'per hour': 'mỗi giờ',

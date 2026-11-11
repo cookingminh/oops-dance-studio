@@ -7,7 +7,7 @@ import { signProofUrls } from '@/services/storage';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 const STUDENT = `${PERSON}, contact_number`;
-const SESSION = 'id, class_id, instructor_id, room_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at';
+const SESSION = 'id, class_id, instructor_id, room_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at, checkout_late, cancel_reason, makes_up';
 
 // Light rows for the directory: every class's sessions in [from, to).
 export async function listSessionsBetween(from, to) {
@@ -62,6 +62,21 @@ export async function listClassSessions(classId, from, to) {
         checkin_proof_url: urls[row.checkin_proof_path] ?? null,
         checkout_proof_url: urls[row.checkout_proof_path] ?? null,
     }));
+}
+
+// The make-up that replaces a class's session on `date` (a session moved to another day), or null.
+export async function getMakeUpFor(classId, date) {
+    const rows = unwrap(
+        await supabase
+            .from('instructor_attendance')
+            .select('id, date, status, start_time, end_time')
+            .eq('class_id', classId)
+            .eq('makes_up', date)
+            .neq('status', 'cancelled')
+            .order('date')
+            .limit(1)
+    );
+    return rows[0] ?? null;
 }
 
 // One class's roll calls from `from` to `until` (inclusive) with each student's profile.

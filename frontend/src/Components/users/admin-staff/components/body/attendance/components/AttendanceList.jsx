@@ -10,6 +10,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import { statusColorMap } from '../../../../../../Table/utils';
 import Segmented from '../../../common/Segmented';
 import MakeUpTag from '../../class-manager/routines/MakeUpTag';
+import LateTag from '../../../common/checkins/LateTag';
 import { personName, teacherOf } from '../../../common/session-modal/sessionModel';
 import { NoteButton } from './AttendanceParts';
 import { downloadCsv } from './csv';
@@ -54,7 +55,7 @@ const AttendanceList = ({ state, sessions, today, onOpen }) => {
     const exportCsv = () =>
         downloadCsv(
             `sessions-${scope === 'all' ? 'all' : today}.csv`,
-            [t('Date'), t('Start'), t('End'), t('Class'), t('Room'), t('Instructor'), t('Check-in'), t('Check-out'), t('Status'), t('Make-up'), t('Note')],
+            [t('Date'), t('Start'), t('End'), t('Class'), t('Room'), t('Instructor'), t('Check-in'), t('Check-out'), t('Late check-out'), t('Status'), t('Make-up'), t('Note')],
             visible.map(({ date, start, end, cls, row, extra }) => [
                 date,
                 start,
@@ -64,6 +65,7 @@ const AttendanceList = ({ state, sessions, today, onOpen }) => {
                 personName(row.instructor),
                 row.checkin_at ? formatClock(row.checkin_at) : '',
                 row.checkout_at ? formatClock(row.checkout_at) : '',
+                row.checkout_late ? t('Yes') : '',
                 statusText(row),
                 extra ? t('Yes') : '',
                 row.details ?? '',
@@ -107,7 +109,12 @@ const AttendanceList = ({ state, sessions, today, onOpen }) => {
             case 'checkin':
             case 'checkout': {
                 const at = key === 'checkin' ? row.checkin_at : row.checkout_at;
-                return <span className={at ? undefined : 'isMuted'}>{at ? formatClock(at) : '—'}</span>;
+                return (
+                    <span className={`atListTime${at ? '' : ' isMuted'}`}>
+                        {at ? formatClock(at) : '—'}
+                        {key === 'checkout' && row.checkout_late && <LateTag />}
+                    </span>
+                );
             }
             case 'status':
                 return (

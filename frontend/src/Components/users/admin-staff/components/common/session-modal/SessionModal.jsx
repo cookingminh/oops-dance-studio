@@ -1,30 +1,40 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from '@nextui-org/react';
-import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarPlus, LuCheck, LuClock, LuDoorOpen, LuListChecks, LuRotateCcw } from 'react-icons/lu';
+import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClipboardEdit, LuClock, LuDoorOpen, LuListChecks, LuRotateCcw } from 'react-icons/lu';
 import { updateInstructorAttendance } from '@/services/attendance';
 import { classImageUrl } from '@/services/storage';
-import { formatClock } from '@/lib/format';
+import { formatClock, formatTime } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import placeholder from '@/assets/images/logo-mark.webp';
 import MakeUpTag from '../../body/class-manager/routines/MakeUpTag';
 import { classPath, sessionTimes } from '../../body/class-hub/hubModel';
 import { useStudioClock } from '../useStudioClock';
+import RescheduleDialog from '../session-changes/RescheduleDialog';
+import EditCheckDialog from '../checkins/EditCheckDialog';
+import LateTag from '../checkins/LateTag';
+import { changeDay, reasonText } from '../session-changes/changeText';
 import RollCall from './RollCall';
 import { CheckStep, InstructorBlock, NoteBox, ProofDialog } from './SessionParts';
-import { OPEN_STATUSES, classColor, isSubstitute, sessionRules, sessionState, teacherOf } from './sessionModel';
+import { OPEN_STATUSES, canReschedule, classColor, isSubstitute, sessionRules, sessionState, teacherOf } from './sessionModel';
 import { useSessionDetail } from './useSessionDetail';
+import '../session-changes/sessionChanges.scss';
 import './sessionModal.scss';
 
 // One class session in a dialog, the same on the attendance page and on the class page: when and
 // where, who teaches (a substitute for this session), the check-in / check-out with proof photos,
-// approve / cancel / reopen, the note and the students' roll call. It loads the session itself and
-// reloads after every change; `onChanged` tells the page to refresh its own data.
+// approve / reopen, call off or move it (today or ahead, also before its record exists), the note and
+// the students' roll call. Staff correct the check-in / check-out times with a reason (a late check-out is
+// marked). A session called off says why and when it is made up — the make-up is scheduled through the
+// same dialog, also for a day already past, so it says which day it replaces; a make-up says which day
+// it replaces. It loads the session itself and reloads after every change; `onChanged` tells the page to
+// refresh its own data.
 //   session   { cls, date, row?, ... } (from sessionModel)   focus  'roll': scroll to the roll call
-//   classLink the class name links to the class page          onMakeUp  "Add a make-up session"
-const SessionModal = ({ session, today, instructors = [], readOnly = false, focus, classLink = false, onClose, onChanged, onMakeUp }) => {
-    const { t, formatDate } = useI18n();
+//   classLink the class name links to the class page
+const SessionModal = ({ session, today, instructors = [], readOnly = false, focus, classLink = false, onClose, onChanged }) => {
+    const i18n = useI18n();
+    const { t, formatDate } = i18n;
     const toast = useToast();
     const now = useStudioClock();
     const { cls, date } = session;
@@ -32,6 +42,7 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const detail = useSessionDetail(cls.id, date, version);
     const [busy, setBusy] = useState(null); // 'approve' | 'cancel' | 'reopen' | 'substitute' | 'note'
     const [proof, setProof] = useState(null);
+    const [changing, setChanging] = useState(null); // 'move' (call off / move) | 'makeUp' (make-up of a called-off session) | 'times'
     const rollRef = useRef(null);
 
     const loaded = detail.data !== undefined;
@@ -42,6 +53,9 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const rules = sessionRules(current, today, readOnly);
     const cancelled = row?.status === 'cancelled';
     const teacher = teacherOf(current);
+    const reschedule = canReschedule(current, today, readOnly);
+    const madeUp = detail.data?.makeUp ?? null;
+    const reason = reasonText(row?.cancel_reason, t);
 
     // "Take roll call": on a narrow screen the roll call sits below the session, so bring it up.
     useEffect(() => {
@@ -111,6 +125,7 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                             </span>
                             <span className="smWhen">
                                 <span>{formatDate(date, 'full')}</span>
+                                {row?.makes_up && <span className="smReplaces">{t('Make-up for {day}', { day: changeDay(row.makes_up, i18n) })}</span>}
                                 <span>
                                     <LuClock aria-hidden="true" /> {current.start ? `${current.start}–${current.end}` : t('No time set')}
                                 </span>
@@ -156,22 +171,55 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                                         <CheckStep label={t('Check-out')} proofLabel={t('Check-out proof')} at={row.checkout_at} proof={row.checkout_proof_url} onView={setProof} />
                                     </ol>
                                 )}
+                                {row?.checkout_late && !cancelled && (
+                                    <p className="smLateLine">
+                                        <LateTag />
+                                        <span>{current.end ? t('More than 10 minutes after the end ({end}).', { end: current.end }) : t('More than 10 minutes after the end.')}</span>
+                                    </p>
+                                )}
+                                {/* A forgotten check-out, a wrong time: staff set them, with a reason (logged). */}
+                                {row && !cancelled && !readOnly && date <= today && (
+                                    <Button size="sm" variant="flat" className="smEditTimes" startContent={<LuClipboardEdit aria-hidden="true" />} isDisabled={Boolean(busy)} onPress={() => setChanging('times')}>
+                                        {t('Edit check-in/out times')}
+                                    </Button>
+                                )}
                                 {!row && loaded && (
                                     <p className="smHint">{date >= today ? t('The check-in record is created with the week’s records.') : t('No check-in record for this day.')}</p>
                                 )}
 
                                 {cancelled && (
                                     <div className="smCancelled">
-                                        <p>{t('This session was cancelled. It doesn’t count for the routine, so the routine (and its shoot day) moves one session later.')}</p>
-                                        {onMakeUp && !readOnly && (
-                                            <Button size="sm" variant="flat" startContent={<LuCalendarPlus aria-hidden="true" />} onPress={onMakeUp}>
+                                        {reason && (
+                                            <p className="smReason">
+                                                <LuCalendarOff aria-hidden="true" />
+                                                <span>{t('Called off: {reason}', { reason })}</span>
+                                            </p>
+                                        )}
+                                        {madeUp ? (
+                                            <>
+                                                <p className="smMadeUp">
+                                                    <LuCalendarCheck aria-hidden="true" />
+                                                    <span>
+                                                        {t('Made up on {day}, {time}', {
+                                                            day: changeDay(madeUp.date, i18n),
+                                                            time: `${formatTime(madeUp.start_time)}–${formatTime(madeUp.end_time)}`,
+                                                        })}
+                                                    </span>
+                                                </p>
+                                                <p>{t('This session was cancelled. The make-up counts for the routine in its place.')}</p>
+                                            </>
+                                        ) : (
+                                            <p>{t('This session was cancelled. It doesn’t count for the routine, so the routine (and its shoot day) moves one session later.')}</p>
+                                        )}
+                                        {!madeUp && !readOnly && (
+                                            <Button size="sm" variant="flat" startContent={<LuCalendarPlus aria-hidden="true" />} onPress={() => setChanging('makeUp')}>
                                                 {t('Add a make-up session')}
                                             </Button>
                                         )}
                                     </div>
                                 )}
 
-                                {(rules.approve || rules.reopen || rules.cancel) && (
+                                {(rules.approve || rules.reopen || rules.cancel || reschedule) && (
                                     <div className="smActions">
                                         {rules.approve && (
                                             <Button
@@ -191,7 +239,12 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                                                 {t('Reopen session')}
                                             </Button>
                                         )}
-                                        {rules.cancel && (
+                                        {reschedule && (
+                                            <Button size="sm" color="danger" variant="flat" startContent={<LuCalendarClock aria-hidden="true" />} isDisabled={Boolean(busy)} onPress={() => setChanging('move')}>
+                                                {t('Call off / move')}
+                                            </Button>
+                                        )}
+                                        {rules.cancel && !reschedule && (
                                             <Button
                                                 size="sm"
                                                 variant="light"
@@ -239,6 +292,28 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                 </ModalContent>
             </Modal>
             {proof && <ProofDialog proof={proof} onClose={() => setProof(null)} />}
+            {changing === 'times' && (
+                <EditCheckDialog
+                    session={current}
+                    onClose={() => setChanging(null)}
+                    onDone={() => {
+                        setChanging(null);
+                        refresh();
+                    }}
+                />
+            )}
+            {(changing === 'move' || changing === 'makeUp') && (
+                <RescheduleDialog
+                    session={current}
+                    today={today}
+                    makeUpOnly={changing === 'makeUp'}
+                    onClose={() => setChanging(null)}
+                    onDone={() => {
+                        setChanging(null);
+                        refresh();
+                    }}
+                />
+            )}
         </>
     );
 };

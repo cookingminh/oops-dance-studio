@@ -38,6 +38,7 @@ const FIELD_LABELS = {
     leaves_after: 'Leaves after',
     checkin_at: 'Check-in',
     checkout_at: 'Check-out',
+    checkout_late: 'Late check-out',
     is_extra: 'Make-up',
     amount: 'Amount',
     paid_amount: 'Paid',
@@ -177,8 +178,8 @@ export function recordLink(row, lookups) {
             if (row.action === 'deleted') return null;
             return { to: `/admin/bookings?booking=${row.entity_id}${row.meta?.date ? `&date=${row.meta.date}` : ''}`, page: 'Bookings' };
         case 'booking_settings':
-            // The cancellation policy opens over the bookings page.
-            return { to: '/admin/bookings?policy=1', page: 'Bookings' };
+            // The cancellation policy opens over its card, beside the room prices.
+            return { to: '/admin/bookings?view=rooms&policy=1', page: 'Rooms & prices' };
         case 'classes':
             return inClass('overview');
         case 'class_schedules':
@@ -190,6 +191,9 @@ export function recordLink(row, lookups) {
         case 'instructor_attendance':
         case 'student_attendance':
             return inClass('sessions', row.meta?.date ? { day: row.meta.date } : undefined);
+        case 'studio':
+            // A day the studio was closed: the Attendance calendar on that day.
+            return row.meta?.date ? { to: `/admin/attendance?day=${row.meta.date}`, page: 'Attendance' } : null;
         case 'tuition_invoices':
             return inClass('tuition') ?? { to: '/admin/tuition', page: 'Tuition' };
         case 'class_pay_rates':
@@ -206,7 +210,8 @@ export function recordLink(row, lookups) {
         case 'payroll_settings':
             return { to: '/admin/payroll', page: 'Payroll' };
         case 'rooms':
-            return row.action === 'deleted' ? null : { to: '/admin/rooms', page: 'Rooms' };
+            // Rooms and their prices: the bookings page's "Rooms & prices" view.
+            return row.action === 'deleted' ? null : { to: '/admin/bookings?view=rooms', page: 'Rooms & prices' };
         case 'profiles':
             return row.subject_id && lookups?.people?.has(row.subject_id) ? { to: `/admin/users?person=${row.subject_id}`, page: 'Users' } : null;
         default:

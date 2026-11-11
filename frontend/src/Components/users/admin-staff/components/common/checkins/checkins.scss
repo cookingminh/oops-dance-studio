@@ -1,0 +1,81 @@
+// Instructor check-ins: the "Late check-out" pill (staff pages, the instructor's history) and the staff
+// "Edit check-in/out times" dialog (a portal: .adminPortal carries the --ad-* tokens, the dialog chrome
+// .rtDialog* / .scg* comes from routines.scss and sessionChanges.scss).
+
+.ckLateTag {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: .25rem;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: hsl(38, 100%, 92%);
+    color: hsl(28, 85%, 32%);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+    vertical-align: middle;
+
+    svg {
+        font-size: .8rem;
+    }
+}
+
+// A session calendar's badge for a late check-out (calendarItem flag 'late') is amber like the pill.
+:is(.calItem, .calChip, .calRow).flag-late .calBadge {
+    border-color: hsl(38, 90%, 72%);
+    background: hsl(38, 100%, 93%);
+    color: hsl(28, 85%, 30%);
+}
+
+.ckDialog {
+    .ckTimes {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .75rem;
+    }
+
+    .ckLate {
+        display: grid;
+        justify-items: start;
+        gap: .45rem;
+    }
+
+    .ckLabel {
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+
+    .ckHint {
+        display: flex;
+        align-items: flex-start;
+        gap: .4rem;
+        font-size: .85rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .ckDialog .ckTimes {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .ckDialog .ckLate .segmented {
+        width: 100%;
+
+        button {
+            flex: 1 1 0;
+            justify-content: center;
+        }
+    }
+}

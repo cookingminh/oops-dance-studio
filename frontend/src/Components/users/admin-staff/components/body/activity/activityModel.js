@@ -100,6 +100,8 @@ export const ACTIONS = {
         note: 'Note',
         make_up_added: 'Make-up added',
         make_up_removed: 'Make-up removed',
+        day_closed: 'Studio closed for a day',
+        check_edited: 'Check-in times corrected',
     },
     roll_call: { attended: 'Attended', absent: 'Absent', unmarked: 'Unmarked', note: 'Note' },
     tuition: {
@@ -238,6 +240,8 @@ const CLASS_SETUP = new Set(['classes.created', 'classes.schedule_added', 'routi
 
 function burstKey(row) {
     const what = `${row.area}.${row.action}`;
+    // A check-in correction carries its own reason: it is never folded into a run.
+    if (what === 'sessions.check_edited') return `single|${row.id}`;
     if (row.area === 'roll_call') return `roll|${row.class_id}|${row.meta?.date ?? ''}`;
     if (CLASS_SETUP.has(what) && row.class_id) return `class|${row.class_id}`;
     return `${what}|${row.class_id ?? ''}|${row.meta?.date ?? row.meta?.month ?? ''}`;

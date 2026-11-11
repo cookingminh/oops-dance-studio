@@ -8,12 +8,16 @@ import { formatTime, toIsoDate } from '@/lib/format';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { statusColorMap } from '../../../../../../Table/utils';
 import SectionCard, { CardFooterLink } from '../../../../../admin-staff/components/common/SectionCard';
+import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
+import { changeDay, reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
 import { ClassThumb, DayName } from '../classes/ClassParts';
 
-const ACTIVE = ['pending', 'approved'];
+// Bookings still on: waiting, approved, or paid in full ahead (`completed` by itself once paid).
+const ACTIVE = ['pending', 'approved', 'completed'];
 const FIRST = 5; // items shown before "Show all"
 
-// Classes and room bookings of the next 7 days in one list, grouped by day.
+// Classes and room bookings of the next 7 days in one list, grouped by day. A make-up is tagged (with the
+// day it replaces); a session called off stays in the list, greyed, with "Off" and why.
 const WeekAgenda = ({ state, week, bookings, today }) => {
     const { t, tn } = useI18n();
     const [expanded, setExpanded] = useState(false);
@@ -58,21 +62,7 @@ const WeekAgenda = ({ state, week, bookings, today }) => {
                                         .filter((item) => item.date === date)
                                         .map((item) =>
                                             item.kind === 'class' ? (
-                                                <li key={item.key} className={`pfAgendaItem${item.session.isLive ? ' isLive' : ''}`}>
-                                                    <span className="pfAgendaTime">{item.start}</span>
-                                                    <ClassThumb cls={item.session.cls} />
-                                                    <span className="pfAgendaText">
-                                                        <strong>{item.session.cls.name}</strong>
-                                                        <span>
-                                                            {item.session.start}–{item.session.end} · {t('with')} {item.session.cls.instructorName}
-                                                        </span>
-                                                    </span>
-                                                    {item.session.isLive && (
-                                                        <span className="pfLiveTag">
-                                                            <span className="pfPulse" aria-hidden="true" /> {t('Now')}
-                                                        </span>
-                                                    )}
-                                                </li>
+                                                <ClassItem key={item.key} session={item.session} />
                                             ) : (
                                                 <li key={item.key} className="pfAgendaItem isBooking">
                                                     <span className="pfAgendaTime">{item.start}</span>
@@ -106,6 +96,33 @@ const WeekAgenda = ({ state, week, bookings, today }) => {
                 )}
             </AsyncState>
         </SectionCard>
+    );
+};
+
+// One class session of the agenda: live, a make-up, or called off (struck through, with the reason).
+const ClassItem = ({ session }) => {
+    const i18n = useI18n();
+    const { t } = i18n;
+    const off = session.calledOff;
+    let line = `${session.start}–${session.end} · ${t('with')} ${session.cls.instructorName}`;
+    if (off) line = [t('Called off'), reasonText(off.reason, t)].filter(Boolean).join(' · ');
+    else if (session.makesUp) line = `${session.start}–${session.end} · ${t('Instead of {day}', { day: changeDay(session.makesUp, i18n) })}`;
+    return (
+        <li className={`pfAgendaItem${session.isLive ? ' isLive' : ''}${off ? ' isOff' : ''}`}>
+            <span className="pfAgendaTime">{session.start}</span>
+            <ClassThumb cls={session.cls} />
+            <span className="pfAgendaText">
+                <strong>{session.cls.name}</strong>
+                <span>{line}</span>
+            </span>
+            {session.isMakeUp && <MakeUpTag />}
+            {off && <span className="pfOffTag">{t('Called off')}</span>}
+            {session.isLive && (
+                <span className="pfLiveTag">
+                    <span className="pfPulse" aria-hidden="true" /> {t('Now')}
+                </span>
+            )}
+        </li>
     );
 };
 

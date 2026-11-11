@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { LuGift, LuMusic, LuTicket } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { ClassBanner, LessonCard, WeekStrip } from './ClassParts';
+import { ClassChanges } from './ClassChanges';
 import { NextSessionCard } from './ClassNext';
 import { StudentProgress } from './ClassProgress';
 import { ClassRoster } from './ClassRoster';
@@ -11,15 +12,17 @@ import ClassTuitionLine from '../tuition/ClassTuitionLine';
 // Everything about one class on one screen: who/where, (students) tuition, the routine it is
 // learning (sessions held, shoot day), the next session (instructors check in from here), the next
 // routine's promo (instructors upload it, students watch it), the coming week and attendance (own,
-// or the students'). onChanged() reloads the classes.
+// or the students'). A change in the next 7 days (a session called off, a make-up) shows first.
+// onChanged() reloads the classes.
 export const ClassView = ({ cls, today, now, isInstructor, onCheck, onChanged }) => (
     <div className={`pfClassView${isInstructor ? ' isInstructor' : ''}`}>
         <ClassBanner cls={cls} today={today} isInstructor={isInstructor} />
+        <ClassChanges cls={cls} today={today} />
         {!isInstructor && <ClassTuitionLine classId={cls.id} />}
         <LessonCard cls={cls} today={today} isInstructor={isInstructor} />
         <NextSessionCard cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={onCheck} />
         <PromoCard cls={cls} isInstructor={isInstructor} onChanged={onChanged} />
-        <WeekStrip cls={cls} today={today} now={now} />
+        <WeekStrip cls={cls} today={today} now={now} notes={false} />
         {isInstructor ? <ClassRoster cls={cls} today={today} /> : <StudentProgress cls={cls} />}
     </div>
 );

@@ -72,13 +72,19 @@
     }
 }
 
-// Calendar: a pending request's badge is amber, and so is "Refund due" on a cancelled booking; context
-// class sessions stay quiet.
+// Calendar: a pending request's badge is amber, and so is "Refund due" on a cancelled booking; "Paid up"
+// on a completed booking ahead is green; context class sessions stay quiet.
 .bookingCalendar {
     :is(.status-pending, .status-cancelled, .status-rejected) .calBadge {
         border-color: hsl(40, 90%, 72%);
         background: hsl(45, 100%, 93%);
         color: hsl(30, 88%, 30%);
+    }
+
+    .status-completed .calBadge {
+        border-color: hsl(150, 50%, 74%);
+        background: hsl(150, 60%, 95%);
+        color: hsl(152, 60%, 26%);
     }
 }
 
@@ -306,12 +312,49 @@
         }
     }
 
-    // The header's "Cancellation policy" shrinks to its icon (the label stays for screen readers).
-    .adminShell .bookingsCard .bookingPolicyBtn {
-        min-width: 0;
-        padding: 0 .8rem;
+    // The room tabs stay on one line and scroll sideways (the counts stay readable).
+    .adminShell .bookingsCard .bookingToolbar .segmented.isRooms {
+        flex-wrap: nowrap;
+        max-width: 100%;
+        overflow-x: auto;
+        scrollbar-width: none;
 
-        .bookingPolicyLabel {
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        button {
+            flex: 0 0 auto;
+        }
+    }
+
+    // Header: the three views share the row with "New booking", which shrinks to its icon (the label
+    // stays for screen readers).
+    .adminShell .bookingsCard .cardActions {
+        flex-wrap: nowrap;
+        width: 100%;
+    }
+
+    .adminShell .bookingsCard .bookingLayout {
+        flex: 1 1 auto;
+        flex-wrap: nowrap;
+        min-width: 0;
+
+        button {
+            flex: 1 1 0;
+            justify-content: center;
+            min-width: 0;
+            padding: 0 .5rem;
+        }
+    }
+
+    .adminShell .bookingsCard .bookingNewBtn {
+        flex: 0 0 auto;
+        min-width: 0;
+        width: 2.75rem;
+        padding: 0;
+
+        .bookingNewLabel {
             position: absolute;
             width: 1px;
             height: 1px;
@@ -321,14 +364,63 @@
         }
     }
 
-    .adminShell .bookingsCard .bookingLayout {
-        flex: 1 1 auto;
+    .adminShell .bookingsCard .bookingToolbarRow {
+        > * {
+            flex: 1 1 100%;
+        }
 
-        button {
+        .segmented button {
             flex: 1 1 0;
             justify-content: center;
         }
     }
+}
+
+// "Rooms & prices" says just "Rooms" on phones (one of the two is always hidden, so it is read once).
+.adminShell .bookingsCard .bookingViewShort {
+    display: none;
+}
+
+@media screen and (max-width: 560px) {
+    .adminShell .bookingsCard .bookingViewLong {
+        display: none;
+    }
+
+    .adminShell .bookingsCard .bookingViewShort {
+        display: inline;
+    }
+}
+
+// The table's second filter row: the search, then the date scope.
+.adminShell .bookingsCard .bookingToolbarRow {
+    display: flex;
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+// "Paid up": a completed booking (paid in full) whose day is still ahead — the list's status cell and
+// the booking dialog's header. Green like a paid booking; the word says it too.
+:is(.adminShell, .adminPortal) .bkPaidUp {
+    display: inline-flex;
+    align-items: center;
+    padding: .1rem .55rem;
+    border: 1px solid hsl(150, 50%, 78%);
+    border-radius: 999px;
+    background: hsl(150, 60%, 95%);
+    color: hsl(152, 60%, 28%);
+    font-size: .74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.adminShell .bkStatusCell {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
 }
 
 // Booking dialog, wide: booking on the left, payment on the right.

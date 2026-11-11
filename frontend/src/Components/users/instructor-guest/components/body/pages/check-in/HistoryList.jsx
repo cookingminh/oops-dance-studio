@@ -6,6 +6,7 @@ import { sessionTimesOf } from '@/lib/lessons';
 import { ClassThumb } from '../classes/ClassParts';
 import ProofThumb from './ProofThumb';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
+import LateTag from '../../../../../admin-staff/components/common/checkins/LateTag';
 
 // Phone layout of the check-in history: one compact card per session instead of a wide table.
 const HistoryList = ({ rows, onView }) => {
@@ -33,13 +34,14 @@ const HistoryList = ({ rows, onView }) => {
                     <div className="pfHistoryTimes">
                         {[
                             { label: t('Check-in'), proofLabel: t('Check-in proof'), at: row.checkin_at, url: row.checkin_proof_url },
-                            { label: t('Check-out'), proofLabel: t('Check-out proof'), at: row.checkout_at, url: row.checkout_proof_url },
+                            { label: t('Check-out'), proofLabel: t('Check-out proof'), at: row.checkout_at, url: row.checkout_proof_url, late: row.checkout_late },
                         ].map((step) => (
                             <span key={step.label} className="pfProofCell">
                                 <ProofThumb url={step.url} label={step.proofLabel} onView={onView} />
                                 <span className="pfHistoryTime">
                                     <small>{step.label}</small>
                                     <strong className={step.at ? undefined : 'isMuted'}>{step.at ? formatClock(step.at) : '—'}</strong>
+                                    {step.late && <LateTag />}
                                 </span>
                             </span>
                         ))}

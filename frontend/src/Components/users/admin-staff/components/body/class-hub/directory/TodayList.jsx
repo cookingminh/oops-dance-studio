@@ -7,11 +7,13 @@ import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import LinkButton from '@/ui/LinkButton';
 import { fadeUp, stagger } from '../../../common/motion';
+import LateTag from '../../../common/checkins/LateTag';
 import { ClassImage, MiniBar } from '../HubParts';
 import { classPath, personName } from '../hubModel';
 
 // Today's classes in time order: when and where, who teaches (a substitute is marked), the
-// instructor's check-in, the roll call so far and the two things staff do from here.
+// instructor's check-in (a late check-out is marked), the roll call so far and the two things staff do
+// from here.
 const TodayList = ({ items, today }) => {
     const { t } = useI18n();
     return (
@@ -46,6 +48,7 @@ const TodayList = ({ items, today }) => {
                                 {state.tone === 'live' && <span className="livePulse" aria-hidden="true" />}
                                 {t(state.key, state.vars)}
                             </span>
+                            {item.row?.checkout_late && <LateTag />}
                         </span>
                         <span className="hubTodayRoll">
                             <small>{t('Roll call')}</small>

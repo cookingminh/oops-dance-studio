@@ -2,6 +2,8 @@ import { formatTime, formatVnd } from '@/lib/format';
 import { categoryOf } from '@/lib/expenseCategories';
 import { refundPolicyLines } from '@/services/bookingRefunds';
 import { VOID_REASONS } from '../tuition/tuitionModel';
+import { reasonText } from '../../common/session-changes/changeText';
+import { checkReasonText } from '../../common/checkins/checkEdit';
 import { ROLE_LABELS, changedFields } from './activityFields';
 import { actionLabel, areaOf, isSelf } from './activityModel';
 
@@ -140,16 +142,31 @@ const SESSIONS = (row, fmt) => {
     const m = row.meta ?? {};
     const at = when(fmt, m.date, m.start);
     const makeUp = m.make_up ? fmt.t('Make-up') : '';
+    // The whole studio closed for a day (studio_close_day; entity 'studio', the reason as label).
+    if (row.action === 'day_closed') {
+        return {
+            key: '{actor} closed the studio on {date}',
+            vars: { date: day(fmt, m.date) },
+            facts: [
+                quote(reasonText(m.reason, fmt.t)),
+                fmt.tn(Number(m.sessions ?? 0), '{count} session called off', '{count} sessions called off'),
+                Number(m.bookings) > 0 && fmt.tn(Number(m.bookings), '{count} booking cancelled', '{count} bookings cancelled'),
+            ],
+        };
+    }
     const out = {
         checked_in: [isSelf(row) || !row.subject_id ? '{actor} checked in to {class}' : '{actor} checked {name} in to {class}', [at, makeUp]],
         checked_out: ['{actor} checked out of {class}', [at, makeUp]],
         approved: ['{actor} approved {name}’s session of {class}', [at, makeUp]],
-        cancelled: ['{actor} cancelled the {class} session', [at, quote(m.note)]],
+        // Called off with a reason the class sees (session_cancel); older rows have none.
+        cancelled: ['{actor} cancelled the {class} session', [at, makeUp, quote(reasonText(m.reason, fmt.t)), quote(m.note)]],
         reopened: ['{actor} reopened the {class} session', [at]],
         substituted: ['{actor} made {name} the substitute for {class}', [at, m.from && fmt.t('Instead of {name}', { name: m.from })]],
         note: ['{actor} added a note to the {class} session', [at, quote(m.note)]],
         make_up_added: ['{actor} added a make-up session for {class}', [at, m.instructor]],
         make_up_removed: ['{actor} removed a make-up session of {class}', [at]],
+        // Staff corrected the check-in / check-out (session_edit_check): the drawer shows before → after.
+        check_edited: ['{actor} corrected {name}’s check-in times for {class}', [at, quote(checkReasonText(m.reason, fmt.t)), fieldsFact(row, fmt)]],
     }[row.action];
     return out && { key: out[0], vars: { class: row.label, name: m.instructor ?? fmt.t('someone') }, facts: out[1] };
 };

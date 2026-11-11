@@ -92,7 +92,7 @@ export async function listInstructorMonth(instructorId, month) {
     return unwrap(
         await supabase
             .from('instructor_attendance')
-            .select(`id, class_id, date, status, checkin_at, checkout_at, details, start_time, end_time, is_extra,
+            .select(`id, class_id, date, status, checkin_at, checkout_at, checkout_late, details, start_time, end_time, is_extra,
                 class:classes!class_id(id, name, schedules:class_schedules(day_of_week, start_time, end_time))`)
             .eq('instructor_id', instructorId)
             .gte('date', month)

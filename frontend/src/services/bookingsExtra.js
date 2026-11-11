@@ -15,7 +15,8 @@ const iso = (date) => format(date, 'yyyy-MM-dd');
 const hhmm = (time) => (time ? time.slice(0, 5) : '');
 
 // Class sessions between `from` and `until` ('yyyy-MM-dd', inclusive), oldest first:
-// [{ key, class_id, class_name, instructor_name, room_id, room_name, date, start, end, is_extra }].
+// [{ key, class_id, class_name, instructor_name, room_id, room_name, date, start, end, is_extra, makes_up }]
+// (`makes_up`: the day a make-up replaces, or null).
 // Weekly sessions count while the class runs (starts_on … ended_on) and not on a day whose session
 // was cancelled (that frees the room); make-up sessions come from instructor_attendance.
 export async function listRoomSessions({ from, until }) {
@@ -23,7 +24,7 @@ export async function listRoomSessions({ from, until }) {
         supabase.from('classes').select(CLASS_COLUMNS).or(`ended_on.is.null,ended_on.gte.${from}`),
         supabase
             .from('instructor_attendance')
-            .select('id, class_id, room_id, date, status, start_time, end_time, is_extra')
+            .select('id, class_id, room_id, date, status, start_time, end_time, is_extra, makes_up')
             .gte('date', from)
             .lte('date', until)
             .or('is_extra.eq.true,status.eq.cancelled'),
@@ -57,6 +58,7 @@ export async function listRoomSessions({ from, until }) {
                     start: hhmm(slot.start_time),
                     end: hhmm(slot.end_time),
                     is_extra: false,
+                    makes_up: null,
                 });
             }
         }
@@ -76,6 +78,7 @@ export async function listRoomSessions({ from, until }) {
             start: hhmm(row.start_time),
             end: hhmm(row.end_time),
             is_extra: true,
+            makes_up: row.makes_up ?? null,
         });
     }
 

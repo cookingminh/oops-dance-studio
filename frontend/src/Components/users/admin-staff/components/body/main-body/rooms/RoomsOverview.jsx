@@ -10,6 +10,8 @@ import SectionCard, { CardFooterLink } from '../../../common/SectionCard';
 import studioPhoto from '@/assets/images/studio.webp';
 
 const PREVIEW = 2;
+// Rooms and their prices: the bookings page's "Rooms & prices" view.
+const ROOMS_VIEW = '/admin/bookings?view=rooms';
 
 const RoomsOverview = () => {
     const { t } = useI18n();
@@ -23,7 +25,7 @@ const RoomsOverview = () => {
             title={t('Rooms')}
             subtitle={t('Spaces guests can book by the hour')}
             footer={
-                <CardFooterLink to="/admin/rooms">
+                <CardFooterLink to={ROOMS_VIEW}>
                     {count > PREVIEW ? t('See all {count} rooms', { count }) : t('Edit sizes and prices')}
                 </CardFooterLink>
             }
@@ -32,7 +34,7 @@ const RoomsOverview = () => {
                 {(list) => (
                     <div className="roomTiles">
                         {list.slice(0, PREVIEW).map((room) => (
-                            <Link to="/admin/rooms" key={room.id} className="roomTile">
+                            <Link to={ROOMS_VIEW} key={room.id} className="roomTile">
                                 <img src={roomImageUrls(room)[0] ?? studioPhoto} alt="" />
                                 <span className="roomTileShade" aria-hidden="true" />
                                 <span className="roomTileText">

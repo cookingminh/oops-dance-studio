@@ -1,0 +1,389 @@
+// Session changes: the Call off / move dialog and the Close-for-a-day dialog (portals: .adminPortal carries
+// the --ad-* tokens; the routines dialog chrome .rtDialog* comes from routines.scss), and the bits the
+// session modal and the calendars add (the reason of a cancelled session, "Make-up for Wed 13/11").
+
+.scgDialog {
+    // The form sits between the dialog and its body/footer: it passes the column layout on, so on a short
+    // screen the body scrolls and the buttons stay in view (scrollBehavior="inside").
+    > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    // Rows keep their height (the make-up's fieldset clips while it slides): the body scrolls instead.
+    .scgBody {
+        display: grid;
+        grid-auto-rows: max-content;
+        gap: .95rem;
+    }
+
+    .scgNoWrap {
+        white-space: nowrap;
+    }
+
+    fieldset {
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    legend {
+        padding: 0;
+    }
+}
+
+// Two big choices (aria-pressed buttons), side by side; one column on a phone.
+.scgChoice {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .5rem;
+
+    button {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        padding: .75rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease, transform .2s var(--ad-ease);
+
+        > svg {
+            flex-shrink: 0;
+            margin-top: .1rem;
+            font-size: 1.15rem;
+            color: var(--ad-subtle);
+            transition: color .15s ease;
+        }
+
+        span {
+            display: grid;
+            gap: .12rem;
+        }
+
+        strong {
+            font-size: .92rem;
+            font-weight: 700;
+            line-height: 1.3;
+            color: var(--ad-text);
+        }
+
+        small {
+            font-size: .8rem;
+            line-height: 1.35;
+            color: var(--ad-muted);
+        }
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+        }
+
+        &:active {
+            transform: scale(.985);
+        }
+
+        &[aria-pressed='true'] {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            box-shadow: inset 0 0 0 1px var(--ad-primary);
+
+            > svg {
+                color: var(--ad-primary);
+            }
+        }
+    }
+}
+
+// The reason: the field, then one-tap reasons as pills.
+.scgReason {
+    display: grid;
+    gap: .5rem;
+}
+
+.scgChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+
+    button {
+        padding: .32rem .75rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: color .15s ease, border-color .15s ease, background-color .15s ease;
+
+        &:hover:not(:disabled) {
+            border-color: var(--ad-primary-tint);
+            color: var(--ad-primary);
+        }
+
+        &[aria-pressed='true'] {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary-strong);
+        }
+
+        &:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+    }
+}
+
+// The make-up's day and times (slides open under "Make it up on another day").
+.scgMakeUp {
+    display: grid;
+    gap: .75rem;
+    overflow: hidden;
+
+    > legend {
+        float: left;
+        width: 100%;
+        margin-bottom: .1rem;
+        color: var(--ad-subtle);
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+
+        + * {
+            clear: both;
+        }
+    }
+}
+
+.scgShoot strong {
+    font-weight: 700;
+}
+
+// ---- Close the studio for a day ----------------------------------------------------------------
+
+.scgClose {
+    .scgDate {
+        display: grid;
+        grid-template-columns: minmax(0, 15rem);
+    }
+}
+
+// What closing the day touches: the classes meeting then and the room bookings, money back included.
+.scgPreview {
+    display: grid;
+    gap: .7rem;
+    padding: .85rem .95rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface-2);
+
+    > header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .25rem .75rem;
+
+        strong {
+            font-size: .92rem;
+            font-weight: 700;
+        }
+
+        small {
+            color: var(--ad-muted);
+            font-size: .8rem;
+        }
+    }
+
+    h4 {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        color: var(--ad-muted);
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .scgEmpty {
+        color: var(--ad-muted);
+        font-size: .85rem;
+    }
+}
+
+.scgList {
+    display: grid;
+    gap: .3rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        min-width: 0;
+        padding: .45rem .6rem;
+        border-radius: 12px;
+        background: var(--ad-surface);
+        font-size: .86rem;
+        line-height: 1.3;
+    }
+
+    .scgTime {
+        flex-shrink: 0;
+        min-width: 6rem;
+        white-space: nowrap;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .scgName {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .scgDot {
+        flex-shrink: 0;
+        width: .55rem;
+        height: .55rem;
+        border-radius: 50%;
+        background: var(--class, var(--ad-subtle));
+    }
+
+    .scgAside {
+        flex-shrink: 0;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        white-space: nowrap;
+    }
+
+    li.isOff {
+        opacity: .6;
+
+        .scgName {
+            text-decoration: line-through;
+        }
+    }
+}
+
+.scgMoney {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem .5rem;
+    font-size: .86rem;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ad-primary-strong);
+    }
+}
+
+// After closing: what happened, and a make-up per class.
+.scgDone {
+    display: grid;
+    justify-items: center;
+    gap: .35rem;
+    padding: .4rem 0 .2rem;
+    text-align: center;
+
+    .scgDoneIcon {
+        display: grid;
+        place-items: center;
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: hsl(150, 60%, 92%);
+        color: hsl(156, 64%, 28%);
+        font-size: 1.5rem;
+    }
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    p {
+        color: var(--ad-muted);
+        font-size: .88rem;
+        line-height: 1.5;
+    }
+}
+
+.scgSummary li {
+    flex-wrap: wrap;
+
+    .scgMadeUp {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        color: hsl(156, 64%, 26%);
+        font-size: .8rem;
+        font-weight: 600;
+    }
+}
+
+@media (max-width: 560px) {
+    .scgChoice {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .scgClose .scgDate {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .scgList .scgTime {
+        min-width: 0;
+    }
+}
+
+// ---- Session modal: why it was called off, which day a make-up replaces ------------------------
+
+.sessionModal {
+    .smReason {
+        display: flex;
+        align-items: flex-start;
+        gap: .45rem;
+        color: var(--ad-text);
+        font-weight: 600;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .2rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    .smMadeUp {
+        display: flex;
+        align-items: flex-start;
+        gap: .45rem;
+        color: hsl(156, 64%, 26%);
+        font-weight: 600;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .2rem;
+        }
+    }
+
+    .smReplaces {
+        color: hsl(262, 45%, 40%);
+        font-size: .8rem;
+        font-weight: 600;
+    }
+}

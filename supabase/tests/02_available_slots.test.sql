@@ -95,13 +95,13 @@ insert into public.bookings (id, room_id, guest_id, date, start_time, end_time, 
 
 select results_eq(
   $$select * from tests.slots(900011, tests.next_week(2))$$,
-  $$values (time '09:00', time '13:00'), (time '14:00', time '21:00')$$,
-  'bookings at 08:00 and 22:00 edges trim the window; pending 13:00–14:00 splits it; rejected/cancelled/completed do not block');
+  $$values (time '09:00', time '13:00'), (time '14:00', time '17:00'), (time '18:00', time '21:00')$$,
+  'bookings at 08:00 and 22:00 edges trim the window; pending 13:00–14:00 splits it; rejected/cancelled do not block; completed ahead (paid in full) does');
 
 update public.bookings set status = 'cancelled' where id = 900011;
 select results_eq(
   $$select * from tests.slots(900011, tests.next_week(2))$$,
-  $$values (time '08:00', time '13:00'), (time '14:00', time '21:00')$$,
+  $$values (time '08:00', time '13:00'), (time '14:00', time '17:00'), (time '18:00', time '21:00')$$,
   'cancelling a booking frees its slot');
 
 select is(

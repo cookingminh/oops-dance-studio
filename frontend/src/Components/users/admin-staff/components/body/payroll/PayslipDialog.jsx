@@ -27,6 +27,7 @@ import { isReadOnly, sessionKey } from '../../common/session-modal/sessionModel'
 import { sessionTimes } from '../class-hub/hubModel';
 import PayslipCalendar from './PayslipCalendar';
 import { NOT_COUNTED, STATUS_LABELS, minutesLate, payByClass, roleTitle } from './payrollShared';
+import LateTag from '../../common/checkins/LateTag';
 
 const QUICK_AMOUNTS = [50000, 100000, 200000];
 const QUICK_REASONS = {
@@ -253,6 +254,7 @@ const PayslipDialog = ({ row, month, today, onClose, onChanged }) => {
                                                                 <LuAlarmClock aria-hidden="true" /> {t('{minutes} min late', { minutes: late })}
                                                             </span>
                                                         )}
+                                                        {session.checkout_late && <LateTag />}
                                                         {isCounted ? (
                                                             <span className="paySessionRate">{formatVnd(rateOf(session))}</span>
                                                         ) : (

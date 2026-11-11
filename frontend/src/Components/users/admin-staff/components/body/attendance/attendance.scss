@@ -207,6 +207,20 @@ $amber-soft: hsl(40, 95%, 92%);
     }
 }
 
+// A late check-out: the pill sits under the two steps.
+.adminShell .atChecks > .ckLateTag {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+
+// The sessions table's check-in / check-out cell (time, then "Late check-out").
+.adminShell .atListTime {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .35rem;
+}
+
 .adminShell .atStep:not(.isDone) .atStepText strong {
     color: var(--ad-muted);
     font-weight: 500;

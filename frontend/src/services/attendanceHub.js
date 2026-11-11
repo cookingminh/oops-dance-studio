@@ -8,6 +8,7 @@ import { signProofUrls } from './storage';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 const SESSION = `id, class_id, instructor_id, room_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at, details,
+    cancel_reason, makes_up, checkout_late,
     checkin_proof_path, checkout_proof_path,
     instructor:profiles!instructor_id(${PERSON})`;
 

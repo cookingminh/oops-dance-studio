@@ -63,7 +63,7 @@ test.describe.serial('reminders to pay', () => {
 
     test('nothing owed: the bell says so', async ({ page }) => {
         await login(page, 'instructor@demo.oopsdance.test');
-        await page.getByRole('button', { name: 'Notifications: nothing to pay' }).click();
+        await page.getByRole('button', { name: 'Notifications: nothing new' }).click();
         await expect(page.locator('.duesPanel')).toContainText('All paid up. Thank you!');
     });
 });

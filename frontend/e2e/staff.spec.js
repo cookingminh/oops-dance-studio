@@ -66,8 +66,10 @@ test('staff /admin/users redirects to /admin', async () => {
     await page.waitForURL((url) => url.pathname === '/admin');
 });
 
-test('updates a room', async () => {
+test('updates a room (Rooms & prices in Bookings; the old /admin/rooms leads there)', async () => {
     await page.goto('/admin/rooms');
+    await page.waitForURL((url) => url.pathname === '/admin/bookings' && url.searchParams.get('view') === 'rooms');
+    await expect(page.getByRole('button', { name: 'Rooms & prices', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await page.getByRole('button', { name: new RegExp(`^Edit ${roomA.name}`) }).click();
     await dialog.getByLabel('Room Size').fill(roomA.size ?? '');
     await dialog.getByRole('button', { name: 'Update Room' }).click();
@@ -123,11 +125,14 @@ test('a booking created by staff is approved', async () => {
     await expect(bookingRow().getByText('approved', { exact: true })).toHaveCount(1);
 });
 
-test('marks the booking completed via the quick action', async () => {
-    await bookingAction('Mark completed');
-    // Nothing was paid: completing asks first; "Complete anyway" leaves it owed.
-    await page.locator('.bdCompleteDialog').getByRole('button', { name: 'Complete anyway' }).click();
-    await expectToast(page, 'is now completed');
+test('a booking ahead offers Cancel, not Mark completed (it completes itself once paid in full)', async () => {
+    await bookingRow().getByRole('button', { name: /Actions for booking/ }).click();
+    await page.waitForTimeout(500); // menu open animation
+    const menu = page.getByRole('menu', { name: /^Actions for booking/ });
+    await expect(menu.getByRole('menuitem', { name: 'Cancel', exact: true })).toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: 'Mark completed' })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
 });
 
 test('deletes the booking', async () => {

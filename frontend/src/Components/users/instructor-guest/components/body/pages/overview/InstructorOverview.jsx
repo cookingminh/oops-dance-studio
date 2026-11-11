@@ -19,6 +19,9 @@ import { ClassThumb, DayName, LessonCard, NextLine, WeekStrip } from '../classes
 import { CheckAction } from '../classes/ClassNext';
 import { AvatarStack } from '../classes/ClassRoster';
 import { NoClasses } from '../classes/ClassView';
+import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
+import LateTag from '../../../../../admin-staff/components/common/checkins/LateTag';
+import { reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
 import { Hero, StatGrid, UpNext } from './OverviewParts';
 import PromoNudge from './PromoNudge';
 
@@ -66,7 +69,8 @@ const InstructorOverview = () => {
     const open = todayRows.filter((row) => !['completed', 'cancelled'].includes(row.status));
     const next = today ? upcomingSessions(classes, today, now, 8)[0] : null;
     const selectedId = classes.some((cls) => cls.id === picked) ? picked : (next?.cls.id ?? classes[0]?.id);
-    const later = today ? upcomingSessions(classes, today, now, 7).filter((session) => session.date !== today).slice(0, 4) : [];
+    // The rest of the week, sessions called off included (greyed, with why).
+    const later = today ? upcomingSessions(classes, today, now, 7, { withCancelled: true }).filter((session) => session.date !== today).slice(0, 4) : [];
     const month = today?.slice(0, 7);
     const taughtThisMonth = history.filter((row) => row.status === 'completed' && row.date.startsWith(month)).length;
 
@@ -139,9 +143,10 @@ const InstructorOverview = () => {
                                             {phase.tone === 'live' && <span className="pfPulse" aria-hidden="true" />}
                                             {t(phase.key, phase.vars)}
                                         </span>
+                                        {row.checkout_late && <LateTag />}
                                         {(canCheckIn(row) || canCheckOut(row)) && (
                                             <span className="pfTodayAction">
-                                                <CheckAction record={row} onCheck={setChecking} size="sm" />
+                                                <CheckAction record={row} now={now} onCheck={setChecking} size="sm" />
                                             </span>
                                         )}
                                     </li>
@@ -154,7 +159,7 @@ const InstructorOverview = () => {
                             <h4 className="pfAgendaDay">{t('Coming up')}</h4>
                             <ul>
                                 {later.map((session) => (
-                                    <li key={`${session.cls.id}-${session.date}`}>
+                                    <li key={`${session.cls.id}-${session.date}-${session.start}`} className={session.calledOff ? 'isOff' : undefined}>
                                         <span className="pfLaterDay">
                                             <DayName date={session.date} today={today} style="weekdayShort" />
                                         </span>
@@ -162,8 +167,13 @@ const InstructorOverview = () => {
                                         <ClassThumb cls={session.cls} />
                                         <span className="pfLaterText">
                                             <strong>{session.cls.name}</strong>
-                                            <span>{session.cls.roomName ?? t('No room')}</span>
+                                            <span>
+                                                {session.calledOff
+                                                    ? [t('Called off'), reasonText(session.calledOff.reason, t)].filter(Boolean).join(' · ')
+                                                    : session.cls.roomName ?? t('No room')}
+                                            </span>
                                         </span>
+                                        {session.isMakeUp && <MakeUpTag />}
                                     </li>
                                 ))}
                             </ul>

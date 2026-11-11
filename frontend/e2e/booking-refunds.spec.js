@@ -1,9 +1,10 @@
 // Booking cancellations and refunds (supabase/migrations/20261117000800_booking_refunds.sql): the booking
 // form shows the cancellation policy; a guest cancels an approved booking ahead (the dialog quotes half
 // back, the row then says the studio will refund it, to the account they gave); staff see it on the to-do,
-// open the booking and record the refund (the guest's row then says refunded); staff cancel a booking as
-// the studio (everything back; another amount waits for a reason); the admin changes the policy and puts
-// the defaults back, staff only read it.
+// open the booking and record the refund (the guest's row then says refunded); staff cancel a booking paid
+// in full (completed by itself, still ahead) as the studio (everything back; another amount waits for a
+// reason); the admin changes the policy from its card beside the room prices and puts the defaults back,
+// staff only read it.
 // Works on its own day far ahead, deletes its bookings afterwards and resets the policy to the defaults.
 import { test, expect } from '@playwright/test';
 import { addDays, expectToast, login, rest, rpc, searchRooms, staffJwt, studioToday, token } from './support.js';
@@ -22,7 +23,7 @@ let staffPage;
 let adminPage;
 let date;
 let guestBooking; // approved, 125.000 paid by transfer → the guest cancels it (50 % back)
-let studioBooking; // approved, fully paid in cash → staff cancel it as the studio (everything back)
+let studioBooking; // fully paid in cash, so `completed` (paid in full) → staff cancel it as the studio (everything back)
 let freeHour; // { start, end } free in some room that day, for the booking form
 
 const adminJwt = async () => (await token('admin@demo.oopsdance.test')).jwt;
@@ -160,7 +161,11 @@ test('staff see the refund on the to-do, open the booking and record it; the gue
 test('staff cancel a booking as the studio: everything goes back; another amount waits for a reason', async () => {
     const page = staffPage;
     const paid = Number(studioBooking.full_payment);
+    // Paid in full ahead: completed by itself (20261117001000_booking_auto_complete), still cancellable.
+    expect((await bookingNow(studioBooking.id)).status).toBe('completed');
     await page.goto(`/admin/bookings?booking=${studioBooking.id}`);
+    await expect(page.locator('.bookingDetails .bkPaidUp')).toHaveText('Paid up');
+    await expect(page.locator('.bookingDetails .bdFooter').getByRole('button', { name: 'Mark completed' })).toHaveCount(0);
     await page.locator('.bookingDetails .bdFooter').getByRole('button', { name: 'Cancel booking' }).click();
 
     const dialog = page.locator('.scCancelDialog');
@@ -208,10 +213,14 @@ test('staff cancel a booking as the studio: everything goes back; another amount
     await expect(page.getByRole('row').filter({ hasText: `#${studioBooking.id}` })).toContainText(`To refund ${vnd(paid / 2)}`);
 });
 
+// The policy sits beside the room prices (Bookings → Rooms & prices); ?policy=1 still opens the dialog.
+const policyCard = (page) => page.locator('.bkPolicyCard');
+
 test('the admin changes the policy and puts the defaults back; staff only read it', async () => {
     const page = adminPage;
-    await page.goto('/admin/bookings');
-    await page.getByRole('button', { name: 'Cancellation policy' }).click();
+    await page.goto('/admin/bookings?view=rooms');
+    await expect(policyCard(page)).toContainText('Cancel 24 hours or more ahead: 50% back');
+    await policyCard(page).getByRole('button', { name: 'Edit the policy' }).click();
     const dialog = page.locator('.rpDialog');
     await dialog.getByText('Full refund when cancelled early').click();
     await dialog.getByLabel('Hours ahead').first().fill('72');
@@ -228,15 +237,21 @@ test('the admin changes the policy and puts the defaults back; staff only read i
     await expectToast(page, 'Cancellation policy saved.');
     await expect(dialog).toHaveCount(0);
     await expect.poll(policyNow).toEqual({ refund_full_hours: 72, refund_partial_hours: 24, refund_partial_percent: 30 });
+    // The card shows the new lines.
+    await expect(policyCard(page)).toContainText('Cancel 72 hours or more ahead: full refund');
 
-    // Staff read it, without a way to change it.
+    // Staff read it, without a way to change it: on the card, and in the dialog ?policy=1 opens.
+    await staffPage.goto('/admin/bookings?view=rooms');
+    await expect(policyCard(staffPage)).toContainText('Cancel 72 hours or more ahead: full refund');
+    await expect(policyCard(staffPage)).toContainText('Only an admin can change the policy.');
+    await expect(policyCard(staffPage).getByRole('button', { name: 'Edit the policy' })).toHaveCount(0);
     await staffPage.goto('/admin/bookings?policy=1');
     const readOnly = staffPage.locator('.rpDialog');
     await expect(readOnly).toContainText('Cancel 72 hours or more ahead: full refund');
     await expect(readOnly).toContainText('Only an admin can change the policy.');
     await expect(readOnly.getByRole('button', { name: 'Save policy' })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Cancellation policy' }).click();
+    await policyCard(page).getByRole('button', { name: 'Edit the policy' }).click();
     await dialog.getByRole('button', { name: 'Back to the default (24 hours, 50%)' }).click();
     await expect(dialog.getByRole('region', { name: 'Guests see' })).not.toContainText('Cancel 72 hours or more ahead');
     await dialog.getByRole('button', { name: 'Save policy' }).click();

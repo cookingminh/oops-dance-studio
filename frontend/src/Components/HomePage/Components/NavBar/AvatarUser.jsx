@@ -20,8 +20,9 @@ const LINKS = {
     admin: [
         { href: '/admin', label: 'Dashboard', icon: LuLayoutDashboard },
         { href: '/admin/users', label: 'Users Manager', icon: LuUsers },
-        { href: '/admin/rooms', label: 'Rooms Manager', icon: LuDoorOpen },
         { href: '/admin/bookings', label: 'Bookings Manager', icon: LuCalendarCheck },
+        // Rooms and their prices are a view of the bookings page.
+        { href: '/admin/bookings?view=rooms', label: 'Rooms & prices', icon: LuDoorOpen },
         { href: '/admin/classes', label: 'Classes', icon: LuMusic },
         { href: '/admin/attendance', label: 'Attendance', icon: LuClipboardList },
     ],

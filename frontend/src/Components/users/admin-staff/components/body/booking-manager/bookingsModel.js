@@ -38,11 +38,27 @@ export function periodOf(view, date) {
 }
 
 // Pending requests wait (dashed + a badge), approved ones are solid, the rest are done with (muted;
-// cancelled and rejected are also struck through by the calendar).
+// cancelled and rejected are also struck through by the calendar). A booking paid in full becomes
+// `completed` by itself (20261117001000_booking_auto_complete): one still ahead isn't done with, so it
+// stays solid with a "Paid up" badge; a past one is muted.
 const TONES = { pending: 'dashed', approved: 'solid', completed: 'muted', cancelled: 'muted', rejected: 'muted' };
 
+// Completed because it is paid in full, and its day hasn't passed yet (today counts as ahead).
+export const isPaidAhead = (booking, today) => booking.status === 'completed' && Boolean(today) && booking.date >= today;
+
+// Has the booking started (studio date `today` + 'HH:mm' `now`)? Staff mark a booking completed once it
+// happened; before that a completed (paid up) one can still be cancelled.
+export const bookingStarted = (booking, today, now) =>
+    Boolean(today) && (booking.date < today || (booking.date === today && formatTime(booking.start_time) <= now));
+
 // `withRoom` false when the calendar shows rooms as lanes (the lane already says which room).
-export function bookingItem(booking, { roomColor, t, withRoom = true }) {
+export function bookingItem(booking, { roomColor, t, withRoom = true, today }) {
+    const paidAhead = isPaidAhead(booking, today);
+    let badge;
+    // A request waiting for approval, a booking paid up ahead, or a cancelled one with money still to give back.
+    if (booking.status === 'pending') badge = t('Awaiting approval');
+    else if (paidAhead) badge = t('Paid up');
+    else if (owesRefund(booking)) badge = t('Refund due');
     return {
         id: `b${booking.id}`,
         date: booking.date,
@@ -56,15 +72,15 @@ export function bookingItem(booking, { roomColor, t, withRoom = true }) {
         // Not fully paid: a glowing red border on the calendar (flag 'owing'), said in words too.
         statusLabel: bookingBalance(booking) > 0 ? `${t(booking.status)} · ${t('Not fully paid')}` : t(booking.status),
         flag: bookingBalance(booking) > 0 ? 'owing' : undefined,
-        tone: TONES[booking.status] ?? 'solid',
-        // A request waiting for approval, or a cancelled booking with money still to give back.
-        badge: booking.status === 'pending' ? t('Awaiting approval') : owesRefund(booking) ? t('Refund due') : undefined,
+        tone: paidAhead ? 'solid' : TONES[booking.status] ?? 'solid',
+        badge,
         data: booking,
     };
 }
 
-// A class session behind the bookings: it explains why that slot of the room is taken.
-export function sessionItem(session, { roomColor, t, withRoom = true }) {
+// A class session behind the bookings: it explains why that slot of the room is taken. A make-up that
+// replaces a session called off names that day (`day(date)` → "Wed 13/11").
+export function sessionItem(session, { roomColor, t, withRoom = true, day }) {
     return {
         id: `s${session.key}`,
         date: session.date,
@@ -77,7 +93,7 @@ export function sessionItem(session, { roomColor, t, withRoom = true }) {
         status: 'class',
         statusLabel: t('Class'),
         tone: 'background',
-        badge: session.is_extra ? t('Make-up') : undefined,
+        badge: session.is_extra ? (session.makes_up && day ? t('Make-up · {day}', { day: day(session.makes_up) }) : t('Make-up')) : undefined,
         data: session,
     };
 }

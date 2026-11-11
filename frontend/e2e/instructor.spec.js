@@ -13,7 +13,7 @@ test.beforeAll(async ({ browser }) => {
     const mine = sessions.find((s) => s.instructor?.email === EMAIL);
     other = sessions.find((s) => s.instructor?.email !== EMAIL);
     expect(mine, 'Ami has a session today').toBeTruthy();
-    await resetSession(mine.id);
+    await resetSession(mine.id, { open: true });
     me = await token(EMAIL);
     page = await browser.newPage();
 });

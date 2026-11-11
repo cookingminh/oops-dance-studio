@@ -11,7 +11,6 @@ export default {
     Pages: 'Các trang',
     'Log out': 'Đăng xuất',
     'Users Manager': 'Quản lý người dùng',
-    'Rooms Manager': 'Quản lý phòng tập',
     'Bookings Manager': 'Quản lý đặt phòng',
     'Dance Students': 'Học viên',
     'Attendance Records': 'Chấm công giáo viên',

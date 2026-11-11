@@ -192,7 +192,9 @@ begin
   if not found or (v_row.guest_id is distinct from v_uid and not v_staff) then
     raise exception 'NOT_FOUND: booking % not found', p_booking_id;
   end if;
-  if v_row.status not in ('pending', 'approved') then
+  -- A booking paid in full is `completed` (20261117001000) but can still be cancelled before it starts.
+  if v_row.status not in ('pending', 'approved', 'completed')
+     or (v_row.status = 'completed' and private.booking_starts_at(v_row) <= now()) then
     raise exception 'INVALID_STATE: booking is already %', v_row.status;
   end if;
   if not v_staff and private.booking_starts_at(v_row) <= now() then

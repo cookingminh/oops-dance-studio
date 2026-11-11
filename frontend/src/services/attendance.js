@@ -4,7 +4,8 @@ import { signProofUrls, uploadProof } from './storage';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // start_time / end_time / is_extra: a make-up session's own times (regular sessions take theirs from the schedule).
-const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, date, checkin_at, checkout_at, status,
+// checkout_late: checked out more than 10 minutes after the end (20261117001100_checkin_window).
+const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, date, checkin_at, checkout_at, checkout_late, status,
     checkin_proof_path, checkout_proof_path, details, start_time, end_time, is_extra,
     class:classes!class_id(id, name, image_path, schedules:class_schedules(id, day_of_week, start_time, end_time)),
     room:rooms!room_id(id, name)`;
@@ -78,7 +79,7 @@ export async function listRecentCheckins(limit = 6) {
     return unwrap(
         await supabase
             .from('instructor_attendance')
-            .select(`id, status, checkin_at, checkout_at, class:classes!class_id(id, name),
+            .select(`id, status, checkin_at, checkout_at, checkout_late, class:classes!class_id(id, name),
                 instructor:profiles!instructor_id(${PERSON})`)
             .not('checkin_at', 'is', null)
             .order('checkin_at', { ascending: false })

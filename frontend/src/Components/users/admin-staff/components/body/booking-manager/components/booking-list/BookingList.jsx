@@ -23,8 +23,8 @@ import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { VerticalDotsIcon } from '../../../../../../../Table/VerticalDotsIcon';
 import { statusColorMap } from '../../../../../../../Table/utils';
-import { DEPOSIT_LABELS, QUICK_ACTIONS } from '../../useBookingActions';
-import { PAGE_SIZE, guestName } from '../../bookingsModel';
+import { DEPOSIT_LABELS } from '../../useBookingActions';
+import { PAGE_SIZE, guestName, isPaidAhead } from '../../bookingsModel';
 
 const COLUMNS = [
     { key: 'id', label: 'Booking' },
@@ -41,7 +41,7 @@ const COLUMNS = [
 // Row actions sit in fixed slots (note · reject + approve · menu) so they line up down the table.
 const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, actions, onOpen, onEdit, onClearFilters }) => {
     const { t, formatDate } = useI18n();
-    const { busyId, setStatus, remove } = actions;
+    const { busyId, setStatus, remove, quick } = actions;
     const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     const renderCell = (booking, key) => {
@@ -96,9 +96,13 @@ const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, ac
                 );
             case 'status':
                 return (
-                    <Chip className="capitalize" color={statusColorMap[booking.status] ?? 'default'} size="sm" variant="flat">
-                        {t(booking.status)}
-                    </Chip>
+                    <span className="bkStatusCell">
+                        <Chip className="capitalize" color={statusColorMap[booking.status] ?? 'default'} size="sm" variant="flat">
+                            {t(booking.status)}
+                        </Chip>
+                        {/* Completed because it is paid in full, with its day still ahead. */}
+                        {isPaidAhead(booking, todayIso) && <span className="bkPaidUp">{t('Paid up')}</span>}
+                    </span>
                 );
             case 'actions':
                 return (
@@ -146,7 +150,7 @@ const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, ac
                             </DropdownTrigger>
                             <DropdownMenu aria-label={t('Booking actions')}>
                                 {[
-                                    ...(QUICK_ACTIONS[booking.status] ?? []).map(([status, label]) => (
+                                    ...quick(booking).map(([status, label]) => (
                                         <DropdownItem key={status} onPress={() => setStatus(booking.id, status)}>{t(label)}</DropdownItem>
                                     )),
                                     <DropdownItem key="edit" onPress={() => onEdit(booking)}>{t('Edit booking')}</DropdownItem>,

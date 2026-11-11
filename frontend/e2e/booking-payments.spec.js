@@ -1,7 +1,8 @@
 // Money on a room booking (supabase/migrations/20261117000500_booking_payments.sql): the dialog opened by
 // ?booking=<id>, "Still to pay" with its QR (amount + code), a simulated bank transfer, "Received … in
 // cash" and removing that entry, a refund with its reason, a price change with its reason (summary and
-// receipt), the "still unpaid" prompt before completing, taking a transfer back and assigning it again
+// receipt), paid in full → completed by itself (and back to approved when money is taken back), the "still
+// unpaid" prompt before marking a booking that happened completed, taking a transfer back and assigning it again
 // from the tuition inbox by its code, the guest paying from My bookings, the new booking form (deposit in
 // cash / nothing yet → QR / another price), and the "Owes money" list.
 // Works on its own day far ahead, deletes its bookings and their transfers afterwards.
@@ -57,10 +58,12 @@ async function closeDialogs(target = page) {
     }
 }
 
-// Every booking of Room A on our day, and every transfer carrying one of their codes: gone.
+// Every booking of Room A on our day (and ours, wherever a failed run left it), and every transfer carrying
+// one of their codes: gone.
 async function cleanUp() {
     const jwt = await staffJwt();
-    const leftovers = (await rest(jwt, `bookings?select=id,payment_code&date=eq.${date}&room_id=eq.${roomA.id}`)).data;
+    const ours = booking ? `or=(date.eq.${date},id.eq.${booking.id})` : `date=eq.${date}`;
+    const leftovers = (await rest(jwt, `bookings?select=id,payment_code&${ours}&room_id=eq.${roomA.id}`)).data;
     const key = serviceKey();
     for (const row of leftovers) {
         for (const transfer of (await rest(jwt, `bank_transfers?select=id&content=ilike.*${row.payment_code}*`)).data) {
@@ -147,6 +150,9 @@ test('"Received … in cash" settles the balance: fully paid, a cash line by the
     await expectToast(page, 'Payment recorded.');
     await expect(pay().locator('.bdDueHero.isPaid')).toContainText('Fully paid');
     await expect(pay().locator('.bdPill')).toHaveText('Fully paid');
+    // Paid in full ahead: completed by itself (20261117001000_booking_auto_complete), marked "Paid up".
+    await expect(details().locator('.bkPaidUp')).toHaveText('Paid up');
+    expect((await bookingNow()).status).toBe('completed');
     const cashLine = pay().locator('.bdHistory li[data-payment^="entry-"]');
     await expect(cashLine).toContainText('Cash');
     await expect(cashLine).toContainText(`recorded by ${staffName}`);
@@ -162,11 +168,12 @@ test('"Received … in cash" settles the balance: fully paid, a cash line by the
     await page.locator('.bkReceiptActions').getByRole('button', { name: 'Close' }).click();
 });
 
-test('removing the cash entry makes the balance due again', async () => {
+test('removing the cash entry makes the balance due again (approved again)', async () => {
     await pay().locator('.bdHistory li[data-payment^="entry-"]').getByRole('button', { name: /^Remove/ }).click();
     await expectToast(page, 'Payment entry removed.');
     await expect(pay().locator('.bdDueAmount')).toHaveText(vnd(booking.full_payment - booking.deposit));
-    expect(await bookingNow()).toMatchObject({ cash: 0, bank_transfer: Number(booking.deposit) });
+    expect(await bookingNow()).toMatchObject({ status: 'approved', cash: 0, bank_transfer: Number(booking.deposit) });
+    await expect(details().locator('.bkPaidUp')).toHaveCount(0);
 });
 
 test('a refund needs its reason; it lowers what was received (then it is removed again)', async () => {
@@ -188,15 +195,46 @@ test('a refund needs its reason; it lowers what was received (then it is removed
     expect(await bookingNow()).toMatchObject({ bank_transfer: Number(booking.deposit) });
 });
 
-test('completing a booking with money still due asks first', async () => {
-    await details().getByRole('button', { name: 'Mark completed' }).click();
-    const prompt = page.locator('.bdCompleteDialog');
-    await expect(prompt).toContainText(`${vnd(booking.full_payment - booking.deposit)} still unpaid`);
-    await expect(prompt.getByRole('button', { name: /in cash$/ })).toBeVisible();
-    await expect(prompt.getByRole('button', { name: /by transfer$/ })).toBeVisible();
-    await expect(prompt.getByRole('button', { name: 'Complete anyway' })).toBeVisible();
-    await prompt.getByRole('button', { name: 'Cancel' }).click();
-    expect((await bookingNow()).status).toBe('approved');
+// A free past day for the booking (same weekday, so no class holds Room A 10:00–12:00): no booking or
+// make-up there then.
+async function freePastDay() {
+    const jwt = await staffJwt();
+    for (let weeks = 1; weeks < 30; weeks += 1) {
+        const day = addDays(await studioToday(), -7 * weeks + (isoWeekday(date) - isoWeekday(await studioToday())));
+        if (day >= (await studioToday())) continue;
+        const taken = (await rest(jwt, `bookings?select=id&room_id=eq.${roomA.id}&date=eq.${day}&start_time=lt.12:00&end_time=gt.10:00&status=in.(pending,approved,completed)`)).data;
+        const makeUps = (await rest(jwt, `instructor_attendance?select=id&room_id=eq.${roomA.id}&date=eq.${day}&is_extra=is.true`)).data;
+        if (!taken.length && !makeUps.length) return day;
+    }
+    throw new Error('no free past day for Room A');
+}
+
+test('a booking ahead has no "Mark completed"; one that happened asks first while money is still due', async () => {
+    // Ahead: completing comes with the full payment, so the dialog offers only cancelling.
+    await expect(details().getByRole('button', { name: 'Cancel booking' })).toBeVisible();
+    await expect(details().getByRole('button', { name: 'Mark completed' })).toHaveCount(0);
+
+    // The same booking on a day already past (moved there for this check, then back).
+    const past = await freePastDay();
+    const jwt = await staffJwt();
+    const moved = await rest(jwt, `bookings?id=eq.${booking.id}`, { method: 'PATCH', body: { date: past } });
+    expect(moved.status, JSON.stringify(moved.data)).toBeLessThan(300);
+    try {
+        await page.goto(`/admin/bookings?booking=${booking.id}`);
+        await details().getByRole('button', { name: 'Mark completed' }).click();
+        const prompt = page.locator('.bdCompleteDialog');
+        await expect(prompt).toContainText(`${vnd(booking.full_payment - booking.deposit)} still unpaid`);
+        await expect(prompt.getByRole('button', { name: /in cash$/ })).toBeVisible();
+        await expect(prompt.getByRole('button', { name: /by transfer$/ })).toBeVisible();
+        await expect(prompt.getByRole('button', { name: 'Complete anyway' })).toBeVisible();
+        await prompt.getByRole('button', { name: 'Cancel' }).click();
+        expect((await bookingNow()).status).toBe('approved');
+    } finally {
+        const back = await rest(jwt, `bookings?id=eq.${booking.id}`, { method: 'PATCH', body: { date } });
+        expect(back.status, JSON.stringify(back.data)).toBeLessThan(300);
+    }
+    await page.goto(`/admin/bookings?booking=${booking.id}`);
+    await expect(details()).toContainText(`Booking #${booking.id}`);
 });
 
 test('changing the price needs a reason; the summary and the receipt read list → reason → total', async () => {

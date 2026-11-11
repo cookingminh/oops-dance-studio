@@ -22,6 +22,7 @@ import CheckForm from './CheckForm';
 import HistoryList from './HistoryList';
 import ProofThumb from './ProofThumb';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
+import LateTag from '../../../../../admin-staff/components/common/checkins/LateTag';
 
 const PAGE_SIZE = 8;
 const PERIODS = [
@@ -45,7 +46,7 @@ async function loadToday(instructorId) {
     return { today, rows: rows.sort(byStart) };
 }
 
-// `label` and `proofLabel` are already translated.
+// `label` and `proofLabel` are already translated. (A late check-out is said under the steps, by CheckAction.)
 const Step = ({ label, proofLabel, at, proof, onView }) => {
     const { t } = useI18n();
     return (
@@ -117,6 +118,7 @@ const CheckIn = () => {
                     <span className="pfProofCell">
                         <ProofThumb url={url} label={key === 'checkin' ? t('Check-in proof') : t('Check-out proof')} onView={viewProof} />
                         <span className={at ? undefined : 'isMuted'}>{at ? formatClock(at) : '—'}</span>
+                        {key === 'checkout' && row.checkout_late && <LateTag />}
                     </span>
                 );
             }
@@ -181,7 +183,7 @@ const CheckIn = () => {
                                             <Step label={t('Check-out')} proofLabel={t('Check-out proof')} at={row.checkout_at} proof={row.checkout_proof_url} onView={viewProof} />
                                         </ol>
                                         <footer className="pfSessionAction">
-                                            <CheckAction record={row} onCheck={setChecking} />
+                                            <CheckAction record={row} now={now} onCheck={setChecking} />
                                         </footer>
                                     </motion.article>
                                 );

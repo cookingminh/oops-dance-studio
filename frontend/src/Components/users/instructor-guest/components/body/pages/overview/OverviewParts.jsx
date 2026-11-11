@@ -5,6 +5,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import { studioDateLabel } from '@/lib/format';
 import CountUp from '../../../../../admin-staff/components/common/CountUp';
 import { fadeUp, stagger } from '../../../../../admin-staff/components/common/motion';
+import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
 import { ClassThumb, DayName, StartsIn } from '../classes/ClassParts';
 import video from '@/assets/video/dashboard.mp4';
 import poster from '@/assets/images/studio.webp';
@@ -42,7 +43,10 @@ export const UpNext = ({ session, today, room }) => {
             <ClassThumb cls={session.cls} />
             <span className="pfUpNextText">
                 <small>{session.isLive ? t('Happening now') : t('Up next')}</small>
-                <strong>{session.cls.name}</strong>
+                <strong>
+                    {session.cls.name}
+                    {session.isMakeUp && <MakeUpTag className="sessionTag" />}
+                </strong>
                 <span>
                     <DayName date={session.date} today={today} style="weekday" /> · {session.start}–{session.end}
                     {room && ` · ${room}`}

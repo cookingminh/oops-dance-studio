@@ -17,6 +17,29 @@
         }
     }
 
+    // Schedule changes: a calendar icon (red: called off, violet: make-up) and "New" until seen.
+    .taskIcon.kind-changes {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+
+        &.is-make_up {
+            background: hsl(262, 60%, 94%);
+            color: hsl(262, 45%, 42%);
+        }
+    }
+
+    .duesNew {
+        flex-shrink: 0;
+        align-self: center;
+        padding: .1rem .45rem;
+        border-radius: 999px;
+        background: var(--ad-primary);
+        color: #fff;
+        font-size: .68rem;
+        font-weight: 700;
+        line-height: 1.5;
+    }
+
     .duesPayBtn {
         display: inline-flex;
         justify-self: start;

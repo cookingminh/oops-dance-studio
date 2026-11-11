@@ -1,6 +1,7 @@
 // The Attendance page (/admin/attendance): student roll calls and instructor check-ins in one place.
 // Today's sessions with their roll call, a planned session handled from the calendar (note,
-// substitute, cancel, reopen) in the session dialog, the list with its CSV export, and a deep link.
+// substitute, call off with a reason, reopen) in the session dialog, the list with its CSV export, and a
+// deep link.
 // Everything it changes (one session row, one roll-call mark) is put back exactly as it was.
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
@@ -150,7 +151,7 @@ test('take the roll call in the session dialog', async () => {
     await expect(dialog).toHaveCount(0);
 });
 
-test('a planned session from the calendar: note, substitute, cancel and reopen', async () => {
+test('a planned session from the calendar: note, substitute, call off and reopen', async () => {
     test.skip(!planned || !substitute, 'no planned session after today');
     // Only that class, then the week of the session.
     await pickOption(page, page.locator('.atFilters'), 'Class', planned.cls.name);
@@ -175,10 +176,17 @@ test('a planned session from the calendar: note, substitute, cancel and reopen',
     await expect(dialog.locator('.smWho')).toContainText('Substitute');
     expect((await sessionRow()).instructor_id).toBe(substitute.id);
 
-    await dialog.getByRole('button', { name: 'Cancel session' }).click();
-    await expectToast(page, 'Session cancelled.');
+    // Calling it off asks why (the class sees it); here without a make-up.
+    await dialog.getByRole('button', { name: 'Call off / move' }).click();
+    const change = page.locator('.scgDialog');
+    await change.getByRole('button', { name: /^Only call it off/ }).click();
+    await change.getByRole('group', { name: 'Ready-made reasons' }).getByRole('button', { name: 'Storm / bad weather' }).click();
+    await change.getByRole('button', { name: 'Call off the session' }).click();
+    await expectToast(page, 'Session called off.');
+    await expect(change).toHaveCount(0);
     await expect(dialog).toContainText('This session was cancelled.');
-    expect((await sessionRow()).status).toBe('cancelled');
+    await expect(dialog).toContainText('Called off: Storm / bad weather');
+    expect((await rest(staff, `instructor_attendance?select=status,cancel_reason&id=eq.${planned.row.id}`)).data[0]).toEqual({ status: 'cancelled', cancel_reason: 'Storm / bad weather' });
 
     await dialog.getByRole('button', { name: 'Reopen session' }).click();
     await expectToast(page, 'Session reopened.');
@@ -202,7 +210,7 @@ test('the list: every recorded session, searchable, as a CSV file', async () => 
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export CSV' }).click()]);
     expect(download.suggestedFilename()).toMatch(/^sessions-all\.csv$/);
     const csv = fs.readFileSync(await download.path(), 'utf8');
-    expect(csv).toMatch(/^\uFEFFDate,Start,End,Class,Room,Instructor,Check-in,Check-out,Status,Make-up,Note\r\n/);
+    expect(csv).toMatch(/^\uFEFFDate,Start,End,Class,Room,Instructor,Check-in,Check-out,Late check-out,Status,Make-up,Note\r\n/);
     expect(csv.split('\r\n').slice(1).every((line) => line.includes(planned.cls.name))).toBe(true);
 });
 

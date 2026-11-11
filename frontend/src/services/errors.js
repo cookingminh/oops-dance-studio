@@ -35,6 +35,9 @@ const INVALID_INPUT_REASONS = [
     [/between 08:00 and 22:00|opening_hours/i, 'Bookings must be between 08:00 and 22:00.'],
     [/end time must be after start time|time_order/i, 'The end time must be after the start time.'],
     [/proof photo .* not been uploaded|proof path/i, 'The proof photo didn’t upload. Please choose the photo again.'],
+    [/check-out comes after check-in/i, 'The check-out time must be after the check-in time.'],
+    [/a check-in time is needed/i, 'Enter the check-in time.'],
+    [/^say why/i, 'Please give a reason.'],
 ];
 
 function invalidInputMessage(text) {

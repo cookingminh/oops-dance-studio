@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAsync } from '@/hooks/useAsync';
 import { updateInstructorAttendance } from '@/services/attendance';
-import { listMakeUpSessions } from '@/services/sessions';
 import { useToast } from '@/ui/feedback/toastContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { useI18n } from '@/i18n/i18nContext';
@@ -10,20 +9,23 @@ import { useStaffTasks } from '../../../tasks/staffTasks';
 import SectionCard from '../../common/SectionCard';
 import SessionModal from '../../common/session-modal/SessionModal';
 import { ProofDialog } from '../../common/session-modal/SessionParts';
+import RescheduleDialog from '../../common/session-changes/RescheduleDialog';
 import { isReadOnly, rangeSessions, sessionKey } from '../../common/session-modal/sessionModel';
-import MakeUpDialog from '../class-manager/routines/MakeUpDialog';
 import { loadBase, loadToday } from './attendanceData';
 import TodayBoard from './components/TodayBoard';
 import ReviewQueue from './components/ReviewQueue';
 import SessionsCalendar from './components/SessionsCalendar';
 import AttendanceChart from './components/AttendanceChart';
 import ClassMembersLinks from './components/ClassMembersLinks';
+import CloseDayDialog from './components/CloseDayDialog';
 import './attendance.scss';
 
 // /admin/attendance — students' roll calls and instructors' check-ins in one place, in the order
 // staff deal with them: today (quick actions), earlier sessions nobody closed, every session on a
 // calendar, sessions per instructor, and links to each class's members. Every session opens the
-// same modal as on the class page. ?class=<id>&day=yyyy-MM-dd opens one session (from a to-do).
+// same modal as on the class page. ?class=<id>&day=yyyy-MM-dd opens one session (from a to-do);
+// ?day=yyyy-MM-dd alone opens the calendar on that day (a day the studio was closed, from the log).
+// Today's header also closes the studio for a day (storm, power cut).
 const Attendance = () => {
     const { t } = useI18n();
     const toast = useToast();
@@ -34,8 +36,9 @@ const Attendance = () => {
     const todayState = useAsync(() => (base.data ? loadToday(base.data.today, base.data.classes) : Promise.resolve(undefined)), [base.data, version]);
     const [modal, setModal] = useState(null); // { session, focus }
     const [proof, setProof] = useState(null);
-    const [makeUpFor, setMakeUpFor] = useState(null); // class
     const [busyKey, setBusyKey] = useState(null);
+    const [moving, setMoving] = useState(null); // a session of today's board to call off / move
+    const [closingDay, setClosingDay] = useState(false);
 
     const today = base.data?.today;
     const classes = base.data?.classes ?? [];
@@ -48,6 +51,7 @@ const Attendance = () => {
 
     // A deep link opens its session once the classes are in (state adjusted during render).
     const linkKey = params.get('class') && params.get('day') ? sessionKey(params.get('class'), params.get('day')) : null;
+    const linkDay = !params.get('class') && /^\d{4}-\d{2}-\d{2}$/.test(params.get('day') ?? '') ? params.get('day') : null;
     const [seenLink, setSeenLink] = useState(null);
     if (linkKey && base.data && seenLink !== linkKey) {
         setSeenLink(linkKey);
@@ -95,6 +99,8 @@ const Attendance = () => {
                 onOpen={(session, focus) => setModal({ session, focus })}
                 onChanged={changed}
                 onViewProof={setProof}
+                onReschedule={setMoving}
+                onCloseDay={() => setClosingDay(true)}
             />
             {reviewSessions.length > 0 && (
                 <ReviewQueue
@@ -108,11 +114,11 @@ const Attendance = () => {
                     }
                 />
             )}
-            <SessionsCalendar today={today} classes={classes} version={version} onOpen={(session) => setModal({ session })} />
+            <SessionsCalendar key={linkDay ?? 'today'} today={today} startDate={linkDay} classes={classes} version={version} onOpen={(session) => setModal({ session })} />
             <AttendanceChart />
             <ClassMembersLinks classes={classes} today={today} />
 
-            {modal && !makeUpFor && (
+            {modal && (
                 <SessionModal
                     key={modal.session.key}
                     session={modal.session}
@@ -123,31 +129,23 @@ const Attendance = () => {
                     classLink
                     onClose={closeModal}
                     onChanged={changed}
-                    onMakeUp={() => setMakeUpFor(modal.session.cls)}
                 />
             )}
-            {makeUpFor && (
-                <MakeUpFor
-                    cls={makeUpFor}
+            {proof && <ProofDialog proof={proof} onClose={() => setProof(null)} />}
+            {moving && (
+                <RescheduleDialog
+                    session={moving}
                     today={today}
-                    onClose={() => setMakeUpFor(null)}
-                    onAdded={() => {
-                        setMakeUpFor(null);
-                        setModal(null);
+                    onClose={() => setMoving(null)}
+                    onDone={() => {
+                        setMoving(null);
                         changed();
                     }}
                 />
             )}
-            {proof && <ProofDialog proof={proof} onClose={() => setProof(null)} />}
+            {closingDay && <CloseDayDialog today={today} classes={classes} onClose={() => setClosingDay(false)} onChanged={changed} />}
         </>
     );
-};
-
-// "Add a make-up session" from a cancelled session: the dialog needs the class's other make-ups.
-const MakeUpFor = ({ cls, today, onClose, onAdded }) => {
-    const makeUps = useAsync(() => listMakeUpSessions([cls.id], { from: today }), [cls.id, today]);
-    if (!makeUps.data) return null;
-    return <MakeUpDialog cls={cls} today={today} makeUps={makeUps.data} onClose={onClose} onAdded={onAdded} />;
 };
 
 export default Attendance;

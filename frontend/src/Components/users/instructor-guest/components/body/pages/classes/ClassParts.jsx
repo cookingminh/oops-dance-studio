@@ -4,8 +4,10 @@ import { LuCalendarDays, LuDoorOpen, LuMusic, LuSparkles, LuUsers } from 'react-
 import { useI18n } from '@/i18n/i18nContext';
 import { classImageUrl } from '@/services/storage';
 import { formatTime, isoWeekdayOf, toIsoDate } from '@/lib/format';
-import { classHue, secondsUntil, splitDuration, startsInText, useStudioNow } from '../../profileHelpers';
-import { makeUpOn, nextSessionWithMakeUps } from './routineView';
+import { reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
+import { classHue, nextSessionOf, secondsUntil, splitDuration, startsInText, useStudioNow } from '../../profileHelpers';
+import { calledOffOn, changesBetween, makeUpOn } from './routineView';
+import { ChangeLines } from './ClassChanges';
 
 // The routine card lives in its own file; the overview pages import it from here.
 export { default as LessonCard } from './LessonCard';
@@ -86,11 +88,12 @@ export const ClassBanner = ({ cls, today, isInstructor }) => {
     );
 };
 
-// The coming week of one class: today first, a time on every day the class meets (make-up days
-// too, for instructors).
-export const WeekStrip = ({ cls, today, now }) => {
+// The coming week of one class: today first, a time on every day the class meets, make-ups tagged and a
+// session called off greyed with "Off"; below, why (`notes`; the class view says it in its notice instead).
+export const WeekStrip = ({ cls, today, now, notes = true }) => {
     const { t, formatDate } = useI18n();
     const days = Array.from({ length: 7 }, (_, offset) => toIsoDate(addDays(parseISO(today), offset)));
+    const changes = notes ? changesBetween(cls, days[0], days[6]) : [];
     let nextMarked = false;
     return (
         <section className="pfBlock pfWeek" aria-label={t('Next 7 days')}>
@@ -103,15 +106,19 @@ export const WeekStrip = ({ cls, today, now }) => {
             <ol className="pfDays">
                 {days.map((date, offset) => {
                     const makeUp = makeUpOn(cls, date);
+                    const off = makeUp ? null : calledOffOn(cls, date);
                     const weekly = cls.schedules.find((s) => s.day_of_week === isoWeekdayOf(date));
-                    const slot = makeUp ? { start_time: makeUp.start, end_time: makeUp.end } : weekly;
+                    let slot = weekly;
+                    if (makeUp) slot = { start_time: makeUp.start, end_time: makeUp.end };
+                    else if (off && !weekly) slot = off;
                     const ended = slot && offset === 0 && now >= formatTime(slot.end_time);
-                    const live = slot && offset === 0 && !ended && now >= formatTime(slot.start_time);
-                    const isNext = Boolean(slot) && !ended && !nextMarked;
+                    const live = slot && !off && offset === 0 && !ended && now >= formatTime(slot.start_time);
+                    const isNext = Boolean(slot) && !off && !ended && !nextMarked;
                     if (isNext) nextMarked = true;
-                    const classes = ['pfDay', slot && 'hasClass', makeUp && 'isMakeUp', offset === 0 && 'isToday', isNext && 'isNext', ended && 'isDone', live && 'isLive'];
+                    const reason = off ? reasonText(off.reason, t) : '';
+                    const classes = ['pfDay', slot && 'hasClass', makeUp && 'isMakeUp', off && 'isOff', offset === 0 && 'isToday', isNext && 'isNext', ended && 'isDone', live && 'isLive'];
                     return (
-                        <li key={date} className={classes.filter(Boolean).join(' ')}>
+                        <li key={date} className={classes.filter(Boolean).join(' ')} title={off ? [t('Called off'), reason].filter(Boolean).join(': ') : undefined}>
                             {/* Today is marked by colour and outline; "Today" itself is too wide for a phone. */}
                             <small>
                                 {formatDate(date, 'weekdayShort')}
@@ -119,11 +126,19 @@ export const WeekStrip = ({ cls, today, now }) => {
                             </small>
                             <strong>{format(parseISO(date), 'd')}</strong>
                             {slot ? (
-                                <span className="pfDayTime">
-                                    {live && <span className="pfPulse" aria-hidden="true" />}
-                                    {formatTime(slot.start_time)}
-                                    {makeUp && <span className="sr-only"> ({t('Make-up')})</span>}
-                                </span>
+                                <>
+                                    <span className="pfDayTime">
+                                        {live && <span className="pfPulse" aria-hidden="true" />}
+                                        {formatTime(slot.start_time)}
+                                    </span>
+                                    {makeUp && <span className="pfDayTag">{t('Make-up')}</span>}
+                                    {off && (
+                                        <span className="pfDayTag">
+                                            {t('Called off')}
+                                            {reason && <span className="sr-only">: {reason}</span>}
+                                        </span>
+                                    )}
+                                </>
                             ) : (
                                 <span className="pfDayRest">
                                     <span className="sr-only">{t('No class')}</span>
@@ -133,6 +148,7 @@ export const WeekStrip = ({ cls, today, now }) => {
                     );
                 })}
             </ol>
+            {changes.length > 0 && <ChangeLines changes={changes} className="isCompact" />}
         </section>
     );
 };
@@ -201,7 +217,7 @@ export const DayName = ({ date, today, style = 'long' }) => {
 // When the class meets next, in one short line ("Tomorrow · 18:00"), make-up sessions included.
 export const NextLine = ({ cls, today, now }) => {
     const { t } = useI18n();
-    const next = nextSessionWithMakeUps(cls, today, now);
+    const next = nextSessionOf(cls, today, now);
     if (!next) return t('No weekly sessions yet');
     if (next.isLive) return t('Happening now');
     return (

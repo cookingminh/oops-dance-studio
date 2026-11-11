@@ -186,6 +186,11 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
 ## 6. Điểm danh
 
 - **Giáo viên**: `/profile` → *Check-in* → chụp ảnh lúc vào và lúc ra. Buổi học bù hiện giờ riêng và nhãn *Học bù*.
+  - **Check-in** mở từ **15 phút trước** giờ học tới hết buổi; quá giờ kết thúc thì báo studio ghi nhận.
+  - **Check-out** được ngay (về sớm cũng được); muộn hơn **10 phút sau giờ kết thúc** vẫn check-out được nhưng buổi
+    bị gắn nhãn **Check-out muộn**.
+  - Staff **sửa giờ check-in/out** (và nhãn muộn) trong cửa sổ buổi học, bắt buộc ghi lý do; nhật ký hoạt động lưu
+    giờ trước và sau khi sửa.
 - **Một trang *Điểm danh*** (`/admin/attendance`) gộp điểm danh học viên và chấm công giáo viên. Hai trang cũ
   (*Học viên*, *Chấm công giáo viên*) tự chuyển về đây.
   - **Hôm nay** (truy cập nhanh): mọi buổi hôm nay theo giờ, có check-in/out kèm ảnh, số học viên đã điểm danh x/y, và
@@ -204,6 +209,16 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
   Buổi **hoàn thành** mới được tính lương.
 - **Huỷ buổi** → phòng trống cho người khác đặt, và khoá đang học lùi thêm một buổi. **Mở lại** chỉ được khi chưa ai
   đặt phòng giờ đó; nếu đã có người đặt thì thêm buổi học bù.
+- **Nghỉ / dời buổi** (bão, giáo viên ốm, phòng có sự cố…): mở buổi học → *Nghỉ / dời buổi*, làm được cả với buổi
+  tuần sau.
+  - Bắt buộc chọn hoặc ghi **lý do**; học viên sẽ thấy lý do này.
+  - Chọn *Học bù vào ngày khác* (ngày, giờ; hệ thống kiểm tra phòng trống và ngày lớp không học) → một bước vừa nghỉ
+    buổi cũ vừa tạo buổi học bù ghi rõ "học bù cho Thứ 4 …"; hoặc *Chỉ nghỉ*, xếp học bù sau từ chính buổi đã nghỉ.
+  - Nếu đó là **buổi quay**: ngày quay tự chuyển sang buổi học bù (hoặc lùi sang buổi sau nếu chưa xếp bù).
+- **Nghỉ cả ngày** (trang *Điểm danh*): mọi lớp hôm đó nghỉ với cùng một lý do; tuỳ chọn huỷ luôn các lượt đặt phòng
+  hôm đó (studio huỷ → hoàn toàn bộ tiền cho khách). Sau đó xếp học bù cho từng lớp.
+- **Học viên và giáo viên được báo**: lịch tuần của họ hiện buổi nghỉ (kèm lý do) và buổi học bù; chuông thông báo
+  có mục *Lịch thay đổi*.
 - **Điểm danh học viên**: mỗi ngày 00:05 hệ thống tạo danh sách cho các buổi hôm nay (kể cả học bù) → staff/giáo viên
   đánh dấu *Có mặt / Vắng*. Chuông thông báo nhắc lớp chưa điểm danh; bấm vào là mở thẳng buổi học đó.
 
@@ -212,7 +227,10 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
 ## 7. Đặt phòng tập
 
 - Khách tìm giờ trống ở `/rooms` (thanh giờ hiển thị các khoảng còn trống) → đăng nhập → đặt → chờ studio duyệt.
-- Staff: *Đặt phòng* mở dạng **lịch** (tuần / tháng; có nút *Danh sách* để tìm kiếm):
+- Staff: *Đặt phòng* có ba chế độ **Lịch | Danh sách | Phòng & giá** (mặc định là lịch tuần / tháng; *Danh sách* để
+  tìm kiếm). *Phòng & giá* thay cho trang *Phòng* cũ (`/admin/rooms` tự chuyển về đây): mỗi phòng có ảnh, tiện ích,
+  **giá theo giờ** (sửa tại chỗ), số lượt đặt tuần này / tháng này, doanh thu tháng, lượt đặt tiếp theo và nút
+  *Xem lịch phòng này* (mở lịch chỉ của phòng đó); **chính sách huỷ** nằm cạnh bảng giá.
   - Mỗi lượt đặt mang màu phòng. *Chờ duyệt* có viền nét đứt và nhãn vàng; chip **Chờ duyệt** lọc nhanh các yêu cầu
     cần xử lý.
   - Buổi học của các lớp hiện dạng sọc mờ phía sau, để biết vì sao giờ đó đã kín.
@@ -237,6 +255,10 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
   - **Staff đặt hộ khách** (khách gọi điện / đến quầy): *Đặt phòng mới*.
     - Chọn khách, phòng, ngày, giờ. Giá tự tính (giá phòng × số giờ, cọc 50%); muốn đổi giá thì ghi lý do.
     - Trạng thái: *Đã duyệt* (mặc định) hoặc *Giữ chỗ (chờ duyệt)*.
+  - **Trả đủ = Hoàn thành**: lượt *Đã duyệt* khi nhận đủ tiền (chuyển khoản, tiền mặt) tự chuyển sang *Hoàn thành*;
+    nếu bị trả lại tiền trước ngày đặt thì quay về *Đã duyệt*. Lượt *Hoàn thành* chưa tới ngày vẫn giữ phòng, và
+    vẫn huỷ được (hoàn tiền theo chính sách). Trên lịch, lượt đó hiện đậm với nhãn **Đã trả đủ**; *Đánh dấu hoàn
+    thành* chỉ còn cho lượt đã diễn ra (xác nhận buổi đã thuê).
     - **Thu ngay**: *Chưa thu* (khách trả sau bằng QR) / *Cọc* / *Toàn bộ* / *Số khác*, bằng *Tiền mặt* hoặc
       *Chuyển khoản* (khách đưa màn hình chuyển khoản).
     - Lưu xong mở luôn lượt đặt: nếu chưa thu thì hiện QR có mã để gửi khách.
@@ -245,7 +267,7 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
     hoạt động ghi ai làm.
   - Chuyển khoản thiếu hoặc sai mã nằm trong hộp *Chuyển khoản* (trang Học phí) → staff *gán cho lượt đặt phòng* (theo
     #số hoặc mã), hoặc *gỡ ra* nếu gán nhầm. Lượt đặt đã huỷ / bị từ chối thì tiền không tự cộng (để hoàn tiền).
-- **Chính sách huỷ & hoàn tiền** (admin chỉnh ở nút *Chính sách huỷ* trang Đặt phòng; mặc định):
+- **Chính sách huỷ & hoàn tiền** (admin chỉnh ở thẻ *Chính sách huỷ* trong *Đặt phòng → Phòng & giá*; mặc định):
   - huỷ trước giờ đặt **từ 24 giờ trở lên** → hoàn **50%** số đã đóng; **dưới 24 giờ** → không hoàn;
   - có thể bật thêm mốc **hoàn 100%** (ví dụ huỷ trước 72 giờ);
   - lượt **chưa được duyệt**, hoặc **studio huỷ / từ chối** → hoàn toàn bộ.
@@ -402,6 +424,9 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Mỗi lúc một bài, miễn → mở lại | `20261117000100_routine_order_and_waive.sql` | `check_routine_order`, `tuition_waive`, `tuition_reopen` |
 | Nhật ký hoạt động | `20261117000200_activity_log.sql` | `log_activity`, `activity_summary`, `seed_demo_activity` |
 | Promo bài tiếp theo | `20261117000700_routine_promos.sql` | `lesson_set_promo`, bucket `class-promos` |
+| Nghỉ / dời buổi, nghỉ cả ngày | `20261117000900_session_changes.sql` | `session_cancel`, `session_move`, `studio_close_day`, `my_session_changes` |
+| Khung giờ check-in, check-out muộn | `20261117001100_checkin_window.sql` | `instructor_check_in`, `instructor_check_out`, `session_edit_check` |
+| Trả đủ = Hoàn thành | `20261117001000_booking_auto_complete.sql` | trigger `booking_auto_complete` |
 | Huỷ đặt phòng & hoàn tiền | `20261117000800_booking_refunds.sql` | `cancel_booking`, `booking_cancel_quote`, `booking_refund`, `booking_settings` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

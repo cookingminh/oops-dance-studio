@@ -5,6 +5,7 @@ import { loadMyTuition } from '@/services/tuitionStudent';
 import { listMyBookings } from '@/services/bookings';
 import { bookingDue } from '@/services/bookingPayments';
 import { getStudioToday } from '@/services/studio';
+import { listMySessionChanges } from '@/services/sessionChanges';
 import { arrangeTuition, needsAnswer, songOf } from '../components/body/pages/tuition/tuitionData';
 
 // What a signed-in student or guest still has to pay (or answer), for the bell, the menu badges and the
@@ -85,19 +86,25 @@ export function bookingDues(bookings, today) {
 const TONE_ORDER = { late: 0, soon: 1, due: 2 };
 export const byUrgency = (a, b) => TONE_ORDER[a.tone] - TONE_ORDER[b.tone] || a.days - b.days || b.amount - a.amount;
 
-// Everything for one person: { today, items (most urgent first), counts: { [page]: n }, settings, sandbox }.
-// Students (guests) get tuition and bookings; instructors only bookings.
+// How far ahead the bell tells about schedule changes (sessions called off, make-ups) in one's classes.
+export const CHANGE_DAYS = 21;
+
+// Everything for one person: { today, items (most urgent first), counts: { [page]: n }, settings, sandbox,
+// changes }. Students (guests) get tuition and bookings; instructors only bookings. `changes`: what changed
+// ahead in their classes, as a member or the teacher (my_session_changes) — news, not something to pay, so
+// it stays out of `items`, the menu badges and the daily reminder.
 export async function loadMyDues(user, role) {
     const isStudent = role === ROLES.guest;
-    const [today, tuition, bookings, settings, sandbox] = await Promise.all([
+    const [today, tuition, bookings, settings, sandbox, changes] = await Promise.all([
         getStudioToday(),
         isStudent ? loadMyTuition(user.id).catch(() => null) : null,
         listMyBookings(user.id).catch(() => []),
         getTuitionSettings().catch(() => null),
         isPaymentSandbox().catch(() => false),
+        role === ROLES.guest || role === ROLES.instructor ? listMySessionChanges(CHANGE_DAYS).catch(() => []) : [],
     ]);
     const items = [...tuitionDues(tuition), ...bookingDues(bookings, today)].sort(byUrgency);
     const counts = {};
     for (const item of items) counts[item.to] = (counts[item.to] ?? 0) + 1;
-    return { today, items, counts, settings, sandbox };
+    return { today, items, counts, settings, sandbox, changes };
 }

@@ -1,0 +1,197 @@
+// Session changes in the class views (/profile, both roles): the notice at the top of a class, the lines
+// under the week strip, an "Off" day in the strip, a session called off in the agenda and "Coming up".
+
+// "Off on Wed 13 Nov · Storm" / "Make-up Sat 16 Nov, 10:00–11:30 · Instead of Wed 13 Nov".
+.adminShell .pfChanges {
+    display: grid;
+    gap: .45rem;
+
+    li {
+        display: flex;
+        align-items: flex-start;
+        gap: .6rem;
+        min-width: 0;
+        padding: .6rem .75rem;
+        border-radius: 14px;
+        background: var(--ad-surface);
+        font-size: .9rem;
+        line-height: 1.4;
+
+        > svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+            font-size: 1.05rem;
+        }
+
+        > span {
+            display: grid;
+            min-width: 0;
+        }
+
+        strong {
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+
+        span span {
+            color: var(--ad-muted);
+            font-size: .84rem;
+        }
+
+        &.kind-cancelled > svg {
+            color: var(--ad-primary);
+        }
+
+        &.kind-make_up > svg {
+            color: hsl(262, 45%, 46%);
+        }
+    }
+
+    // Under the week strip: lighter, one line each.
+    &.isCompact {
+        gap: .25rem;
+        margin-top: .7rem;
+
+        li {
+            padding: .35rem .2rem;
+            background: transparent;
+            font-size: .84rem;
+
+            > span {
+                display: block;
+            }
+
+            span span::before {
+                content: ' · ';
+            }
+        }
+    }
+}
+
+// The notice at the top of a class's view: the whole width, warm so it is seen.
+.adminShell .pfClassView > .pfChangeNotice {
+    grid-column: 1 / -1;
+}
+
+.adminShell .pfBlock.pfChangeNotice {
+    border-color: hsl(40, 80%, 82%);
+    background: hsl(42, 100%, 96%);
+
+    .pfBlockHead {
+        margin-bottom: .6rem;
+
+        h4 svg {
+            color: hsl(30, 88%, 40%);
+        }
+
+        > span {
+            color: hsl(30, 50%, 36%);
+            font-size: .82rem;
+            font-weight: 600;
+        }
+    }
+}
+
+// The week strip: a tag under the time ("Make-up", "Off"); a day called off is greyed and struck through.
+.adminShell .pfDay {
+    .pfDayTag {
+        max-width: 100%;
+        overflow: hidden;
+        margin-top: .15rem;
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .02em;
+        text-overflow: ellipsis;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    &.isMakeUp .pfDayTag {
+        color: hsl(262, 45%, 42%);
+    }
+
+    &.isOff {
+        border-style: dashed;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+
+        .pfDayTime {
+            background: transparent;
+            color: var(--ad-subtle);
+            text-decoration: line-through;
+        }
+
+        .pfDayTag {
+            color: var(--ad-primary);
+        }
+    }
+}
+
+// Agenda and "Coming up": a session called off stays, greyed, with why.
+.adminShell .pfAgendaItem.isOff {
+    border-style: dashed;
+    background: var(--ad-surface-2);
+
+    .pfAgendaTime,
+    .pfAgendaText strong {
+        color: var(--ad-subtle);
+        text-decoration: line-through;
+    }
+
+    .pfThumb {
+        opacity: .5;
+        filter: grayscale(1);
+    }
+}
+
+.adminShell .pfOffTag {
+    flex-shrink: 0;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: .72rem;
+    font-weight: 700;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.adminShell .pfLater li.isOff {
+    .pfLaterTime,
+    .pfLaterText strong {
+        color: var(--ad-subtle);
+        text-decoration: line-through;
+    }
+
+    .pfLaterText span {
+        color: var(--ad-primary);
+    }
+
+    .pfThumb {
+        opacity: .5;
+        filter: grayscale(1);
+    }
+}
+
+// "Instead of Wed 13 Nov" under the next session's time.
+.adminShell .pfNextFacts .pfNextReplaces {
+    padding-left: 1.5rem;
+    color: hsl(262, 45%, 42%);
+    font-size: .86rem;
+    font-weight: 600;
+}
+
+.adminShell .pfUpNext .rtMakeUpTag {
+    background: hsla(0, 0%, 100%, .9);
+}
+
+@media (max-width: 720px) {
+    .adminShell .pfDay .pfDayTag {
+        font-size: .55rem;
+        letter-spacing: 0;
+    }
+
+    .adminShell .pfAgendaItem.isOff .pfOffTag {
+        display: none;
+    }
+}

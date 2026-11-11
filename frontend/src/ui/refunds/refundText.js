@@ -41,9 +41,11 @@ export function quoteStep(quote) {
 // The hours below which nothing comes back (the "no refund" line's number).
 export const noRefundHours = (settings) => refundPolicyLines(settings).find((line) => line.key === TIER_KEYS.none)?.vars.hours;
 
-// A guest may cancel a pending or approved booking until it starts (studio date + 'HH:mm' now).
+// A guest may cancel a pending, approved or completed booking until it starts (studio date + 'HH:mm' now):
+// a booking paid in full becomes `completed` by itself (20261117001000_booking_auto_complete) and is still
+// ahead of them.
 export const guestCanCancel = (booking, today, now) =>
-    ['pending', 'approved'].includes(booking.status) && Boolean(today) && (booking.date > today || (booking.date === today && formatTime(booking.start_time) > now));
+    ['pending', 'approved', 'completed'].includes(booking.status) && Boolean(today) && (booking.date > today || (booking.date === today && formatTime(booking.start_time) > now));
 
 // Money on a cancelled booking: { due (still to give back), paid (given back) }.
 export const refundOf = (booking) => ({ due: Number(booking?.refund_due ?? 0), paid: Number(booking?.refund_paid ?? 0) });

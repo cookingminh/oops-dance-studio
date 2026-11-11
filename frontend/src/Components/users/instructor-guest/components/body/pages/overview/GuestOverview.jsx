@@ -39,8 +39,9 @@ const GuestOverview = () => {
     const [picked, setPicked] = useState(null);
     const { today, stats, classes = [], attendance = [], bookings = [] } = data.data ?? {};
 
-    const week = today ? upcomingSessions(classes, today, now, 7) : [];
-    const next = week[0];
+    // The week shows sessions called off too (greyed); "next" is the first one that happens.
+    const week = today ? upcomingSessions(classes, today, now, 7, { withCancelled: true }) : [];
+    const next = week.find((session) => !session.calledOff);
     const selectedId = classes.some((cls) => cls.id === picked) ? picked : (next?.cls.id ?? classes[0]?.id);
 
     // Progress across every class.

@@ -118,6 +118,13 @@ insert into public.instructor_attendance (id, class_id, instructor_id, room_id, 
   (900041, 900041, 'd0000000-0000-4000-8000-000000000003', 900041, public.studio_today()),
   (900042, 900041, 'd0000000-0000-4000-8000-000000000003', 900041, public.studio_today() + 1),
   (900043, 900042, 'd0000000-0000-4000-8000-000000000004', 900041, public.studio_today());
+-- Check-in opens 15 minutes before a session (20261117001100_checkin_window): today's session gets its own
+-- times around the current studio time, so this works at any hour.
+update public.instructor_attendance a
+   set start_time = make_time(m.s / 60, m.s % 60, 0), end_time = make_time(least(m.s + 60, 1439) / 60, least(m.s + 60, 1439) % 60, 0)
+  from (select greatest(extract(hour from l)::int * 60 + extract(minute from l)::int - 5, 0) as s
+          from (select (now() at time zone 'Asia/Ho_Chi_Minh')::time as l) n) m
+ where a.id = 900041;
 -- Proof photos "uploaded" to the private bucket.
 insert into storage.objects (bucket_id, name, owner) values
   ('attendance-proofs', 'd0000000-0000-4000-8000-000000000003/900041/checkin.jpg',  'd0000000-0000-4000-8000-000000000003'),

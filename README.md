@@ -141,6 +141,6 @@ Tests: `supabase test db` (pgTAP), and `npm run test:e2e` in `frontend/` (Playwr
 
 ## Follow-ups
 
-- Upload and reorder room photos from the admin Rooms page (the database and storage paths already support it).
+- Upload and reorder room photos from Bookings → Rooms & prices (the database and storage paths already support it).
 - Upgrade NextUI 2.4 to HeroUI.
 - UI polish: the login page layout on wide screens, decorative dashboard widgets, placeholder footer links.

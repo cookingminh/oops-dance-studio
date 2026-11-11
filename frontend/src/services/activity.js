@@ -21,6 +21,12 @@ import { unwrap } from './errors';
 //   students   enrolled · removed (system = left after their course) · leaving · staying · updated [class, joined_at, leaves_after]
 //   sessions   checked_in · checked_out · approved · cancelled · reopened · substituted [from] · note [note]
 //              make_up_added · make_up_removed [date, start, make_up, instructor]
+//              cancelled through session_cancel / session_move also [reason] (what the class is told)
+//              day_closed (entity 'studio', entity_id and meta date, label = the reason; studio_close_day)
+//              [date, reason, sessions (called off), bookings (cancelled by the studio)]
+//              check_edited (staff corrected the check-in / check-out; session_edit_check, subject = the instructor,
+//              label = the class) [date, instructor, reason, start]; changes {checkin_at, checkout_at,
+//              checkout_late, status: { from, to }} (only what changed)
 //   roll_call  attended · absent · unmarked · note [class, date, status]
 //   tuition    paid [received, method] (system = the bank) · payment_undone · waived [note] · reopened · cancelled [reason]
 //              (system = the renewal cycle) · amount_changed [from, note] · renewal [renewal: continue|stop] · note

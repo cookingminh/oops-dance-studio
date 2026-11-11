@@ -4,7 +4,6 @@ import RequireRole from '@/auth/RequireRole';
 import { ROLES } from '@/auth/roles';
 import { stagger } from '../common/motion';
 import Bookings from './booking-manager/BookingsManager';
-import Rooms from './room-manager/RoomManager';
 import MainBody from './main-body/MainBody';
 import Attendance from './attendance/Attendance';
 import UserManager from './user-manager/UserManager';
@@ -29,7 +28,8 @@ const Body = () => {
                     <Route index element={<MainBody />} />
                     <Route path="classes/*" element={<ClassHub />} />
                     <Route path="bookings" element={<Bookings />} />
-                    <Route path="rooms" element={<Rooms />} />
+                    {/* Rooms and their prices live in the bookings page now ("Rooms & prices"). */}
+                    <Route path="rooms" element={<Navigate to="/admin/bookings?view=rooms" replace />} />
                     <Route path="attendance" element={<Attendance />} />
                     {/* Student roll calls and instructor check-ins used to be two pages. */}
                     <Route path="attendance-records" element={<Navigate to="/admin/attendance" replace />} />

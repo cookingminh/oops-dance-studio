@@ -8,8 +8,7 @@ import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import BookingPayDialog from '@/ui/payment/BookingPayDialog';
 import BookingReceipt from '@/ui/payment/BookingReceipt';
 import { statusColorMap } from '../../../../../../../Table/utils';
-import { QUICK_ACTIONS } from '../../useBookingActions';
-import { guestName } from '../../bookingsModel';
+import { guestName, isPaidAhead } from '../../bookingsModel';
 import BookingPayment from './BookingPayment';
 
 // Buttons for the status changes a booking allows (same choices as the table's ⋮ menu).
@@ -33,7 +32,8 @@ const BookingDetails = ({ booking, phone, roomColor, actions, settings, sandbox,
         const timer = setTimeout(() => setExtra({ kind: initialExtra }), 300);
         return () => clearTimeout(timer);
     }, [initialExtra]);
-    const { busyId, setStatus, remove } = actions;
+    const { busyId, setStatus, remove, quick } = actions;
+    const decisions = quick(booking);
     const name = guestName(booking, t);
     const busy = busyId === booking.id;
     const minutes = toMinutes(booking.end_time.slice(0, 5)) - toMinutes(booking.start_time.slice(0, 5));
@@ -52,6 +52,7 @@ const BookingDetails = ({ booking, phone, roomColor, actions, settings, sandbox,
                         <Chip className="capitalize" color={statusColorMap[booking.status] ?? 'default'} size="sm" variant="flat">
                             {t(booking.status)}
                         </Chip>
+                        {isPaidAhead(booking, today) && <span className="bkPaidUp">{t('Paid up')}</span>}
                         <span className="bdCode" title={t('Payment code')}>
                             {booking.payment_code}
                         </span>
@@ -126,9 +127,9 @@ const BookingDetails = ({ booking, phone, roomColor, actions, settings, sandbox,
                                 {t('Edit booking')}
                             </Button>
                         </div>
-                        {QUICK_ACTIONS[booking.status] && (
+                        {decisions.length > 0 && (
                             <div className="bdFooterGroup isDecide">
-                                {QUICK_ACTIONS[booking.status]
+                                {decisions
                                     .slice()
                                     .reverse()
                                     .map(([status, label]) => (

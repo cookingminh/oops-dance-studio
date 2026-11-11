@@ -8,8 +8,9 @@ import AsyncState from '@/ui/feedback/AsyncState';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import { useI18n } from '@/i18n/i18nContext';
 import SectionCard, { CardFooterLink } from '../../../common/SectionCard';
+import LateTag from '../../../common/checkins/LateTag';
 
-// Latest instructor check-ins / check-outs.
+// Latest instructor check-ins / check-outs (a late check-out says so).
 const Activity = () => {
     const { t, dateLocale } = useI18n();
     const recent = useAsync(() => listRecentCheckins(5), []);
@@ -48,7 +49,10 @@ const Activity = () => {
                                             <strong>{name}</strong> {checkedOut ? t('checked out of') : t('checked in to')}{' '}
                                             <strong>{row.class?.name}</strong>
                                         </span>
-                                        <time dateTime={at}>{formatDistanceToNow(new Date(at), { addSuffix: true, locale: dateLocale })}</time>
+                                        <span className="activityWhen">
+                                            <time dateTime={at}>{formatDistanceToNow(new Date(at), { addSuffix: true, locale: dateLocale })}</time>
+                                            {checkedOut && row.checkout_late && <LateTag />}
+                                        </span>
                                     </div>
                                 </li>
                             );

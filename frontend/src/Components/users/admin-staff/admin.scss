@@ -851,10 +851,6 @@
         flex-wrap: wrap;
         justify-content: flex-end;
         gap: .6rem;
-
-        .bookingSearch {
-            width: 16rem;
-        }
     }
 
     .cardLink {
@@ -977,114 +973,6 @@
 .adminShell .actionHint {
     font-size: .88rem;
     color: var(--ad-muted);
-}
-
-// Rooms page
-.adminShell .roomGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
-    gap: 1.25rem;
-}
-
-.adminShell .roomCard {
-    overflow: hidden;
-    border: 1px solid var(--ad-border);
-    border-radius: var(--ad-radius-lg);
-    background: var(--ad-surface);
-    transition: transform .35s var(--ad-ease), box-shadow .35s var(--ad-ease);
-
-    &:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--ad-shadow-hover);
-
-        .roomCardMedia img {
-            transform: scale(1.05);
-        }
-    }
-
-    .roomCardMedia {
-        position: relative;
-        overflow: hidden;
-        aspect-ratio: 16 / 10;
-        background: var(--ad-surface-2);
-
-        img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform .7s var(--ad-ease);
-        }
-    }
-
-    .photoCount {
-        position: absolute;
-        left: .75rem;
-        bottom: .75rem;
-        display: inline-flex;
-        align-items: center;
-        gap: .35rem;
-        padding: .3rem .65rem;
-        border-radius: 999px;
-        background: hsla(0, 0%, 0%, .55);
-        backdrop-filter: blur(6px);
-        color: #fff;
-        font-size: .8rem;
-        font-weight: 500;
-    }
-
-    .roomCardBody {
-        display: grid;
-        gap: .85rem;
-        padding: 1.1rem 1.25rem 1.25rem;
-    }
-
-    .roomCardHead {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: .75rem;
-
-        h3 {
-            font-family: var(--ad-display);
-            font-size: 1.45rem;
-            font-weight: 700;
-        }
-    }
-
-    .roomFeatures {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .4rem;
-
-        li {
-            padding: .3rem .7rem;
-            border-radius: 999px;
-            background: var(--ad-surface-2);
-            color: var(--ad-muted);
-            font-size: .84rem;
-            font-weight: 500;
-        }
-    }
-
-    .roomPrice {
-        display: flex;
-        align-items: baseline;
-        gap: .4rem;
-        padding-top: .85rem;
-        border-top: 1px dashed var(--ad-border);
-
-        strong {
-            font-family: var(--ad-display);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--ad-primary);
-        }
-
-        span {
-            font-size: .9rem;
-            color: var(--ad-muted);
-        }
-    }
 }
 
 // Bookings page (and dialogs, which render outside the shell)
@@ -1331,7 +1219,8 @@
 
 .adminShell .bookingsCard {
     .bookingSearch {
-        width: 16rem;
+        width: 20rem;
+        max-width: 100%;
     }
 
     .tableScroll {

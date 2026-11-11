@@ -2,7 +2,6 @@ import {
     LuBanknote,
     LuCalendarDays,
     LuClipboardCheck,
-    LuDoorOpen,
     LuHistory,
     LuLayoutDashboard,
     LuLineChart,
@@ -27,8 +26,7 @@ export const ADMIN_NAV = [
     {
         group: 'Studio',
         items: [
-            { to: '/admin/bookings', label: 'Bookings', icon: LuTicket, description: 'Approve requests and keep track of payments.' },
-            { to: '/admin/rooms', label: 'Rooms', icon: LuDoorOpen, description: 'Room details, sizes and hourly prices.' },
+            { to: '/admin/bookings', label: 'Bookings', icon: LuTicket, description: 'Requests, payments, room prices and the cancellation policy.' },
             { to: '/admin/classes', label: 'Classes', icon: LuCalendarDays, description: 'Every class in one place: students, sessions, tuition, routines and money.' },
         ],
     },

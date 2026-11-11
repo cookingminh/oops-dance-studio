@@ -15,6 +15,7 @@ import SessionModal from '../../../../common/session-modal/SessionModal';
 import SessionLegend from '../../../../common/session-modal/SessionLegend';
 import { calendarItem, rangeSessions, sessionKey } from '../../../../common/session-modal/sessionModel';
 import { readView, rememberView } from '../../../../common/session-modal/viewPreference';
+import { changeDay, reasonText } from '../../../../common/session-changes/changeText';
 import MakeUpDialog from '../../../class-manager/routines/MakeUpDialog';
 import { sessionTimes, shiftDay } from '../../hubModel';
 import ClassAttendanceHistory from '../sessions/ClassAttendanceHistory';
@@ -26,7 +27,8 @@ import '../sessions/sessions.scss';
 // ?day=yyyy-MM-dd opens that day's session (from "Take today's roll call" or a to-do).
 const SessionsTab = ({ ctx }) => {
     const { cls, today, badge, params, setTab, version, changed, instructors } = ctx;
-    const { t, tn } = useI18n();
+    const i18n = useI18n();
+    const { t, tn } = i18n;
     const toast = useToast();
     const now = useStudioClock();
     const readOnly = badge.phase === 'ended';
@@ -62,7 +64,9 @@ const SessionsTab = ({ ctx }) => {
         marksBy.get(mark.date).push(mark);
     }
     const sessions = rangeSessions(cls, from, until, rows);
-    const items = sessions.map((session) => calendarItem(session, { today, now, roll: marksBy.get(session.date), t, byState: true }));
+    const reason = (text) => reasonText(text, t);
+    const dayOf = (value) => changeDay(value, i18n, { short: true });
+    const items = sessions.map((session) => calendarItem(session, { today, now, roll: marksBy.get(session.date), t, byState: true, reason, day: dayOf }));
 
     // Counts for the month shown (the month view also shows a few days of its neighbours).
     const counted = view === 'month' ? sessions.filter((session) => session.date.slice(0, 7) === date.slice(0, 7)) : sessions;
@@ -164,7 +168,6 @@ const SessionsTab = ({ ctx }) => {
                     focus={day ? 'roll' : undefined}
                     onClose={closeModal}
                     onChanged={reload}
-                    onMakeUp={() => setDialog('makeUp')}
                 />
             )}
             {dialog === 'makeUp' && (

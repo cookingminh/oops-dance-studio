@@ -143,7 +143,9 @@ test('clicking the booking opens its dialog; approve from there', async () => {
 
 test('cancelling from the dialog asks who cancels, then mutes the booking', async () => {
     await block().click();
-    await expect(dialog.getByRole('button', { name: 'Mark completed' })).toBeVisible();
+    // A booking ahead completes itself once paid in full; "Mark completed" is for one that happened.
+    await expect(dialog.getByRole('button', { name: 'Cancel booking' })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Mark completed' })).toHaveCount(0);
     await dialog.getByRole('button', { name: 'Cancel booking' }).click();
     // The cancel dialog on top: who asked and what goes back (nothing was paid for this one).
     const cancel = page.locator('.scCancelDialog');

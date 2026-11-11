@@ -150,11 +150,23 @@ export async function todaysSessions() {
 }
 
 // Puts a session back to "pending" so check-in can be exercised again.
-export async function resetSession(id) {
-    return rest(await staffJwt(), `instructor_attendance?id=eq.${id}`, {
-        method: 'PATCH',
-        body: { status: 'pending', checkin_at: null, checkout_at: null, checkin_proof_path: null, checkout_proof_path: null },
-    });
+// Back to "not checked in". Check-in opens 15 minutes before a session and closes at its end
+// (20261117001100_checkin_window), so `open: true` gives the session its own times around now
+// (studio time), whatever hour the tests run; without it the session keeps the class's weekly slot.
+export async function resetSession(id, { open = false } = {}) {
+    const body = { status: 'pending', checkin_at: null, checkout_at: null, checkin_proof_path: null, checkout_proof_path: null };
+    if (open) Object.assign(body, sessionTimesAroundNow());
+    else Object.assign(body, { start_time: null, end_time: null });
+    return rest(await staffJwt(), `instructor_attendance?id=eq.${id}`, { method: 'PATCH', body });
+}
+
+function sessionTimesAroundNow() {
+    const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
+    const [h, m] = clock.split(':').map(Number);
+    const start = Math.min(Math.max(h * 60 + m - 5, 0), 23 * 60);
+    const end = Math.min(start + 60, 23 * 60 + 59);
+    const hhmm = (minutes) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    return { start_time: hhmm(start), end_time: hhmm(end) };
 }
 
 // Makes sure today has a checked-in session with a proof photo (staff views it).
@@ -163,7 +175,7 @@ export async function ensureProofToday() {
     if (sessions.some((s) => s.checkin_proof_path)) return;
     const mine = sessions.find((s) => s.instructor?.email === 'instructor@demo.oopsdance.test');
     expect(mine, 'instructor@ has a session today').toBeTruthy();
-    await resetSession(mine.id);
+    await resetSession(mine.id, { open: true });
     const me = await token('instructor@demo.oopsdance.test');
     const proofPath = `${me.id}/${mine.id}/checkin.jpg`;
     const upload = await fetch(`${API}/storage/v1/object/attendance-proofs/${proofPath}`, {

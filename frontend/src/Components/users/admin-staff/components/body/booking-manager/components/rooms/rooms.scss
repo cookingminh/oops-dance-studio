@@ -1,0 +1,351 @@
+// "Rooms & prices" view of the bookings page: the room cards (photo, features, hourly price, how each
+// room is booked) and the cancellation policy beside them. Wide screens: rooms on the left, the policy
+// in a column on the right that stays in view; narrower: the policy under the rooms.
+
+.adminShell .bkRoomsView {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+    align-items: start;
+    gap: 1.25rem;
+}
+
+.adminShell .roomGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1.25rem;
+}
+
+.adminShell .roomCard {
+    overflow: hidden;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    background: var(--ad-surface);
+    transition: box-shadow .35s var(--ad-ease), border-color .35s var(--ad-ease);
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--room, var(--ad-border)) 30%, var(--ad-border));
+        box-shadow: var(--ad-shadow-hover);
+
+        .roomCardMedia img {
+            transform: scale(1.04);
+        }
+    }
+
+    .roomCardMedia {
+        position: relative;
+        overflow: hidden;
+        aspect-ratio: 16 / 9;
+        background: var(--ad-surface-2);
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .7s var(--ad-ease);
+        }
+    }
+
+    .photoCount {
+        position: absolute;
+        left: .75rem;
+        bottom: .75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        padding: .3rem .65rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 0%, .55);
+        backdrop-filter: blur(6px);
+        color: #fff;
+        font-size: .8rem;
+        font-weight: 500;
+    }
+
+    .roomCardBody {
+        display: grid;
+        gap: .85rem;
+        padding: 1.1rem 1.25rem 1.25rem;
+    }
+
+    .roomCardHead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+
+        h3 {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            font-family: var(--ad-display);
+            font-size: 1.45rem;
+            font-weight: 700;
+        }
+
+        .segDot {
+            width: .7rem;
+            height: .7rem;
+        }
+    }
+
+    .roomFeatures {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+
+        li {
+            padding: .3rem .7rem;
+            border-radius: 999px;
+            background: var(--ad-surface-2);
+            color: var(--ad-muted);
+            font-size: .84rem;
+            font-weight: 500;
+        }
+    }
+
+    .roomPrice {
+        display: flex;
+        align-items: baseline;
+        gap: .4rem;
+        padding-top: .85rem;
+        border-top: 1px dashed var(--ad-border);
+
+        strong {
+            font-family: var(--ad-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ad-primary);
+        }
+
+        span {
+            font-size: .9rem;
+            color: var(--ad-muted);
+        }
+    }
+
+    // This week · this month side by side, this month's income under them on one line.
+    .roomFacts {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+        margin: 0;
+
+        > .isMoney {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: .25rem .75rem;
+
+            dd {
+                color: var(--ad-primary-strong);
+                white-space: nowrap;
+            }
+        }
+
+        > div {
+            display: grid;
+            align-content: start;
+            gap: .2rem;
+            min-width: 0;
+            padding: .6rem .7rem;
+            border-radius: 12px;
+            background: var(--ad-surface-2);
+        }
+
+        dt {
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+        }
+
+        dd {
+            margin: 0;
+            font-size: .95rem;
+            font-weight: 700;
+            color: var(--ad-text);
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .roomNext {
+        display: grid;
+        gap: .3rem;
+
+        > small {
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--ad-subtle);
+        }
+    }
+
+    // The next booking opens its dialog.
+    .roomNextBtn {
+        display: grid;
+        gap: .1rem;
+        padding: .6rem .8rem;
+        border: 1px solid var(--ad-border);
+        border-left: 3px solid var(--room, var(--ad-primary));
+        border-radius: 12px;
+        background: var(--ad-surface);
+        text-align: left;
+        cursor: pointer;
+        transition: background-color .2s ease, border-color .2s ease;
+
+        strong {
+            font-size: .92rem;
+            font-weight: 700;
+            color: var(--ad-text);
+        }
+
+        span {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .4rem;
+            font-size: .85rem;
+            color: var(--ad-muted);
+        }
+
+        &:hover {
+            background: var(--ad-surface-2);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+
+    .roomNextTag {
+        padding: .05rem .45rem;
+        border-radius: 999px;
+        background: hsl(45, 100%, 92%);
+        color: hsl(30, 88%, 30%);
+        font-size: .72rem;
+        font-style: normal;
+        font-weight: 700;
+    }
+
+    .roomNextNone {
+        font-size: .88rem;
+        color: var(--ad-subtle);
+    }
+
+    .roomCalendarBtn {
+        justify-self: start;
+        font-weight: 600;
+    }
+}
+
+// The cancellation policy, beside the prices.
+.adminShell .bkPolicyCard {
+    position: sticky;
+    top: 1rem;
+    display: grid;
+    gap: .85rem;
+    padding: 1.1rem 1.15rem 1.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    background: linear-gradient(180deg, var(--ad-primary-soft), var(--ad-surface) 7rem);
+
+    .bkPolicyHead {
+        display: flex;
+        align-items: flex-start;
+        gap: .7rem;
+
+        h3 {
+            font-family: var(--ad-display);
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1.25;
+        }
+
+        small {
+            display: block;
+            margin-top: .15rem;
+            font-size: .85rem;
+            line-height: 1.4;
+            color: var(--ad-muted);
+        }
+    }
+
+    .bkPolicyIcon {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 12px;
+        background: var(--ad-surface);
+        color: var(--ad-primary);
+        font-size: 1.15rem;
+        box-shadow: var(--ad-shadow);
+    }
+
+    .bkPolicyLines {
+        margin: 0;
+    }
+
+    .bkPolicyMeta {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        margin: 0;
+        font-size: .82rem;
+        color: var(--ad-subtle);
+
+        &.isLock {
+            color: var(--ad-muted);
+        }
+    }
+}
+
+@media screen and (max-width: 1180px) {
+    .adminShell .bkRoomsView {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .bkPolicyCard {
+        position: static;
+    }
+}
+
+@media screen and (max-width: 560px) {
+    .adminShell .roomCard {
+        .roomCardBody {
+            padding: 1rem;
+        }
+
+        .roomFacts > div {
+            padding: .5rem .6rem;
+        }
+
+        .roomCalendarBtn {
+            justify-self: stretch;
+        }
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .roomCard .roomCardMedia img {
+        transition: none;
+    }
+}
+
+.adminShell .bkPolicyCard .bkPolicyEdit {
+    border-width: 1px;
+    border-color: var(--ad-border);
+    background: var(--ad-surface);
+    font-weight: 600;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        color: var(--ad-primary);
+    }
+}

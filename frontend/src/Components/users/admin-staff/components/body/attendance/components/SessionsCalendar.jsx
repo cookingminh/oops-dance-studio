@@ -11,6 +11,7 @@ import { calendarRange } from '../../../common/calendar/calendarModel';
 import SessionLegend from '../../../common/session-modal/SessionLegend';
 import { STATUS_FILTERS, calendarItem, filterOptions, matchesSearch, matchesStatus, statusKeyOf, teacherOf } from '../../../common/session-modal/sessionModel';
 import { readView, rememberView } from '../../../common/session-modal/viewPreference';
+import { changeDay, reasonText } from '../../../common/session-changes/changeText';
 import { loadAll, loadRange } from '../attendanceData';
 import AttendanceList from './AttendanceList';
 import SessionFilters from './SessionFilters';
@@ -19,13 +20,15 @@ const NO_FILTERS = { query: '', instructor: 'all', classId: 'all', status: 'all'
 
 // "All sessions": every class's sessions on a calendar (week or month; the class colour, the state
 // as outline and badge), filtered by instructor, class, status and a search. A click opens the
-// session modal. "List" shows the recorded sessions as a table (any period) with a CSV export.
-const SessionsCalendar = ({ today, classes, version, onOpen }) => {
-    const { t, tn } = useI18n();
+// session modal. "List" shows the recorded sessions as a table (any period) with a CSV export. A
+// session called off says why; a make-up names the day it replaces. `startDate` opens on another day.
+const SessionsCalendar = ({ today, startDate, classes, version, onOpen }) => {
+    const i18n = useI18n();
+    const { t, tn } = i18n;
     const now = useStudioClock();
     const [mode, setMode] = useState('calendar');
     const [view, setView] = useState(() => readView('attendance', 'week'));
-    const [date, setDate] = useState(today);
+    const [date, setDate] = useState(startDate ?? today);
     const [filters, setFilters] = useState(NO_FILTERS);
     const { from, until } = calendarRange(view, date);
 
@@ -58,7 +61,9 @@ const SessionsCalendar = ({ today, classes, version, onOpen }) => {
         })),
     ];
 
-    const items = visible.map((session) => calendarItem(session, { today, now, roll: range.data?.marks.get(session.key), t }));
+    const reason = (text) => reasonText(text, t);
+    const day = (value) => changeDay(value, i18n, { short: true });
+    const items = visible.map((session) => calendarItem(session, { today, now, roll: range.data?.marks.get(session.key), t, reason, day }));
     const review = visible.filter((session) => statusKeyOf(session, today, now) === 'review').length;
     const filtered = visible.length !== source.length;
 

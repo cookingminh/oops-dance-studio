@@ -1827,10 +1827,22 @@
 
 .adminShell .pfCheckBtn {
     font-weight: 600;
+
+    // Before the check-in window: it says when it opens and enables by itself (kept readable).
+    &.isWaiting {
+        opacity: .9;
+        color: var(--ad-muted);
+    }
+
+    // A check-out more than 10 minutes after the end.
+    &.isLate {
+        color: hsl(28, 90%, 18%);
+    }
 }
 
 .adminShell .pfCheckDone {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: .4rem;
     color: var(--pf-good);
@@ -1840,6 +1852,28 @@
     &.isMuted {
         color: var(--ad-subtle);
     }
+
+    // The session ended without a check-in: the studio records it.
+    &.isOver {
+        color: var(--ad-muted);
+        font-weight: 500;
+        line-height: 1.35;
+
+        svg {
+            flex-shrink: 0;
+        }
+    }
+}
+
+// "Late check-out" under the time (today's steps, the history) or under the session (today's list).
+.adminShell :is(.pfStepText, .pfHistoryTime) .ckLateTag {
+    justify-self: start;
+    margin-top: .15rem;
+}
+
+.adminShell .pfTodayItem > .ckLateTag {
+    grid-column: 3 / -1;
+    justify-self: start;
 }
 
 // Empty states ====================>
@@ -2799,6 +2833,10 @@
         > .pfThumb {
             display: none;
         }
+
+        > .ckLateTag {
+            grid-column: 2 / -1;
+        }
     }
 
     .adminShell .pfAgendaItem .pfThumb {
@@ -2821,5 +2859,30 @@
         .pfEmptyArt svg {
             animation: none;
         }
+    }
+}
+
+// The check-out dialog (a portal, outside the shell): a check-out more than 10 minutes after the end is
+// marked late — said before confirming.
+.pfLateWarn {
+    display: flex;
+    align-items: flex-start;
+    gap: .55rem;
+    padding: .7rem .85rem;
+    border: 1px solid hsl(38, 90%, 72%);
+    border-radius: 14px;
+    background: hsl(42, 100%, 95%);
+    color: hsl(28, 80%, 24%);
+    font-size: .88rem;
+    line-height: 1.45;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        font-size: 1.05rem;
+    }
+
+    strong {
+        font-weight: 700;
     }
 }

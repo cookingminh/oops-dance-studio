@@ -68,8 +68,6 @@ export default {
     'My Attendance': 'Điểm danh của tôi',
     'Today at the studio at a glance.': 'Mọi việc ở studio hôm nay, gói gọn một trang.',
     'Revenue, bookings and enrolment over time.': 'Doanh thu, lượt đặt phòng và số học viên theo thời gian.',
-    'Approve requests and keep track of payments.': 'Duyệt yêu cầu đặt phòng và theo dõi thanh toán.',
-    'Room details, sizes and hourly prices.': 'Thông tin phòng, diện tích và giá theo giờ.',
     'Monthly lessons, instructors and the weekly timetable.': 'Bài học hằng tháng, giáo viên và lịch học trong tuần.',
     'Today’s student attendance and class members.': 'Điểm danh học viên hôm nay và danh sách lớp.',
     'Check-ins, proof photos and session approvals.': 'Check-in, ảnh xác nhận và duyệt buổi dạy.',

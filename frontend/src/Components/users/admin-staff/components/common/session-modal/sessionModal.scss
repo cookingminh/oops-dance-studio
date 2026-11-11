@@ -354,6 +354,20 @@ $amber-soft: hsl(40, 95%, 92%);
         }
     }
 
+    // A late check-out, then "Edit check-in/out times", under the two steps.
+    .smLateLine {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem;
+        font-size: .85rem;
+        color: var(--ad-muted);
+    }
+
+    .smEditTimes {
+        justify-self: start;
+    }
+
     .smCheck:not(.isDone) .smCheckText strong {
         color: var(--ad-muted);
         font-weight: 500;

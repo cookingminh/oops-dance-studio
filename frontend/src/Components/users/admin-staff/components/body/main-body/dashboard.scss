@@ -764,6 +764,14 @@
             font-size: .8rem;
             color: var(--ad-subtle);
         }
+
+        // When, then "Late check-out" for a late one.
+        > .activityWhen {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .2rem .45rem;
+        }
     }
 }
 

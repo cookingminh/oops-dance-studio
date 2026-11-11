@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Avatar, Button, Tooltip } from '@nextui-org/react';
-import { LuBan, LuCalendarPlus, LuCheck, LuInfo, LuListChecks, LuPlus, LuSun } from 'react-icons/lu';
+import { LuBan, LuCalendarClock, LuCalendarPlus, LuCheck, LuCloudLightning, LuInfo, LuListChecks, LuPlus, LuSun } from 'react-icons/lu';
 import { generateInstructorAttendance, generateStudentAttendance, updateInstructorAttendance } from '@/services/attendance';
 import { avatarUrl, classImageUrl } from '@/services/storage';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
@@ -13,13 +13,16 @@ import SectionCard from '../../../common/SectionCard';
 import { fadeUp, stagger } from '../../../common/motion';
 import { useStudioClock } from '../../../common/useStudioClock';
 import MakeUpTag from '../../class-manager/routines/MakeUpTag';
-import { OPEN_STATUSES, classColor, isSubstitute, personName, rollOf, sessionState, teacherOf } from '../../../common/session-modal/sessionModel';
+import { reasonText } from '../../../common/session-changes/changeText';
+import { OPEN_STATUSES, canReschedule, classColor, isSubstitute, personName, rollOf, sessionState, teacherOf } from '../../../common/session-modal/sessionModel';
+import LateTag from '../../../common/checkins/LateTag';
 import { CheckMini } from './AttendanceParts';
 
 // Today at a glance: every session in time order (weekly and make-up) with the instructor's
 // check-in / check-out and proofs, the roll call so far and one-click actions — take the roll
-// call, mark completed when a check-in is missing, cancel. The whole session opens in the modal.
-const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }) => {
+// call, mark completed when a check-in is missing, call off / move (or cancel one that started). The
+// whole session opens in the modal. The header also closes the studio for a day (onCloseDay).
+const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof, onReschedule, onCloseDay }) => {
     const { t, tn, formatDate } = useI18n();
     const toast = useToast();
     const now = useStudioClock();
@@ -52,12 +55,18 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }
             await updateInstructorAttendance(session.row.id, { status: 'completed' });
             toast.success('Marked as completed.');
         });
-    const cancel = (session) =>
-        window.confirm(t('Cancel this session? It won’t count for the routine, which then ends one session later.')) &&
+    // A session that hasn't started is called off (or moved) with a reason the class sees.
+    const cancel = (session) => {
+        if (canReschedule(session, today, isReadOnly(session.cls))) {
+            onReschedule(session);
+            return;
+        }
+        if (!window.confirm(t('Cancel this session? It won’t count for the routine, which then ends one session later.'))) return;
         run(session.key, async () => {
             await updateInstructorAttendance(session.row.id, { status: 'cancelled' });
             toast.success('Session cancelled.');
         });
+    };
     const createRolls = () =>
         run('roll', async () => {
             const created = await generateStudentAttendance();
@@ -90,6 +99,9 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }
                     </Button>
                     <Button variant="light" startContent={<LuCalendarPlus aria-hidden="true" />} isLoading={busy === 'week'} onPress={createWeek}>
                         {t('Create this week’s records')}
+                    </Button>
+                    <Button variant="flat" color="danger" startContent={<LuCloudLightning aria-hidden="true" />} onPress={onCloseDay}>
+                        {t('Close for a day')}
                     </Button>
                 </>
             }
@@ -124,6 +136,7 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }
                         const roll = rollOf(marks.get(session.key));
                         const readOnly = isReadOnly(cls);
                         const open = row && OPEN_STATUSES.includes(row.status) && !readOnly;
+                        const movable = canReschedule(session, today, readOnly);
                         const rollDone = roll.total > 0 && roll.marked === roll.total;
                         return (
                             <motion.li key={session.key} variants={fadeUp} className={`atTodayRow tone-${phase.tone}`} style={{ '--class': classColor(cls.id) }}>
@@ -157,9 +170,12 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }
                                         <>
                                             <CheckMini label={t('Check-in')} proofLabel={t('Check-in proof')} at={row.checkin_at} proof={row.checkin_proof_url} onView={onViewProof} />
                                             <CheckMini label={t('Check-out')} proofLabel={t('Check-out proof')} at={row.checkout_at} proof={row.checkout_proof_url} onView={onViewProof} />
+                                            {row.checkout_late && <LateTag />}
                                         </>
                                     ) : (
-                                        <span className="atStepNone">{row ? t('Cancelled') : t('No record yet')}</span>
+                                        <span className="atStepNone">
+                                            {row ? [t('Cancelled'), reasonText(row.cancel_reason, t)].filter(Boolean).join(' · ') : t('No record yet')}
+                                        </span>
                                     )}
                                 </span>
 
@@ -202,10 +218,17 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof }
                                             {t('Take roll call')}
                                         </Button>
                                     )}
-                                    {open && (
-                                        <Tooltip content={t('Cancel session')}>
-                                            <Button isIconOnly size="sm" variant="light" aria-label={t('Cancel the session of {name}', { name: cls.name })} isDisabled={busy === session.key} onPress={() => cancel(session)}>
-                                                <LuBan aria-hidden="true" />
+                                    {(open || movable) && (
+                                        <Tooltip content={movable ? t('Call off / move') : t('Cancel session')}>
+                                            <Button
+                                                isIconOnly
+                                                size="sm"
+                                                variant="light"
+                                                aria-label={movable ? t('Call off or move the session of {name}', { name: cls.name }) : t('Cancel the session of {name}', { name: cls.name })}
+                                                isDisabled={busy === session.key}
+                                                onPress={() => cancel(session)}
+                                            >
+                                                {movable ? <LuCalendarClock aria-hidden="true" /> : <LuBan aria-hidden="true" />}
                                             </Button>
                                         </Tooltip>
                                     )}

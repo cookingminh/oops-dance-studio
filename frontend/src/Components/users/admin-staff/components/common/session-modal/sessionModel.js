@@ -1,4 +1,5 @@
 import { isoWeekdayOf } from '@/lib/format';
+import { meetsOn } from '@/lib/lessons';
 import { classPhase } from '@/services/classes';
 import { classHue } from '@/Components/users/instructor-guest/components/body/profileHelpers';
 import { fold, personName, runsOn, sessionState, sessionTimes, shiftDay } from '../../body/class-hub/hubModel';
@@ -68,6 +69,16 @@ export function sessionRules(session, today, readOnly) {
     };
 }
 
+// Call off / move (session_cancel, session_move): a session today or ahead that hasn't started — also one
+// the timetable gives whose record doesn't exist yet. One that started, or an earlier one, is cancelled the
+// plain way (sessionRules.cancel).
+export function canReschedule(session, today, readOnly) {
+    if (readOnly || !today || session.date < today) return false;
+    const row = session.row;
+    if (row) return row.status === 'pending' || row.status === 'waiting';
+    return meetsOn(session.cls, session.date);
+}
+
 // ---- Calendar items ----------------------------------------------------------------------------
 
 // Each class keeps its own hue (the same as on the instructor and student pages).
@@ -94,8 +105,10 @@ export function rollOf(rows = []) {
 
 // One CalendarView item. `byState` (one class's calendar): coloured by state, with the state as
 // title and who teaches below; otherwise the class colour, the class name as title and the state
-// as status text. `t` translates.
-export function calendarItem(session, { today, now, roll, t, byState = false }) {
+// as status text. `t` translates; `reason(text)` shows why a session was called off (in place of who
+// teaches) and `day(date)` names the day a make-up replaces in its badge ("Make-up · Wed 13/11"). A late
+// check-out takes the badge from the roll-call count (and is said in the label too).
+export function calendarItem(session, { today, now, roll, t, byState = false, reason, day }) {
     const state = sessionState(session, today, now);
     const status = STATUS_OF_KIND[state.kind] ?? 'pending';
     const teacher = personName(teacherOf(session)) || t('No instructor');
@@ -104,11 +117,14 @@ export function calendarItem(session, { today, now, roll, t, byState = false }) 
     if (state.kind === 'cancelled' || state.kind === 'missing') tone = 'muted';
     else if (state.kind === 'planned' || state.kind === 'soon') tone = 'dashed';
     const { marked, total } = rollOf(roll);
+    const late = Boolean(session.row?.checkout_late) && state.kind === 'done';
     let badge = total ? `${marked}/${total}` : undefined;
-    if (session.extra) badge = t('Make-up');
+    if (late) badge = t('Late check-out');
+    if (session.extra) badge = session.row?.makes_up && day ? t('Make-up · {day}', { day: day(session.row.makes_up) }) : t('Make-up');
     // The class page already says it in the title.
     if (state.kind === 'review' && !byState) badge = t('Needs review');
-    const who = substitute ? `${teacher} · ${t('Substitute')}` : teacher;
+    let who = substitute ? `${teacher} · ${t('Substitute')}` : teacher;
+    if (state.kind === 'cancelled' && session.row?.cancel_reason && reason) who = reason(session.row.cancel_reason);
     return {
         id: session.key,
         date: session.date,
@@ -118,9 +134,10 @@ export function calendarItem(session, { today, now, roll, t, byState = false }) 
         subtitle: byState ? who : [who, session.cls.room?.name].filter(Boolean).join(' · '),
         color: byState ? STATE_COLORS[state.kind] : classColor(session.cls.id),
         status,
-        statusLabel: byState ? '' : t(state.key, state.vars),
+        statusLabel: [byState ? '' : t(state.key, state.vars), late ? t('Late check-out') : ''].filter(Boolean).join(' · '),
         tone,
         badge,
+        flag: late ? 'late' : undefined,
         data: session,
     };
 }

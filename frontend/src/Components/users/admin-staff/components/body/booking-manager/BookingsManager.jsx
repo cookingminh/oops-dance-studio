@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Button, Input } from '@nextui-org/react';
-import { LuPlus, LuSearch, LuShieldCheck, LuTicket } from 'react-icons/lu';
+import { Button } from '@nextui-org/react';
+import { LuPlus, LuTicket } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
 import { useAsync } from '@/hooks/useAsync';
@@ -20,6 +20,7 @@ import Segmented from '../../common/Segmented';
 import { STATUS_COLORS, roomColorMap } from '../../common/chartTheme';
 import { asDate, calendarRange, studioTodayIso } from '../../common/calendar/calendarModel';
 import BookingFilters from './components/BookingFilters';
+import RoomsView from './components/rooms/RoomsView';
 import BookingList from './components/booking-list/BookingList';
 import BookingForm from './components/booking-list/BookingForm';
 import BookingCalendar from './components/booking-calendar/BookingCalendar';
@@ -34,9 +35,11 @@ import './bookings.scss';
 const inRange = ({ from, until }) => (booking) => booking.date >= from && booking.date <= until;
 
 // /admin/bookings: every room booking as a calendar (default; week or month, with the rooms' class
-// sessions behind) or as the searchable table. Room and status filters apply to both; the header
-// counts what is shown. `?view=list|month`, `?status=pending`, `?date=yyyy-MM-dd`, `?booking=<id>`,
-// `?owing=1` / `?refunds=1` (list) and `?policy=1` (the cancellation policy) open it pre-set.
+// sessions behind) or as the searchable table, and the rooms themselves — "Rooms & prices": each room's
+// hourly price and how it is booked, beside the cancellation policy (once a page of its own; /admin/rooms
+// leads here). Room and status filters apply to the calendar and the table; the header counts what is
+// shown. `?view=list|month|rooms`, `?status=pending`, `?date=yyyy-MM-dd`, `?booking=<id>`, `?owing=1` /
+// `?refunds=1` (list) and `?policy=1` (the cancellation policy dialog) open it pre-set.
 const BookingsManager = () => {
     const toast = useToast();
     const { role } = useAuth();
@@ -48,16 +51,18 @@ const BookingsManager = () => {
     const today = useAsync(getStudioToday, []);
     // The bank account for the QR code, and whether simulated transfers work (local stack, demo).
     const payment = useAsync(() => Promise.all([getTuitionSettings(), isPaymentSandbox()]), []);
-    // The cancellation policy (admins change it from the header button).
+    // The cancellation policy (shown in "Rooms & prices"; admins change it there).
     const policy = useAsync(getBookingSettings, []);
     const [policyOpen, setPolicyOpen] = useState(() => params.get('policy') === '1');
     const todayIso = today.data ?? studioTodayIso();
 
     // Layout: the URL keeps it, so a reload (or a link) opens the same view.
-    const view = ['list', 'month'].includes(params.get('view')) ? params.get('view') : 'week';
+    const view = ['list', 'month', 'rooms'].includes(params.get('view')) ? params.get('view') : 'week';
     const isList = view === 'list';
+    const isRooms = view === 'rooms';
+    const isCalendar = !isList && !isRooms;
     const lastCalendar = useRef(view === 'month' ? 'month' : 'week');
-    if (!isList) lastCalendar.current = view;
+    if (isCalendar) lastCalendar.current = view;
     const calView = lastCalendar.current;
     const setView = (next, extra = {}) =>
         setParams(
@@ -99,7 +104,7 @@ const BookingsManager = () => {
         setView(on ? 'list' : view, { refunds: on ? '1' : null, owing: null });
     };
 
-    const baseActions = useBookingActions(bookings.reload);
+    const baseActions = useBookingActions(bookings.reload, todayIso);
     // Completing a booking that still owes money asks first (take it now, or complete anyway).
     const actions = {
         ...baseActions,
@@ -133,7 +138,7 @@ const BookingsManager = () => {
 
     // Class sessions behind the calendar, for the days it shows.
     const shown = calendarRange(calView, calDate);
-    const sessions = useAsync(() => (isList ? Promise.resolve([]) : listRoomSessions(shown)), [isList, shown.from, shown.until]);
+    const sessions = useAsync(() => (isCalendar ? listRoomSessions(shown) : Promise.resolve([])), [isCalendar, shown.from, shown.until]);
 
     // Any filter change starts the table again from its first page.
     const filterSetter = (setter) => (value) => {
@@ -213,7 +218,11 @@ const BookingsManager = () => {
         return pendingCount && statusFilter !== 'pending' ? `${text} · ${t('{count} awaiting approval', { count: pendingCount })}` : text;
     };
     let summary = t('Loading bookings…');
-    if (bookings.data) {
+    if (isRooms) {
+        summary = rooms.data
+            ? `${tn(roomList.length, '{count} room', '{count} rooms')} · ${t('hourly prices and the cancellation policy')}`
+            : t('Loading…');
+    } else if (bookings.data) {
         summary = owing
             ? tn(visible.length, '{count} past booking still owes money', '{count} past bookings still owe money')
             : refunds
@@ -235,12 +244,19 @@ const BookingsManager = () => {
     };
 
     // Calendar inputs: bookings of every day on screen, sessions of the shown rooms.
-    const calendarBookings = isList ? [] : all.filter(inRange(shown)).filter(roomMatches).filter(statusMatches);
+    const calendarBookings = isCalendar ? all.filter(inRange(shown)).filter(roomMatches).filter(statusMatches) : [];
     const calendarSessions = (sessions.data ?? []).filter(roomMatches);
 
     const newBooking = (prefill = null) => {
         setDraft(prefill);
         setEditing(null);
+    };
+    // "Rooms & prices" → that room alone on the calendar, this week.
+    const showRoomCalendar = (room) => {
+        setRoomFilter(String(room.id));
+        setStatusFilter('all');
+        setCalDate(asDate(todayIso));
+        setView(lastCalendar.current);
     };
     // A free slot (click) or a dragged range, in a room lane or the selected room.
     const pickSlot = (date, time, { end, lane } = {}) => {
@@ -268,56 +284,68 @@ const BookingsManager = () => {
             subtitle={summary}
             actions={
                 <>
-                    {isList && (
-                        <Input
-                            isClearable
-                            aria-label={t('Search bookings')}
-                            placeholder={t('Search...')}
-                            className="bookingSearch"
-                            startContent={<LuSearch className="text-default-400" aria-hidden="true" />}
-                            value={query}
-                            onValueChange={filterSetter(setQuery)}
-                            onClear={() => filterSetter(setQuery)('')}
-                        />
-                    )}
                     <Segmented
                         label={t('Layout')}
                         className="bookingLayout"
                         options={[
                             { key: 'calendar', label: t('Calendar') },
                             { key: 'list', label: t('List') },
+                            {
+                                key: 'rooms',
+                                // Phones keep the short word so the three views fit beside "New booking".
+                                label: (
+                                    <>
+                                        <span className="bookingViewLong">{t('Rooms & prices')}</span>
+                                        <span className="bookingViewShort">{t('Rooms')}</span>
+                                    </>
+                                ),
+                            },
                         ]}
-                        value={isList ? 'list' : 'calendar'}
-                        onChange={(key) => setView(key === 'list' ? 'list' : lastCalendar.current)}
+                        value={isRooms ? 'rooms' : isList ? 'list' : 'calendar'}
+                        onChange={(key) => setView(key === 'calendar' ? lastCalendar.current : key)}
                     />
-                    <Button variant="flat" className="bookingPolicyBtn" startContent={<LuShieldCheck aria-hidden="true" />} onPress={() => setPolicyOpen(true)}>
-                        <span className="bookingPolicyLabel">{t('Cancellation policy')}</span>
-                    </Button>
-                    <Button color="danger" startContent={<LuPlus aria-hidden="true" />} onPress={() => newBooking()}>
-                        {t('New booking')}
+                    <Button color="danger" className="bookingNewBtn" startContent={<LuPlus aria-hidden="true" />} onPress={() => newBooking()}>
+                        <span className="bookingNewLabel">{t('New booking')}</span>
                     </Button>
                 </>
             }
         >
-            <BookingFilters
-                roomOptions={roomOptions}
-                room={roomFilter}
-                onRoom={filterSetter(setRoomFilter)}
-                statusOptions={statusOptions}
-                status={statusFilter}
-                onStatus={filterSetter(setStatusFilter)}
-                pendingCount={pendingCount}
-                owingCount={owingCount}
-                owing={owing}
-                onOwing={setOwing}
-                refundCount={refundCount}
-                refunds={refunds}
-                onRefunds={setRefunds}
-                scope={isList && !owing && !refunds ? scope : null}
-                onScope={filterSetter(setScope)}
-            />
+            {!isRooms && (
+                <BookingFilters
+                    roomOptions={roomOptions}
+                    room={roomFilter}
+                    onRoom={filterSetter(setRoomFilter)}
+                    statusOptions={statusOptions}
+                    status={statusFilter}
+                    onStatus={filterSetter(setStatusFilter)}
+                    pendingCount={pendingCount}
+                    owingCount={owingCount}
+                    owing={owing}
+                    onOwing={setOwing}
+                    refundCount={refundCount}
+                    refunds={refunds}
+                    onRefunds={setRefunds}
+                    search={isList && !owing && !refunds ? { value: query, onChange: filterSetter(setQuery) } : null}
+                    scope={isList && !owing && !refunds ? scope : null}
+                    onScope={filterSetter(setScope)}
+                />
+            )}
 
-            {isList ? (
+            {isRooms ? (
+                <RoomsView
+                    roomsState={rooms}
+                    rooms={roomList}
+                    bookings={all}
+                    today={todayIso}
+                    roomColor={roomColor}
+                    policy={policy}
+                    isAdmin={role === ROLES.admin}
+                    onEditPolicy={() => setPolicyOpen(true)}
+                    onCalendar={showRoomCalendar}
+                    onOpenBooking={(booking) => setOpenId(booking.id)}
+                    onRoomsChanged={rooms.reload}
+                />
+            ) : isList ? (
                 <BookingList
                     state={bookings}
                     rows={visible.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)}

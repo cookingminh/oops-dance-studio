@@ -51,9 +51,9 @@ async function load(userId) {
     return { today, bookings, settings, sandbox, policy };
 }
 
-// The signed-in user's room bookings. A pending or approved one can be cancelled from its row (a card on
-// phones) until it starts: the dialog says what comes back under the cancellation policy, and the row then
-// shows the refund. A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each
+// The signed-in user's room bookings. A pending, approved or paid-up (completed) one can be cancelled from
+// its row (a card on phones) until it starts: the dialog says what comes back under the cancellation policy,
+// and the row then shows the refund. A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each
 // has a receipt.
 const MyBookings = () => {
     const { user } = useAuth();

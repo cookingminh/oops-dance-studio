@@ -1,8 +1,9 @@
-import { addDays, parseISO, subDays } from 'date-fns';
+import { parseISO, subDays } from 'date-fns';
 import { getStudioToday } from '@/services/studio';
 import { listClassLessons, listInstructorClasses, listLessonProgress, listMyEnrolledClasses } from '@/services/classes';
 import { listMyInstructorAttendance, listMyStudentAttendance, listStudentAttendanceForClasses } from '@/services/attendance';
-import { listMakeUpSessions, withOwnTimes } from '@/services/sessions';
+import { withOwnTimes } from '@/services/sessions';
+import { listMySessionChanges } from '@/services/sessionChanges';
 import { getTuitionSettings } from '@/services/tuition';
 import { avatarUrl } from '@/services/storage';
 import { promoFields } from '@/services/promos';
@@ -13,7 +14,8 @@ import { toIsoDate } from '@/lib/format';
 //     routines (lesson_progress rows + video_url and promo_*: the routine now, next and before),
 //     joinedAt?, attendance? (student: own roll calls),
 //     students? ({ …profile, joinedAt, leavesAfter }), rollCalls?, todaySession?,
-//     makeUps? (instructor: make-up sessions this coming week),
+//     changes (what changed in the next 3 weeks, my_session_changes: { kind: 'cancelled' | 'make_up',
+//       date, start_time, end_time, reason, makes_up }), makeUps (its make-ups) and calledOff (the rest),
 //     renewalOpensAt? (instructor: sessions left when the next course's renewal opens, null = unknown) }
 
 // Progress rows of one class with each routine's class video and promo clip.
@@ -26,10 +28,19 @@ const routinesOf = (progress, lessons, classId) => {
 
 const byName = (a, b) => (a.full_name || a.username).localeCompare(b.full_name || b.username, 'vi');
 
+// One class's session changes (one source for both roles): its make-ups and the sessions called off.
+const changesOf = (changes, classId) => {
+    const mine = changes.filter((row) => row.class_id === classId);
+    return { changes: mine, makeUps: mine.filter((row) => row.kind === 'make_up'), calledOff: mine.filter((row) => row.kind === 'cancelled') };
+};
+
+// Session changes are newer: without them the classes still show.
+const loadChanges = () => listMySessionChanges(21).catch(() => []);
+
 // Student: enrolments come from the public listing (RLS hides other profiles), lessons and the
 // student's own roll calls are read directly.
 export async function loadStudentClasses(userId) {
-    const [today, classes, attendance] = await Promise.all([getStudioToday(), listMyEnrolledClasses(userId), listMyStudentAttendance(userId)]);
+    const [today, classes, attendance, changes] = await Promise.all([getStudioToday(), listMyEnrolledClasses(userId), listMyStudentAttendance(userId), loadChanges()]);
     const ids = classes.map((cls) => cls.id);
     // Routines are newer: without their progress the classes still show.
     const [lessons, progress] = await Promise.all([listClassLessons(ids), listLessonProgress(ids).catch(() => [])]);
@@ -48,13 +59,14 @@ export async function loadStudentClasses(userId) {
             routines: routinesOf(progress, lessons, cls.id),
             joinedAt: cls.joined_at,
             attendance: attendance.filter((row) => row.class?.id === cls.id),
+            ...changesOf(changes, cls.id),
         })),
     };
 }
 
 // Instructor: own classes with students, the last 90 days of roll calls, today's sessions
-// (instructor_attendance rows, for one-tap check-in; make-ups with their own times), the make-up
-// sessions of the coming week and every routine's progress.
+// (instructor_attendance rows, for one-tap check-in; make-ups with their own times), the session
+// changes ahead (make-ups, sessions called off) and every routine's progress.
 export async function loadInstructorClasses(userId) {
     const [today, classes, renewalOpensAt] = await Promise.all([
         getStudioToday(),
@@ -65,10 +77,10 @@ export async function loadInstructorClasses(userId) {
             .catch(() => null),
     ]);
     const ids = classes.map((cls) => cls.id);
-    const [sessions, rollCalls, makeUps, progress] = await Promise.all([
+    const [sessions, rollCalls, changes, progress] = await Promise.all([
         listMyInstructorAttendance(userId, { date: today }).then(withOwnTimes),
         listStudentAttendanceForClasses(ids, { from: toIsoDate(subDays(parseISO(today), 90)), until: today }),
-        listMakeUpSessions(ids, { from: today, until: toIsoDate(addDays(parseISO(today), 7)) }).catch(() => []),
+        loadChanges(),
         listLessonProgress(ids).catch(() => []),
     ]);
     return {
@@ -85,7 +97,7 @@ export async function loadInstructorClasses(userId) {
             lessons: cls.lessons ?? [],
             routines: routinesOf(progress, cls.lessons ?? [], cls.id),
             renewalOpensAt,
-            makeUps: makeUps.filter((row) => row.class_id === cls.id),
+            ...changesOf(changes, cls.id),
             // Members with when they join (may be later) and their last day, if they are leaving.
             students: (cls.students ?? [])
                 .filter((row) => row.student)
