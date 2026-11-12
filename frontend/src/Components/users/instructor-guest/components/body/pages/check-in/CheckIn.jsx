@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Chip, Image, Modal, ModalBody, ModalContent, ModalHeader, Pagination, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
-import { LuCheck, LuClipboardCheck, LuCoffee, LuDoorOpen, LuHistory, LuMail } from 'react-icons/lu';
+import { LuCheck, LuClipboardCheck, LuCoffee, LuHistory, LuMail } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useAsync } from '@/hooks/useAsync';
@@ -10,6 +10,8 @@ import { getStudioToday } from '@/services/studio';
 import { withOwnTimes } from '@/services/sessions';
 import { sessionTimesOf } from '@/lib/lessons';
 import { formatClock } from '@/lib/format';
+import { placeOf } from '@/lib/place';
+import { PlaceDetails, PlaceIcon } from '@/ui/place/PlaceParts';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { statusColorMap } from '../../../../../../Table/utils';
 import SectionCard from '../../../../../admin-staff/components/common/SectionCard';
@@ -106,7 +108,7 @@ const CheckIn = () => {
                         <ClassThumb cls={row.class ?? {}} />
                         <span className="stackCell">
                             <strong>{row.class?.name}</strong>
-                            <span>{row.room?.name}</span>
+                            <span>{placeOf(row, row.class).name}</span>
                         </span>
                     </span>
                 );
@@ -173,8 +175,9 @@ const CheckIn = () => {
                                             <ClassThumb cls={row.class ?? {}} />
                                             <span>
                                                 <strong>{row.class?.name}</strong>
-                                                <small>
-                                                    <LuDoorOpen aria-hidden="true" /> {row.room?.name ?? t('No room')}
+                                                <small className="pfSessionPlace">
+                                                    <PlaceIcon place={placeOf(row, row.class)} />
+                                                    <PlaceDetails place={placeOf(row, row.class)} empty={t('No room')} />
                                                 </small>
                                             </span>
                                         </div>

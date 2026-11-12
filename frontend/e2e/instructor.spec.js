@@ -1,23 +1,27 @@
 import { test, expect } from '@playwright/test';
-import { PROOF, expectToast, login, pathname, resetSession, rest, rpc, todaysSessions, token } from './support.js';
+import { PROOF, dropSessionToday, expectToast, login, pathname, resetSession, rest, rpc, sessionToday, token } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
-const EMAIL = 'instructor@demo.oopsdance.test'; // Ami teaches every day
+const EMAIL = 'instructor@demo.oopsdance.test';
+const OTHER = 'instructor2@demo.oopsdance.test';
 let page;
 let me;
-let other;
+let mine; // her session today (a make-up added for the run on a day she doesn't teach)
+let other; // another instructor's session today, likewise
 
 test.beforeAll(async ({ browser }) => {
-    const sessions = await todaysSessions();
-    const mine = sessions.find((s) => s.instructor?.email === EMAIL);
-    other = sessions.find((s) => s.instructor?.email !== EMAIL);
-    expect(mine, 'Ami has a session today').toBeTruthy();
+    mine = await sessionToday(EMAIL);
+    other = await sessionToday(OTHER);
     await resetSession(mine.id, { open: true });
     me = await token(EMAIL);
     page = await browser.newPage();
 });
-test.afterAll(() => page.close());
+test.afterAll(async () => {
+    await page.close();
+    await dropSessionToday(mine);
+    await dropSessionToday(other);
+});
 
 test('instructor lands on /profile', async () => {
     await login(page, EMAIL);
@@ -66,7 +70,6 @@ for (const target of ['/admin', '/profile/my-attendance']) {
 }
 
 test("cannot check in another instructor's session", async () => {
-    expect(other, 'another instructor has a session today').toBeTruthy();
     const res = await rpc(me.jwt, 'instructor_check_in', { p_attendance_id: other.id, p_proof_path: `${me.id}/${other.id}/checkin.jpg` });
     expect(res.data.message).toMatch(/^FORBIDDEN/);
 });

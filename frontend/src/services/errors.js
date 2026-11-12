@@ -28,6 +28,8 @@ const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|P
 const CLASS_HAS_HISTORY = 'This class has sessions, attendance or payments on record. End the class instead of deleting it.';
 // A cancelled session frees its room; once someone books it, the session can't come back (guard_session_reopen).
 const BOOKED_AFTER_CANCEL = 'The room was booked after this session was cancelled, so it can’t be reopened. Add a make-up session instead.';
+// A rented studio classes were taught at stays on record (venue_delete).
+const VENUE_USED = 'Classes were taught at this studio, so it can’t be deleted. Set it inactive instead.';
 
 // Specific INVALID_INPUT reasons (RPC text or constraint name) that deserve their own message.
 const INVALID_INPUT_REASONS = [
@@ -38,6 +40,12 @@ const INVALID_INPUT_REASONS = [
     [/check-out comes after check-in/i, 'The check-out time must be after the check-in time.'],
     [/a check-in time is needed/i, 'Enter the check-in time.'],
     [/^say why/i, 'Please give a reason.'],
+    // Rented studios (venue_save) and a class's place (classes_one_place).
+    [/give the studio a name/i, 'Give the studio a name (up to 100 characters).'],
+    [/already a studio called/i, 'There is already a rented studio with this name.'],
+    [/map link must start with https/i, 'The map link must start with https://.'],
+    [/the rent must be 0 or more/i, 'The rent must be 0 or more.'],
+    [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
 ];
 
 function invalidInputMessage(text) {
@@ -95,7 +103,9 @@ export function toAppError(error) {
                   ? CLASS_HAS_HISTORY
                   : rpc[1] === 'SLOT_TAKEN' && /after the session was cancelled/i.test(detail)
                     ? BOOKED_AFTER_CANCEL
-                    : MESSAGES[rpc[1]];
+                    : rpc[1] === 'INVALID_STATE' && /set it inactive instead/i.test(detail)
+                      ? VENUE_USED
+                      : MESSAGES[rpc[1]];
         return new AppError(rpc[1], message, error, detail);
     }
 

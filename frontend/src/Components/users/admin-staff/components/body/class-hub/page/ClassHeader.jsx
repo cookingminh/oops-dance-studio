@@ -1,20 +1,22 @@
 import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@nextui-org/react';
-import { LuArrowLeft, LuDoorOpen, LuFlag, LuHistory, LuImage, LuListChecks, LuMoreVertical, LuPencil, LuRotateCcw, LuTrash2, LuUserPlus } from 'react-icons/lu';
+import { LuArrowLeft, LuFlag, LuHistory, LuImage, LuListChecks, LuMoreVertical, LuPencil, LuRotateCcw, LuTrash2, LuUserPlus } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
 import { formatVnd } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
+import { PlaceDetails, PlaceIcon } from '@/ui/place/PlaceParts';
 import { ClassImage, PhaseBadge, ScheduleChips } from '../HubParts';
 import { HUB_BASE, personName } from '../hubModel';
 import HubTabs from './HubTabs';
 import { useStickyHeader } from './useStickyHeader';
 import { activityPath } from '../../activity/activityLinks';
 
-// The class page's sticky header: who / where / when at a glance, the two things staff do most
+// The class page's sticky header: who / where (a rented studio with its address and map link) / when at a glance, the two things staff do most
 // (today's roll call, add a student), the rest in ⋮, and the tab row.
 const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, actions }) => {
     const { t } = useI18n();
@@ -22,6 +24,7 @@ const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, acti
     const top = useStickyHeader(heroRef);
     const ended = badge.phase === 'ended';
     const teacher = personName(cls.instructor) || t('No instructor');
+    const place = placeOf(cls);
     const navigate = useNavigate();
     const { role } = useAuth();
 
@@ -55,9 +58,9 @@ const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, acti
                                 <Avatar {...AVATAR_DEFAULTS} size="sm" className="hubAvatarXs" src={avatarUrl(cls.instructor?.avatar_path, cls.instructor?.updated_at) ?? undefined} name={teacher} />
                                 {teacher}
                             </span>
-                            <span className="hubMetaItem">
-                                <LuDoorOpen aria-hidden="true" />
-                                {cls.room?.name ?? t('No room')}
+                            <span className="hubMetaItem isPlace">
+                                <PlaceIcon place={place} />
+                                <PlaceDetails place={place} empty={t('No room')} />
                             </span>
                             <span className="hubMetaItem">{t('{price} per course', { price: formatVnd(cls.price) })}</span>
                             <ScheduleChips cls={cls} />

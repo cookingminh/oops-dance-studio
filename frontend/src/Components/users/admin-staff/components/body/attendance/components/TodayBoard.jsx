@@ -8,6 +8,7 @@ import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
+import { placeOf } from '@/lib/place';
 import placeholder from '@/assets/images/logo-mark.webp';
 import SectionCard from '../../../common/SectionCard';
 import { fadeUp, stagger } from '../../../common/motion';
@@ -138,6 +139,7 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof, 
                         const open = row && OPEN_STATUSES.includes(row.status) && !readOnly;
                         const movable = canReschedule(session, today, readOnly);
                         const rollDone = roll.total > 0 && roll.marked === roll.total;
+                        const place = placeOf(row, cls);
                         return (
                             <motion.li key={session.key} variants={fadeUp} className={`atTodayRow tone-${phase.tone}`} style={{ '--class': classColor(cls.id) }}>
                                 <button
@@ -160,7 +162,7 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof, 
                                             <Avatar {...AVATAR_DEFAULTS} size="sm" className="atAvatar" src={avatarUrl(teacher?.avatar_path, teacher?.updated_at) ?? undefined} name={name} />
                                             <span>{name}</span>
                                             {isSubstitute(session) && <span className="atTag">{t('Substitute')}</span>}
-                                            {cls.room?.name && <span>· {cls.room.name}</span>}
+                                            {place.name && <span>· {place.name}</span>}
                                         </span>
                                     </span>
                                 </button>

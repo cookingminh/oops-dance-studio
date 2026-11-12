@@ -39,4 +39,5 @@ export default {
     'Nothing recorded yet': 'Chưa ghi nhận khoản nào',
     'No notes': 'Không có ghi chú',
     'Cancel booking': 'Huỷ lượt đặt phòng',
+    'Now {time}': 'Bây giờ {time}',
 };

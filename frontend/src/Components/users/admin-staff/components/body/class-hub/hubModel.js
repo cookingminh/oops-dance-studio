@@ -210,7 +210,7 @@ export const fold = (text) =>
 
 export function matchesClass(cls, term) {
     if (!term) return true;
-    const haystack = fold([cls.name, cls.instructor?.full_name, cls.instructor?.username, cls.room?.name, cls.lesson].join(' '));
+    const haystack = fold([cls.name, cls.instructor?.full_name, cls.instructor?.username, cls.room?.name, cls.venue?.name, cls.lesson].join(' '));
     return fold(term)
         .split(/\s+/)
         .filter(Boolean)

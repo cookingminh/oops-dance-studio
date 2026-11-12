@@ -6,6 +6,7 @@ import {
     LuBadgePercent,
     LuBanknote,
     LuCheck,
+    LuCoins,
     LuGift,
     LuMoreVertical,
     LuQrCode,
@@ -14,7 +15,7 @@ import {
     LuUndo2,
     LuX,
 } from 'react-icons/lu';
-import { amountDue } from '@/services/tuition';
+import { amountDue, extraOf } from '@/services/tuition';
 import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { fadeUp } from '../../common/motion';
@@ -26,6 +27,7 @@ import { PlaceTag, RenewalChip, StatePill, StudentCell } from './TuitionParts';
 const ACTION_INFO = {
     pay: { label: 'Record payment', icon: LuBanknote },
     code: { label: 'Show payment code', icon: LuQrCode },
+    extra: { label: 'Sort out the extra money', icon: LuCoins },
     undo: { label: 'Undo payment', icon: LuUndo2, danger: true },
     amount: { label: 'Change amount', icon: LuBadgePercent },
     waive: { label: 'Waive this course', icon: LuGift },
@@ -111,6 +113,9 @@ const InvoiceRow = ({ invoice, invoices, today, place, enrolled, thisMonth, busy
     const late = rawNote.match(LATE_NOTE);
     const note = late ? rawNote.slice(late[0].length) : rawNote;
     const paid = Number(invoice.paid_amount);
+    const extra = extraOf(invoice);
+    // A class switch's "paid more than this course costs" — while the extra is still here (it can be moved on).
+    const switchExtra = from?.extra > 0 ? extra : 0;
     const isLate = joinedLate(invoice);
     const listPrice = coursePrice(invoice);
     const discounted = !isLate && listPrice !== null && Number(listPrice) !== Number(invoice.amount);
@@ -142,6 +147,12 @@ const InvoiceRow = ({ invoice, invoices, today, place, enrolled, thisMonth, busy
                 ) : discounted ? (
                     <small className="tuWas">{t('List price {amount}', { amount: formatVnd(listPrice) })}</small>
                 ) : null}
+                {extra > 0 && (
+                    <button type="button" className="tuExtraTag" onClick={() => onAction('extra', invoice)} disabled={busy}>
+                        <LuCoins aria-hidden="true" />
+                        <span>{t('{amount} extra', { amount: formatVnd(extra) })}</span>
+                    </button>
+                )}
                 {from && (
                     <span className="tuFromTag" title={t('Switched from {className}', { className: from.className })}>
                         <LuArrowRightLeft aria-hidden="true" />
@@ -212,12 +223,12 @@ const InvoiceRow = ({ invoice, invoices, today, place, enrolled, thisMonth, busy
                     </DropdownMenu>
                 </Dropdown>
             </span>
-            {(note || from?.extra > 0) && (
+            {(note || switchExtra > 0) && (
                 <p className="tuRowNote">
                     <LuStickyNote aria-hidden="true" />
                     <span>
-                        {from?.extra > 0 && t('Paid {amount} more than this course costs.', { amount: formatVnd(from.extra) })}
-                        {from?.extra > 0 && note && ' '}
+                        {switchExtra > 0 && t('Paid {amount} more than this course costs.', { amount: formatVnd(switchExtra) })}
+                        {switchExtra > 0 && note && ' '}
                         {note}
                     </span>
                 </p>

@@ -43,6 +43,14 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
   5. **Bài nhảy**: khoá đang học, lập khoá tiếp theo, video, học bù.
   6. **Tiền** (admin): học phí thu được, lương giáo viên, chi phí riêng của lớp, lãi gộp 6 tháng, mức lương/buổi.
   7. **Thiết lập**: thông tin, lịch tuần, ảnh, kết thúc / mở lại / xoá lớp.
+- **Nơi học**: mỗi lớp học ở **một phòng của studio** (Phòng A, Phòng B) **hoặc một studio thuê ngoài** (ví dụ Studio
+  Baladi Vũ Thạnh, Studio Thỏ (Đê La Thành nhỏ), Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo. Học viên, giáo
+  viên thấy tên và địa chỉ (kèm link bản đồ); **giá thuê chỉ staff/admin thấy**.
+- **Studio thuê ngoài** (trang *Đặt phòng* → *Phòng & studio*): thêm / sửa tên, địa chỉ, link bản đồ, **giá thuê mỗi
+  giờ**, ngưng dùng. Studio đã từng có lớp dạy thì chỉ ngưng dùng được, không xoá.
+- **Tiền thuê tự thành chi phí**: mỗi buổi dạy ở studio thuê ngoài, khi buổi kết thúc → chi phí *Thuê studio ngoài* =
+  giá/giờ × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và báo cáo). Buổi bị huỷ thì không tính (đã tính rồi
+  mà huỷ sau thì tự xoá). Phòng A/B và đặt phòng giữ nguyên để dùng lại khi studio mở cửa lại.
 
 ### Vòng đời một lớp
 
@@ -115,7 +123,7 @@ và vài lời giới thiệu) để học viên biết sắp học gì và quy�
 - Dòng tổng quan (đã thu / cần thu của các khoá đang chạy, còn nợ, số người trễ) + ô **tìm học viên hoặc mã `OOPS…`**
   (cả mã đặt phòng) + menu ⋯ (*Xuất CSV*, *Chạy kiểm tra hôm nay*, *Cài đặt thanh toán* cho admin).
 - **Việc cần làm**: *Trễ hạn* (thu tiền, mã QR, ghi chú ngay trên dòng) → *Chuyển khoản cần xử lý* (gán cho học phí
-  hoặc lượt đặt phòng, để riêng) → *Sắp đến hạn* (thu gọn). *Lịch sử chuyển khoản* mở ở ngăn bên.
+  hoặc lượt đặt phòng, để riêng) → *Tiền dư* → *Sắp đến hạn* (thu gọn). *Lịch sử chuyển khoản* mở ở ngăn bên.
 - **Theo lớp**: mỗi lớp một dòng — khoá đang chạy (đã đóng x/y, còn nợ) và khoá tiếp theo (học tiếp / chưa trả lời,
   hạn trả lời) → bấm để mở tab Học phí của lớp.
 
@@ -161,6 +169,12 @@ Các con số "2 buổi", "buổi thứ 2", "tính theo buổi còn lại" chỉ
   miễn → về "chưa đóng", lý do miễn biến mất, ghi chú trước đó (nếu có) quay lại.
 - **Hộp thư chuyển khoản** (trang Học phí): tiền vào **không có mã** → hệ thống gợi ý hoá đơn khớp (cùng số tiền, có tên
   học viên/lớp trong nội dung) → staff *Gán*, hoặc *Bỏ qua* (ví dụ tiền cọc phòng).
+- **Tiền dư**: khoản đã đóng mà nhận **nhiều hơn học phí** (chuyển khoản to hơn khoá, gán nhầm khoá, đổi lớp) hiện nhãn
+  *Dư … ₫* dưới số tiền, nằm trong nhóm *Tiền dư* của Việc cần làm, và chuông nhắc. Bấm nhãn để:
+  - *Chuyển sang khoá khác*: chọn một khoá **chưa đóng** của học viên, số tiền điền sẵn phần vừa đủ;
+  - *Trả lại học viên*: tiền mặt hoặc chuyển khoản, kèm ghi chú.
+  Báo cáo chỉ tính phần studio giữ lại. **Gán nhầm khoá** thì bấm *Huỷ khoản đã thu*: chuyển khoản về lại hộp thư để
+  gán lại (tiền dư đã chuyển đi cũng được thu về; đã trả lại cho học viên thì không huỷ được nữa).
 - **Demo / máy local** là "sandbox": tài khoản ngân hàng giả, mã QR có dải **DEMO**, nút **Giả lập chuyển khoản**.
 
 ---
@@ -297,8 +311,8 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
 
 ## 9. Chi phí (*Chi phí*)
 
-- 11 nhóm: mặt bằng, điện nước/internet, quay dựng video, trang phục, thuê địa điểm quay, thiết bị, marketing, sự kiện,
-  sửa chữa, vật tư, khác.
+- 12 nhóm: mặt bằng, điện nước/internet, quay dựng video, trang phục, thuê địa điểm quay, thiết bị, marketing, sự kiện,
+  sửa chữa, vật tư, **thuê studio ngoài** (hệ thống tự ghi sau mỗi buổi dạy, xem mục 2), khác.
 - **Gắn vào một lớp** khi là chi phí riêng của lớp (camera man quay lớp đó, trang phục lớp đó) → trừ vào lãi của lớp.
 - **Ảnh/PDF hoá đơn** đính kèm.
 - **Chi phí định kỳ** (tiền nhà, internet, quảng cáo): tự thêm vào đúng ngày mỗi tháng (00:15). Xoá bản của một tháng
@@ -379,6 +393,7 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | 00:05 | Tạo danh sách điểm danh hôm nay (kể cả học bù) |
 | 00:10 | Học phí: lập hoá đơn khoá đang chạy, mở gia hạn khi còn 2 buổi, huỷ hoá đơn quá hạn chưa trả lời, đưa học viên rời lớp |
 | 00:15 | Thêm chi phí định kỳ đến ngày |
+| 00:20 | Tính tiền thuê studio ngoài cho các buổi đã dạy |
 | 00:25 | Xoá nhật ký hoạt động cũ hơn 400 ngày |
 
 ---

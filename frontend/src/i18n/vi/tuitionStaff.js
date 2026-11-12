@@ -340,4 +340,33 @@ export default {
     'No next course is planned yet. Plan it in Routines: its renewal then opens by itself when {count} sessions are left.': 'Chưa lên khoá tiếp theo. Hãy lên khoá ở mục Bài nhảy: gia hạn sẽ tự mở khi khoá đang học còn {count} buổi.',
     'Nobody pays for this course yet: its renewal isn’t open.': 'Chưa ai cần đóng học phí khoá này vì chưa mở gia hạn.',
     'Nobody paid for this course.': 'Chưa ai đóng học phí khoá này.',
+
+    // Extra money (an invoice paid more than it costs)
+    'Extra money': 'Tiền dư',
+    Extra: 'Dư',
+    'What happens to it': 'Xử lý phần dư',
+    'Pay another course': 'Chuyển sang khoá khác',
+    'Give it back': 'Trả lại học viên',
+    '{name} has no unpaid course to put it on. Leave it here and move it once the next course is billed, or give it back.':
+        '{name} chưa có khoá nào chưa đóng để chuyển sang. Cứ để phần dư ở đây, khi khoá sau có học phí thì chuyển, hoặc trả lại cho học viên.',
+    'Put it on': 'Chuyển sang',
+    '{amount} due': 'còn {amount}',
+    'Given back by': 'Trả lại bằng',
+    'Optional, e.g. handed back at the desk': 'Không bắt buộc, vd đã đưa lại tại quầy',
+    'Put on the wrong course by mistake? Undo the payment: the transfer goes back to the inbox to be assigned again.':
+        'Gán nhầm khoá? Bấm Huỷ khoản đã thu: khoản chuyển khoản sẽ quay về hộp thư để gán lại.',
+    'Move {amount}': 'Chuyển {amount}',
+    'Record {amount} given back': 'Ghi nhận đã trả lại {amount}',
+    'That course only needs {amount}.': 'Khoá đó chỉ còn thiếu {amount}.',
+    'Only {amount} is extra.': 'Chỉ dư {amount}.',
+    '{amount} stays extra on this invoice.': 'Còn dư {amount} ở khoản này.',
+    'Sort out the extra money': 'Xử lý tiền dư',
+    '{amount} extra': 'Dư {amount}',
+    '{amount} moved to “{course}”.': 'Đã chuyển {amount} sang “{course}”.',
+    '{amount} recorded as given back to {name}.': 'Đã ghi nhận trả lại {amount} cho {name}.',
+    'Paid more than the course costs, {amount} in all: put it on another course or give it back.':
+        'Đóng nhiều hơn học phí, tổng cộng dư {amount}: chuyển sang khoá khác hoặc trả lại cho học viên.',
+    '{count} invoice holds extra money': '{count} khoản học phí đang dư tiền',
+    '{count} invoices hold extra money': '{count} khoản học phí đang dư tiền',
+    '{amount} paid too much · {names}': 'Dư {amount} · {names}',
 };

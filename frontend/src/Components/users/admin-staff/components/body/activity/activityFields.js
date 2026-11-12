@@ -15,6 +15,7 @@ const FIELD_LABELS = {
     start_time: 'Start',
     end_time: 'End',
     room_id: 'Room',
+    venue_id: 'Rented studio',
     guest_id: 'Guest',
     deposit: 'Deposit',
     full_payment: 'Full payment',
@@ -101,6 +102,7 @@ const FIELD_LABELS = {
 const ENTITY_LABELS = {
     classes: { name: 'Class Name' },
     rooms: { name: 'Room Name', price: 'Price per hour' },
+    venues: { name: 'Studio name', address: 'Address', map_url: 'Map link', rent_per_hour: 'Rent per hour', active: 'In use' },
 };
 export const fieldLabel = (column, entity) => ENTITY_LABELS[entity]?.[column] ?? FIELD_LABELS[column] ?? column.replace(/_/g, ' ');
 
@@ -116,7 +118,7 @@ const STATUS_LABELS = {
 const DEPOSIT_LABELS = { waiting: 'Waiting', completed: 'Completed', cancelled: 'Cancelled' };
 
 const MONEY = new Set(['deposit', 'full_payment', 'real_income', 'bank_transfer', 'cash', 'price', 'amount', 'paid_amount', 'session_pay', 'base_salary',
-    'monthly_salary', 'bonuses', 'deductions', 'total', 'session_rate', 'default_session_rate']);
+    'monthly_salary', 'bonuses', 'deductions', 'total', 'session_rate', 'default_session_rate', 'rent_per_hour']);
 const DATES = new Set(['date', 'starts_on', 'ended_on', 'joined_at', 'leaves_after', 'due_date', 'spent_on', 'ends_on', 'date_of_birth']);
 const STAMPS = new Set(['checkin_at', 'checkout_at', 'paid_at', 'finalized_at', 'received_at']);
 const FILES = new Set(['image_path', 'avatar_path', 'receipt_path']);
@@ -135,6 +137,7 @@ export function formatValue(column, value, entity, fmt) {
     if (column === 'image_paths') return tn(value.length, '{count} photo', '{count} photos');
     if (PEOPLE.has(column)) return fmt.people?.get(value)?.name || '—';
     if (column === 'room_id') return fmt.rooms?.get(value) ?? `#${value}`;
+    if (column === 'venue_id') return fmt.venues?.get(value) ?? `#${value}`;
     if (column === 'class_id' || column === 'switched_from') return fmt.classes?.get(value) ?? `#${value}`;
     if (column === 'day_of_week') return fmt.dayName(value);
     if (column === 'role') return t(ROLE_LABELS[value] ?? value);
@@ -210,8 +213,9 @@ export function recordLink(row, lookups) {
         case 'payroll_settings':
             return { to: '/admin/payroll', page: 'Payroll' };
         case 'rooms':
-            // Rooms and their prices: the bookings page's "Rooms & prices" view.
-            return row.action === 'deleted' ? null : { to: '/admin/bookings?view=rooms', page: 'Rooms & prices' };
+        case 'venues':
+            // Rooms and their prices, and the rented studios under them: the bookings page's "Rooms & prices" view.
+            return ['deleted', 'venue_removed'].includes(row.action) ? null : { to: '/admin/bookings?view=rooms', page: 'Rooms & prices' };
         case 'profiles':
             return row.subject_id && lookups?.people?.has(row.subject_id) ? { to: `/admin/users?person=${row.subject_id}`, page: 'Users' } : null;
         default:

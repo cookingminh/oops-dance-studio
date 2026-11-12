@@ -18,11 +18,13 @@
     }
 }
 
-// Four equal panels (2 × 2). Each shows a short preview sized to fit; the footer link leads to
-// the page with everything.
+// Four panels (2 × 2). Each shows a short preview sized to fit; the footer link leads to the page
+// with everything.
 .adminShell .dashPanels {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    // Today's classes and the requests count: as tall as the timetable; rooms and check-ins below.
+    grid-template-rows: minmax(16rem, auto);
     grid-auto-rows: 31rem;
     gap: 1.5rem;
 
@@ -547,67 +549,92 @@
 }
 
 // Booking requests ====================>
+// One tile: how many requests wait (amber while some do); it opens them on the Bookings page.
 
-.adminShell .requestList {
-    display: grid;
-    gap: .55rem;
-}
-
-.adminShell .requestItem {
+.adminShell .requestSummary {
     display: flex;
+    flex: 1;
     align-items: center;
-    gap: .8rem;
-    padding: .6rem .7rem .6rem .8rem;
+    gap: 1.1rem;
+    padding: 1.2rem 1.35rem;
     border: 1px solid var(--ad-border);
-    border-radius: 16px;
-    background: var(--ad-surface);
-    transition: border-color .25s ease, box-shadow .25s ease;
+    border-radius: 20px;
+    background: var(--ad-surface-2);
+    color: var(--ad-text);
+    text-decoration: none;
+    transition: border-color .25s ease, box-shadow .25s ease, background-color .25s ease;
+
+    .requestSummaryIcon {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 16px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: 1.4rem;
+    }
+
+    .requestSummaryText {
+        display: grid;
+        flex: 1;
+        gap: .15rem;
+        min-width: 0;
+
+        strong {
+            font-size: 1.02rem;
+            font-weight: 600;
+        }
+
+        span {
+            color: var(--ad-muted);
+            font-size: .88rem;
+        }
+
+        .requestSummaryCount {
+            margin-bottom: .1rem;
+            font-family: var(--ad-display);
+            font-size: 2.6rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+    }
+
+    .requestSummaryGo {
+        flex-shrink: 0;
+        color: var(--ad-muted);
+        font-size: 1.25rem;
+        transition: transform .25s ease, color .25s ease;
+    }
+
+    &.hasWaiting {
+        border-color: hsl(40, 90%, 80%);
+        background: hsl(45, 100%, 96%);
+
+        .requestSummaryIcon {
+            background: hsl(42, 100%, 89%);
+            color: hsl(30, 88%, 32%);
+        }
+
+        .requestSummaryCount {
+            color: hsl(30, 88%, 30%);
+        }
+    }
 
     &:hover {
         border-color: var(--ad-primary-tint);
         box-shadow: var(--ad-shadow);
-    }
 
-    .requestInfo {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .requestHead {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: .5rem;
-
-        strong {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-size: .98rem;
-            font-weight: 600;
+        .requestSummaryGo {
+            color: var(--ad-primary);
+            transform: translateX(3px);
         }
     }
 
-    .requestAmount {
-        flex-shrink: 0;
-        font-family: var(--ad-display);
-        font-size: .98rem;
-        font-weight: 700;
-        color: var(--ad-text);
-    }
-
-    .requestWhen {
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: .86rem;
-        color: var(--ad-muted);
-    }
-
-    .requestActions {
-        display: flex;
-        gap: .35rem;
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
     }
 }
 
@@ -848,6 +875,7 @@
 
     .adminShell .dashPanels {
         grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: none;
         grid-auto-rows: auto;
 
         .cardBody {

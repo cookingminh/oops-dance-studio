@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { addDays, parseISO } from 'date-fns';
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem } from '@nextui-org/react';
-import { LuAlertTriangle, LuCalendarPlus, LuDoorOpen, LuStickyNote } from 'react-icons/lu';
+import { LuAlertTriangle, LuCalendarPlus, LuStickyNote } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { addMakeUpSession } from '@/services/classes';
 import { getAvailableSlots } from '@/services/bookings';
@@ -9,6 +9,7 @@ import { TIME_OPTIONS, formatTime, toIsoDate, toMinutes } from '@/lib/format';
 import { meetsOn, usualSlot } from '@/lib/lessons';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
+import { PlaceIcon } from '@/ui/place/PlaceParts';
 import { makeUpProblem } from './routineData';
 import './routines.scss';
 
@@ -78,7 +79,9 @@ const MakeUpDialog = ({ cls, today, makeUps = [], onClose, onAdded }) => {
     };
 
     let roomHint = null;
-    if (!cls.room_id) roomHint = t('This class has no room, so the time is up to you.');
+    // Room clashes only concern the studio's rooms; a rented studio's own diary is the staff's to check.
+    if (cls.venue_id) roomHint = t('{venue} is a rented studio: check with them that it’s free then.', { venue: cls.venue?.name ?? t('The studio') });
+    else if (!cls.room_id) roomHint = t('This class has no room, so the time is up to you.');
     else if (date && !dateError && slots.data) {
         roomHint = free.length
             ? t('{room} is free {slots}.', { room: cls.room?.name ?? t('The room'), slots: free.map((slot) => `${formatTime(slot.start_time)}–${formatTime(slot.end_time)}`).join(' · ') })
@@ -144,7 +147,7 @@ const MakeUpDialog = ({ cls, today, makeUps = [], onClose, onAdded }) => {
                     </div>
                     {roomHint && (
                         <p className={`rtRoomHint${cls.room_id && !fits && !timeError ? ' isWarn' : ''}`}>
-                            <LuDoorOpen aria-hidden="true" />
+                            <PlaceIcon place={{ kind: cls.venue_id ? 'venue' : 'room' }} />
                             <span>
                                 {roomHint}
                                 {cls.room_id && free.length > 0 && !fits && !timeError && <strong> {t('The time you picked isn’t in a free stretch.')}</strong>}

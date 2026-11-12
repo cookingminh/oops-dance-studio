@@ -6,8 +6,9 @@
 // called off on a day already past gets its make-up the same way (it says which day it replaces); and the
 // studio is closed for a whole day far ahead (preview of classes and bookings with the money back, summary
 // with a make-up button per class).
-// Works on a demo class with guest@ as a member (days in the next week) and on a day 5–6 weeks ahead; every
-// session row and booking it creates is removed afterwards (a row that was already there is put back).
+// Works on a demo class with guest@ as a member (days in the next week; a class at a rented studio or in a
+// room) and on a day 5–6 weeks ahead; every session row and booking it creates is removed afterwards (a row
+// that was already there is put back).
 import { test, expect } from '@playwright/test';
 import { addDays, expectToast, isoWeekday, login, pickOption, rest, rpc, staffJwt, studioToday, token } from './support.js';
 
@@ -31,7 +32,7 @@ const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 let staff;
 let today;
-let cls; // a demo class guest@ dances in: { id, name, room_id, schedules }
+let cls; // a demo class guest@ dances in: { id, name, room_id, venue_id, schedules }
 let moved; // { date, newDate, start, end } — called off and made up in one step
 let later; // { date, newDate, start, end } — called off first, made up afterwards
 let pastOff; // { date, newDate, start, end } — a past session called off earlier, made up now
@@ -45,8 +46,10 @@ const sessionModal = (page) => page.locator('.sessionModal');
 const changeDialog = (page) => page.locator('.scgDialog:not(.scgClose)');
 const reasonField = (scope) => scope.getByRole('textbox', { name: /^Reason/ });
 
-// A free stretch of `minutes` in the class's room on `date` (from the server's free slots), on the half hour.
+// A free stretch of `minutes` in the class's room on `date` (from the server's free slots), starting on the half
+// hour. A class at a rented studio has no room to check: the morning will do.
 async function freeSlot(date, minutes) {
+    if (!cls.room_id) return { start: '10:00', end: toClock(toMinutes('10:00') + minutes) };
     const slots = (await rpc(staff, 'get_available_slots', { p_date: date })).data.filter((slot) => slot.room_id === cls.room_id);
     for (const slot of slots) {
         const from = Math.ceil(toMinutes(slot.start_time) / 30) * 30;
@@ -98,15 +101,14 @@ test.beforeAll(async () => {
     const memberships = (
         await rest(
             staff,
-            `class_students?select=joined_at,leaves_after,class:classes!class_id(id,name,room_id,starts_on,ended_on,schedules:class_schedules(day_of_week,start_time,end_time))&student_id=eq.${guest.id}`
+            `class_students?select=joined_at,leaves_after,class:classes!class_id(id,name,room_id,venue_id,starts_on,ended_on,schedules:class_schedules(day_of_week,start_time,end_time))&student_id=eq.${guest.id}`
         )
     ).data;
-    const onGrid = (time) => /:(00|30):00$/.test(time);
     const candidates = memberships
-        .filter((m) => m.joined_at <= today && !m.leaves_after && m.class.room_id && !m.class.ended_on && m.class.schedules.length && m.class.schedules.every((s) => onGrid(s.start_time) && onGrid(s.end_time)))
+        .filter((m) => m.joined_at <= today && !m.leaves_after && m.class.starts_on <= today && !m.class.ended_on && m.class.schedules.length)
         .map((m) => m.class)
         .sort((a, b) => a.id - b.id);
-    expect(candidates.length, 'guest@ dances in a demo class with a room').toBeGreaterThan(0);
+    expect(candidates.length, 'guest@ dances in a running demo class').toBeGreaterThan(0);
 
     // A weekly session in the next 6 days (one in next week whose record doesn't exist yet, if there is one)
     // and a day without a class in those days for its make-up, so the student's 7-day views show both.

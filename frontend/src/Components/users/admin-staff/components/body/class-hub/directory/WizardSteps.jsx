@@ -7,12 +7,13 @@ import { TIME_OPTIONS, WEEKDAYS, formatTime, formatVnd, toMinutes } from '@/lib/
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
+import PlaceField from '../../../common/PlaceField';
 import { bySlot } from '../hubModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
 
-// Step 1: what the class is. `form` { name, instructorId, roomId, price, startsOn }.
-export const DetailsStep = ({ form, onChange, instructors, rooms, today, problems, tried }) => {
+// Step 1: what the class is. `form` { name, instructorId, place (lib/place.js key), price, startsOn }.
+export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today, problems, tried }) => {
     const { t } = useI18n();
     const set = (field) => (value) => onChange({ ...form, [field]: value });
     const show = (key) => tried && problems[key];
@@ -49,18 +50,7 @@ export const DetailsStep = ({ form, onChange, instructors, rooms, today, problem
                     </SelectItem>
                 ))}
             </Select>
-            <Select
-                label={t('Room')}
-                classNames={POPOVER}
-                placeholder={t('Select a room')}
-                description={t('Optional. A class without a room blocks no room.')}
-                selectedKeys={form.roomId ? [form.roomId] : []}
-                onChange={(event) => set('roomId')(event.target.value)}
-            >
-                {rooms.map((room) => (
-                    <SelectItem key={String(room.id)}>{room.name}</SelectItem>
-                ))}
-            </Select>
+            <PlaceField value={form.place} onChange={set('place')} rooms={rooms} venues={venues} roomHint={t('Optional. A class without a room blocks no room.')} />
             <Input
                 label={t('Price (VND)')}
                 type="number"

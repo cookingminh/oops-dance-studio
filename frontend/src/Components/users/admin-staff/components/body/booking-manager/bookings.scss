@@ -685,6 +685,19 @@
 .bdMoneyDialog {
     border-radius: 22px;
 
+    // The cancel / policy dialogs keep their parts in a <form>: it passes the column layout on, so on a
+    // short screen the body scrolls and the buttons stay inside (scrollBehavior="inside").
+    > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .bdMoneyBody > * {
+        flex-shrink: 0;
+    }
+
     .bdMoneyHead {
         display: grid;
         gap: .1rem;

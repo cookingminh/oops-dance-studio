@@ -8,9 +8,10 @@ import { getTuitionSettings } from '@/services/tuition';
 import { avatarUrl } from '@/services/storage';
 import { promoFields } from '@/services/promos';
 import { toIsoDate } from '@/lib/format';
+import { placeOf, publicPlaceOf } from '@/lib/place';
 
 // Both roles' classes in one shape, so the class views don't care who is looking:
-//   { id, name, image_path, instructorName, instructorAvatar, roomName, schedules, lessons,
+//   { id, name, image_path, instructorName, instructorAvatar, place (lib/place.js), schedules, lessons,
 //     routines (lesson_progress rows + video_url and promo_*: the routine now, next and before),
 //     joinedAt?, attendance? (student: own roll calls),
 //     students? ({ …profile, joinedAt, leavesAfter }), rollCalls?, todaySession?,
@@ -40,7 +41,12 @@ const loadChanges = () => listMySessionChanges(21).catch(() => []);
 // Student: enrolments come from the public listing (RLS hides other profiles), lessons and the
 // student's own roll calls are read directly.
 export async function loadStudentClasses(userId) {
-    const [today, classes, attendance, changes] = await Promise.all([getStudioToday(), listMyEnrolledClasses(userId), listMyStudentAttendance(userId), loadChanges()]);
+    const [today, classes, attendance, changes] = await Promise.all([
+        getStudioToday(),
+        listMyEnrolledClasses(userId),
+        listMyStudentAttendance(userId),
+        loadChanges(),
+    ]);
     const ids = classes.map((cls) => cls.id);
     // Routines are newer: without their progress the classes still show.
     const [lessons, progress] = await Promise.all([listClassLessons(ids), listLessonProgress(ids).catch(() => [])]);
@@ -53,7 +59,7 @@ export async function loadStudentClasses(userId) {
             image_path: cls.image_path,
             instructorName: cls.instructor_name,
             instructorAvatar: avatarUrl(cls.instructor_avatar_path),
-            roomName: cls.room_name,
+            place: publicPlaceOf(cls),
             schedules: cls.schedules ?? [],
             lessons: lessons.filter((lesson) => lesson.class_id === cls.id),
             routines: routinesOf(progress, lessons, cls.id),
@@ -92,7 +98,7 @@ export async function loadInstructorClasses(userId) {
             image_path: cls.image_path,
             instructorName: cls.instructor?.full_name || cls.instructor?.username,
             instructorAvatar: avatarUrl(cls.instructor?.avatar_path, cls.instructor?.updated_at),
-            roomName: cls.room?.name,
+            place: placeOf(cls),
             schedules: cls.schedules ?? [],
             lessons: cls.lessons ?? [],
             routines: routinesOf(progress, cls.lessons ?? [], cls.id),

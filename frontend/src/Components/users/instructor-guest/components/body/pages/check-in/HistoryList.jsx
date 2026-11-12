@@ -3,6 +3,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import { formatClock } from '@/lib/format';
 import { statusColorMap } from '../../../../../../Table/utils';
 import { sessionTimesOf } from '@/lib/lessons';
+import { placeOf } from '@/lib/place';
 import { ClassThumb } from '../classes/ClassParts';
 import ProofThumb from './ProofThumb';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
@@ -24,7 +25,7 @@ const HistoryList = ({ rows, onView }) => {
                                 {row.is_extra && <MakeUpTag className="sessionTag" />}
                             </strong>
                             <span>
-                                {formatDate(row.date, 'short')} · {sessionTimesOf(row).start} · {row.room?.name}
+                                {formatDate(row.date, 'short')} · {sessionTimesOf(row).start} · {placeOf(row, row.class).name}
                             </span>
                         </span>
                         <Chip size="sm" variant="flat" className="capitalize" color={statusColorMap[row.status] ?? 'default'}>

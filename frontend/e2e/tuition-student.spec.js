@@ -8,7 +8,7 @@ import { expectToast, login, rest, rpc, staffJwt, token } from './support.js';
 // progress, the VietQR pay dialog, a simulated bank transfer (sandbox) that turns the invoice paid by
 // itself, and the renewal of the next course (stop after the current one, then continue after all).
 // guest@'s running course is paid and undone; the renewal uses another student whose next course is
-// open and unanswered (guest@ has none in the seed). Everything is put back afterwards.
+// open and unanswered (guest@'s own may be open too: it is left alone). Everything is put back afterwards.
 
 test.describe.configure({ mode: 'serial' });
 
@@ -100,7 +100,7 @@ test.beforeAll(async ({ browser }) => {
     const open = (await rest(staff,
         `tuition_invoices?select=${FIELDS},${COURSE},student:profiles!student_id(email)&status=eq.unpaid&renewal=is.null&paid_amount=eq.0&switched_from=is.null&order=id`)).data;
     const next = open.find((row) => row.course?.starts_on > today && /^guest\d+@demo\.oopsdance\.test$/.test(row.student?.email ?? ''));
-    expect(next, 'a student with an open, unanswered next course (seed: K-pop Cover Nâng Cao’s renewal)').toBeTruthy();
+    expect(next, 'a demo student with an open, unanswered next course (seed renewals)').toBeTruthy();
     const before = (await rest(staff, `class_lessons?select=title&class_id=eq.${next.class_id}&starts_on=lt.${next.course.starts_on}&order=starts_on.desc&limit=1`)).data[0];
     renew = { invoice: next, email: next.student.email, previous: before?.title ?? null };
 
@@ -154,8 +154,16 @@ test('the student sees their courses, how renewal works and the finished courses
     await expect(row).toContainText(/Due by|Overdue/);
     await expect(row.getByRole('button', { name: `Pay now ${payInvoice.class_name}` })).toBeVisible();
 
-    // No next course open for guest@: the renewal rules instead.
-    await expect(page.locator('.tuRenewCard').getByRole('heading', { name: 'How renewal works' })).toBeVisible();
+    // guest@'s next course waiting for an answer, or with none open the renewal rules instead.
+    const today = (await rpc(null, 'studio_today')).data;
+    const asked = (await myInvoices()).filter((invoice) => invoice.status === 'unpaid' && invoice.renewal === null && invoice.course?.starts_on > today);
+    const renewCard = page.locator('.tuRenewCard');
+    if (asked.length) {
+        await expect(renewCard.getByRole('heading', { name: /^Your next course/ })).toBeVisible();
+        for (const invoice of asked) await expect(renewCard.locator('.tuRenew', { hasText: invoice.class_name })).toContainText(`Continue with ${invoice.lesson_title}`);
+    } else {
+        await expect(renewCard.getByRole('heading', { name: 'How renewal works' })).toBeVisible();
+    }
 
     const history = page.locator('.tuHistoryCard');
     await expect(history.getByRole('heading', { name: 'Payment history' })).toBeVisible();

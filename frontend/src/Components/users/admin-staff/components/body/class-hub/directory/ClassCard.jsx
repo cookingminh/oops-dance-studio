@@ -4,6 +4,7 @@ import { Avatar } from '@nextui-org/react';
 import { LuMusic } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
 import { formatVnd } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import { fadeUp } from '../../../common/motion';
@@ -74,13 +75,14 @@ const ClassCard = ({ item, view, isAdmin }) => {
     const { t } = useI18n();
     const { cls } = item;
     const teacher = personName(cls.instructor) || t('No instructor');
+    const place = placeOf(cls);
     return (
         <motion.li variants={fadeUp} className="hubCardItem">
             <Link to={classPath(cls.id)} className={`hubCard is-${item.phase}`} aria-label={cls.name}>
                 <span className="hubCardMedia">
                     <ClassImage cls={cls} />
                     <PhaseBadge badge={item.badge} className="onImage" />
-                    {cls.room && <span className="hubRoomTag">{cls.room.name}</span>}
+                    {place.name && <span className="hubRoomTag" title={place.name}>{place.name}</span>}
                 </span>
                 <span className="hubCardBody">
                     <span className="hubCardTitle">

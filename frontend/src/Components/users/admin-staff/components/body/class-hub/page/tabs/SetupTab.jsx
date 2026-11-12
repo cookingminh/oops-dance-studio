@@ -15,7 +15,7 @@ import EndClassPanel from '../setup/EndClassPanel';
 // Setup: details, weekly sessions, image — and the danger zone (end / reopen / delete).
 // ?end=1 scrolls to the danger zone (the header's "End class").
 const SetupTab = ({ ctx }) => {
-    const { cls, today, badge, instructors, rooms, history, canDelete, changed, params, openImage, reopen, remove } = ctx;
+    const { cls, today, badge, instructors, rooms, venues, history, canDelete, changed, params, openImage, reopen, remove } = ctx;
     const { t, tn, dayName } = useI18n();
     const toast = useToast();
     const ended = badge.phase === 'ended';
@@ -53,8 +53,8 @@ const SetupTab = ({ ctx }) => {
 
     return (
         <>
-            <SectionCard icon={LuSettings2} title={t('Details')} subtitle={ended ? t('An ended class can’t be edited. Reopen it first.') : t('Name, instructor, room, price and start date')}>
-                <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} readOnly={ended} onSaved={changed} />
+            <SectionCard icon={LuSettings2} title={t('Details')} subtitle={ended ? t('An ended class can’t be edited. Reopen it first.') : t('Name, instructor, where it’s taught, price and start date')}>
+                <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
             </SectionCard>
 
             <div className="hubDuo">

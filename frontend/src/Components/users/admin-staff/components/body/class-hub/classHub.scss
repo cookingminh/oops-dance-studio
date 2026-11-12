@@ -433,6 +433,11 @@ $blue-soft: hsl(217, 85%, 95%);
         color: #fff;
         font-size: .78rem;
         font-weight: 600;
+        // A rented studio's name can be long.
+        max-width: calc(100% - 1.4rem);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .hubCardBody {
@@ -873,6 +878,17 @@ $blue-soft: hsl(217, 85%, 95%);
     > svg {
         color: var(--ad-subtle);
     }
+
+    // A rented studio's address may wrap.
+    &.isPlace {
+        align-items: baseline;
+        white-space: normal;
+
+        > svg {
+            align-self: center;
+            flex-shrink: 0;
+        }
+    }
 }
 
 .adminShell .hubHeroActions {
@@ -1087,9 +1103,13 @@ $blue-soft: hsl(217, 85%, 95%);
         font-weight: 700;
     }
 
+    // Where: a rented studio's name can be long, so it stays on one line.
     small {
+        overflow: hidden;
         color: var(--ad-muted);
         font-size: .84rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 
@@ -1631,6 +1651,10 @@ a.hubWhoName:hover {
     small {
         color: var(--ad-subtle);
         font-size: .8rem;
+
+        .exBadge {
+            margin-left: .4rem;
+        }
     }
 }
 
@@ -1834,6 +1858,16 @@ a.hubWhoName:hover {
 @media screen and (max-width: 767px) {
     .adminShell .hubDirectory .hubSearch {
         width: 100%;
+    }
+
+    // The next session: who and where keep the width, its state moves under them.
+    .adminShell .hubNext {
+        flex-wrap: wrap;
+        row-gap: .5rem;
+    }
+
+    .adminShell .hubNextWho {
+        flex-basis: 10rem;
     }
 
     .adminShell .hubHeader {

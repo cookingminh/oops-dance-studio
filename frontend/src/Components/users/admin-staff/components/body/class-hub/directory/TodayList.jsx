@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Avatar } from '@nextui-org/react';
 import { LuClipboardCheck, LuListChecks } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import LinkButton from '@/ui/LinkButton';
@@ -23,6 +24,7 @@ const TodayList = ({ items, today }) => {
                 const teacher = personName(item.teacher) || t('No instructor');
                 const sessionLink = classPath(cls.id, { tab: 'sessions', day: today });
                 const review = state.kind === 'review';
+                const place = placeOf(item.row, cls);
                 return (
                     <motion.li key={cls.id} variants={fadeUp} className={`hubTodayRow tone-${state.tone}`}>
                         <span className="hubTodayTime">
@@ -38,7 +40,7 @@ const TodayList = ({ items, today }) => {
                                 <Avatar {...AVATAR_DEFAULTS} size="sm" className="hubAvatarXs" src={avatarUrl(item.teacher?.avatar_path, item.teacher?.updated_at) ?? undefined} name={teacher} />
                                 <span>{teacher}</span>
                                 {item.substitute && <span className="hubTag">{t('Substitute')}</span>}
-                                {cls.room?.name && <span>· {cls.room.name}</span>}
+                                {place.name && <span>· {place.name}</span>}
                                 {item.row?.is_extra && <span className="hubTag isMakeUp">{t('Make-up')}</span>}
                             </span>
                         </span>

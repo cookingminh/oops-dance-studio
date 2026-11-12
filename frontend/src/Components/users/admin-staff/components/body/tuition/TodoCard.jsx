@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Button } from '@nextui-org/react';
-import { LuAlertCircle, LuCalendarClock, LuChevronDown, LuCoffee, LuHistory, LuLandmark, LuListTodo } from 'react-icons/lu';
+import { LuAlertCircle, LuCalendarClock, LuChevronDown, LuCoffee, LuCoins, LuHistory, LuLandmark, LuListTodo } from 'react-icons/lu';
+import { extraOf } from '@/services/tuition';
 import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import AsyncState from '@/ui/feedback/AsyncState';
@@ -55,12 +56,12 @@ const GroupHead = ({ id, icon: Icon, title, count, hint, children }) => (
 );
 
 // "To do": one action list across every class, most urgent first — who is late, the bank transfers
-// nobody has sorted yet, then (folded) what falls due this week. Each row keeps its own actions.
+// nobody has sorted yet, invoices holding extra money, then (folded) what falls due this week. Each row keeps its own actions.
 const TodoCard = ({ state, lists, invoices, transfers, today, enrolments, busyId, onAction, onHistory, transferProps }) => {
     const { t, tn } = useI18n();
     const [showSoon, setShowSoon] = useState(false);
-    const { late, soon } = lists;
-    const clear = late.length === 0 && transfers.length === 0;
+    const { late, soon, extra = [] } = lists;
+    const clear = late.length === 0 && transfers.length === 0 && extra.length === 0;
     const rowProps = { invoices, today, enrolments, busyId, onAction };
 
     return (
@@ -110,6 +111,21 @@ const TodoCard = ({ state, lists, invoices, transfers, today, enrolments, busyId
                             hint={t('Money that came in without a usable invoice code: put it on an invoice or a room booking, or set it aside.')}
                         />
                         <UnmatchedTransfers transfers={transfers} {...transferProps} />
+                    </section>
+                )}
+
+                {extra.length > 0 && (
+                    <section id="tuition-extra" className="tuTodoGroup isExtra" aria-labelledby="tu-extra-title">
+                        <GroupHead
+                            id="tu-extra-title"
+                            icon={LuCoins}
+                            title={t('Extra money')}
+                            count={extra.length}
+                            hint={t('Paid more than the course costs, {amount} in all: put it on another course or give it back.', {
+                                amount: formatVnd(extra.reduce((sum, invoice) => sum + extraOf(invoice), 0)),
+                            })}
+                        />
+                        <Rows list={extra} {...rowProps} />
                     </section>
                 )}
 

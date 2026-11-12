@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-    PROOF, addDays, deleteBookingsOn, ensureProofToday, expectToast, freeDate, isoWeekday, login, pathname, people, pickOption,
+    PROOF, addDays, deleteBookingsOn, dropSessionToday, ensureProofToday, expectToast, freeDate, isoWeekday, login, pathname, people, pickOption,
     rest, rooms, rpc, staffJwt, studioToday, token,
 } from './support.js';
 
@@ -15,6 +15,7 @@ let guests;
 let instructors;
 let bookingDate;
 let today;
+let proofSession; // a session added today for the check-in proof, if none had one
 
 const lastName = (person) => person.full_name.split(' ').slice(-2).join(' ');
 
@@ -32,12 +33,15 @@ test.beforeAll(async ({ browser }) => {
     bookingDate = await freeDate(offset);
     await deleteBookingsOn(bookingDate);
     await rest(await staffJwt(), `classes?name=eq.${encodeURIComponent(CLASS_NAME)}`, { method: 'DELETE' });
-    await ensureProofToday();
+    proofSession = await ensureProofToday();
     page = await browser.newPage();
     page.on('dialog', (d) => d.accept());
     dialog = page.getByRole('dialog');
 });
-test.afterAll(() => page.close());
+test.afterAll(async () => {
+    await page.close();
+    await dropSessionToday(proofSession);
+});
 
 test('staff lands on /admin', async () => {
     await login(page, 'staff@demo.oopsdance.test');

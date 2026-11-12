@@ -2,20 +2,22 @@ import { useState } from 'react';
 import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem, Avatar } from '@nextui-org/react';
 import { createClass, updateClass } from '@/services/classes';
 import { avatarUrl } from '@/services/storage';
+import { placeColumns, placeKeyOf } from '@/lib/place';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
 import ImagePicker from '@/ui/ImagePicker';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
+import PlaceField from '../../../../common/PlaceField';
 
 // Create or edit a class. Schedules are managed separately (each schedule belongs to one class).
-const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
+const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved }) => {
     const toast = useToast();
     const { t } = useI18n();
     const isNew = !classRow;
     const [form, setForm] = useState({
         name: classRow?.name ?? '',
         instructorId: classRow?.instructor_id ?? '',
-        roomId: classRow?.room_id ? String(classRow.room_id) : '',
+        place: placeKeyOf(classRow),
         price: classRow ? String(classRow.price) : '',
     });
     const [image, setImage] = useState(null);
@@ -28,7 +30,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
     const handleSubmit = async () => {
         setSaving(true);
         try {
-            const fields = { ...form, roomId: form.roomId ? Number(form.roomId) : null };
+            const fields = { ...form, ...placeColumns(form.place) };
             if (isNew) {
                 await createClass(fields, image);
                 toast.success('Class added. Add its weekly sessions and its first routine next.');
@@ -70,16 +72,7 @@ const ClassForm = ({ classRow, instructors, rooms, onClose, onSaved }) => {
                             </SelectItem>
                         ))}
                     </Select>
-                    <Select
-                        label={t('Room')}
-                        placeholder={t('Select a room')}
-                        selectedKeys={form.roomId ? [form.roomId] : []}
-                        onChange={(event) => set('roomId')(event.target.value)}
-                    >
-                        {rooms.map((room) => (
-                            <SelectItem key={String(room.id)}>{room.name}</SelectItem>
-                        ))}
-                    </Select>
+                    <PlaceField value={form.place} onChange={set('place')} rooms={rooms} venues={venues} />
                     <Input
                         label={t('Price (VND)')}
                         type="number"

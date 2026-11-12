@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Local demo data (runs on `supabase db reset`). api-contract §11.
 --   2 rooms · 1 admin · 1 staff · 5 instructors · 15 guests
---   6 classes with schedules + enrolments
+--   the studio's November timetable: 6 running classes + 2 Newbie classes opening next month,
+--   taught at six rented studios (venues); the rooms are closed for now but stay
 --   bookings: last 3 months → next 2 weeks (relative to today, so the demo stays fresh)
 --   attendance history: 8 weeks of sessions, 4 weeks of roll calls
 --
@@ -9,9 +10,9 @@
 -- Hosted demo projects are seeded by scripts/seed-demo.mjs instead.
 -- Instructor avatars and class photos cannot be uploaded from SQL: after a reset
 -- run `node scripts/demo-images.mjs --local` (sets avatar_path / image_path).
--- The five instructors are the studio's teachers as named on the legacy homepage,
+-- The five instructors are the studio's teachers as named on the November timetable posters,
 -- matching their photos in scripts/demo-assets/; no personal details
--- (phone, birthday) are made up for them.
+-- (phone, birthday) are made up for them. Đỗ Linh is instructor@ (she teaches the most days).
 -- Runs as postgres without JWT claims → allowed to set roles / generate attendance.
 -- =============================================================================
 
@@ -25,11 +26,11 @@ create temporary table seed_users (
 insert into seed_users values
   ('00000000-0000-4000-a000-000000000001', 'admin@demo.oopsdance.test',       'admin',      'admin',      'Trần Thị Thu Hà',  '0903111001', '1990-04-12'),
   ('00000000-0000-4000-a000-000000000002', 'staff@demo.oopsdance.test',       'staff',      'staff',      'Lê Hoàng Nam',     '0903111002', '1996-09-03'),
-  ('00000000-0000-4000-a000-000000000011', 'instructor@demo.oopsdance.test',  'instructor', 'ami',        'Ami',              null,         null),
-  ('00000000-0000-4000-a000-000000000012', 'instructor2@demo.oopsdance.test', 'instructor', 'bin',        'Bin',              null,         null),
-  ('00000000-0000-4000-a000-000000000013', 'instructor3@demo.oopsdance.test', 'instructor', 'dolinh',     'Đỗ Linh',          null,         null),
-  ('00000000-0000-4000-a000-000000000014', 'instructor4@demo.oopsdance.test', 'instructor', 'chaeng',     'Chaeng',           null,         null),
-  ('00000000-0000-4000-a000-000000000015', 'instructor5@demo.oopsdance.test', 'instructor', 'ducbo',      'Duc Bo',           null,         null),
+  ('00000000-0000-4000-a000-000000000011', 'instructor@demo.oopsdance.test',  'instructor', 'dolinh',     'Đỗ Linh',          null,         null),
+  ('00000000-0000-4000-a000-000000000012', 'instructor2@demo.oopsdance.test', 'instructor', 'soleck',     'Soleck',           null,         null),
+  ('00000000-0000-4000-a000-000000000013', 'instructor3@demo.oopsdance.test', 'instructor', 'antrinh',    'An Trinh',         null,         null),
+  ('00000000-0000-4000-a000-000000000014', 'instructor4@demo.oopsdance.test', 'instructor', 'vananh',     'Vân Anh',          null,         null),
+  ('00000000-0000-4000-a000-000000000015', 'instructor5@demo.oopsdance.test', 'instructor', 'ducbo',      'Đức Anh',          null,         null),
   ('00000000-0000-4000-a000-000000000101', 'guest@demo.oopsdance.test',       'guest',      'thaovy',     'Nguyễn Thảo Vy',   '0987333101', '2002-03-15'),
   ('00000000-0000-4000-a000-000000000102', 'guest02@demo.oopsdance.test',     'guest',      'giabao',     'Trần Gia Bảo',     '0987333102', '2001-06-21'),
   ('00000000-0000-4000-a000-000000000103', 'guest03@demo.oopsdance.test',     'guest',      'khanhlinh',  'Lê Khánh Linh',    '0987333103', '2003-12-02'),
@@ -81,58 +82,68 @@ insert into public.rooms (id, name, size, price) values
 select setval(pg_get_serial_sequence('public.rooms', 'id'), 2);
 
 -- -----------------------------------------------------------------------------
--- Classes (price = VND per month) and weekly schedules (ISO 1 = Mon … 7 = Sun)
--- Ami (instructor@, the demo instructor) teaches every day so check-in can be
--- tried any day. No two classes overlap in the same room (enforced by trigger).
---   Phòng A  Mon/Wed  K-pop CB 18:00–19:30 · Contemporary 19:30–21:00
---            Tue/Thu  Hip-hop 18:00–19:30   Fri K-pop CB 18:00–19:30
---            Sat      Contemporary 10:00–11:30 · Hip-hop 15:00–16:30
---   Phòng B  Mon/Wed  Breaking Kids 17:00–18:00   Tue/Thu K-pop NC 19:00–20:30
---            Fri      Choreography 18:00–19:30
---            Sat      K-pop NC 09:00–10:30 · Choreography 13:00–14:30
---            Sun      K-pop NC 09:00–10:30 · Breaking Kids 16:00–17:00
+-- Classes (price = VND per course of 8 sessions) and weekly schedules (ISO 1 = Mon … 7 = Sun):
+-- the studio's November timetable. Classes are taught at rented studios (seed_demo_venues() places
+-- them, below); levels: Newbie, Cơ bản (basic), Nâng cao (advanced).
+--   Trending      Cơ bản    Đỗ Linh   Mon & Thu 18:30–19:45   Studio Thỏ (Đê La Thành nhỏ)
+--   Choreo CG     Nâng cao  Đỗ Linh   Sat & Sun 18:30–19:45   Hoàng Quốc Việt
+--   K-pop Dance   Cơ bản    Đức Anh   Tue & Sat 18:30–19:45   Studio Baladi Vũ Thạnh
+--   Girlstyle 2   Cơ bản    Vân Anh   Tue & Thu 19:00–20:15   Quan Hoa
+--   Choreo BT     Nâng cao  Soleck    Mon & Thu 20:00–21:15   Bà Triệu
+--   Girlstyle 1   Cơ bản    An Trinh  Tue & Thu 18:15–19:30   Studio Thỏ (opened this month,
+--                                     on the second Tuesday)
+--   Newbie 1 / 2  Newbie    Đỗ Linh / Soleck, Wed & Fri, open next month (seed_demo_classes()).
+-- Each month's course starts on the class's first day of the month ("KG 2/11", "KG 3/11", "KG 7/11").
 -- -----------------------------------------------------------------------------
--- They have been running for months (starts_on: sessions, roll calls and tuition reach back that far).
-insert into public.classes (id, name, instructor_id, room_id, price, starts_on)
-select v.id, v.name, v.instructor_id::uuid, v.room_id, v.price, public.studio_today() - 120
+-- They have been running for months (starts_on: sessions, roll calls and tuition reach back that far);
+-- Girlstyle 1 opened this month.
+insert into public.classes (id, name, instructor_id, price, starts_on)
+select v.id, v.name, v.instructor_id::uuid, v.price,
+       case when v.id = 6
+            then date_trunc('month', public.studio_today())::date
+                 + ((2 - extract(isodow from date_trunc('month', public.studio_today()))::int + 7) % 7) + 7
+            else public.studio_today() - 120 end
   from (values
-    (1, 'K-pop Cover Cơ Bản',    '00000000-0000-4000-a000-000000000011', 1,  900000),
-    (2, 'K-pop Cover Nâng Cao',  '00000000-0000-4000-a000-000000000011', 2, 1200000),
-    (3, 'Hip-hop Foundation',    '00000000-0000-4000-a000-000000000012', 1, 1000000),
-    (4, 'Breaking Kids',         '00000000-0000-4000-a000-000000000015', 2,  800000),
-    (5, 'Contemporary & Jazz',   '00000000-0000-4000-a000-000000000013', 1, 1100000),
-    (6, 'Choreography Sáng Tạo', '00000000-0000-4000-a000-000000000014', 2, 1200000)
-  ) as v (id, name, instructor_id, room_id, price);
+    (1, 'Trending',    '00000000-0000-4000-a000-000000000011', 1000000),
+    (2, 'Choreo CG',   '00000000-0000-4000-a000-000000000011', 1200000),
+    (3, 'K-pop Dance', '00000000-0000-4000-a000-000000000015', 1000000),
+    (4, 'Girlstyle 2', '00000000-0000-4000-a000-000000000014', 1000000),
+    (5, 'Choreo BT',   '00000000-0000-4000-a000-000000000012', 1200000),
+    (6, 'Girlstyle 1', '00000000-0000-4000-a000-000000000013', 1000000)
+  ) as v (id, name, instructor_id, price);
 select setval(pg_get_serial_sequence('public.classes', 'id'), 6);
 
--- Monthly lessons (the piece each class learns). Every class has last month's; Hip-hop
--- Foundation and Breaking Kids have no lesson for this month yet, so the admin UI shows them
--- as "needs this month's lesson". A trigger copies the latest title into classes.lesson.
--- Last month's lessons carry the end-of-month class video (real videos from the studio's
--- YouTube channel); Breaking Kids has none yet, so its card asks for it.
-insert into public.class_lessons (class_id, month, title, video_url)
-select v.class_id, (date_trunc('month', public.studio_today()) + make_interval(months => v.months_ago * -1))::date, v.title, v.video_url
-  from (values
-    (1, 1, 'HIT ’EM — MEOVV', 'https://www.youtube.com/watch?v=tbDUtRdhfUI'),
-    (1, 0, 'Super Shy — NewJeans', null),
-    (2, 1, 'LIES & SUNSET GLOW — BIGBANG', 'https://www.youtube.com/watch?v=D_UzYE3U81Y'),
-    (2, 0, 'Magnetic — ILLIT', null),
-    (3, 1, 'MANTRA (Remix) x HOOTIE FRUITTI', 'https://www.youtube.com/watch?v=mxHD5wW5NuY'),
-    (4, 1, 'Jump Around — House of Pain', null),
-    (5, 1, 'HANDLEBAR x DRACULA', 'https://www.youtube.com/watch?v=tSZuWh-LMb4'),
-    (5, 0, 'lovely — Billie Eilish & Khalid', null),
-    (6, 1, 'WHISTLE x GOALS', 'https://www.youtube.com/watch?v=iG2UbHqhIGg'),
-    (6, 0, 'Dynamite — BTS', null)
-  ) as v (class_id, months_ago, title, video_url);
-
-
 insert into public.class_schedules (class_id, day_of_week, start_time, end_time) values
-  (1, 1, '18:00', '19:30'), (1, 3, '18:00', '19:30'), (1, 5, '18:00', '19:30'),
-  (2, 2, '19:00', '20:30'), (2, 4, '19:00', '20:30'), (2, 6, '09:00', '10:30'), (2, 7, '09:00', '10:30'),
-  (3, 2, '18:00', '19:30'), (3, 4, '18:00', '19:30'), (3, 6, '15:00', '16:30'),
-  (4, 1, '17:00', '18:00'), (4, 3, '17:00', '18:00'), (4, 7, '16:00', '17:00'),
-  (5, 1, '19:30', '21:00'), (5, 3, '19:30', '21:00'), (5, 6, '10:00', '11:30'),
-  (6, 5, '18:00', '19:30'), (6, 6, '13:00', '14:30');
+  (1, 1, '18:30', '19:45'), (1, 4, '18:30', '19:45'),
+  (2, 6, '18:30', '19:45'), (2, 7, '18:30', '19:45'),
+  (3, 2, '18:30', '19:45'), (3, 6, '18:30', '19:45'),
+  (4, 2, '19:00', '20:15'), (4, 4, '19:00', '20:15'),
+  (5, 1, '20:00', '21:15'), (5, 4, '20:00', '21:15'),
+  (6, 2, '18:15', '19:30'), (6, 4, '18:15', '19:30');
+
+-- Routines (the piece each course learns). Last month's carry the end-of-month class video (real videos from
+-- the studio's YouTube channel). A course starts ("KG") on the month's first day of the class's first weekly
+-- slot: Trending and Choreo BT on the first Monday, K-pop Dance and Girlstyle 2 on the first Tuesday, Choreo CG
+-- on the first Saturday. A trigger copies the latest title into classes.lesson.
+insert into public.class_lessons (class_id, month, starts_on, title, video_url)
+select v.class_id, m.month, m.month + ((f.dow - extract(isodow from m.month)::int + 7) % 7), v.title, v.video_url
+  from (values
+    (1, 1, 'MANTRA (Remix) x HOOTIE FRUITTI', 'https://www.youtube.com/watch?v=mxHD5wW5NuY'),
+    (1, 0, 'APT. — ROSÉ & Bruno Mars', null),
+    (2, 1, 'WHISTLE x GOALS', 'https://www.youtube.com/watch?v=iG2UbHqhIGg'),
+    (2, 0, 'Water — Tyla', null),
+    (3, 1, 'HIT ’EM — MEOVV', 'https://www.youtube.com/watch?v=tbDUtRdhfUI'),
+    (3, 0, 'Magnetic — ILLIT', null),
+    (4, 1, 'LIES & SUNSET GLOW — BIGBANG', 'https://www.youtube.com/watch?v=D_UzYE3U81Y'),
+    (4, 0, 'Super Shy — NewJeans', null),
+    (5, 1, 'HANDLEBAR x DRACULA', 'https://www.youtube.com/watch?v=tSZuWh-LMb4'),
+    (5, 0, 'lovely — Billie Eilish & Khalid', null)
+  ) as v (class_id, months_ago, title, video_url)
+  cross join lateral (select (date_trunc('month', public.studio_today()) - make_interval(months => v.months_ago))::date as month) m
+  cross join lateral (select min(s.day_of_week)::int as dow from public.class_schedules s where s.class_id = v.class_id) f;
+-- Girlstyle 1's first course starts with the class.
+insert into public.class_lessons (class_id, month, starts_on, title)
+select c.id, date_trunc('month', c.starts_on)::date, c.starts_on, 'Supernova — aespa' from public.classes c where c.id = 6;
 
 -- Routines last a number of sessions: last month's ran the whole month; this month's are 8-session
 -- routines (so some finish mid-month and ask for the next one).
@@ -143,22 +154,31 @@ update public.class_lessons l
            join public.class_schedules s on s.class_id = l.class_id and s.day_of_week = extract(isodow from d)))
  where l.month < date_trunc('month', public.studio_today())::date;
 
--- Enrolments: each guest in 1–3 classes, joined 60–100 days ago.
+-- Enrolments: each guest in 1–3 of the classes running for months, joined 60–100 days ago.
 insert into public.class_students (class_id, student_id, joined_at)
 select c.class_id, u.id, public.studio_today() - (60 + (abs(hashtext(u.email || c.class_id)) % 41))
 from seed_users u
 cross join lateral (
   select distinct x as class_id
   from unnest(array[
-    1 + abs(hashtext(u.email || 'a')) % 6,
-    1 + abs(hashtext(u.email || 'b')) % 6,
-    case when abs(hashtext(u.email)) % 3 = 0 then 1 + abs(hashtext(u.email || 'c')) % 6 end
+    1 + abs(hashtext(u.email || 'a')) % 5,
+    1 + abs(hashtext(u.email || 'b')) % 5,
+    case when abs(hashtext(u.email)) % 3 = 0 then 1 + abs(hashtext(u.email || 'c')) % 5 end
   ]) as x
   where x is not null
 ) c
 where u.role = 'guest';
 
--- The demo guest is always in K-pop Cover and Hip-hop Foundation.
+-- Girlstyle 1 opened this month: five students signed up the week before.
+insert into public.class_students (class_id, student_id, joined_at)
+select 6, u.id, (select starts_on from public.classes where id = 6) - 3
+  from seed_users u
+ where u.role = 'guest' and u.email <> 'guest@demo.oopsdance.test'
+ order by abs(hashtext(u.email || 'girlstyle'))
+ limit 5
+on conflict do nothing;
+
+-- The demo guest is always in Trending and K-pop Dance.
 insert into public.class_students (class_id, student_id, joined_at) values
   (1, '00000000-0000-4000-a000-000000000101', public.studio_today() - 90),
   (3, '00000000-0000-4000-a000-000000000101', public.studio_today() - 90)
@@ -310,7 +330,7 @@ update public.student_attendance sa
    );
 
 -- -----------------------------------------------------------------------------
--- Payroll: a monthly salary for the staff account, two advanced classes paid 350,000 a
+-- Payroll: a monthly salary for the staff account, the two advanced classes paid 350,000 a
 -- session (the rest use the 300,000 default), last month's bonuses and deductions, last
 -- month finalized and paid; this month stays a live draft with one deduction in it.
 -- (Runs without a signed-in user, which the payroll RPCs accept as a service context.)
@@ -319,14 +339,14 @@ insert into public.staff_salaries (profile_id, monthly_salary) values
   ('00000000-0000-4000-a000-000000000002', 8000000);
 
 insert into public.class_pay_rates (class_id, session_rate)
-select c.id, 350000 from public.classes c where c.name in ('K-pop Cover Nâng Cao', 'Choreography Sáng Tạo');
+select c.id, 350000 from public.classes c where c.name in ('Choreo BT', 'Choreo CG');
 
 insert into public.payroll_adjustments (profile_id, month, amount, reason, created_by)
 select v.pid, (date_trunc('month', public.studio_today()) - make_interval(months => v.months_ago))::date, v.amount, v.reason,
        '00000000-0000-4000-a000-000000000001'
   from (values
     ('00000000-0000-4000-a000-000000000012'::uuid, 1, -50000,  'Check-in trễ 15 phút'),
-    ('00000000-0000-4000-a000-000000000011'::uuid, 1, 200000,  'Dạy thay lớp Hip-hop Foundation'),
+    ('00000000-0000-4000-a000-000000000011'::uuid, 1, 200000,  'Dạy thay lớp Girlstyle 2'),
     ('00000000-0000-4000-a000-000000000002'::uuid, 1, 500000,  'Thưởng hỗ trợ sự kiện cuối tháng'),
     ('00000000-0000-4000-a000-000000000015'::uuid, 0, -30000,  'Về sớm 10 phút')
   ) as v (pid, months_ago, amount, reason);
@@ -348,13 +368,16 @@ select public.seed_demo_tuition();
 select public.seed_demo_fit_routines();
 -- Expenses (recurring rent, internet, ads; the monthly shoot; a few one-offs) and one class switch.
 select public.seed_demo_finance();
--- A summer class that ran three months and ended, and one opening next month.
+-- Newbie 1 and Newbie 2 open on the first Wednesday of next month, a few students already in.
 select public.seed_demo_classes();
-update public.class_lessons set session_count = 4
- where class_id = (select id from public.classes where name = 'Hip-hop Summer Camp');
 
 -- Room deposits paid by transfer, each with its transfer (the booking's payment history).
 select public.seed_demo_booking_payments();
+
+-- The studio's rooms are closed for now: its classes are taught at the six rented studios on the timetable
+-- (example rents), with their sessions, and the rent of the sessions taught is charged as expenses.
+-- The rooms and their bookings stay (for when the studio reopens).
+select public.seed_demo_venues();
 
 -- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
 select public.seed_demo_activity();

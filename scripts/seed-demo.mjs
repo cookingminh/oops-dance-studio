@@ -72,12 +72,13 @@ async function must(promise, what) {
 const USERS = [
   ["admin@demo.oopsdance.test",       "admin",      "admin",      "Trần Thị Thu Hà", "0903111001", "1990-04-12"],
   ["staff@demo.oopsdance.test",       "staff",      "staff",      "Lê Hoàng Nam",    "0903111002", "1996-09-03"],
-  // The studio's teachers as named on the legacy homepage; no made-up personal details.
-  ["instructor@demo.oopsdance.test",  "instructor", "ami",        "Ami",             null,         null],
-  ["instructor2@demo.oopsdance.test", "instructor", "bin",        "Bin",             null,         null],
-  ["instructor3@demo.oopsdance.test", "instructor", "dolinh",     "Đỗ Linh",         null,         null],
-  ["instructor4@demo.oopsdance.test", "instructor", "chaeng",     "Chaeng",          null,         null],
-  ["instructor5@demo.oopsdance.test", "instructor", "ducbo",      "Duc Bo",          null,         null],
+  // The studio's teachers as named on the November timetable; no made-up personal details.
+  // Đỗ Linh is instructor@ (she teaches the most days).
+  ["instructor@demo.oopsdance.test",  "instructor", "dolinh",     "Đỗ Linh",         null,         null],
+  ["instructor2@demo.oopsdance.test", "instructor", "soleck",     "Soleck",          null,         null],
+  ["instructor3@demo.oopsdance.test", "instructor", "antrinh",    "An Trinh",        null,         null],
+  ["instructor4@demo.oopsdance.test", "instructor", "vananh",     "Vân Anh",         null,         null],
+  ["instructor5@demo.oopsdance.test", "instructor", "ducbo",      "Đức Anh",         null,         null],
   ["guest@demo.oopsdance.test",       "guest",      "thaovy",     "Nguyễn Thảo Vy",  "0987333101", "2002-03-15"],
   ["guest02@demo.oopsdance.test",     "guest",      "giabao",     "Trần Gia Bảo",    "0987333102", "2001-06-21"],
   ["guest03@demo.oopsdance.test",     "guest",      "khanhlinh",  "Lê Khánh Linh",   "0987333103", "2003-12-02"],
@@ -101,34 +102,33 @@ const ROOMS = [
   { name: "Phòng B", size: "45 m² · sàn gỗ · máy lạnh",     price: 180000 },
 ];
 
-// schedules: [ISO weekday 1=Mon…7=Sun, start, end]. Same timetable as seed.sql:
-// Ami teaches every day; no two classes overlap in a room.
+// schedules: [ISO weekday 1=Mon…7=Sun, start, end]. The studio's November timetable, as in seed.sql;
+// seed_demo_venues() puts each class at its rented studio. Girlstyle 1 opened this month (`opensThisMonth`:
+// on the month's second Tuesday); the two Newbie classes come from seed_demo_classes().
 const CLASSES = [
-  { name: "K-pop Cover Cơ Bản", instructor: "instructor@demo.oopsdance.test", room: "Phòng A", price: 900000,
-    schedules: [[1, "18:00", "19:30"], [3, "18:00", "19:30"], [5, "18:00", "19:30"]] },
-  { name: "K-pop Cover Nâng Cao", instructor: "instructor@demo.oopsdance.test", room: "Phòng B", price: 1200000,
-    schedules: [[2, "19:00", "20:30"], [4, "19:00", "20:30"], [6, "09:00", "10:30"], [7, "09:00", "10:30"]] },
-  { name: "Hip-hop Foundation", instructor: "instructor2@demo.oopsdance.test", room: "Phòng A", price: 1000000,
-    schedules: [[2, "18:00", "19:30"], [4, "18:00", "19:30"], [6, "15:00", "16:30"]] },
-  { name: "Breaking Kids", instructor: "instructor5@demo.oopsdance.test", room: "Phòng B", price: 800000,
-    schedules: [[1, "17:00", "18:00"], [3, "17:00", "18:00"], [7, "16:00", "17:00"]] },
-  { name: "Contemporary & Jazz", instructor: "instructor3@demo.oopsdance.test", room: "Phòng A", price: 1100000,
-    schedules: [[1, "19:30", "21:00"], [3, "19:30", "21:00"], [6, "10:00", "11:30"]] },
-  { name: "Choreography Sáng Tạo", instructor: "instructor4@demo.oopsdance.test", room: "Phòng B", price: 1200000,
-    schedules: [[5, "18:00", "19:30"], [6, "13:00", "14:30"]] },
+  { name: "Trending", instructor: "instructor@demo.oopsdance.test", price: 1000000,
+    schedules: [[1, "18:30", "19:45"], [4, "18:30", "19:45"]] },
+  { name: "Choreo CG", instructor: "instructor@demo.oopsdance.test", price: 1200000,
+    schedules: [[6, "18:30", "19:45"], [7, "18:30", "19:45"]] },
+  { name: "K-pop Dance", instructor: "instructor5@demo.oopsdance.test", price: 1000000,
+    schedules: [[2, "18:30", "19:45"], [6, "18:30", "19:45"]] },
+  { name: "Girlstyle 2", instructor: "instructor4@demo.oopsdance.test", price: 1000000,
+    schedules: [[2, "19:00", "20:15"], [4, "19:00", "20:15"]] },
+  { name: "Choreo BT", instructor: "instructor2@demo.oopsdance.test", price: 1200000,
+    schedules: [[1, "20:00", "21:15"], [4, "20:00", "21:15"]] },
+  { name: "Girlstyle 1", instructor: "instructor3@demo.oopsdance.test", price: 1000000, opensThisMonth: true,
+    schedules: [[2, "18:15", "19:30"], [4, "18:15", "19:30"]] },
 ];
 
-// Monthly lessons: [class, months ago, title]. Every class has last month's piece; Hip-hop
-// Foundation and Breaking Kids have none for this month yet ("needs this month's lesson").
-// [class, months ago, title, end-of-month video] — last month's videos are real ones from the
-// studio's YouTube channel; Breaking Kids has none yet.
+// Routines: [class, months ago, title, end-of-month video]. Last month's videos are real ones from the studio's
+// YouTube channel. Each course starts ("KG") on the month's first day of the class's first weekly slot.
 const LESSONS = [
-  ["K-pop Cover Cơ Bản", 1, "HIT ’EM — MEOVV", "https://www.youtube.com/watch?v=tbDUtRdhfUI"], ["K-pop Cover Cơ Bản", 0, "Super Shy — NewJeans"],
-  ["K-pop Cover Nâng Cao", 1, "LIES & SUNSET GLOW — BIGBANG", "https://www.youtube.com/watch?v=D_UzYE3U81Y"], ["K-pop Cover Nâng Cao", 0, "Magnetic — ILLIT"],
-  ["Hip-hop Foundation", 1, "MANTRA (Remix) x HOOTIE FRUITTI", "https://www.youtube.com/watch?v=mxHD5wW5NuY"],
-  ["Breaking Kids", 1, "Jump Around — House of Pain"],
-  ["Contemporary & Jazz", 1, "HANDLEBAR x DRACULA", "https://www.youtube.com/watch?v=tSZuWh-LMb4"], ["Contemporary & Jazz", 0, "lovely — Billie Eilish & Khalid"],
-  ["Choreography Sáng Tạo", 1, "WHISTLE x GOALS", "https://www.youtube.com/watch?v=iG2UbHqhIGg"], ["Choreography Sáng Tạo", 0, "Dynamite — BTS"],
+  ["Trending", 1, "MANTRA (Remix) x HOOTIE FRUITTI", "https://www.youtube.com/watch?v=mxHD5wW5NuY"], ["Trending", 0, "APT. — ROSÉ & Bruno Mars"],
+  ["Choreo CG", 1, "WHISTLE x GOALS", "https://www.youtube.com/watch?v=iG2UbHqhIGg"], ["Choreo CG", 0, "Water — Tyla"],
+  ["K-pop Dance", 1, "HIT ’EM — MEOVV", "https://www.youtube.com/watch?v=tbDUtRdhfUI"], ["K-pop Dance", 0, "Magnetic — ILLIT"],
+  ["Girlstyle 2", 1, "LIES & SUNSET GLOW — BIGBANG", "https://www.youtube.com/watch?v=D_UzYE3U81Y"], ["Girlstyle 2", 0, "Super Shy — NewJeans"],
+  ["Choreo BT", 1, "HANDLEBAR x DRACULA", "https://www.youtube.com/watch?v=tSZuWh-LMb4"], ["Choreo BT", 0, "lovely — Billie Eilish & Khalid"],
+  ["Girlstyle 1", 0, "Supernova — aespa"],
 ];
 
 const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", "receipts", "class-promos"];
@@ -140,7 +140,7 @@ const APP_TABLES = [
   ["bank_transfers", "id"], ["tuition_invoices", "id"],
   ["payslips", "profile_id"], ["payroll_adjustments", "id"], ["staff_salaries", "profile_id"], ["class_pay_rates", "class_id"],
   ["student_attendance", "id"], ["instructor_attendance", "id"], ["class_students", "class_id"],
-  ["bookings", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"],
+  ["bookings", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"], ["venues", "id"],
   // Last: the wipe itself is logged (students leaving, accounts removed).
   ["activity_log", "id"],
 ];
@@ -237,6 +237,13 @@ async function upsertUsers() {
 }
 
 // 'yyyy-MM-01' of the month `monthsAgo` months before `isoDate`.
+// The `nth` (0 = first) ISO weekday `dow` (1 = Mon … 7 = Sun) on or after a month's first day.
+function firstWeekday(monthIso, dow, nth = 0) {
+  const d = new Date(`${monthIso}T00:00:00Z`);
+  const offset = (dow - (d.getUTCDay() || 7) + 7) % 7 + 7 * nth;
+  return new Date(d.getTime() + offset * 86400000).toISOString().slice(0, 10);
+}
+
 function monthStart(isoDate, monthsAgo) {
   const [y, m] = isoDate.split("-").map(Number);
   const d = new Date(Date.UTC(y, m - 1 - monthsAgo, 1));
@@ -245,13 +252,13 @@ function monthStart(isoDate, monthsAgo) {
 
 async function upsertCatalogue(userIds, today) {
   const rooms = await must(db.from("rooms").upsert(ROOMS, { onConflict: "name" }).select("id, name, price"), "rooms");
-  const roomByName = Object.fromEntries(rooms.map((r) => [r.name, r]));
 
-  // They have been running for months: sessions, roll calls and tuition reach back to starts_on.
+  // They have been running for months (sessions, roll calls and tuition reach back to starts_on); Girlstyle 1
+  // opened this month. No room: seed_demo_venues() puts each class at its rented studio.
   const classes = await must(db.from("classes").upsert(CLASSES.map((c) => ({
-    name: c.name, instructor_id: userIds[c.instructor], room_id: roomByName[c.room].id,
-    price: c.price, starts_on: monthStart(today, 4),
-  })), { onConflict: "name" }).select("id, name, room_id"), "classes");
+    name: c.name, instructor_id: userIds[c.instructor], room_id: null,
+    price: c.price, starts_on: c.opensThisMonth ? firstWeekday(monthStart(today, 0), 2, 1) : monthStart(today, 4),
+  })), { onConflict: "name" }).select("id, name, room_id, starts_on"), "classes");
   const classByName = Object.fromEntries(classes.map((c) => [c.name, c]));
 
   // A trigger copies each class's latest lesson title into classes.lesson.
@@ -269,7 +276,9 @@ async function upsertCatalogue(userIds, today) {
   };
   await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title, videoUrl]) => {
     const month = monthStart(today, monthsAgo);
-    return { class_id: classByName[name].id, month, starts_on: month, title, video_url: videoUrl ?? null,
+    const cls = CLASSES.find((c) => c.name === name);
+    const kg = cls.opensThisMonth ? classByName[name].starts_on : firstWeekday(month, Math.min(...cls.schedules.map(([dow]) => dow)));
+    return { class_id: classByName[name].id, month, starts_on: kg, title, video_url: videoUrl ?? null,
       session_count: monthsAgo === 0 ? 8 : sessionsIn(name, month) };
   }), { onConflict: "class_id,starts_on" }), "class_lessons");
 
@@ -285,15 +294,21 @@ async function upsertCatalogue(userIds, today) {
 async function upsertEnrolments(userIds, classes, today) {
   const guests = USERS.filter((u) => u.role === "guest");
   const rows = [];
+  // Classes running for months take the usual mix; Girlstyle 1 (opened this month) five sign-ups the week before.
+  const older = classes.filter((c) => !CLASSES.find((d) => d.name === c.name).opensThisMonth);
+  const fresh = classes.filter((c) => CLASSES.find((d) => d.name === c.name).opensThisMonth);
   guests.forEach((g, i) => {
-    const picks = new Set([i % classes.length, (i * 3 + 1) % classes.length]);
-    if (i % 3 === 0) picks.add((i + 2) % classes.length);
+    const picks = new Set([i % older.length, (i * 3 + 1) % older.length]);
+    if (i % 3 === 0) picks.add((i + 2) % older.length);
     if (g.email === "guest@demo.oopsdance.test") {
       picks.clear();
-      classes.forEach((c, idx) => { if (["K-pop Cover Cơ Bản", "Hip-hop Foundation"].includes(c.name)) picks.add(idx); });
+      older.forEach((c, idx) => { if (["Trending", "K-pop Dance"].includes(c.name)) picks.add(idx); });
     }
     for (const idx of picks) {
-      rows.push({ class_id: classes[idx].id, student_id: userIds[g.email], joined_at: addDays(today, -(60 + (i * 7) % 41)) });
+      rows.push({ class_id: older[idx].id, student_id: userIds[g.email], joined_at: addDays(today, -(60 + (i * 7) % 41)) });
+    }
+    if (fresh.length && g.email !== "guest@demo.oopsdance.test" && i % 3 === 1) {
+      for (const c of fresh) rows.push({ class_id: c.id, student_id: userIds[g.email], joined_at: addDays(c.starts_on, -3) });
     }
   });
   await must(db.from("class_students").upsert(rows,
@@ -439,7 +454,10 @@ async function seedTuition() {
   const finance = await must(db.rpc("seed_demo_finance"), "seed_demo_finance");
   console.log(`✓ finance: ${finance.expenses} expenses (${finance.recurring} recurring), ${finance.switched} switched invoices`);
   const classes = await must(db.rpc("seed_demo_classes"), "seed_demo_classes");
-  console.log(`✓ classes: one ended (#${classes.past_class}), one opening next month (#${classes.upcoming_class})`);
+  console.log(`✓ classes: Newbie 1 and Newbie 2 opening ${classes.opens_on} (#${classes.upcoming_classes.join(", #")})`);
+  // The studio's rooms are closed for now: the classes are taught in two rented studios (rent charged per session).
+  await must(db.rpc("seed_demo_venues"), "seed_demo_venues");
+  console.log("✓ venues: the six rented studios on the timetable, each class at its own, rent charged for sessions taught");
 }
 
 // The admin's Activity page: a believable last week and a half from the data above (check-ins, roll calls,
@@ -455,12 +473,12 @@ async function seedPayroll(userIds, classes, today) {
   const monthStartOf = (monthsAgo) => monthStart(today, monthsAgo);
   await must(db.from("payroll_settings").update({ default_session_rate: 300000 }).eq("id", 1), "payroll_settings");
   await must(db.from("staff_salaries").upsert({ profile_id: userIds["staff@demo.oopsdance.test"], monthly_salary: 8000000 }), "staff_salaries");
-  const advanced = classes.filter((c) => ["K-pop Cover Nâng Cao", "Choreography Sáng Tạo"].includes(c.name));
+  const advanced = classes.filter((c) => ["Choreo BT", "Choreo CG"].includes(c.name));
   await must(db.from("class_pay_rates").upsert(advanced.map((c) => ({ class_id: c.id, session_rate: 350000 }))), "class_pay_rates");
   const admin = userIds["admin@demo.oopsdance.test"];
   await must(db.from("payroll_adjustments").insert([
     { profile_id: userIds["instructor2@demo.oopsdance.test"], month: monthStartOf(1), amount: -50000, reason: "Check-in trễ 15 phút", created_by: admin },
-    { profile_id: userIds["instructor@demo.oopsdance.test"], month: monthStartOf(1), amount: 200000, reason: "Dạy thay lớp Hip-hop Foundation", created_by: admin },
+    { profile_id: userIds["instructor@demo.oopsdance.test"], month: monthStartOf(1), amount: 200000, reason: "Dạy thay lớp Girlstyle 2", created_by: admin },
     { profile_id: userIds["staff@demo.oopsdance.test"], month: monthStartOf(1), amount: 500000, reason: "Thưởng hỗ trợ sự kiện cuối tháng", created_by: admin },
     { profile_id: userIds["instructor5@demo.oopsdance.test"], month: monthStartOf(0), amount: -30000, reason: "Về sớm 10 phút", created_by: admin },
   ]), "payroll_adjustments");

@@ -75,7 +75,7 @@ const GuestOverview = () => {
             <Hero
                 title={isNew ? t('Welcome, {name}!', { name: givenName(user) }) : `${t(greetingFor(studioHour()))}, ${givenName(user)}`}
                 summary={summary}
-                upNext={next && <UpNext session={next} today={today} room={next.cls.roomName} />}
+                upNext={next && <UpNext session={next} today={today} place={next.cls.place} />}
                 actions={actions}
             />
             <StatGrid

@@ -320,4 +320,13 @@ export default {
     '{count} people signed up': '{count} người đã đăng ký tài khoản',
     '{count} changes: {action}': '{count} thay đổi: {action}',
     '{actor} made {count} changes: {action}': '{actor} đã thực hiện {count} thay đổi: {action}',
+
+    // Extra tuition money
+    'Extra money moved': 'Chuyển tiền dư',
+    'Extra money given back': 'Trả lại tiền dư',
+    'Extra money taken back': 'Thu hồi tiền dư đã chuyển',
+    '{actor} moved {name}’s extra money to {other}': '{actor} đã chuyển tiền dư của {name} sang {other}',
+    '{actor} moved {name}’s extra money to another course': '{actor} đã chuyển tiền dư của {name} sang khoá khác',
+    '{actor} gave {name}’s extra money back': '{actor} đã trả lại tiền dư cho {name}',
+    '{actor} took {name}’s moved extra money back': '{actor} đã thu hồi tiền dư đã chuyển của {name}',
 };

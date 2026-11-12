@@ -44,10 +44,13 @@ export async function loadTuitionBoard() {
     );
     const progress = await listLessonProgress(classes.map((cls) => cls.id));
     const open = progress.filter((row) => row.status === 'current' || row.status === 'planned').map((row) => row.lesson_id);
-    let query = supabase
+    // Paid invoices still holding extra money stay on the board (its "Extra money" to-do) whatever their course.
+    const extraIds = unwrap(await supabase.rpc('tuition_extra_list').select('id')).map((row) => row.id);
+    const filters = [open.length && `lesson_id.in.(${open.join(',')})`, 'status.eq.unpaid', extraIds.length && `id.in.(${extraIds.join(',')})`].filter(Boolean);
+    const query = supabase
         .from('tuition_invoices')
-        .select(`${INVOICE}, student:profiles!student_id(${PERSON}), class:classes!class_id(${CLASS}), ${COURSE}`);
-    query = open.length ? query.or(`lesson_id.in.(${open.join(',')}),status.eq.unpaid`) : query.eq('status', 'unpaid');
+        .select(`${INVOICE}, student:profiles!student_id(${PERSON}), class:classes!class_id(${CLASS}), ${COURSE}`)
+        .or(filters.join(','));
     const invoices = unwrap(await query.order('class_name').order('student_name'));
     return { today, classes, progress, invoices };
 }
@@ -83,7 +86,7 @@ export async function loadStudentTuition(studentId) {
 //               day after the due date), soonest due first — one renewal question per student and course:
 //               { id, student_id, class_id, class_name, lesson_id, lesson_title, month, due_date }
 export async function loadTuitionTodo(today) {
-    const [overdue, unmatched, unanswered] = await Promise.all([
+    const [overdue, unmatched, unanswered, extra] = await Promise.all([
         supabase
             .from('tuition_invoices')
             .select('id, student_id, student_name, class_name, lesson_title, due_date')
@@ -99,6 +102,7 @@ export async function loadTuitionTodo(today) {
             .eq('paid_amount', 0)
             .gte('due_date', today)
             .order('due_date'),
+        supabase.rpc('tuition_extra_list').select('id, student_name, amount, paid_amount'),
     ]);
-    return { overdue: unwrap(overdue), unmatched: unwrap(unmatched), unanswered: unwrap(unanswered) };
+    return { overdue: unwrap(overdue), unmatched: unwrap(unmatched), unanswered: unwrap(unanswered), extra: unwrap(extra) };
 }

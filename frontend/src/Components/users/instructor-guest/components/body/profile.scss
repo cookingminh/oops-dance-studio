@@ -2359,6 +2359,16 @@
             font-size: .86rem;
             color: var(--ad-muted);
         }
+
+        // A rented studio adds its address under the name: the pin stays by the name.
+        small.pfSessionPlace {
+            align-items: flex-start;
+
+            > svg {
+                flex-shrink: 0;
+                margin-top: .2rem;
+            }
+        }
     }
 
     .pfSessionAction {

@@ -54,12 +54,7 @@ export default {
     'No record': 'Chưa ghi nhận',
 
     // Dashboard: booking requests
-    'Booking #{id} {status}.': 'Lượt đặt phòng #{id} {status}.',
     'Booking requests': 'Yêu cầu đặt phòng',
-    'Checking for new requests…': 'Đang kiểm tra yêu cầu mới…',
-    '{count} waiting for approval': '{count} yêu cầu chờ duyệt',
-    'Review all {count} requests': 'Xem cả {count} yêu cầu',
-    'Go to all bookings': 'Xem tất cả lượt đặt phòng',
     'No upcoming requests to review.': 'Không có yêu cầu nào cần duyệt.',
 
     // Dashboard: rooms

@@ -1,4 +1,4 @@
-import { LuChevronLeft, LuChevronRight, LuRepeat } from 'react-icons/lu';
+import { LuChevronLeft, LuChevronRight, LuRepeat, LuSparkles } from 'react-icons/lu';
 import { categoryOf } from '@/lib/expenseCategories';
 import { classImageUrl } from '@/services/storage';
 import { useI18n } from '@/i18n/i18nContext';
@@ -35,6 +35,20 @@ export const RecurringBadge = () => {
         <span className="exBadge" title={t('Added automatically by a recurring cost.')}>
             <LuRepeat aria-hidden="true" />
             {t('Monthly')}
+        </span>
+    );
+};
+
+// Why an automatic studio rent is there and when it goes (lib/expenseCategories.js isAutomaticRent).
+export const AUTO_RENT_HINT = 'Added by itself after each session at a rented studio, and taken off if that session is called off.';
+
+// "Automatic": a rented studio's rent for one session, added by the server.
+export const AutoRentBadge = () => {
+    const { t } = useI18n();
+    return (
+        <span className="exBadge isAuto" title={t(AUTO_RENT_HINT)}>
+            <LuSparkles aria-hidden="true" />
+            {t('Automatic')}
         </span>
     );
 };

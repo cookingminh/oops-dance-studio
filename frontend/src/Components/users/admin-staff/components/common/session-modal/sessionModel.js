@@ -1,4 +1,5 @@
 import { isoWeekdayOf } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { meetsOn } from '@/lib/lessons';
 import { classPhase } from '@/services/classes';
 import { classHue } from '@/Components/users/instructor-guest/components/body/profileHelpers';
@@ -131,7 +132,7 @@ export function calendarItem(session, { today, now, roll, t, byState = false, re
         start: session.start || '08:00',
         end: session.end || session.start || '09:00',
         title: byState ? t(state.key, state.vars) : session.cls.name,
-        subtitle: byState ? who : [who, session.cls.room?.name].filter(Boolean).join(' · '),
+        subtitle: byState ? who : [who, placeOf(session.row, session.cls).name].filter(Boolean).join(' · '),
         color: byState ? STATE_COLORS[state.kind] : classColor(session.cls.id),
         status,
         statusLabel: [byState ? '' : t(state.key, state.vars), late ? t('Late check-out') : ''].filter(Boolean).join(' · '),
@@ -160,11 +161,11 @@ export const statusKeyOf = (session, today, now) => STATUS_OF_KIND[sessionState(
 export const matchesStatus = (session, filter, today, now) =>
     filter === 'all' || (filter === 'makeup' ? session.extra : statusKeyOf(session, today, now) === filter);
 
-// Every word of `term` appears in the session's class, instructor, room, note or date.
+// Every word of `term` appears in the session's class, instructor, place, note or date.
 export function matchesSearch(session, term) {
     if (!term.trim()) return true;
     const teacher = teacherOf(session);
-    const haystack = fold([session.cls.name, personName(teacher), teacher?.email, session.cls.room?.name, session.row?.details, session.date].join(' '));
+    const haystack = fold([session.cls.name, personName(teacher), teacher?.email, placeOf(session.row, session.cls).name, session.row?.details, session.date].join(' '));
     return fold(term)
         .split(/\s+/)
         .filter(Boolean)

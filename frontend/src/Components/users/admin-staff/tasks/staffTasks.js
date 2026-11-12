@@ -32,9 +32,9 @@ export function sessionTimes(cls, isoDate) {
     return { start: formatTime(slot?.start_time), end: formatTime(slot?.end_time) };
 }
 
-// Tuition: students who are late, money waiting in the bank inbox, and renewals nobody has
-// answered yet (one task per month whose answers are still open).
-function buildTuitionTasks({ overdue, unmatched, unanswered }) {
+// Tuition: students who are late, money waiting in the bank inbox, invoices paid more than they cost,
+// and renewals nobody has answered yet (one task per month whose answers are still open).
+function buildTuitionTasks({ overdue, unmatched, unanswered, extra = [] }) {
     const tasks = [];
     if (overdue.length) {
         // One student can be late for several classes: name each person once.
@@ -59,6 +59,19 @@ function buildTuitionTasks({ overdue, unmatched, unanswered }) {
             title: count(unmatched.length, '{count} bank transfer to sort', '{count} bank transfers to sort'),
             detail: msg('{amount} received without an invoice code', { amount: formatVnd(total) }),
             to: `${TUITION_PAGE}?show=transfers`,
+        });
+    }
+    // Invoices paid more than they cost: move the extra on or give it back.
+    if (extra.length) {
+        const total = extra.reduce((sum, row) => sum + Number(row.paid_amount) - Number(row.amount), 0);
+        const names = [...new Set(extra.map((row) => row.student_name).filter(Boolean))];
+        tasks.push({
+            id: 'tuition-extra',
+            kind: 'tuition',
+            tone: 'normal',
+            title: count(extra.length, '{count} invoice holds extra money', '{count} invoices hold extra money'),
+            detail: msg('{amount} paid too much · {names}', { amount: formatVnd(total), names: names.slice(0, 3).join(', ') }),
+            to: `${TUITION_PAGE}?show=extra`,
         });
     }
     // One to-do per course whose renewal has unanswered students.

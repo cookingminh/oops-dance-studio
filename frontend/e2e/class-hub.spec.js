@@ -1,8 +1,9 @@
-// The class hub (/admin/classes): the directory's views, opening a class, and a whole class's
-// life on a test class made with the "New class" wizard — add a student, a make-up session today,
-// its roll call, the delete guard, ending and reopening, removing the student. The test class and
-// everything it created (enrolment, invoices, sessions, roll calls, routine) are removed with the
-// local service role, and the student's other records are checked to be exactly as before.
+// The class hub (/admin/classes): the directory's views (classes picked from the database, plus an ended
+// test class it adds), opening a past class, and a whole class's life on a test class made with the "New
+// class" wizard — add a student, a make-up session today, its roll call, the delete guard, ending and
+// reopening, removing the student. The test classes and everything they created (enrolment, invoices,
+// sessions, roll calls, routine) are removed with the local service role, and the student's other records
+// are checked to be exactly as before.
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -15,6 +16,8 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const HUB = '/admin/classes';
 const PREFIX = 'E2E Hub';
 const NAME = `${PREFIX} ${Date.now()}`;
+const PAST = `${PREFIX} Past ${Date.now()}`; // an ended class the spec adds for the Past view
+const TEACHER_EMAIL = 'instructor@demo.oopsdance.test';
 const STUDENT_EMAIL = 'guest08@demo.oopsdance.test';
 // Every table a class's life writes to, child tables first (the class itself last).
 const CLASS_TABLES = ['student_attendance', 'instructor_attendance', 'tuition_invoices', 'class_students', 'class_schedules', 'class_lessons'];
@@ -45,6 +48,12 @@ let today;
 let student; // { id, full_name }
 let before; // the student's own rows before the run
 let classId;
+let teacher; // { id, full_name } who teaches the wizard's class
+let running; // two running classes: [{ id, name }]
+let upcoming; // a class opening later, or undefined
+
+// Lower case without accents, as the directory's search compares.
+const fold = (text) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase();
 
 // Everything of the student outside test classes: it must be untouched at the end.
 async function studentRows(key, studentId) {
@@ -76,6 +85,15 @@ test.beforeAll(async ({ browser }) => {
     student = (await rest(staff, `profiles?select=id,full_name&email=eq.${STUDENT_EMAIL}`)).data[0];
     expect(student, `${STUDENT_EMAIL} exists (seed)`).toBeTruthy();
     before = await studentRows(serviceKey(), student.id);
+    teacher = (await rest(staff, `profiles?select=id,full_name&email=eq.${TEACHER_EMAIL}`)).data[0];
+    running = (await rest(staff, `classes?select=id,name&starts_on=lte.${today}&ended_on=is.null&order=name`)).data;
+    expect(running.length, 'two running classes').toBeGreaterThanOrEqual(2);
+    upcoming = (await rest(staff, `classes?select=id,name&starts_on=gt.${today}&ended_on=is.null&order=starts_on,name&limit=1`)).data[0];
+    // An ended class (the demo has none): two months, over ten days ago.
+    ok(await rest(serviceKey(), 'classes', {
+        method: 'POST',
+        body: { name: PAST, instructor_id: teacher.id, price: 500000, starts_on: addDays(today, -70), ended_on: addDays(today, -10), end_reason: 'E2E past class' },
+    }), 'add the past class');
 
     page = await browser.newPage();
     page.on('dialog', (dialog) => dialog.accept());
@@ -98,17 +116,19 @@ test('the directory shows today, this month, upcoming, past and the timetable', 
     await page.goto(`${HUB}?view=month`);
     const views = page.getByRole('group', { name: 'Show classes' });
     await expect(views.getByRole('button', { name: /^Today/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'K-pop Cover Cơ Bản' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Hip-hop Summer Camp' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: running[0].name, exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: PAST })).toHaveCount(0);
 
     await views.getByRole('button', { name: /^Upcoming/ }).click();
     await expect(page).toHaveURL(/view=upcoming/);
-    const upcoming = page.getByRole('link', { name: 'Waacking Basics' });
-    await expect(upcoming).toBeVisible();
-    await expect(upcoming).toContainText('Opens');
+    if (upcoming) {
+        const card = page.getByRole('link', { name: upcoming.name, exact: true });
+        await expect(card).toBeVisible();
+        await expect(card).toContainText('Opens');
+    }
 
     await views.getByRole('button', { name: /^Past/ }).click();
-    await expect(page.getByRole('link', { name: 'Hip-hop Summer Camp' })).toContainText('Sessions taught');
+    await expect(page.getByRole('link', { name: PAST })).toContainText('Sessions taught');
 
     await views.getByRole('button', { name: 'Timetable' }).click();
     await expect(page.getByRole('heading', { name: 'Weekly timetable' })).toBeVisible();
@@ -116,19 +136,20 @@ test('the directory shows today, this month, upcoming, past and the timetable', 
     await views.getByRole('button', { name: /^Today/ }).click();
     await expect(page.locator('.hubToday, .hubDirectory').first()).toBeVisible();
 
-    // Search narrows the cards (accents don't matter).
+    // Search narrows the cards (typed without accents).
+    const [found, other] = [running[0], running.find((cls) => !fold(cls.name).includes(fold(running[0].name)))];
     await views.getByRole('button', { name: /^This month/ }).click();
-    await page.getByRole('textbox', { name: 'Search classes' }).fill('nang cao');
-    // exact: today's list (fading out) also has "Take the roll call for K-pop Cover Nâng Cao".
-    await expect(page.getByRole('link', { name: 'K-pop Cover Nâng Cao', exact: true })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'K-pop Cover Cơ Bản', exact: true })).toHaveCount(0);
+    await page.getByRole('textbox', { name: 'Search classes' }).fill(fold(found.name));
+    // exact: today's list (fading out) may also have "Take the roll call for …".
+    await expect(page.getByRole('link', { name: found.name, exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: other.name, exact: true })).toHaveCount(0);
 });
 
 test('opening a past class shows its page, read-only', async () => {
     await page.goto(`${HUB}?view=past`);
-    await page.getByRole('link', { name: 'Hip-hop Summer Camp' }).click();
+    await page.getByRole('link', { name: PAST }).click();
     await expect(page).toHaveURL(new RegExp(`${HUB}/\\d+$`));
-    await expect(page.getByRole('heading', { name: /Hip-hop Summer Camp/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: new RegExp(PAST) })).toBeVisible();
     await expect(page.getByText('This class has ended')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Add student' })).toHaveCount(0);
 
@@ -145,7 +166,7 @@ test('the New class wizard creates a class with a weekly session and its first r
 
     // 1. Details (no room: a test class blocks nothing; it starts today by default).
     await dialog.getByLabel('Class Name').fill(NAME);
-    await pickOption(page, dialog, 'Instructor', 'Ami');
+    await pickOption(page, dialog, 'Instructor', teacher.full_name);
     await dialog.getByLabel('Price (VND)').fill('500000');
     await dialog.getByRole('button', { name: 'Create class' }).click();
     await expectToast(page, `${NAME} created.`);

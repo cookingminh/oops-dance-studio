@@ -2,33 +2,44 @@ import { motion } from 'framer-motion';
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@nextui-org/react';
 import { LuClock, LuPlus } from 'react-icons/lu';
 import { WEEKDAYS, formatTime, isoWeekdayOf } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard from '../../../../common/SectionCard';
+import { SERIES } from '../../../../common/chartTheme';
 import { fadeUp, stagger } from '../../../../common/motion';
 
-// Monday → Sunday columns; each block is one weekly session, tinted with its room's colour.
-// Clicking a block opens edit / delete.
+const NO_PLACE = 'hsl(240, 4%, 60%)';
+
+// Monday → Sunday columns; each block is one weekly session, tinted with its place's colour: a room keeps
+// its colour, the rented studios in use take the next ones. Clicking a block opens edit / delete.
 const WeeklyTimetable = ({ state, today, rooms, roomColor, actions }) => {
     const { t, dayName } = useI18n();
     const sessions = (state.data ?? []).flatMap((cls) =>
         cls.schedules.map((schedule) => ({ ...schedule, class_id: cls.id, cls }))
     );
     const todayDow = today ? isoWeekdayOf(today) : null;
+    const venues = [...new Map((state.data ?? []).filter((cls) => cls.venue).map((cls) => [cls.venue.id, cls.venue])).values()].sort((a, b) => a.id - b.id);
+    const venueColor = new Map(venues.map((venue, index) => [venue.id, SERIES[((rooms ?? []).length + index) % SERIES.length]]));
+    const colorOf = (cls) => (cls.venue_id ? venueColor.get(cls.venue_id) : roomColor.get(cls.room_id)) ?? NO_PLACE;
+    const legend = [
+        ...(rooms ?? []).map((room) => ({ key: `room-${room.id}`, name: room.name, color: roomColor.get(room.id) })),
+        ...venues.map((venue) => ({ key: `venue-${venue.id}`, name: venue.name, color: venueColor.get(venue.id) })),
+    ];
 
     return (
         <SectionCard
             className="classScheduleDiv"
             icon={LuClock}
             title={t('Weekly timetable')}
-            subtitle={t('{count} sessions a week · colours show the room', { count: sessions.length })}
+            subtitle={t('{count} sessions a week · colours show where', { count: sessions.length })}
             actions={
                 <>
                     <span className="roomLegend">
-                        {(rooms ?? []).map((room) => (
-                            <span key={room.id}>
-                                <span className="segDot" style={{ background: roomColor.get(room.id) }} aria-hidden="true" />
-                                {room.name}
+                        {legend.map((item) => (
+                            <span key={item.key}>
+                                <span className="segDot" style={{ background: item.color }} aria-hidden="true" />
+                                {item.name}
                             </span>
                         ))}
                     </span>
@@ -59,7 +70,7 @@ const WeeklyTimetable = ({ state, today, rooms, roomColor, actions }) => {
                                                     <button
                                                         type="button"
                                                         className="slotBlock"
-                                                        style={{ '--room': roomColor.get(s.cls.room_id) ?? 'hsl(240, 4%, 60%)' }}
+                                                        style={{ '--room': colorOf(s.cls) }}
                                                         aria-label={t('{name}, {day} {start} to {end}', {
                                                             name: s.cls.name,
                                                             day: dayName(day.value),
@@ -71,7 +82,7 @@ const WeeklyTimetable = ({ state, today, rooms, roomColor, actions }) => {
                                                             {formatTime(s.start_time)}–{formatTime(s.end_time)}
                                                         </span>
                                                         <strong>{s.cls.name}</strong>
-                                                        <span className="slotRoom">{s.cls.room?.name ?? t('No room')}</span>
+                                                        <span className="slotRoom">{placeOf(s.cls).name ?? t('No room')}</span>
                                                     </button>
                                                 </DropdownTrigger>
                                                 <DropdownMenu aria-label={t('Session actions')}>

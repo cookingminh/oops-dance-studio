@@ -5,6 +5,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { getFinanceByClass } from '@/services/finance';
 import { avatarUrl } from '@/services/storage';
 import { formatVnd } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import SectionCard from '../../../../common/SectionCard';
@@ -110,7 +111,7 @@ const OverviewTab = ({ ctx }) => {
                                 <span>
                                     <strong>{personName(teacher) || t('No instructor')}</strong>
                                     <small>
-                                        {cls.room?.name ?? t('No room')}
+                                        {placeOf(next.row, cls).name ?? t('No room')}
                                         {next.row?.is_extra ? ` · ${t('Make-up')}` : ''}
                                     </small>
                                 </span>

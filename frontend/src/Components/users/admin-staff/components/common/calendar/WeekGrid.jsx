@@ -18,7 +18,10 @@ const WeekGrid = ({ days, byDate, today, now, minHour, maxHour, lanes, onSelect,
     const isos = days.map(toIso);
     const showsToday = isos.includes(today);
     const nowMinutes = minutesOf(now);
-    const nowVisible = showsToday && nowMinutes >= range.start && nowMinutes <= range.end;
+    // Outside the hours shown, "now" stays on today's column: pinned to the top (before opening) or the
+    // bottom (after closing), dashed and with the time, so it isn't read as the first or last hour.
+    const nowOutside = nowMinutes < range.start ? 'before' : nowMinutes > range.end ? 'after' : null;
+    const nowAt = Math.min(Math.max(nowMinutes, range.start), range.end);
     const hasLanes = Boolean(lanes?.length);
     const { drag, handlersFor } = useSlotDrag({ range, onPick: onSlotClick });
 
@@ -41,7 +44,15 @@ const WeekGrid = ({ days, byDate, today, now, minHour, maxHour, lanes, onSelect,
     }, [weekKey, Number.isFinite(firstStart), hasLanes]);
 
     const nowLine = (iso) =>
-        iso === today && nowVisible && <span className="calNow" style={{ top: `${((nowMinutes - range.start) / (range.end - range.start)) * 100}%` }} aria-hidden="true" />;
+        iso === today && (
+            <span
+                className={`calNow${nowOutside ? ` isOutside is-${nowOutside}` : ''}`}
+                style={{ top: `${((nowAt - range.start) / (range.end - range.start)) * 100}%` }}
+                aria-hidden="true"
+            >
+                {nowOutside && <span className="calNowTime">{t('Now {time}', { time: now })}</span>}
+            </span>
+        );
     const trackProps = { slots, range, onSelect, selectable: Boolean(onSlotClick), slotLabel, drag };
 
     return (

@@ -7,11 +7,12 @@ import { useRoleLabel } from '@/hooks/useRoleLabel';
 import { studioDateLabel } from '@/lib/format';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import LanguageSwitch from '@/ui/LanguageSwitch';
+import PageGuideButton from '@/ui/guide/PageGuideButton';
 import { useI18n } from '@/i18n/i18nContext';
 
-// Workspace top bar, shared by /admin and /profile: the current page's title and description,
-// optional `actions` (the staff to-do bell), today's date and who is signed in (which opens
-// `settingsPath`).
+// Workspace top bar, shared by /admin and /profile: the current page's title and description, the
+// page's guide (?), optional `actions` (the staff to-do bell), today's date and who is signed in (which
+// opens `settingsPath`).
 const TopBar = ({ onOpenMenu, findPage, settingsPath, actions = null }) => {
     const { user } = useAuth();
     const { t, intl } = useI18n();
@@ -43,6 +44,7 @@ const TopBar = ({ onOpenMenu, findPage, settingsPath, actions = null }) => {
 
             <div className="topBarRight">
                 <LanguageSwitch />
+                <PageGuideButton pageTo={page.to} />
                 {actions}
                 <span className="datePill">
                     <LuCalendarDays aria-hidden="true" />

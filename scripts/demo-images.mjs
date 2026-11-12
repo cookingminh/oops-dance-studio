@@ -7,8 +7,8 @@
 //   node demo-images.mjs           # SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY from ../.env
 //
 // Sources (read only, committed):
-//   scripts/demo-assets/<name>_rmbg.webp           → avatars/{instructor_id}/avatar.webp    (profiles.avatar_path)
-//   scripts/demo-assets/dolinh_class_*.webp        → class-images/{class_id}/{uuid}.webp    (classes.image_path = first)
+//   scripts/demo-assets/<teacher>.webp             → avatars/{instructor_id}/avatar.webp    (profiles.avatar_path)
+//   scripts/demo-assets/class_*.webp               → class-images/{class_id}/{uuid}.webp    (classes.image_path = first)
 //   frontend/src/assets/images/room{N}-*.webp      → site-assets/rooms/{room_id}/{file}     (rooms.image_paths, in order)
 //   scripts/demo-assets/promo_*.mp4 / .jpg         → class-promos/{class_id}/{lesson_id}/…  (class_lessons.promo_*)
 // Missing sources are skipped with a note. Idempotent: deterministic object
@@ -23,21 +23,28 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-// The legacy homepage's cut-out photos and Đỗ Linh's class photos, as WebP.
+// The teachers' photos and the November timetable posters, as WebP.
 const DEMO_ASSETS_DIR = resolve(REPO_ROOT, "scripts", "demo-assets");
 const ROOM_PHOTOS_DIR = resolve(REPO_ROOT, "frontend", "src", "assets", "images");
 
-// Demo instructor (api-contract §11) → cut-out photo from the legacy homepage.
+// Demo instructor (api-contract §11) → their photo.
 const AVATARS = [
-  ["instructor@demo.oopsdance.test",  "ami_rmbg.webp"],
-  ["instructor2@demo.oopsdance.test", "bin_rmbg.webp"],
-  ["instructor3@demo.oopsdance.test", "dolinh_rmbg.webp"],
-  ["instructor4@demo.oopsdance.test", "chaeng_rmbg.webp"],
-  ["instructor5@demo.oopsdance.test", "ducbo_rmbg.webp"],
+  ["instructor@demo.oopsdance.test",  "dolinh.webp"],
+  ["instructor2@demo.oopsdance.test", "soleck.webp"],
+  ["instructor3@demo.oopsdance.test", "antrinh.webp"],
+  ["instructor4@demo.oopsdance.test", "vananh.webp"],
+  ["instructor5@demo.oopsdance.test", "ducanh.webp"],
 ];
-// Đỗ Linh's class photos; the first becomes the class image.
+// Each class's timetable poster; the first file becomes the class image.
 const CLASS_IMAGES = [
-  ["Contemporary & Jazz", ["dolinh_class_1.webp", "dolinh_class_2.webp"]],
+  ["Trending", ["class_trending.webp"]],
+  ["Choreo CG", ["class_choreo_cg.webp"]],
+  ["K-pop Dance", ["class_kpop_dance.webp"]],
+  ["Girlstyle 2", ["class_girlstyle_2.webp"]],
+  ["Choreo BT", ["class_choreo_bt.webp"]],
+  ["Girlstyle 1", ["class_girlstyle_1.webp"]],
+  ["Newbie 1", ["class_newbie.webp"]],
+  ["Newbie 2", ["class_newbie.webp"]],
 ];
 // Demo room → prefix of its bundled photo set (the frontend's old position rule).
 const ROOM_PHOTOS = [
@@ -47,9 +54,8 @@ const ROOM_PHOTOS = [
 
 // A planned routine (by title) → its instructor's promo clip, poster frame, length and line for students.
 // The demo instructor's own next routine gets none, so their overview asks them to film it.
-const PROMOS = [
-  ["Vogue — Madonna", "promo_vogue.mp4", "promo_vogue.jpg", 8, "Arms, poses and attitude. New to waacking? Perfect, we start from zero."],
-];
+// (None in the November demo: the teachers film their own.)
+const PROMOS = [];
 
 const CONTENT_TYPES = { ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".mp4": "video/mp4" };
 

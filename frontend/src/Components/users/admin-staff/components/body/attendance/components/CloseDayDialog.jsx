@@ -6,6 +6,7 @@ import { LuAlertTriangle, LuArrowRight, LuCalendarCheck, LuCalendarPlus, LuCheck
 import { useAsync } from '@/hooks/useAsync';
 import { closeStudioDay } from '@/services/sessionChanges';
 import { formatTime, formatVnd } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { bookingReceived } from '@/services/bookingPayments';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
@@ -198,7 +199,7 @@ const CloseDayDialog = ({ today, classes, onClose, onChanged }) => {
                                                                     <span className="scgAside">
                                                                         {session.off === 'cancelled' && t('Already called off')}
                                                                         {session.off === 'started' && t('Already started')}
-                                                                        {!session.off && (personName(session.row?.instructor ?? session.cls.instructor) || session.cls.room?.name)}
+                                                                        {!session.off && (personName(session.row?.instructor ?? session.cls.instructor) || placeOf(session.row, session.cls).name)}
                                                                     </span>
                                                                 </li>
                                                             ))}

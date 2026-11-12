@@ -1,0 +1,1227 @@
+// Page guides: the (?) button, the guide dialog (gm*) and the worked examples (gx*).
+// Rendered in a portal, so every token has a fallback.
+
+$ink: var(--ad-text, hsl(0, 0%, 12%));
+$muted: var(--ad-muted, hsl(240, 4%, 44%));
+$subtle: var(--ad-subtle, hsl(240, 4%, 60%));
+$border: var(--ad-border, hsl(20, 10%, 91%));
+$surface: var(--ad-surface, #fff);
+$surface2: var(--ad-surface-2, hsl(20, 14%, 95.5%));
+$primary: var(--ad-primary, hsl(0, 66%, 43%));
+$primarySoft: var(--ad-primary-soft, hsl(0, 85%, 96%));
+$ease: cubic-bezier(.22, 1, .36, 1);
+
+// The (?) button ====================>
+
+.gdHelpWrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.adminShell .iconButton.gdHelp {
+    position: relative;
+
+    &.isFresh::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border: 2px solid $primary;
+        border-radius: 15px;
+        animation: gdPulse 2s ease-out infinite;
+        pointer-events: none;
+    }
+}
+
+@keyframes gdPulse {
+    0% {
+        opacity: .8;
+        transform: scale(.92);
+    }
+
+    70%,
+    100% {
+        opacity: 0;
+        transform: scale(1.18);
+    }
+}
+
+.gdHint {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: -6px;
+    z-index: 60;
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    width: max-content;
+    max-width: 15rem;
+    padding: .55rem .55rem .55rem .8rem;
+    border-radius: 12px;
+    background: $ink;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.35;
+    box-shadow: 0 12px 30px -12px hsla(0, 0%, 0%, .45);
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -5px;
+        right: 18px;
+        width: 10px;
+        height: 10px;
+        background: $ink;
+        transform: rotate(45deg);
+    }
+
+    button {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 1.3rem;
+        height: 1.3rem;
+        border-radius: 50%;
+        color: hsla(0, 0%, 100%, .7);
+
+        &:hover {
+            color: #fff;
+            background: hsla(0, 0%, 100%, .14);
+        }
+    }
+}
+
+// The guide dialog ====================>
+
+.gmDialog {
+    max-height: calc(100vh - 3rem);
+    border-radius: 24px;
+
+    .gmHead {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        padding: 1.25rem 3.2rem .9rem 1.5rem;
+    }
+
+    .gmIcon {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 14px;
+        background: $primarySoft;
+        color: $primary;
+        font-size: 1.35rem;
+    }
+
+    .gmTitle {
+        margin: 0;
+        padding: 0;
+        color: $ink;
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.25;
+    }
+
+    // The page in a sentence or two, above the numbered parts (it scrolls with them).
+    .gmIntro {
+        margin: 0 .2rem .85rem;
+        color: $muted;
+        font-size: .95rem;
+        font-weight: 500;
+        line-height: 1.55;
+    }
+
+    .gmBody {
+        padding: .25rem 1.5rem 1rem;
+    }
+
+    .gmSections {
+        display: grid;
+        gap: .85rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .gmSection {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+        align-items: start;
+        gap: 1.1rem;
+        padding: 1rem;
+        border: 1px solid $border;
+        border-radius: 18px;
+
+        &.isTextOnly {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .gmText {
+        display: grid;
+        gap: .5rem;
+
+        h3 {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            margin: 0;
+            color: $ink;
+            font-size: 1.02rem;
+            font-weight: 700;
+        }
+
+        > p {
+            margin: 0;
+            color: $ink;
+            font-size: .92rem;
+            line-height: 1.6;
+        }
+    }
+
+    .gmNumber {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        background: $ink;
+        color: #fff;
+        font-size: .78rem;
+        font-weight: 700;
+    }
+
+    .gmTip {
+        display: flex;
+        gap: .45rem;
+        margin: .1rem 0 0;
+        padding: .5rem .65rem;
+        border-radius: 10px;
+        background: hsl(45, 95%, 93%);
+        color: hsl(32, 70%, 28%);
+        font-size: .84rem;
+        line-height: 1.45;
+
+        svg {
+            flex-shrink: 0;
+            margin-top: .15rem;
+        }
+    }
+
+    .gmExample {
+        display: grid;
+        gap: .55rem;
+        margin: 0;
+        padding: .75rem .85rem .85rem;
+        border-radius: 14px;
+        background: $surface2;
+
+        figcaption {
+            color: $muted;
+            font-size: .68rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+    }
+
+    .gmOutro {
+        margin: .9rem .2rem 0;
+        color: $muted;
+        font-size: .9rem;
+        line-height: 1.55;
+    }
+
+    .gmFoot {
+        display: flex;
+        justify-content: flex-end;
+        padding: .85rem 1.5rem 1.1rem;
+        border-top: 1px solid $border;
+    }
+
+    .gmDone {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: .4rem;
+        height: 2.6rem;
+        margin-left: auto;
+        padding: 0 1.2rem;
+        border-radius: 999px;
+        background: $primary;
+        color: #fff;
+        font-size: .92rem;
+        font-weight: 700;
+        transition: background-color .2s ease, transform .25s $ease;
+
+        &:hover {
+            background: var(--ad-primary-strong, hsl(0, 66%, 36%));
+            transform: translateY(-1px);
+        }
+
+        &:focus-visible {
+            outline: 2px solid $primary;
+            outline-offset: 2px;
+        }
+    }
+}
+
+@media (max-width: 720px) {
+    .gmDialog {
+        .gmHead {
+            gap: .7rem;
+            padding: 1rem 3rem .75rem 1.1rem;
+        }
+
+        .gmIcon {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 12px;
+            font-size: 1.15rem;
+        }
+
+        .gmTitle {
+            font-size: 1.1rem;
+        }
+
+        .gmBody {
+            padding: .2rem 1.1rem .9rem;
+        }
+
+        .gmSection {
+            grid-template-columns: minmax(0, 1fr);
+            padding: .85rem;
+        }
+
+        .gmFoot {
+            padding: .7rem 1.1rem .9rem;
+        }
+
+        .gmDone {
+            flex: 1;
+            justify-content: center;
+            margin-left: 0;
+        }
+    }
+}
+
+// Worked examples ====================>
+
+.gxCallout {
+    margin: 0;
+    color: $ink;
+    font-size: .8rem;
+    line-height: 1.45;
+}
+
+.gxLegend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem .75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: $muted;
+    font-size: .74rem;
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+    }
+
+    i {
+        width: .6rem;
+        height: .6rem;
+        border-radius: 3px;
+    }
+}
+
+.gxColumns {
+    display: grid;
+    gap: .5rem;
+}
+
+.gxColumnsPlot {
+    display: flex;
+    align-items: flex-end;
+    gap: .8rem;
+    height: 7.5rem;
+    padding: 0 .3rem;
+    border-bottom: 1px solid $border;
+}
+
+.gxColumn {
+    display: grid;
+    flex: 1;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    height: 100%;
+    margin-bottom: -1.3rem;
+
+    .gxColumnTotal {
+        align-self: end;
+        margin-bottom: .4rem;
+        color: $muted;
+        font-size: .7rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .gxColumnStack {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 2px;
+        align-self: end;
+        width: 70%;
+        max-width: 3rem;
+
+        i {
+            min-height: 3px;
+            border-radius: 3px;
+        }
+    }
+
+    .gxColumnLabel {
+        margin-top: .35rem;
+        color: $muted;
+        font-size: .72rem;
+    }
+
+    &.isOn {
+        .gxColumnStack {
+            outline: 2px solid $ink;
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        .gxColumnTotal,
+        .gxColumnLabel {
+            color: $ink;
+        }
+    }
+}
+
+.gxColumns .gxLegend {
+    margin-top: 1.1rem;
+}
+
+.gxSplits,
+.gxBars {
+    display: grid;
+    gap: .45rem;
+}
+
+.gxSplit,
+.gxBar {
+    display: grid;
+    grid-template-columns: minmax(5.5rem, 9.5rem) minmax(3rem, 1fr) 1.8rem;
+    align-items: center;
+    gap: .5rem;
+    font-size: .76rem;
+}
+
+.gxSplitLabel,
+.gxBarLabel {
+    overflow: hidden;
+    color: $ink;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.gxSplitTotal,
+.gxBarValue {
+    color: $muted;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.gxSplitBar {
+    display: flex;
+    gap: 2px;
+    height: .8rem;
+
+    i {
+        border-radius: 3px;
+    }
+}
+
+.gxBarTrack {
+    height: .7rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: hsla(0, 0%, 0%, .05);
+
+    i {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+    }
+}
+
+.gxBar.isLow .gxBarLabel,
+.gxBar.isLow .gxBarValue {
+    color: hsl(32, 80%, 35%);
+    font-weight: 700;
+}
+
+.gxTableWrap {
+    display: grid;
+    gap: .45rem;
+}
+
+.gxTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .76rem;
+    font-variant-numeric: tabular-nums;
+
+    th,
+    td {
+        padding: .3rem .4rem;
+        border-bottom: 1px solid $border;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    th:first-child {
+        text-align: left;
+    }
+
+    thead th {
+        color: $muted;
+        font-weight: 700;
+    }
+
+    tbody th {
+        font-weight: 600;
+    }
+}
+
+.gxTiles {
+    display: grid;
+    gap: .45rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        --gx-tone: #{$primary};
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: .6rem;
+        align-items: center;
+        padding: .45rem .55rem;
+        border-radius: 12px;
+        background: $surface;
+
+        strong {
+            font-size: .84rem;
+        }
+
+        span:last-child {
+            grid-column: 2;
+            color: $muted;
+            font-size: .76rem;
+        }
+    }
+
+    .gxTileIcon {
+        display: grid;
+        grid-row: span 2;
+        place-items: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 10px;
+        background: color-mix(in srgb, var(--gx-tone) 14%, white);
+        color: var(--gx-tone);
+    }
+}
+
+.gxControls {
+    display: grid;
+    gap: .45rem;
+}
+
+.gxSegment {
+    display: inline-flex;
+    justify-self: start;
+    gap: .2rem;
+    padding: .2rem;
+    border-radius: 999px;
+    background: $surface;
+    box-shadow: inset 0 0 0 1px $border;
+    font-size: .76rem;
+    font-weight: 600;
+
+    span {
+        padding: .25rem .7rem;
+        border-radius: 999px;
+        color: $muted;
+
+        &.isOn {
+            background: $ink;
+            color: #fff;
+        }
+    }
+}
+
+// A key: sample | meaning, one per line.
+.gxKey {
+    display: grid;
+    gap: .6rem;
+
+    // One grid for all lines, so the samples share a column as wide as the widest (up to 11rem).
+    ul {
+        display: grid;
+        grid-template-columns: fit-content(11rem) minmax(0, 1fr);
+        align-items: center;
+        gap: .55rem .75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        display: contents;
+    }
+
+    .gxKeySample {
+        display: flex;
+        min-width: 0;
+    }
+
+    .gxKeyText {
+        color: $ink;
+        font-size: .78rem;
+        line-height: 1.4;
+    }
+}
+
+// A calendar block (mirrors the calendars' items).
+.gxBlock {
+    --gx-accent: #2a78d6;
+    display: grid;
+    justify-items: start;
+    gap: 1px;
+    width: 100%;
+    min-width: 0;
+    padding: .3rem .45rem .32rem .5rem;
+    border: 1px solid color-mix(in srgb, var(--gx-accent) 32%, white);
+    border-left: 3px solid var(--gx-accent);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--gx-accent) 13%, white);
+    color: $ink;
+    font-size: .72rem;
+    line-height: 1.25;
+
+    b {
+        color: color-mix(in srgb, var(--gx-accent) 62%, black);
+        font-size: .66rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .gxBlockTitle {
+        max-width: 100%;
+        overflow: hidden;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gxBlockBadge {
+        max-width: 100%;
+        overflow: hidden;
+        margin-top: 1px;
+        padding: 0 .38rem;
+        border: 1px solid color-mix(in srgb, var(--gx-accent) 35%, white);
+        border-radius: 999px;
+        background: #fff;
+        color: color-mix(in srgb, var(--gx-accent) 60%, black);
+        font-size: .6rem;
+        font-weight: 700;
+        line-height: 1.45;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+
+        &.is-pending {
+            border-color: hsl(40, 90%, 72%);
+            background: hsl(45, 100%, 93%);
+            color: hsl(30, 88%, 30%);
+        }
+
+        &.is-paid {
+            border-color: hsl(150, 50%, 74%);
+            background: hsl(150, 60%, 95%);
+            color: hsl(152, 60%, 26%);
+        }
+    }
+
+    &.tone-dashed {
+        border: 1.5px dashed var(--gx-accent);
+        border-left: 3px solid var(--gx-accent);
+        background: color-mix(in srgb, var(--gx-accent) 6%, white);
+    }
+
+    &.tone-muted {
+        border-color: $border;
+        border-left-color: color-mix(in srgb, var(--gx-accent) 40%, hsl(0, 0%, 80%));
+        background: hsl(20, 14%, 97%);
+        color: $muted;
+
+        b {
+            color: $muted;
+        }
+    }
+
+    &.tone-class {
+        border: 0;
+        border-left: 3px solid color-mix(in srgb, var(--gx-accent) 45%, white);
+        border-radius: 6px;
+        background:
+            repeating-linear-gradient(135deg, color-mix(in srgb, var(--gx-accent) 12%, transparent) 0 6px, transparent 6px 12px),
+            hsla(20, 14%, 97%, .9);
+        color: $muted;
+
+        b {
+            color: $muted;
+        }
+    }
+
+    &.isGlow {
+        border-color: hsl(0, 78%, 50%);
+        border-left-color: hsl(0, 78%, 50%);
+        animation: gxOwingGlow 2.4s ease-in-out infinite;
+    }
+}
+
+@keyframes gxOwingGlow {
+    0%,
+    100% {
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .5), 0 0 6px 1px hsla(0, 85%, 55%, .3);
+    }
+
+    50% {
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .9), 0 0 14px 3px hsla(0, 85%, 55%, .55);
+    }
+}
+
+// A filter chip (mirrors the bookings toolbar's).
+.gxChip {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    max-width: 100%;
+    height: 2.1rem;
+    padding: 0 .7rem;
+    border: 1px solid $border;
+    border-radius: 12px;
+    background: $surface;
+    color: $muted;
+    font-size: .76rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    .gxChipLabel {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .gxChipCount {
+        padding: 0 .4rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 0%, .06);
+        font-size: .68rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &.isOn {
+        color: hsl(30, 88%, 32%);
+
+        .gxChipCount {
+            background: hsl(42, 100%, 90%);
+            color: hsl(30, 88%, 32%);
+        }
+    }
+}
+
+// Label / value lines.
+.gxFieldsWrap {
+    display: grid;
+    gap: .55rem;
+}
+
+.gxFieldsCard {
+    padding: .2rem .7rem;
+    border-radius: 12px;
+    background: $surface;
+}
+
+.gxFieldsTitle {
+    margin: 0;
+    padding: .45rem 0 .35rem;
+    border-bottom: 1px solid $border;
+    color: $ink;
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.gxFields {
+    margin: 0;
+
+    .gxField {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .38rem 0;
+        border-bottom: 1px solid $border;
+        font-size: .78rem;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    dt {
+        display: grid;
+        color: $muted;
+
+        small {
+            color: $subtle;
+            font-size: .68rem;
+        }
+    }
+
+    dd {
+        margin: 0;
+        color: $ink;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+    }
+
+    .is-strong dd {
+        font-weight: 800;
+    }
+
+    .is-due {
+        dt {
+            color: $primary;
+            font-weight: 700;
+        }
+
+        dd {
+            color: $primary;
+            font-size: .9rem;
+            font-weight: 800;
+        }
+    }
+
+    .is-good dd {
+        color: hsl(152, 60%, 30%);
+    }
+}
+
+// A stretch of time in zones, with a marker.
+.gxZonesWrap {
+    display: grid;
+    gap: .6rem;
+}
+
+.gxZones {
+    position: relative;
+    padding-top: 1.6rem;
+    padding-bottom: 1.3rem;
+}
+
+.gxZoneMarker {
+    position: absolute;
+    top: 0;
+    bottom: 1.3rem;
+    width: 0;
+    border-left: 2px solid $ink;
+
+    span {
+        position: absolute;
+        top: -.1rem;
+        left: 0;
+        padding: .1rem .45rem;
+        border-radius: 999px;
+        background: $ink;
+        color: #fff;
+        font-size: .66rem;
+        font-weight: 700;
+        white-space: nowrap;
+        transform: translateX(-50%);
+    }
+}
+
+.gxZoneBar {
+    display: flex;
+    gap: 2px;
+    height: 1.7rem;
+
+    .gxZone {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        overflow: hidden;
+        padding: 0 .4rem;
+        font-size: .7rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &:first-child {
+            border-radius: 8px 0 0 8px;
+        }
+
+        &:last-child {
+            border-radius: 0 8px 8px 0;
+        }
+
+        &.is-full {
+            background: hsl(150, 55%, 88%);
+            color: hsl(152, 60%, 24%);
+        }
+
+        &.is-part {
+            background: hsl(45, 100%, 86%);
+            color: hsl(30, 88%, 28%);
+        }
+
+        &.is-none {
+            background: hsl(0, 80%, 92%);
+            color: hsl(0, 66%, 36%);
+        }
+    }
+}
+
+.gxZoneTicks {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1.1rem;
+
+    span {
+        position: absolute;
+        top: 0;
+        color: $muted;
+        font-size: .66rem;
+        white-space: nowrap;
+        transform: translateX(-50%);
+
+        &.isStart {
+            transform: none;
+        }
+
+        &.isEnd {
+            transform: translateX(-100%);
+        }
+    }
+}
+
+// A stat card.
+.gxStat {
+    --gx-tone: #c42b2b;
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    width: 100%;
+    min-width: 0;
+    padding: .5rem .6rem;
+    border: 1px solid $border;
+    border-radius: 12px;
+    background: $surface;
+
+    .gxStatIcon {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 1.8rem;
+        height: 1.8rem;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--gx-tone) 13%, white);
+        color: var(--gx-tone);
+        font-size: .9rem;
+    }
+
+    .gxStatText {
+        display: grid;
+        min-width: 0;
+        line-height: 1.25;
+
+        strong {
+            color: $ink;
+            font-size: .95rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+        }
+
+        span {
+            color: $muted;
+            font-size: .68rem;
+        }
+
+        small {
+            color: $muted;
+            font-size: .64rem;
+            font-weight: 700;
+
+            &.is-bad {
+                color: $primary;
+            }
+
+            &.is-good {
+                color: hsl(152, 60%, 30%);
+            }
+        }
+    }
+}
+
+// List rows.
+.gxListWrap {
+    display: grid;
+    gap: .55rem;
+}
+
+.gxList {
+    display: grid;
+    gap: .35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.gxListRow {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    min-width: 0;
+    padding: .45rem .55rem;
+    border-radius: 10px;
+    background: $surface;
+    font-size: .74rem;
+}
+
+.gxListLead {
+    display: grid;
+    flex-shrink: 0;
+    min-width: 2.4rem;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+
+    b {
+        color: $ink;
+        font-size: .74rem;
+    }
+
+    small {
+        color: $subtle;
+        font-size: .64rem;
+    }
+}
+
+.gxListDot {
+    flex-shrink: 0;
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: $subtle;
+
+    &.is-urgent {
+        background: $primary;
+    }
+
+    &.is-normal {
+        background: hsl(38, 92%, 50%);
+    }
+
+    &.is-later {
+        background: hsl(217, 60%, 60%);
+    }
+}
+
+.gxListAvatar {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    border-radius: 50%;
+    background: hsla(0, 0%, 0%, .07);
+    color: $muted;
+    font-size: .6rem;
+    font-weight: 700;
+}
+
+.gxListMain {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+    line-height: 1.3;
+
+    .gxListTitle {
+        color: $ink;
+        font-weight: 600;
+    }
+
+    .gxListSub {
+        overflow: hidden;
+        color: $muted;
+        font-size: .68rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .gxListMore {
+        color: $primary;
+        font-size: .66rem;
+        font-weight: 600;
+    }
+}
+
+.gxListValue {
+    flex-shrink: 0;
+    color: $ink;
+    font-size: .72rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.gxListActions {
+    display: inline-flex;
+    flex-shrink: 0;
+    gap: .25rem;
+}
+
+.gxAct {
+    display: grid;
+    place-items: center;
+    width: 1.45rem;
+    height: 1.45rem;
+    border-radius: 7px;
+    font-size: .75rem;
+
+    &.is-approve {
+        background: hsl(145, 63%, 42%);
+        color: #fff;
+    }
+
+    &.is-reject {
+        background: hsl(0, 85%, 93%);
+        color: $primary;
+    }
+}
+
+.gxTag {
+    flex-shrink: 0;
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 0%, .06);
+    color: $muted;
+    font-size: .62rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-pending,
+    &.is-late {
+        background: hsl(45, 100%, 91%);
+        color: hsl(30, 88%, 30%);
+    }
+
+    &.is-live {
+        background: hsl(217, 90%, 94%);
+        color: hsl(217, 70%, 38%);
+    }
+
+    &.is-good {
+        background: hsl(150, 60%, 92%);
+        color: hsl(152, 60%, 26%);
+    }
+
+    &.is-role {
+        background: $primarySoft;
+        color: $primary;
+    }
+}
+
+// Pills with counts.
+.gxTagsWrap {
+    display: grid;
+    gap: .55rem;
+}
+
+.gxTags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+
+.gxPill {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .2rem .55rem;
+    border: 1px solid $border;
+    border-radius: 999px;
+    background: $surface;
+    color: $ink;
+    font-size: .7rem;
+    font-weight: 600;
+    white-space: nowrap;
+
+    svg {
+        color: $muted;
+    }
+
+    .gxPillCount {
+        padding: 0 .35rem;
+        border-radius: 999px;
+        background: hsla(0, 0%, 0%, .06);
+        color: $muted;
+        font-size: .62rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &.isOn {
+        border-color: $ink;
+        background: $ink;
+        color: #fff;
+
+        svg {
+            color: #fff;
+        }
+
+        .gxPillCount {
+            background: hsla(0, 0%, 100%, .2);
+            color: #fff;
+        }
+    }
+}
+
+@media (max-width: 720px) {
+    .gxKey ul {
+        grid-template-columns: fit-content(9rem) minmax(0, 1fr);
+        column-gap: .6rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .iconButton.gdHelp.isFresh::after {
+        animation: none;
+        opacity: .6;
+    }
+
+    .gxBlock.isGlow {
+        animation: none;
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .7), 0 0 10px 2px hsla(0, 85%, 55%, .45);
+    }
+}

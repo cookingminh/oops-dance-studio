@@ -1,4 +1,5 @@
 import {
+    LuBuilding2,
     LuCamera,
     LuCircleEllipsis,
     LuClapperboard,
@@ -24,5 +25,6 @@ export const CATEGORY_ICONS = {
     events: LuPartyPopper,
     maintenance: LuWrench,
     supplies: LuShoppingBasket,
+    venue_rent: LuBuilding2,
     other: LuCircleEllipsis,
 };

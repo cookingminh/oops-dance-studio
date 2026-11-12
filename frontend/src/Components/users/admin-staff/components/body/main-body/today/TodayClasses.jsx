@@ -7,6 +7,7 @@ import { listInstructorAttendance } from '@/services/attendance';
 import { getStudioToday } from '@/services/studio';
 import { classImageUrl } from '@/services/storage';
 import { formatTime, isoWeekdayOf } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { statusColorMap } from '../../../../../../Table/utils';
 import AsyncState from '@/ui/feedback/AsyncState';
@@ -72,7 +73,7 @@ const TodayClasses = () => {
                         {list.slice(0, PREVIEW).map((session) => {
                             const { key, cls, start, end, status } = session;
                             const phase = phaseOf(session, now);
-                            const people = [cls.instructor?.full_name || cls.instructor?.username, cls.room?.name].filter(Boolean);
+                            const people = [cls.instructor?.full_name || cls.instructor?.username, placeOf(cls).name].filter(Boolean);
                             return (
                                 <li key={key} className={`timelineItem is-${phase}`}>
                                     <div className="timelineTime">

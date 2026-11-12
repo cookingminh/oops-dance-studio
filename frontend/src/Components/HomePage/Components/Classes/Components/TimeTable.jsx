@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { TiSocialFacebook } from 'react-icons/ti';
+import { LuMapPin } from 'react-icons/lu';
 import { getStudioToday } from '@/services/studio';
 import { avatarUrl } from '@/services/storage';
 import { WEEKDAYS, formatTime, isoWeekdayOf } from '@/lib/format';
+import { publicPlaceOf } from '@/lib/place';
+import { PlaceDetails } from '@/ui/place/PlaceParts';
 import { useI18n } from '@/i18n/i18nContext';
 import timetable_bg from '@/assets/images/timetable-bg.webp';
 import brush from '@/assets/images/timetable-class-bg.webp';
@@ -12,7 +15,8 @@ import { SOCIALS } from '../../NavBar/contactInfo';
 // Vietnamese month names are lowercase ("tháng 11 năm 2026"); this one starts a line.
 const capitalize = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
-// The week at a glance: one column per day (ISO weekday 1–7), sessions in time order.
+// The week at a glance: one column per day (ISO weekday 1–7), sessions in time order, each naming where
+// it is taught; the places (a rented studio with its address and map link) are listed above.
 // Compact on purpose; on small screens the columns scroll sideways. `onPick(classId)` makes each
 // session a button that shows that class's card.
 const TimeTable = ({ classes, onPick }) => {
@@ -23,12 +27,13 @@ const TimeTable = ({ classes, onPick }) => {
         getStudioToday().then(setToday).catch(() => setToday(format(new Date(), 'yyyy-MM-dd')));
     }, []);
 
-    const { days, count } = useMemo(() => {
+    const { days, count, places } = useMemo(() => {
         const sessions = (classes.data ?? []).flatMap((item) =>
-            (item.schedules ?? []).map((s) => ({ ...s, start: formatTime(s.start_time), end: formatTime(s.end_time), cls: item }))
+            (item.schedules ?? []).map((s) => ({ ...s, start: formatTime(s.start_time), end: formatTime(s.end_time), cls: item, place: publicPlaceOf(item) }))
         );
         return {
             count: sessions.length,
+            places: [...new Map(sessions.filter((s) => s.place.name).map((s) => [s.place.name, s.place])).values()],
             days: WEEKDAYS.map((day) => ({
                 ...day,
                 sessions: sessions.filter((s) => s.day_of_week === day.value).sort((a, b) => a.start.localeCompare(b.start)),
@@ -54,6 +59,17 @@ const TimeTable = ({ classes, onPick }) => {
                     </a>
                 </header>
 
+                {places.length > 0 && (
+                    <ul className="hpTimetablePlaces" aria-label={t('Where we dance')} data-aos="fade-up">
+                        {places.map((place) => (
+                            <li key={place.name}>
+                                <LuMapPin aria-hidden="true" />
+                                <PlaceDetails place={place} />
+                            </li>
+                        ))}
+                    </ul>
+                )}
+
                 {count === 0 ? (
                     <p className="hpTimetableEmpty">{classes.loading ? t('Loading the timetable…') : t('The timetable will be published soon.')}</p>
                 ) : (
@@ -72,7 +88,9 @@ const TimeTable = ({ classes, onPick }) => {
                                 </div>
                                 {day.sessions.length === 0 && <span className="weekDayOff">{t('Rest day')}</span>}
                                 {day.sessions.map((s) => {
-                                    const label = t('{name} with {instructor}, {start}–{end}', { name: s.cls.name, instructor: s.cls.instructor_name, start: s.start, end: s.end });
+                                    const label = [t('{name} with {instructor}, {start}–{end}', { name: s.cls.name, instructor: s.cls.instructor_name, start: s.start, end: s.end }), s.place.name]
+                                        .filter(Boolean)
+                                        .join(' · ');
                                     const Slot = onPick ? 'button' : 'div';
                                     return (
                                         <Slot
@@ -90,6 +108,7 @@ const TimeTable = ({ classes, onPick }) => {
                                                     <img className="instructor" src={avatarUrl(s.cls.instructor_avatar_path)} alt={s.cls.instructor_name} loading="lazy" />
                                                 )}
                                             </span>
+                                            {s.place.name && <span className="weekSlotPlace">{s.place.name}</span>}
                                         </Slot>
                                     );
                                 })}

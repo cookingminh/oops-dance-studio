@@ -7,6 +7,7 @@ import { ROLES } from '@/auth/roles';
 import { deleteClass, getClass, listLessonProgress, reopenClass } from '@/services/classes';
 import { listGuests, listInstructors } from '@/services/users';
 import { listRooms } from '@/services/rooms';
+import { listVenues } from '@/services/venues';
 import { getStudioToday } from '@/services/studio';
 import { isoWeekdayOf } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
@@ -69,6 +70,7 @@ const ClassPage = () => {
     const history = useAsync(() => getClassHistory(classId), [classId]);
     const instructors = useAsync(listInstructors, []);
     const rooms = useAsync(listRooms, []);
+    const venues = useAsync(listVenues, []);
     const [dialog, setDialog] = useState(null); // 'enrol' | 'edit' | 'image'
     const guests = useAsync(() => (dialog === 'enrol' ? listGuests() : Promise.resolve(undefined)), [dialog === 'enrol']);
     const [version, setVersion] = useState(0);
@@ -166,6 +168,7 @@ const ClassPage = () => {
         history: history.data,
         instructors: instructors.data ?? [],
         rooms: rooms.data ?? [],
+        venues: venues.data ?? [],
         params,
         setTab,
         openEnrol: () => setDialog('enrol'),
@@ -228,6 +231,7 @@ const ClassPage = () => {
                     classRow={cls}
                     instructors={instructors.data ?? []}
                     rooms={rooms.data ?? []}
+                    venues={venues.data ?? []}
                     onClose={() => setDialog(null)}
                     onSaved={() => {
                         setDialog(null);

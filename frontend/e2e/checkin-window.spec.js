@@ -1,24 +1,26 @@
-// The check-in window and a late check-out (supabase/migrations/20261117001100_checkin_window.sql), on Ami's
-// session today (its own times set over REST around the clock, so it works at any hour):
+// The check-in window and a late check-out (supabase/migrations/20261117001100_checkin_window.sql), on the demo
+// instructor's session today (a make-up added for the run on a day she doesn't teach; its own times set over REST
+// around the clock, so it works at any hour):
 //   * starting in 30 minutes: the button waits — "Check-in opens at HH:MM" — and the server refuses too;
 //   * already over: "The session is over — ask the studio to record it";
 //   * ended more than 10 minutes ago, checked in: the check-out says it is late, works, and the session is
 //     marked "Late check-out";
 //   * staff correct the times in the session dialog with a reason (Attendance), the late mark follows the
 //     times, the badge shows on today's board, and the activity log has the entry with before → after.
-// The session row is put back exactly as it was.
+// The session row is put back exactly as it was (an added one is removed).
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { ANON, API, PROOF, expectToast, login, rest, rpc, staffJwt, studioToday, todaysSessions, token } from './support.js';
+import { ANON, API, PROOF, dropSessionToday, expectToast, login, rest, rpc, sessionToday, staffJwt, studioToday, token } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
-const EMAIL = 'instructor@demo.oopsdance.test'; // Ami teaches every day
+const EMAIL = 'instructor@demo.oopsdance.test';
 const FIELDS = 'status,start_time,end_time,checkin_at,checkout_at,checkout_late,checkin_proof_path,checkout_proof_path';
 
 let today;
 let staff; // { jwt, name }
-let me; // Ami: { jwt, id, name }
+let me; // the instructor: { jwt, id, name }
+let mine; // her session today (sessionToday)
 let session; // { id, class_id, className }
 let original; // the row's FIELDS as they were
 let insPage;
@@ -54,20 +56,19 @@ async function uploadProof(kind) {
     return path;
 }
 
-// Ami's card for the session on her check-in page.
+// Her card for the session on her check-in page.
 const sessionCard = () => insPage.locator('.pfSession').filter({ hasText: session.className });
 
 test.beforeAll(async ({ browser }) => {
     today = await studioToday();
-    const mine = (await todaysSessions()).find((s) => s.instructor?.email === EMAIL);
-    expect(mine, 'Ami has a session today').toBeTruthy();
+    mine = await sessionToday(EMAIL);
     const jwt = await staffJwt();
     const row = (await rest(jwt, `instructor_attendance?select=id,class_id,${FIELDS},class:classes!class_id(name)&id=eq.${mine.id}`)).data[0];
     const { id, class_id: classId, class: cls, ...fields } = row;
     session = { id, class_id: classId, className: cls.name };
     original = fields;
-    const ami = await token(EMAIL);
-    me = { ...ami, name: (await rest(jwt, `profiles?select=full_name&id=eq.${ami.id}`)).data[0].full_name };
+    const teacher = await token(EMAIL);
+    me = { ...teacher, name: (await rest(jwt, `profiles?select=full_name&id=eq.${teacher.id}`)).data[0].full_name };
     staff = { name: (await rest(jwt, 'profiles?select=full_name&email=eq.staff@demo.oopsdance.test')).data[0].full_name };
 
     insPage = await (await browser.newContext()).newPage();
@@ -79,7 +80,8 @@ test.beforeAll(async ({ browser }) => {
 });
 
 test.afterAll(async () => {
-    if (session) {
+    if (session && mine.added) await dropSessionToday(mine);
+    else if (session) {
         await setRow(original);
         expect(await rowNow()).toEqual(original);
     }

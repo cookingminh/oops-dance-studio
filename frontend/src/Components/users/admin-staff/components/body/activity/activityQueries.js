@@ -2,12 +2,15 @@ import { supabase } from '@/lib/supabase';
 import { unwrap } from '@/services/errors';
 import { foldSearch } from '@/services/activity';
 
-// Read-only lookups for the Activity page (admins read every profile, room and class):
+// Read-only lookups for the Activity page (admins read every profile, room, rented studio and class):
 // avatars and current roles for the people in the log, and names for ids in "what changed".
 export async function loadLookups() {
-    const [profiles, rooms, classes, members] = await Promise.all([
+    const [profiles, rooms, venues, venueLog, classes, members] = await Promise.all([
         supabase.from('profiles').select('id, full_name, username, email, role, avatar_path, updated_at'),
         supabase.from('rooms').select('id, name'),
+        supabase.from('venues').select('id, name'),
+        // A rented studio deleted since keeps its name in its own log rows.
+        supabase.from('activity_log').select('entity_id, label').eq('entity', 'venues').order('id'),
         supabase.from('classes').select('id, name'),
         supabase.from('class_students').select('student_id'),
     ]);
@@ -26,6 +29,10 @@ export async function loadLookups() {
     return {
         people,
         rooms: new Map(unwrap(rooms).map((room) => [room.id, room.name])),
+        venues: new Map([
+            ...unwrap(venueLog).map((row) => [Number(row.entity_id), row.label]),
+            ...unwrap(venues).map((venue) => [venue.id, venue.name]),
+        ]),
         classes: new Map(unwrap(classes).map((cls) => [cls.id, cls.name])),
     };
 }

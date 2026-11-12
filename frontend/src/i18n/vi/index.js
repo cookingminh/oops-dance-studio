@@ -24,6 +24,8 @@ import refunds from './refunds';
 import sessionChanges from './sessionChanges';
 import bookingRooms from './bookingRooms';
 import checkins from './checkins';
+import guides from './guides';
+import venues from './venues';
 
 // One flat English → Vietnamese map. Areas live in their own files; later files win on clashes.
-export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity, ...payments, ...promos, ...dues, ...refunds, ...sessionChanges, ...bookingRooms, ...checkins };
+export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity, ...payments, ...promos, ...dues, ...refunds, ...sessionChanges, ...bookingRooms, ...checkins, ...guides, ...venues };

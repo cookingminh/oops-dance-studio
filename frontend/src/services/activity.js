@@ -38,6 +38,7 @@ import { unwrap } from './errors';
 //              bonus_added · deduction_added · adjustment_changed · adjustment_removed [month, amount, reason]
 //              salary_set · salary_removed [salary, from] · rate_set · rate_removed (label = class) [rate, from]
 //   rooms      created · updated · photos_changed · deleted [size, price]
+//              venue_added · venue_changed (changes) · venue_removed — a rented studio (entity venues) [rent, address, active]
 //   users      account_created (actor null = signed up themselves) · account_deleted · role_changed [role, from]
 //              profile_edited [email, role]
 //   settings   updated (label 'Payroll' | 'Tuition'; see changes)

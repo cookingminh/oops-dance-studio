@@ -225,6 +225,26 @@ export async function assignTransfer(transferId, invoiceId) {
     return unwrap(await supabase.rpc('tuition_assign_transfer', { p_transfer: transferId, p_invoice: invoiceId }));
 }
 
+// Extra money: a paid invoice holding more than its price (a transfer bigger than the course, one put on
+// the wrong course, a class switch). Staff move it onto another unpaid invoice or record that it went back
+// to the student (tuition_extra_moves; api-contract §5).
+export const extraOf = (invoice) => (invoice?.status === 'paid' ? Math.max(0, Number(invoice.paid_amount) - Number(invoice.amount)) : 0);
+
+// Invoices holding extra money, newest payment first.
+export async function listExtraInvoices() {
+    return unwrap(await supabase.rpc('tuition_extra_list'));
+}
+
+// Move `amount` (default: as much as fits) of an invoice's extra onto another unpaid invoice → that invoice.
+export async function moveExtra(invoiceId, toInvoiceId, amount = null) {
+    return unwrap(await supabase.rpc('tuition_move_extra', { p_invoice: invoiceId, p_to_invoice: toInvoiceId, p_amount: amount }));
+}
+
+// Record that `amount` (default: all) of the extra went back to the student, in cash or by transfer.
+export async function refundExtra(invoiceId, { amount = null, method = 'cash', note = null } = {}) {
+    return unwrap(await supabase.rpc('tuition_refund_extra', { p_invoice: invoiceId, p_amount: amount, p_method: method, p_note: note }));
+}
+
 // Not tuition (a room deposit, a refund…), or back to the inbox with ignore = false.
 export async function ignoreTransfer(transferId, ignore = true, note = null) {
     return unwrap(await supabase.rpc('tuition_ignore_transfer', { p_transfer: transferId, p_ignore: ignore, p_note: note }));

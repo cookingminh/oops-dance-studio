@@ -9,8 +9,14 @@ test.describe.configure({ mode: 'serial' });
 const REASON = `E2E late check-in ${Date.now()}`;
 let page;
 let dialog;
+let teacher; // the instructor whose payslip the spec works on (name): the one with the most sessions this month
 
 test.beforeAll(async ({ browser }) => {
+    const admin = await token('admin@demo.oopsdance.test');
+    const today = await studioToday();
+    const rows = (await rpc(admin.jwt, 'payroll_month', { p_month: `${today.slice(0, 7)}-01` })).data;
+    teacher = rows.filter((row) => row.role === 'instructor').sort((a, b) => b.sessions - a.sessions)[0]?.full_name;
+    expect(teacher, 'an instructor on this month’s payroll').toBeTruthy();
     page = await browser.newPage();
     page.on('dialog', (d) => d.accept());
     dialog = page.getByRole('dialog');
@@ -33,13 +39,13 @@ test('admin sees this month’s payroll', async () => {
     await page.goto('/admin/payroll');
     expect(pathname(page)).toBe('/admin/payroll');
     await expect(page.getByText('Total payroll')).toBeVisible();
-    await expect(page.locator('.payRow').filter({ hasText: 'Bin' })).toBeVisible();
+    await expect(teacherRow()).toBeVisible();
 });
 
-const binRow = () => page.locator('.payRow').filter({ hasText: 'Bin' });
+const teacherRow = () => page.locator('.payRow').filter({ hasText: teacher });
 
 test('adds a deduction with a reason', async () => {
-    await binRow().click();
+    await teacherRow().click();
     await expect(dialog.getByText('Payslip for')).toBeVisible();
     await dialog.getByLabel('Amount (VND)').fill('12000');
     await dialog.getByLabel('Reason').fill(REASON);
@@ -55,10 +61,10 @@ test('finalize freezes it, reopen unlocks it', async () => {
     await dialog.getByRole('button', { name: 'Finalize payslip' }).click();
     await expectToast(page, 'Payslip finalized.');
     await expect(dialog.getByText('Reopen the payslip to change bonuses or deductions.')).toBeVisible();
-    await expect(binRow()).toContainText('Finalized');
+    await expect(teacherRow()).toContainText('Finalized');
     await dialog.getByRole('button', { name: 'Reopen' }).click();
     await expectToast(page, 'Payslip reopened.');
-    await expect(binRow()).toContainText('Draft');
+    await expect(teacherRow()).toContainText('Draft');
 });
 
 test('cleanup: the deduction is removed', async () => {
@@ -71,30 +77,30 @@ test('cleanup: the deduction is removed', async () => {
 
 // ---- The payslip's calendar ------------------------------------------------------------------
 
-// This month's payslip of Bin: { month, row (payroll_month), sessions (instructor_attendance) }.
-async function binMonth(jwt) {
+// This month's payslip of the teacher: { month, row (payroll_month), sessions (instructor_attendance) }.
+async function teacherMonth(jwt) {
     const today = await studioToday();
     const month = `${today.slice(0, 7)}-01`;
     const next = addDays(`${today.slice(0, 7)}-28`, 7).slice(0, 7);
-    const row = (await rpc(jwt, 'payroll_month', { p_month: month })).data.find((item) => item.full_name === 'Bin');
+    const row = (await rpc(jwt, 'payroll_month', { p_month: month })).data.find((item) => item.full_name === teacher);
     const sessions = (await rest(jwt, `instructor_attendance?select=id,class_id,status&instructor_id=eq.${row.profile_id}&date=gte.${month}&date=lt.${next}-01`)).data;
     return { today, month, row, sessions };
 }
 
-async function openBin() {
+async function openTeacher() {
     if (await dialog.count()) {
         await dialog.getByRole('button', { name: 'Close' }).last().click();
         await expect(dialog).toHaveCount(0);
     }
-    await binRow().click();
+    await teacherRow().click();
     await expect(dialog.getByText('Payslip for')).toBeVisible();
 }
 
 test('the payslip shows its month on a calendar, the legend matches the lines', async () => {
     const admin = await token('admin@demo.oopsdance.test');
-    const { month, row, sessions } = await binMonth(admin.jwt);
+    const { month, row, sessions } = await teacherMonth(admin.jwt);
     const completed = sessions.filter((session) => session.status === 'completed');
-    await openBin();
+    await openTeacher();
 
     // Calendar is the default view; the month is fixed (no ‹ Today ›).
     const views = dialog.getByRole('group', { name: 'Show sessions as' });
@@ -147,9 +153,9 @@ test('the payslip shows its month on a calendar, the legend matches the lines', 
 
 test('a session taught as a substitute has its badge', async () => {
     const admin = await token('admin@demo.oopsdance.test');
-    const { today, month, row, sessions } = await binMonth(admin.jwt);
+    const { today, month, row, sessions } = await teacherMonth(admin.jwt);
     const next = addDays(`${month.slice(0, 7)}-28`, 7).slice(0, 7);
-    // A planned weekly session later this month of a class Bin doesn't teach.
+    // A planned weekly session later this month of a class the teacher doesn't teach.
     const planned = (
         await rest(
             admin.jwt,
@@ -161,7 +167,7 @@ test('a session taught as a substitute has its badge', async () => {
     const patch = await rest(admin.jwt, `instructor_attendance?id=eq.${original.id}`, { method: 'PATCH', body: { instructor_id: row.profile_id } });
     expect(patch.status).toBeLessThan(300);
     try {
-        await openBin();
+        await openTeacher();
         const calendar = dialog.locator('.payCalendar');
         await expect(calendar.locator('.calChip')).toHaveCount(sessions.length + 1);
         const chip = calendar.getByRole('button', { name: new RegExp(`${cls.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}.*Substitute`) });

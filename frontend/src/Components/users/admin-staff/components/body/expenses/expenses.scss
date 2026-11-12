@@ -79,6 +79,12 @@ $grey-soft: hsl(240, 5%, 94%);
         font-size: .72rem;
         font-weight: 700;
         white-space: nowrap;
+
+        // A rented studio's rent, added by the server.
+        &.isAuto {
+            background: $green-soft;
+            color: $green;
+        }
     }
 
     .exLinkButton {
@@ -1629,4 +1635,10 @@ $grey-soft: hsl(240, 5%, 94%);
             flex-wrap: wrap;
         }
     }
+}
+
+// The automatic studio rent's explanation (a portal).
+.exTip {
+    max-width: 18rem;
+    line-height: 1.4;
 }

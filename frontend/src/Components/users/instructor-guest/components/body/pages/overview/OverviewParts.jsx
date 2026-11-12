@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { LuArrowUpRight } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { studioDateLabel } from '@/lib/format';
+import { MapLink } from '@/ui/place/PlaceParts';
 import CountUp from '../../../../../admin-staff/components/common/CountUp';
 import { fadeUp, stagger } from '../../../../../admin-staff/components/common/motion';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
@@ -35,8 +36,8 @@ export const Hero = ({ title, summary, upNext, actions }) => {
     );
 };
 
-// The next session as a frosted strip inside the hero.
-export const UpNext = ({ session, today, room }) => {
+// The next session as a frosted strip inside the hero; `place` (lib/place.js) with a rented studio's map link.
+export const UpNext = ({ session, today, place }) => {
     const { t } = useI18n();
     return (
         <div className={`pfUpNext${session.isLive ? ' isLive' : ''}`}>
@@ -49,7 +50,8 @@ export const UpNext = ({ session, today, room }) => {
                 </strong>
                 <span>
                     <DayName date={session.date} today={today} style="weekday" /> · {session.start}–{session.end}
-                    {room && ` · ${room}`}
+                    {place?.name && ` · ${place.name}`}
+                    <MapLink place={place} compact className="isInherit" />
                 </span>
             </span>
             {!session.isLive && (

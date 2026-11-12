@@ -1,7 +1,8 @@
 import { Button } from '@nextui-org/react';
-import { LuAlarmClock, LuCheckCheck, LuClock, LuDoorOpen, LuInfo, LuLogIn, LuLogOut, LuTimer } from 'react-icons/lu';
+import { LuAlarmClock, LuCheckCheck, LuClock, LuInfo, LuLogIn, LuLogOut, LuTimer } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { sessionTimesOf } from '@/lib/lessons';
+import { PlaceDetails, PlaceIcon } from '@/ui/place/PlaceParts';
 import { canCheckOut, checkInWindow, checkOutLate, nextSessionOf } from '../../profileHelpers';
 import LateTag from '../../../../../admin-staff/components/common/checkins/LateTag';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
@@ -97,8 +98,8 @@ export const NextSessionCard = ({ cls, today, now, isInstructor, onCheck }) => {
                                 <span>{t('Instead of {day}', { day: changeDay(next.makesUp, i18n) })}</span>
                             </li>
                         )}
-                        <li>
-                            <LuDoorOpen aria-hidden="true" /> <span>{cls.roomName ?? t('No room')}</span>
+                        <li className="pfNextPlace">
+                            <PlaceIcon place={cls.place} /> <PlaceDetails place={cls.place} empty={t('No room')} />
                         </li>
                     </ul>
                 </>

@@ -18,6 +18,8 @@ import {
     setRenewal,
     simulateTransfer,
     undoPayment,
+    moveExtra,
+    refundExtra,
     waiveInvoice,
 } from '@/services/tuition';
 import { loadTuitionBoard } from '@/services/tuitionStaff';
@@ -38,6 +40,7 @@ import { TransferHistory } from './TransferInbox';
 import TuitionSettings from './TuitionSettings';
 import ExportDialog from './ExportDialog';
 import PaymentDialog from './PaymentDialog';
+import ExtraDialog from './ExtraDialog';
 import AdjustDialog from './AdjustDialog';
 import PaymentCodeDialog from './PaymentCodeDialog';
 import AssignDialog from './AssignDialog';
@@ -46,7 +49,7 @@ import BookingAssignDialog from './BookingAssignDialog';
 import './tuition.scss';
 
 // Where the to-do bell's links land (?show=…); the to-do card when that group is empty.
-const SECTIONS = { overdue: 'tuition-late', transfers: 'tuition-transfers', renewal: 'tuition-classes' };
+const SECTIONS = { overdue: 'tuition-late', transfers: 'tuition-transfers', extra: 'tuition-extra', renewal: 'tuition-classes' };
 
 // /admin/tuition (staff + admin): studio-wide money work only. A one-line summary of the running
 // courses with the search and a ⋯ menu (export, the daily check, payment settings for admins); "To do"
@@ -142,6 +145,12 @@ const Tuition = () => {
     };
 
     // Row buttons and menu.
+    // Undo a payment (asks first); true when it worked.
+    const undo = async (invoice) => {
+        if (!window.confirm(t('Undo the {amount} payment from {name}? Transfers that paid it go back to the inbox.', { amount: formatVnd(invoice.paid_amount), name: invoice.student_name }))) return false;
+        return run(invoice.id, () => undoPayment(invoice.id), t('Payment undone.'));
+    };
+
     const onAction = (kind, invoice) => {
         switch (kind) {
             case 'pay':
@@ -152,9 +161,11 @@ const Tuition = () => {
             case 'note':
                 setDialog({ kind, invoice });
                 break;
+            case 'extra':
+                setDialog({ kind, invoice });
+                break;
             case 'undo':
-                if (!window.confirm(t('Undo the {amount} payment from {name}? Transfers that paid it go back to the inbox.', { amount: formatVnd(invoice.paid_amount), name: invoice.student_name }))) return;
-                run(invoice.id, () => undoPayment(invoice.id), t('Payment undone.'));
+                undo(invoice);
                 break;
             case 'reopen':
                 run(invoice.id, () => reopenInvoice(invoice.id), t('Invoice reopened.'));
@@ -278,6 +289,21 @@ const Tuition = () => {
                             ? run(dialog.invoice.id, () => waiveInvoice(dialog.invoice.id, note), t('{course} waived for {name}.', { course: courseOf(dialog.invoice), name: dialog.invoice.student_name }))
                             : run(dialog.invoice.id, () => setInvoiceAmount(dialog.invoice.id, amount, note), t('Amount changed to {amount}.', { amount: formatVnd(amount) }))
                     }
+                />
+            )}
+            {dialog?.kind === 'extra' && (
+                <ExtraDialog
+                    invoice={dialog.invoice}
+                    onClose={close}
+                    onMove={({ to, amount }) =>
+                        run(dialog.invoice.id, () => moveExtra(dialog.invoice.id, to.id, amount), t('{amount} moved to “{course}”.', { amount: formatVnd(amount), course: courseOf(to) }))
+                    }
+                    onRefund={({ amount, method, note }) =>
+                        run(dialog.invoice.id, () => refundExtra(dialog.invoice.id, { amount, method, note }), t('{amount} recorded as given back to {name}.', { amount: formatVnd(amount), name: dialog.invoice.student_name }))
+                    }
+                    onUndo={async () => {
+                        if (await undo(dialog.invoice)) close();
+                    }}
                 />
             )}
             {dialog?.kind === 'note' && (

@@ -119,6 +119,11 @@ $amber-soft: hsl(40, 95%, 92%);
         svg {
             color: var(--ad-subtle);
         }
+
+        // A rented studio's map link stands out from the icons.
+        .placeMapLink svg {
+            color: var(--ad-primary);
+        }
     }
 
     // ---- State badge (the shell's phaseBadge, here outside the shell) --------------------------

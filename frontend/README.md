@@ -107,13 +107,17 @@ reset. CI runs them on every push.
 ```
 src/
   App.jsx                 routes + guards (lazy-loaded areas)
-  lib/                    supabase client, image preparation (HEIC → JPEG, resize, WebP), formatting
+  lib/                    supabase client, image preparation (HEIC → JPEG, resize, WebP), formatting,
+                          place.js (a class's or session's place: room or rented studio)
   services/               the only code that talks to Supabase: auth, users, rooms, classes,
                           schedules, bookings, attendance, stats, storage, studio, errors
   auth/                   AuthProvider (session + profile), RequireRole, PublicOnly, roles
   hooks/useAsync.js       loading / error / reload state for service calls
   i18n/                   English / Vietnamese: provider, t()/tn(), date formatting, vi/*.js dictionaries
-  ui/                     shared UI: toasts, loading/empty/error states, pickers, avatars, demo banner
+  ui/                     shared UI: toasts, loading/empty/error states, pickers, avatars, demo banner;
+                          ui/guide/ the (?) page guide (one dialog with worked examples), ui/place/ where a
+                          class is taught (room or rented studio)
+  guides/                 the page guides' content, one file per page (registered in guides/index.js)
   assets/                 compressed images (WebP) and videos (720p MP4); room*.webp are not
                           bundled — ../scripts/demo-images.mjs uploads them to site-assets for the seed
   Components/

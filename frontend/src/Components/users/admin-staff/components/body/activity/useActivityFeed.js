@@ -82,7 +82,7 @@ export function useActivityFeed(query, live) {
 export function useActivityFormat(lookups) {
     const { t, tn, formatDate, dayName, monthName, lang } = useI18n();
     return useMemo(
-        () => ({ t, tn, formatDate, dayName, monthName, lang, people: lookups?.people, rooms: lookups?.rooms, classes: lookups?.classes }),
+        () => ({ t, tn, formatDate, dayName, monthName, lang, people: lookups?.people, rooms: lookups?.rooms, venues: lookups?.venues, classes: lookups?.classes }),
         [t, tn, formatDate, dayName, monthName, lang, lookups]
     );
 }

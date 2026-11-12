@@ -2,10 +2,11 @@
 // Today's sessions with their roll call, a planned session handled from the calendar (note,
 // substitute, call off with a reason, reopen) in the session dialog, the list with its CSV export, and a
 // deep link.
-// Everything it changes (one session row, one roll-call mark) is put back exactly as it was.
+// Everything it changes (one session row, one roll-call mark) is put back exactly as it was. On a day no
+// class meets, it adds a session today for the run (and removes it again).
 import { test, expect } from '@playwright/test';
 import fs from 'node:fs';
-import { expectToast, isoWeekday, login, pickOption, rest, staffJwt, studioToday } from './support.js';
+import { dropSessionToday, expectToast, isoWeekday, login, pickOption, rest, sessionToday, staffJwt, studioToday } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -21,8 +22,9 @@ let substitute; // another instructor: { id, full_name }
 let rollMark; // one of today's roll-call marks: { id, status, class_id }
 let rollClass; // { id, name }
 let closed; // a past completed session, briefly reopened for the review queue: { original, name }
+let todaySession; // a session today (sessionToday)
 
-// "Wed 11 Nov 17:00–18:00 Breaking Kids…" (how the calendar names its items).
+// "Thu 12 Nov 18:30–19:45 <class>…" (how the calendar names its items).
 const short = (iso) => new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${iso}T00:00:00`));
 const mondayOf = (iso) => {
     const date = new Date(`${iso}T00:00:00Z`);
@@ -34,6 +36,7 @@ const sessionRow = async () => (await rest(staff, `instructor_attendance?select=
 test.beforeAll(async ({ browser }) => {
     staff = await staffJwt();
     today = await studioToday();
+    todaySession = await sessionToday();
 
     // A planned weekly session (the week's records exist from today on) of a class with a weekly slot that day.
     const rows = (
@@ -88,6 +91,7 @@ test.afterAll(async () => {
         await rest(staff, `student_attendance?id=eq.${rollMark.id}`, { method: 'PATCH', body: { status: rollMark.status } });
         expect((await rest(staff, `student_attendance?select=*&id=eq.${rollMark.id}`)).data).toEqual([rollMark.original]);
     }
+    await dropSessionToday(todaySession);
 });
 
 test('one Attendance page in the sidebar; the old addresses lead to it', async () => {
@@ -210,7 +214,7 @@ test('the list: every recorded session, searchable, as a CSV file', async () => 
     const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Export CSV' }).click()]);
     expect(download.suggestedFilename()).toMatch(/^sessions-all\.csv$/);
     const csv = fs.readFileSync(await download.path(), 'utf8');
-    expect(csv).toMatch(/^\uFEFFDate,Start,End,Class,Room,Instructor,Check-in,Check-out,Late check-out,Status,Make-up,Note\r\n/);
+    expect(csv).toMatch(/^\uFEFFDate,Start,End,Class,Place,Instructor,Check-in,Check-out,Late check-out,Status,Make-up,Note\r\n/);
     expect(csv.split('\r\n').slice(1).every((line) => line.includes(planned.cls.name))).toBe(true);
 });
 

@@ -1,7 +1,9 @@
-import { LuMusic } from 'react-icons/lu';
+import { LuMapPin, LuMusic } from 'react-icons/lu';
 import { avatarUrl, classImageUrl } from '@/services/storage';
 import { formatTime, formatVnd } from '@/lib/format';
+import { publicPlaceOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
+import { PlaceDetails } from '@/ui/place/PlaceParts';
 
 const initials = (name) =>
     name
@@ -11,10 +13,12 @@ const initials = (name) =>
         .map((word) => word[0].toUpperCase())
         .join('');
 
-// One class from list_public_classes(): photo, coach, this month's song, weekly times and price.
+// One class from list_public_classes(): photo, coach, this month's song, weekly times, where (a rented
+// studio's address and map link) and price.
 // `anchor` gives it an id (#class-<id>) the timetable can jump to; a new `flash` value pulses its outline.
 const ClassCard = ({ item, anchor = false, flash = 0 }) => {
     const { t, dayName } = useI18n();
+    const place = publicPlaceOf(item);
     return (
         <article id={anchor ? `class-${item.id}` : undefined} className="hpClassCard">
             {flash > 0 && <span key={flash} className="hpClassFlash" aria-hidden="true" />}
@@ -51,6 +55,12 @@ const ClassCard = ({ item, anchor = false, flash = 0 }) => {
                         </li>
                     ))}
                 </ul>
+                {place.name && (
+                    <p className="hpClassPlace">
+                        <LuMapPin aria-hidden="true" />
+                        <PlaceDetails place={place} stacked />
+                    </p>
+                )}
                 <div className="hpClassFoot">
                     <span className="hpClassPrice">{formatVnd(item.price)}</span>
                 </div>

@@ -1,0 +1,65 @@
+// Where a class is taught (PlaceParts.jsx). Colours follow the text around it, so the same parts fit the
+// workspace, the instructor / student pages and the public site.
+
+.placeDetails {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem .5rem;
+    min-width: 0;
+
+    &.isStacked {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.placeWhere {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .1rem .6rem;
+    min-width: 0;
+    font-size: .92em;
+}
+
+.placeAddress {
+    opacity: .78;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.placeMapLink {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--ad-primary, hsl(0, 66%, 43%));
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: 6px;
+
+    svg {
+        width: .9em;
+        height: .9em;
+    }
+
+    &:hover span {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    &:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+    }
+
+    &.isCompact {
+        padding: .15rem;
+    }
+
+    // On a coloured or dark surface: the text colour around it.
+    &.isInherit {
+        color: inherit;
+    }
+}

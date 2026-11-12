@@ -14,6 +14,8 @@ import {
     setRenewal,
     simulateTransfer,
     undoPayment,
+    moveExtra,
+    refundExtra,
     waiveInvoice,
 } from '@/services/tuition';
 import { formatVnd } from '@/lib/format';
@@ -25,6 +27,7 @@ import { stagger } from '../../../../common/motion';
 import SwitchClassDialog from '../../../../common/switch-class/SwitchClassDialog';
 import InvoiceRow from '../../../tuition/InvoiceRow';
 import PaymentDialog from '../../../tuition/PaymentDialog';
+import ExtraDialog from '../../../tuition/ExtraDialog';
 import AdjustDialog from '../../../tuition/AdjustDialog';
 import PaymentCodeDialog from '../../../tuition/PaymentCodeDialog';
 import NoteDialog from '../../../tuition/NoteDialog';
@@ -97,6 +100,12 @@ const TuitionTab = ({ ctx }) => {
                 : t('{name} stops at “{course}”.', { name: invoice.student_name, course: course(invoice) }));
     };
 
+    // Undo a payment (asks first); true when it worked.
+    const undo = async (invoice) => {
+        if (!window.confirm(t('Undo the {amount} payment from {name}? Transfers that paid it go back to the inbox.', { amount: formatVnd(invoice.paid_amount), name: invoice.student_name }))) return false;
+        return run(invoice.id, () => undoPayment(invoice.id), t('Payment undone.'));
+    };
+
     const onAction = (kind, invoice) => {
         switch (kind) {
             case 'pay':
@@ -107,9 +116,11 @@ const TuitionTab = ({ ctx }) => {
             case 'note':
                 setDialog({ kind, invoice });
                 break;
+            case 'extra':
+                setDialog({ kind, invoice });
+                break;
             case 'undo':
-                if (!window.confirm(t('Undo the {amount} payment from {name}? Transfers that paid it go back to the inbox.', { amount: formatVnd(invoice.paid_amount), name: invoice.student_name }))) return;
-                run(invoice.id, () => undoPayment(invoice.id), t('Payment undone.'));
+                undo(invoice);
                 break;
             case 'reopen':
                 run(invoice.id, () => reopenInvoice(invoice.id), t('Invoice reopened.'));
@@ -211,6 +222,21 @@ const TuitionTab = ({ ctx }) => {
                             ? run(dialog.invoice.id, () => waiveInvoice(dialog.invoice.id, note), t('“{course}” waived for {name}.', { course: course(dialog.invoice), name: dialog.invoice.student_name }))
                             : run(dialog.invoice.id, () => setInvoiceAmount(dialog.invoice.id, amount, note), t('Amount changed to {amount}.', { amount: formatVnd(amount) }))
                     }
+                />
+            )}
+            {dialog?.kind === 'extra' && (
+                <ExtraDialog
+                    invoice={dialog.invoice}
+                    onClose={close}
+                    onMove={({ to, amount }) =>
+                        run(dialog.invoice.id, () => moveExtra(dialog.invoice.id, to.id, amount), t('{amount} moved to “{course}”.', { amount: formatVnd(amount), course: course(to) }))
+                    }
+                    onRefund={({ amount, method, note }) =>
+                        run(dialog.invoice.id, () => refundExtra(dialog.invoice.id, { amount, method, note }), t('{amount} recorded as given back to {name}.', { amount: formatVnd(amount), name: dialog.invoice.student_name }))
+                    }
+                    onUndo={async () => {
+                        if (await undo(dialog.invoice)) close();
+                    }}
                 />
             )}
             {dialog?.kind === 'note' && (

@@ -1,5 +1,5 @@
 import { formatTime, formatVnd } from '@/lib/format';
-import { categoryOf } from '@/lib/expenseCategories';
+import { categoryOf, expenseTitle } from '@/lib/expenseCategories';
 import { refundPolicyLines } from '@/services/bookingRefunds';
 import { VOID_REASONS } from '../tuition/tuitionModel';
 import { reasonText } from '../../common/session-changes/changeText';
@@ -79,8 +79,35 @@ const BOOKINGS = (row, fmt) => {
     return keys[row.action] && { key: keys[row.action], vars: { amount: row.action === 'refund_changed' ? money(m.refund) : amount, from: money(m.from), to: money(m.to) }, facts };
 };
 
+// Where a class was ('from') / is ('to') taught, from an edit of its room or rented studio. A class has one
+// place, so a column the edit didn't change was empty on both sides.
+const placeName = (fmt, side, changes) => {
+    const venue = changes.venue_id?.[side];
+    if (venue) return fmt.venues?.get(venue) ?? `#${venue}`;
+    const room = changes.room_id?.[side];
+    return room ? fmt.rooms?.get(room) ?? `#${room}` : null;
+};
+
+// "{actor} moved {class} to {place}" when an edit changed where it is taught; the other fields as facts.
+function classMoved(row, fmt) {
+    const changes = row.changes ?? {};
+    if (!('venue_id' in changes) && !('room_id' in changes)) return null;
+    const to = placeName(fmt, 'to', changes);
+    const from = placeName(fmt, 'from', changes);
+    const others = Object.fromEntries(Object.entries(changes).filter(([column]) => column !== 'venue_id' && column !== 'room_id'));
+    return {
+        key: to ? '{actor} moved {class} to {place}' : '{actor} took {class} out of its room or studio',
+        vars: { class: row.label, place: to },
+        facts: [from && fmt.t('Was at {place}', { place: from }), fieldsFact({ ...row, changes: others }, fmt)],
+    };
+}
+
 const CLASSES = (row, fmt) => {
     const m = row.meta ?? {};
+    if (row.action === 'updated') {
+        const moved = classMoved(row, fmt);
+        if (moved) return moved;
+    }
     const out = {
         created: ['{actor} created the class {class}', [m.instructor && fmt.t('Taught by {name}', { name: m.instructor })]],
         updated: ['{actor} edited the class {class}', [fieldsFact(row, fmt)]],
@@ -203,6 +230,11 @@ const TUITION = (row, fmt) => {
     const out = {
         paid: [paidKey, [money(m.received ?? m.paid), ...course]],
         payment_undone: ['{actor} undid a payment from {name}', course],
+        // Extra money (paid more than the course costs): moved onto another course, given back, or taken back
+        // off the course it was moved to (that payment was undone).
+        extra_moved: [m.to_student && m.to_student !== row.label ? '{actor} moved {name}’s extra money to {other}' : '{actor} moved {name}’s extra money to another course', [money(m.amount), ...course, m.to_course && `→ ${[m.to_class, m.to_course].filter(Boolean).join(' · ')}`]],
+        extra_refunded: ['{actor} gave {name}’s extra money back', [money(m.amount), m.method === 'cash' ? fmt.t('Cash') : m.method === 'transfer' ? fmt.t('Bank transfer') : null, ...course, quote(m.note)]],
+        extra_move_undone: ['{actor} took {name}’s moved extra money back', [money(m.amount), m.to_course && `← ${[m.to_class, m.to_course].filter(Boolean).join(' · ')}`]],
         waived: ['{actor} waived {name}’s tuition', [...course, quote(m.note)]],
         reopened: ['{actor} reopened {name}’s invoice', course],
         cancelled: [
@@ -219,7 +251,7 @@ const TUITION = (row, fmt) => {
         transfer_reopened: ['{actor} put a bank transfer back in the inbox', transfer],
     }[row.action];
     const name = row.action.startsWith('transfer_') ? m.student ?? fmt.t('a student') : row.label;
-    return out && { key: out[0], vars: { name }, facts: out[1] };
+    return out && { key: out[0], vars: { name, other: m.to_student }, facts: out[1] };
 };
 
 const EXPENSES = (row, fmt) => {
@@ -244,7 +276,9 @@ const EXPENSES = (row, fmt) => {
         recurring ? m.day && fmt.t('Day {day} of each month', { day: m.day }) : day(fmt, m.spent_on),
         row.action.endsWith('updated') ? fieldsFact(row, fmt) : '',
     ];
-    return keys[row.action] && { key: keys[row.action], facts };
+    // An automatic studio rent is named by the server in English.
+    const title = recurring ? row.label : expenseTitle({ category: m.category, vendor: m.vendor, description: row.label }, fmt.t);
+    return keys[row.action] && { key: keys[row.action], vars: { title }, facts };
 };
 
 const PAYROLL = (row, fmt) => {
@@ -276,9 +310,31 @@ const ROOMS = (row, fmt) => {
         photos_changed: '{actor} changed the photos of {title}',
         deleted: '{actor} deleted the room {title}',
     };
+    if (row.entity === 'venues') return venueSentence(row, fmt);
     const facts = row.action === 'updated' ? [fieldsFact(row, fmt)] : [m.size, m.price && fmt.t('{price} per hour', { price: money(m.price) })];
     return keys[row.action] && { key: keys[row.action], facts };
 };
+
+// A rented studio (area rooms, entity venues): added with its rent and address, changed (rent from → to,
+// set inactive or active again, other fields), removed.
+function venueSentence(row, fmt) {
+    const m = row.meta ?? {};
+    const c = row.changes ?? {};
+    const rent = money(m.rent) && fmt.t('{price} per hour', { price: money(m.rent) });
+    if (row.action === 'venue_added') return { key: '{actor} added the rented studio {title}', facts: [rent, m.address] };
+    if (row.action === 'venue_removed') return { key: '{actor} deleted the rented studio {title}', facts: [] };
+    if (row.action !== 'venue_changed') return null;
+    const others = Object.fromEntries(Object.entries(c).filter(([column]) => !['rent_per_hour', 'active', 'name'].includes(column)));
+    const facts = [
+        c.name && fmt.t('Was {name}', { name: c.name.from }),
+        c.rent_per_hour && fmt.t('Rent {from} → {to} per hour', { from: money(c.rent_per_hour.from), to: money(c.rent_per_hour.to) }),
+        fieldsFact({ ...row, changes: others }, fmt),
+    ];
+    if (c.active) {
+        return { key: c.active.to ? '{actor} made the rented studio {title} active again' : '{actor} set the rented studio {title} inactive', facts };
+    }
+    return { key: '{actor} edited the rented studio {title}', facts };
+}
 
 const USERS = (row, fmt) => {
     const m = row.meta ?? {};

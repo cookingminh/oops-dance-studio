@@ -243,6 +243,336 @@
     }
 }
 
+// Rented studios, under the rooms: a card per studio (where, rent per hour, classes taught there, the rent
+// charged this month) and its add / edit dialog.
+.adminShell .bkRoomsMain {
+    display: grid;
+    gap: 1.75rem;
+    min-width: 0;
+}
+
+.adminShell .venueSection {
+    display: grid;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px dashed var(--ad-border);
+}
+
+.adminShell .venueSectionHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .75rem 1rem;
+
+    > div {
+        flex: 1 1 18rem;
+        min-width: 0;
+    }
+
+    h3 {
+        font-family: var(--ad-display);
+        font-size: 1.35rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    p {
+        margin-top: .2rem;
+        max-width: 46rem;
+        font-size: .9rem;
+        line-height: 1.45;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .venueSectionIcon,
+.adminShell .venueCardIcon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 12px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.15rem;
+}
+
+.adminShell .venueGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    gap: 1rem;
+}
+
+.adminShell .venueCard {
+    display: grid;
+    align-content: start;
+    gap: .8rem;
+    min-width: 0;
+    padding: 1.1rem 1.2rem 1.2rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    background: var(--ad-surface);
+    transition: box-shadow .35s var(--ad-ease);
+
+    &:hover {
+        box-shadow: var(--ad-shadow-hover);
+    }
+
+    &.isInactive {
+        background: var(--ad-surface-2);
+
+        .venueCardIcon {
+            background: var(--ad-surface);
+            color: var(--ad-subtle);
+        }
+
+        .venueRent strong {
+            color: var(--ad-muted);
+        }
+    }
+}
+
+.adminShell .venueCardHead {
+    display: flex;
+    align-items: flex-start;
+    gap: .7rem;
+
+    .venueCardTitle {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .3rem .5rem;
+        min-width: 0;
+        padding-top: .3rem;
+    }
+
+    h4 {
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .venueCardActions {
+        display: flex;
+        flex-shrink: 0;
+        gap: .1rem;
+    }
+
+    .venueDanger:hover {
+        color: var(--ad-primary);
+    }
+}
+
+.adminShell .venueBadge {
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--ad-surface);
+    border: 1px solid var(--ad-border);
+    color: var(--ad-muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.adminShell .venueWhere {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .2rem .75rem;
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.4;
+    color: var(--ad-text);
+}
+
+.adminShell .venueMuted {
+    color: var(--ad-subtle);
+}
+
+.adminShell .venueRent {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    padding-top: .8rem;
+    border-top: 1px dashed var(--ad-border);
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--ad-primary);
+    }
+
+    span {
+        font-size: .9rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .venueFacts {
+    display: grid;
+    gap: .5rem;
+    margin: 0;
+
+    > div {
+        display: grid;
+        gap: .3rem;
+        min-width: 0;
+        padding: .6rem .7rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+    }
+
+    > .isMoney {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: .25rem .75rem;
+
+        dd {
+            color: var(--ad-primary-strong);
+            white-space: nowrap;
+        }
+    }
+
+    dt {
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .05em;
+        text-transform: uppercase;
+        color: var(--ad-subtle);
+    }
+
+    dd {
+        margin: 0;
+        font-size: .92rem;
+        font-weight: 700;
+        color: var(--ad-text);
+    }
+}
+
+.adminShell .venueCard.isInactive .venueFacts > div {
+    background: var(--ad-surface);
+}
+
+.adminShell .venueClassList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+
+    a {
+        display: inline-block;
+        padding: .2rem .6rem;
+        border-radius: 999px;
+        border: 1px solid var(--ad-border);
+        background: var(--ad-surface);
+        color: var(--ad-text);
+        font-size: .82rem;
+        font-weight: 600;
+        transition: border-color .2s ease, color .2s ease;
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+            color: var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+}
+
+.adminShell .venueNote {
+    display: flex;
+    align-items: flex-start;
+    gap: .45rem;
+    margin: 0;
+    font-size: .85rem;
+    line-height: 1.4;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+        color: var(--ad-subtle);
+    }
+}
+
+// The dialog is a portal (.adminPortal carries the tokens). Its parts sit in a <form> that passes the column
+// layout on, so on a short screen the body scrolls and the buttons stay in view (scrollBehavior="inside").
+.venueDialog {
+    > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .venueDialogHead {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+
+        > span:last-child {
+            display: grid;
+            gap: .15rem;
+        }
+
+        small {
+            font-size: .85rem;
+            font-weight: 400;
+            line-height: 1.35;
+            color: var(--ad-muted);
+        }
+    }
+
+    .venueDialogIcon {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.3rem;
+        height: 2.3rem;
+        border-radius: 12px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    .venueDialogBody > * {
+        flex-shrink: 0;
+    }
+
+    .venueDialogLink {
+        color: var(--ad-primary);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    .venueDialogSwitch {
+        max-width: none;
+    }
+
+    .venueSwitchText {
+        display: grid;
+        gap: .05rem;
+
+        strong {
+            font-size: .92rem;
+        }
+
+        small {
+            font-size: .8rem;
+            color: var(--ad-muted);
+        }
+    }
+}
+
 // The cancellation policy, beside the prices.
 .adminShell .bkPolicyCard {
     position: sticky;

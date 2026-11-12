@@ -3,10 +3,12 @@ import { Avatar, Button, Input, Select, SelectItem } from '@nextui-org/react';
 import { LuCheck } from 'react-icons/lu';
 import { updateClass } from '@/services/classes';
 import { avatarUrl } from '@/services/storage';
+import { placeColumns, placeKeyOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
+import PlaceField from '../../../../common/PlaceField';
 import { personName } from '../../hubModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
@@ -14,13 +16,14 @@ const POPOVER = { popoverContent: 'adminPortal' };
 const fromClass = (cls) => ({
     name: cls.name,
     instructorId: cls.instructor_id,
-    roomId: cls.room_id ? String(cls.room_id) : '',
+    place: placeKeyOf(cls),
     price: String(cls.price),
     startsOn: cls.starts_on,
 });
 
-// The class's details in place. The start date can only move while the class hasn't started.
-const DetailsForm = ({ cls, today, instructors, rooms, readOnly, onSaved }) => {
+// The class's details in place. The start date can only move while the class hasn't started. Moving the
+// class to another room or rented studio moves its sessions not started yet (the server does it).
+const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved }) => {
     const { t } = useI18n();
     const toast = useToast();
     const [form, setForm] = useState(() => fromClass(cls));
@@ -44,7 +47,7 @@ const DetailsForm = ({ cls, today, instructors, rooms, readOnly, onSaved }) => {
         try {
             await updateClass(cls.id, {
                 ...form,
-                roomId: form.roomId ? Number(form.roomId) : null,
+                ...placeColumns(form.place),
                 startsOn: notStarted ? form.startsOn : undefined,
             });
             toast.success('Class updated.');
@@ -79,11 +82,7 @@ const DetailsForm = ({ cls, today, instructors, rooms, readOnly, onSaved }) => {
                     </SelectItem>
                 ))}
             </Select>
-            <Select label={t('Room')} classNames={POPOVER} isDisabled={readOnly} placeholder={t('No room')} selectedKeys={form.roomId ? [form.roomId] : []} onChange={(event) => set('roomId')(event.target.value)}>
-                {rooms.map((room) => (
-                    <SelectItem key={String(room.id)}>{room.name}</SelectItem>
-                ))}
-            </Select>
+            <PlaceField value={form.place} onChange={set('place')} rooms={rooms} venues={venues} isDisabled={readOnly} />
             <Input
                 label={t('Price (VND)')}
                 type="number"

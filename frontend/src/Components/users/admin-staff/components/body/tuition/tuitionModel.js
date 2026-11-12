@@ -1,4 +1,4 @@
-import { amountDue, invoiceState } from '@/services/tuition';
+import { amountDue, invoiceState, extraOf } from '@/services/tuition';
 import { routineState, routinesByClass } from '@/lib/lessons';
 import { isSwitchedAway, isSwitchedIn } from '../../common/switch-class/switchNotes';
 import { promoFields } from '@/services/promos';
@@ -89,6 +89,8 @@ export function invoiceActions(invoice, place = null, thisMonth = null) {
     const current = phase ? phase !== 'done' : thisMonth ? invoice.month >= thisMonth : true;
     const actions = { money: [], fix: [], renewal: [], move: [] };
     if (unpaid) actions.money.push('pay', 'code');
+    // A paid invoice holding more than its price: move the extra on, or give it back (ExtraDialog).
+    if (invoice.status === 'paid' && Number(invoice.paid_amount) > Number(invoice.amount)) actions.money.push('extra');
     if (hasPaid && (unpaid || invoice.status === 'paid')) actions.money.push('undo');
     if (unpaid) actions.fix.push('amount');
     if (unpaid && !hasPaid) actions.fix.push('waive');
@@ -300,6 +302,8 @@ export function todoLists(rows, today) {
     return {
         late: unpaid.filter((invoice) => invoice.due_date < today).sort(byDueThenName),
         soon: unpaid.filter((invoice) => invoice.due_date >= today && invoice.due_date <= until).sort(byDueThenName),
+        // Paid more than they cost (extraOf): the extra waits to be moved on or given back.
+        extra: rows.filter((invoice) => extraOf(invoice) > 0).sort(byDueThenName),
     };
 }
 

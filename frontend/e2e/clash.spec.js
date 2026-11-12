@@ -1,7 +1,8 @@
 // Timetable rules seen from the UI: a class session may not overlap a live booking
-// in its room, and a class may not move to a room that is booked at its times.
+// in its room, and a class may not move to a room that is booked at its times. The demo's classes are
+// taught at rented studios, so the spec puts one into a room first and puts it back afterwards.
 import { test, expect } from '@playwright/test';
-import { addDays, clashTarget, isoWeekday, login, people, pickOption, rest, rooms, rpc, staffJwt, studioToday } from './support.js';
+import { addDays, clashTarget, isoWeekday, login, people, pickOption, putClassBack, putClassInRoom, rest, rooms, rpc, staffJwt, studioToday } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -10,10 +11,15 @@ let dialog;
 let target;
 let move;
 let tempBooking = null;
+let placed = null; // the class put into a room (putClassInRoom) and the other room: { cls, room, other }
 
 const alertWith = (text) => page.getByRole('alert').filter({ hasText: text }).first();
 
 test.beforeAll(async ({ browser }) => {
+    const [roomA, roomB] = await rooms();
+    const fits = await putClassInRoom([roomA, roomB]);
+    expect(fits, 'a class that fits into a room').toBeTruthy();
+    placed = { ...fits, other: fits.room.id === roomA.id ? roomB : roomA };
     page = await browser.newPage();
     dialog = page.getByRole('dialog');
     await login(page, 'staff@demo.oopsdance.test');
@@ -21,7 +27,8 @@ test.beforeAll(async ({ browser }) => {
 test.afterAll(async () => {
     // Safety net if the run stopped before the cleanup test.
     if (tempBooking) await rest(await staffJwt(), `bookings?id=eq.${tempBooking.id}`, { method: 'DELETE' });
-    await page.close();
+    await putClassBack(placed);
+    await page?.close();
 });
 
 test('finds an upcoming booking in a room that has classes', async () => {
@@ -42,11 +49,11 @@ test('schedule form explains a clash with a booking', async () => {
 });
 
 test('books the other room at a class time (temporary booking)', async () => {
-    const [roomA, roomB] = await rooms();
+    const { room: roomA, other: roomB } = placed;
     const jwt = await staffJwt();
     const guest = (await people('guest'))[0];
     const classes = (await rest(jwt, `classes?select=id,name,room_id,schedules:class_schedules(day_of_week,start_time,end_time)&room_id=eq.${roomA.id}&order=id`)).data;
-    // First class session whose hour is free in roomB, after the seeded bookings (14 days ahead).
+    // First class session whose hour is free in the other room, after the seeded bookings (14 days ahead).
     const firstFree = addDays(await studioToday(), 15);
     for (const cls of classes) {
         for (const schedule of cls.schedules) {
@@ -70,7 +77,7 @@ test('class form explains why it cannot move to that room', async () => {
     await page.goto(`/admin/classes/${move.cls.id}`);
     await page.getByRole('button', { name: `More for ${move.cls.name}` }).click();
     await page.getByRole('menuitem', { name: 'Edit details' }).click();
-    await pickOption(page, dialog, 'Room', move.roomB.name);
+    await pickOption(page, dialog, 'Where it’s taught', move.roomB.name);
     await dialog.getByRole('button', { name: 'Update Class' }).click();
     await expect(alertWith('That room isn’t free')).toBeVisible();
 });

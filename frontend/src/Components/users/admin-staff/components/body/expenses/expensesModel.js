@@ -1,4 +1,4 @@
-import { EXPENSE_CATEGORIES, categoryOf } from '@/lib/expenseCategories';
+import { EXPENSE_CATEGORIES, categoryOf, expenseTitle } from '@/lib/expenseCategories';
 import { monthOf, nextMonth, prevMonth } from '@/lib/lessons';
 
 // Pure helpers for the expenses page: month sums, the amount field, search and recurring status.
@@ -92,7 +92,7 @@ export const fold = (text) =>
 
 export const expenseSearchText = (expense, t) => {
     const category = categoryOf(expense.category);
-    return fold([expense.description, expense.vendor, expense.class?.name, category.label, t(category.label), expense.author?.full_name, expense.author?.username, expense.amount].join(' '));
+    return fold([expense.description, expenseTitle(expense, t), expense.vendor, expense.class?.name, category.label, t(category.label), expense.author?.full_name, expense.author?.username, expense.amount].join(' '));
 };
 
 // Class filter: 'all', 'shared' (no class) or a class id.

@@ -4,6 +4,7 @@ import { LuDownload, LuPanelRightOpen } from 'react-icons/lu';
 import { addDays, parseISO, startOfWeek } from 'date-fns';
 import { avatarUrl } from '@/services/storage';
 import { formatClock, toIsoDate } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import AsyncState from '@/ui/feedback/AsyncState';
 import { useI18n } from '@/i18n/i18nContext';
@@ -55,13 +56,13 @@ const AttendanceList = ({ state, sessions, today, onOpen }) => {
     const exportCsv = () =>
         downloadCsv(
             `sessions-${scope === 'all' ? 'all' : today}.csv`,
-            [t('Date'), t('Start'), t('End'), t('Class'), t('Room'), t('Instructor'), t('Check-in'), t('Check-out'), t('Late check-out'), t('Status'), t('Make-up'), t('Note')],
+            [t('Date'), t('Start'), t('End'), t('Class'), t('Place'), t('Instructor'), t('Check-in'), t('Check-out'), t('Late check-out'), t('Status'), t('Make-up'), t('Note')],
             visible.map(({ date, start, end, cls, row, extra }) => [
                 date,
                 start,
                 end,
                 cls.name,
-                cls.room?.name ?? '',
+                placeOf(row, cls).name ?? '',
                 personName(row.instructor),
                 row.checkin_at ? formatClock(row.checkin_at) : '',
                 row.checkout_at ? formatClock(row.checkout_at) : '',
@@ -103,7 +104,7 @@ const AttendanceList = ({ state, sessions, today, onOpen }) => {
                 return (
                     <div className="stackCell">
                         <strong>{cls.name}</strong>
-                        <span>{cls.room?.name}</span>
+                        <span>{placeOf(row, cls).name}</span>
                     </div>
                 );
             case 'checkin':

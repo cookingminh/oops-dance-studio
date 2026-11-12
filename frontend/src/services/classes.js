@@ -3,16 +3,19 @@ import { getStudioToday } from './studio';
 import { unwrap } from './errors';
 import { BUCKETS, removeFiles, uploadClassImage } from './storage';
 import { PROMO_BUCKET, PROMO_COLUMNS } from './promos';
+import { VENUE_EMBED } from './venues';
 
 // Column hints (!instructor_id, !room_id, …) are required: classes and profiles are also linked
 // through class_students / attendance, so PostgREST can't pick the relationship on its own.
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // A routine (class_lessons) with its class video and its promo (services/promos.js).
 const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, title, video_url, ${PROMO_COLUMNS}`;
-const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, created_at,
+// A class is taught in a room or at a rented studio (venue), never both (lib/place.js).
+const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, venue_id, created_at,
     starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
+    venue:venues!venue_id(${VENUE_EMBED}),
     schedules:class_schedules(id, day_of_week, start_time, end_time),
     lessons:class_lessons(${LESSON_COLUMNS})`;
 const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
@@ -20,10 +23,12 @@ const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
 
 // `lesson` is not written here: it mirrors the latest row of class_lessons (see setClassLesson).
 // `startsOn` ('yyyy-MM-dd') is optional: a class opening later takes students now and bills from then.
-const CLASS_FIELDS = ({ name, instructorId, roomId, price, startsOn }) => ({
+// The place is a room or a venue: both columns are written, so moving to one clears the other.
+const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, price, startsOn }) => ({
     name: name.trim(),
     instructor_id: instructorId,
     room_id: roomId || null,
+    venue_id: roomId ? null : venueId || null,
     price: Number(price),
     ...(startsOn ? { starts_on: startsOn } : {}),
 });

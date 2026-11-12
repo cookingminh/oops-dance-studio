@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Button, ModalHeader, ModalBody, ModalFooter, ModalContent } from '@nextui-org/react';
-import { LuAlarmClock, LuCamera, LuClock, LuDoorOpen, LuMusic } from 'react-icons/lu';
+import { LuAlarmClock, LuCamera, LuClock, LuMusic } from 'react-icons/lu';
 import { checkIn, checkOut } from '@/services/attendance';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import ImagePicker from '@/ui/ImagePicker';
 import { sessionTimesOf } from '@/lib/lessons';
+import { placeOf } from '@/lib/place';
+import { PlaceDetails, PlaceIcon } from '@/ui/place/PlaceParts';
 import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/routines/MakeUpTag';
 import { checkOutLate, checkProblem, useStudioNow } from '../../profileHelpers';
 
@@ -61,7 +63,8 @@ const CheckForm = ({ kind, attendance, onClose, onDone }) => {
                             {attendance.is_extra && <MakeUpTag />}
                         </li>
                         <li className="flex items-center gap-2 text-default-600">
-                            <LuDoorOpen aria-hidden="true" /> {attendance.room?.name ?? t('No room')}
+                            <PlaceIcon place={placeOf(attendance, attendance.class)} className="shrink-0" />
+                            <PlaceDetails place={placeOf(attendance, attendance.class)} empty={t('No room')} />
                         </li>
                     </ul>
                     {late && (

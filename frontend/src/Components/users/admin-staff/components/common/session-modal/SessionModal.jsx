@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from '@nextui-org/react';
-import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClipboardEdit, LuClock, LuDoorOpen, LuListChecks, LuRotateCcw } from 'react-icons/lu';
+import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClipboardEdit, LuClock, LuListChecks, LuRotateCcw } from 'react-icons/lu';
 import { updateInstructorAttendance } from '@/services/attendance';
 import { classImageUrl } from '@/services/storage';
 import { formatClock, formatTime } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
+import { MapLink, PlaceIcon } from '@/ui/place/PlaceParts';
 import placeholder from '@/assets/images/logo-mark.webp';
 import MakeUpTag from '../../body/class-manager/routines/MakeUpTag';
 import { classPath, sessionTimes } from '../../body/class-hub/hubModel';
@@ -56,6 +58,7 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const reschedule = canReschedule(current, today, readOnly);
     const madeUp = detail.data?.makeUp ?? null;
     const reason = reasonText(row?.cancel_reason, t);
+    const place = placeOf(row, cls);
 
     // "Take roll call": on a narrow screen the roll call sits below the session, so bring it up.
     useEffect(() => {
@@ -129,9 +132,10 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                                 <span>
                                     <LuClock aria-hidden="true" /> {current.start ? `${current.start}–${current.end}` : t('No time set')}
                                 </span>
-                                {cls.room?.name && (
+                                {place.name && (
                                     <span>
-                                        <LuDoorOpen aria-hidden="true" /> {cls.room.name}
+                                        <PlaceIcon place={place} /> {place.name}
+                                        <MapLink place={place} compact />
                                     </span>
                                 )}
                             </span>

@@ -2,11 +2,16 @@
 // "needs review" mark on top of the shared calendar's items (<CalendarView className="sessionCalendar">).
 
 $review: hsl(0, 66%, 43%);
+// The same glowing red border as a booking not fully paid (calendar.scss, flag-owing).
+$glow: hsl(0, 78%, 50%);
 
 .calendarView.sessionCalendar {
-    // A session nobody closed: a red ring, and a "!" so it doesn't rely on colour alone.
+    // A session nobody closed: a glowing red border, and a "!" so it doesn't rely on colour alone.
     :is(.calItem, .calChip, .calRow).status-review {
-        box-shadow: inset 0 0 0 1.5px $review;
+        z-index: 3;
+        border-color: $glow;
+        border-left-color: $glow;
+        animation: calOwingGlow 2.4s ease-in-out infinite;
     }
 
     .calChip.status-review .calChipTitle::before,
@@ -14,6 +19,13 @@ $review: hsl(0, 66%, 43%);
         content: '! ';
         color: $review;
         font-weight: 800;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendarView.sessionCalendar :is(.calItem, .calChip, .calRow).status-review {
+        animation: none;
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .7), 0 0 10px 2px hsla(0, 85%, 55%, .45);
     }
 }
 
@@ -43,7 +55,9 @@ $review: hsl(0, 66%, 43%);
     }
 
     .is-review .sessionLegendSwatch {
-        box-shadow: inset 0 0 0 1.5px $review;
+        border-color: $glow;
+        border-left-color: $glow;
+        box-shadow: 0 0 0 1px hsla(0, 80%, 50%, .6), 0 0 8px 1px hsla(0, 85%, 55%, .4);
     }
 
     .is-planned .sessionLegendSwatch {

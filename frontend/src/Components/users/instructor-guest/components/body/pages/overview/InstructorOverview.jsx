@@ -8,6 +8,7 @@ import { useAsync } from '@/hooks/useAsync';
 import { myStats } from '@/services/stats';
 import { listMyInstructorAttendance } from '@/services/attendance';
 import { studioHour } from '@/lib/format';
+import { placeOf } from '@/lib/place';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard, { CardFooterLink } from '../../../../../admin-staff/components/common/SectionCard';
 import { stagger } from '../../../../../admin-staff/components/common/motion';
@@ -86,7 +87,7 @@ const InstructorOverview = () => {
             <Hero
                 title={`${t(greetingFor(studioHour()))}, ${givenName(user)}`}
                 summary={summary}
-                upNext={next && <UpNext session={next} today={today} room={next.cls.roomName} />}
+                upNext={next && <UpNext session={next} today={today} place={next.cls.place} />}
                 actions={[
                     { to: '/profile/attendance', label: 'Check in', icon: LuClipboardCheck },
                     { to: '/profile/my-classes', label: 'My classes', icon: LuCalendarDays },
@@ -137,7 +138,7 @@ const InstructorOverview = () => {
                                         <ClassThumb cls={row.class} />
                                         <span className="pfTodayText">
                                             <strong>{row.class?.name}</strong>
-                                            <span>{row.room?.name ?? t('No room')}</span>
+                                            <span>{placeOf(row, row.class).name ?? t('No room')}</span>
                                         </span>
                                         <span className={`pfPhase tone-${phase.tone}`}>
                                             {phase.tone === 'live' && <span className="pfPulse" aria-hidden="true" />}
@@ -170,7 +171,7 @@ const InstructorOverview = () => {
                                             <span>
                                                 {session.calledOff
                                                     ? [t('Called off'), reasonText(session.calledOff.reason, t)].filter(Boolean).join(' · ')
-                                                    : session.cls.roomName ?? t('No room')}
+                                                    : session.cls.place.name ?? t('No room')}
                                             </span>
                                         </span>
                                         {session.isMakeUp && <MakeUpTag />}

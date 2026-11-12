@@ -6,12 +6,13 @@ import { stagger } from '../../../../common/motion';
 import PolicyCard from './PolicyCard';
 import RoomCard from './RoomCard';
 import RoomEditForm from './RoomEditForm';
+import VenuesSection from './VenuesSection';
 import { roomStats } from './roomStats';
 import './rooms.scss';
 
 // The bookings page's "Rooms & prices" view (?view=rooms, once the Rooms page): every room with its
 // hourly price and how it is booked, and the cancellation policy beside them — together they are what a
-// guest pays and gets back.
+// guest pays and gets back. Under the rooms, the rented studios classes are taught in (VenuesSection).
 //   roomsState  the rooms' useAsync (loading / error)   rooms  sorted   bookings  every booking
 //   policy      the booking_settings useAsync            onEditPolicy  opens RefundPolicyDialog (admins)
 //   onCalendar(room)  the calendar of that room          onOpenBooking(booking)   onRoomsChanged
@@ -38,6 +39,7 @@ const RoomsView = ({ roomsState, rooms, bookings, today, roomColor, policy, isAd
                         ))}
                     </div>
                 </AsyncState>
+                <VenuesSection today={today} isAdmin={isAdmin} />
             </div>
             <PolicyCard state={policy} isAdmin={isAdmin} onEdit={onEditPolicy} />
 

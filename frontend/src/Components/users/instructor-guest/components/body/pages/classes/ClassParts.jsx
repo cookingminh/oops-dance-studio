@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { addDays, format, parseISO } from 'date-fns';
-import { LuCalendarDays, LuDoorOpen, LuMusic, LuSparkles, LuUsers } from 'react-icons/lu';
+import { LuCalendarDays, LuMusic, LuSparkles, LuUsers } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
+import { PlaceIcon } from '@/ui/place/PlaceParts';
 import { classImageUrl } from '@/services/storage';
 import { formatTime, isoWeekdayOf, toIsoDate } from '@/lib/format';
 import { reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
@@ -61,7 +62,7 @@ export const ClassBanner = ({ cls, today, isInstructor }) => {
                         </li>
                     )}
                     <li>
-                        <LuDoorOpen aria-hidden="true" /> {cls.roomName ?? t('No room')}
+                        <PlaceIcon place={cls.place} /> {cls.place.name ?? t('No room')}
                     </li>
                     {cls.schedules.length > 0 && (
                         <li>

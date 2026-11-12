@@ -44,9 +44,12 @@ export async function expectToast(page, text) {
     await expect(page.getByRole('status').filter({ hasText: text }).first()).toBeVisible();
 }
 
-// NextUI Select names its trigger "<value> <label>" (or "<label> <value>").
+// NextUI Select names its trigger "<value> <label>" (or "<label> <value>"). An option already shown is left as
+// it is (picking it again would clear it, or leave the list open).
 export async function pickOption(page, scope, label, option) {
-    await scope.getByRole('button', { name: new RegExp(`(^${label}\\*?(\\s|$))|(\\s${label}\\*?$)`) }).click();
+    const trigger = scope.getByRole('button', { name: new RegExp(`(^${label}\\*?(\\s|$))|(\\s${label}\\*?$)`) });
+    if ((await trigger.locator('[data-slot="value"]').textContent())?.trim() === option) return;
+    await trigger.click();
     await page.getByRole('option', { name: option, exact: true }).click();
 }
 
@@ -146,7 +149,7 @@ export async function deleteBookingsOn(date) {
 export async function todaysSessions() {
     const today = await studioToday();
     return (await rest(await staffJwt(),
-        `instructor_attendance?select=id,status,instructor_id,checkin_proof_path,class:classes!class_id(name),instructor:profiles!instructor_id(email)&date=eq.${today}`)).data;
+        `instructor_attendance?select=id,class_id,status,instructor_id,checkin_proof_path,class:classes!class_id(name),instructor:profiles!instructor_id(email)&date=eq.${today}`)).data;
 }
 
 // Puts a session back to "pending" so check-in can be exercised again.
@@ -169,12 +172,39 @@ function sessionTimesAroundNow() {
     return { start_time: hhmm(start), end_time: hhmm(end) };
 }
 
-// Makes sure today has a checked-in session with a proof photo (staff views it).
+// A class session today, whatever the weekday (the demo instructors don't teach every day): the
+// instructor's own (`email`; null = anyone's) if there is one, else a make-up added today for one of their
+// running classes that doesn't meet today (class_add_session, which also makes its roll call), at 10:00–11:00
+// (resetSession(id, { open: true }) moves it around now). → { id, class_id, added }. Pass it to
+// dropSessionToday() afterwards: an added one goes again with its roll call.
+export async function sessionToday(email = null) {
+    const today = await studioToday();
+    const jwt = await staffJwt();
+    const own = (await todaysSessions()).find((s) => s.status !== 'cancelled' && (!email || s.instructor?.email === email));
+    if (own) return { id: own.id, class_id: own.class_id, added: false };
+    const classes = (await rest(jwt,
+        `classes?select=id,instructor:profiles!instructor_id(email),schedules:class_schedules(day_of_week)&starts_on=lte.${today}&or=(ended_on.is.null,ended_on.gte.${today})&order=id`)).data;
+    const cls = classes.find((c) => (!email || c.instructor?.email === email) && !c.schedules.some((slot) => slot.day_of_week === isoWeekday(today)));
+    expect(cls, `a running class of ${email ?? 'anyone'} to add a session today to`).toBeTruthy();
+    const added = await rpc(jwt, 'class_add_session', { p_class: cls.id, p_date: today, p_start: '10:00', p_end: '11:00', p_note: 'E2E session today' });
+    expect(added.status, JSON.stringify(added.data)).toBe(200);
+    return { id: added.data.id, class_id: cls.id, added: true };
+}
+
+export async function dropSessionToday(session) {
+    if (!session?.added) return;
+    const jwt = await staffJwt();
+    const today = await studioToday();
+    expect((await rest(jwt, `student_attendance?class_id=eq.${session.class_id}&date=eq.${today}`, { method: 'DELETE' })).status).toBe(204);
+    expect((await rest(jwt, `instructor_attendance?id=eq.${session.id}`, { method: 'DELETE' })).status).toBe(204);
+}
+
+// Makes sure today has a checked-in session with a proof photo (staff views it). → the session added for it
+// (see sessionToday) or null; dropSessionToday() takes it out again.
 export async function ensureProofToday() {
     const sessions = await todaysSessions();
-    if (sessions.some((s) => s.checkin_proof_path)) return;
-    const mine = sessions.find((s) => s.instructor?.email === 'instructor@demo.oopsdance.test');
-    expect(mine, 'instructor@ has a session today').toBeTruthy();
+    if (sessions.some((s) => s.checkin_proof_path)) return null;
+    const mine = await sessionToday('instructor@demo.oopsdance.test');
     await resetSession(mine.id, { open: true });
     const me = await token('instructor@demo.oopsdance.test');
     const proofPath = `${me.id}/${mine.id}/checkin.jpg`;
@@ -186,6 +216,30 @@ export async function ensureProofToday() {
     expect(upload.ok, `proof upload ${upload.status}`).toBe(true);
     const checkIn = await rpc(me.jwt, 'instructor_check_in', { p_attendance_id: mine.id, p_proof_path: proofPath });
     expect(checkIn.status).toBe(200);
+    return mine.added ? mine : null;
+}
+
+// The demo's classes are taught at rented studios: a spec that needs a class in a room puts one there. The
+// first running class that fits into one of `roomList` (in order; the server refuses a room whose bookings
+// overlap the class's weekly times) → { cls: { id, name, room_id, venue_id } as it was, room } or null.
+// putClassBack() restores it (its sessions not started yet follow it both ways).
+export async function putClassInRoom(roomList) {
+    const jwt = await staffJwt();
+    const today = await studioToday();
+    const classes = (await rest(jwt, `classes?select=id,name,room_id,venue_id&starts_on=lte.${today}&ended_on=is.null&order=id`)).data;
+    for (const cls of classes) {
+        for (const room of roomList) {
+            const moved = await rest(jwt, `classes?id=eq.${cls.id}`, { method: 'PATCH', body: { room_id: room.id, venue_id: null } });
+            if (moved.status < 300) return { cls, room };
+        }
+    }
+    return null;
+}
+
+export async function putClassBack(placed) {
+    if (!placed) return;
+    const { id, room_id, venue_id } = placed.cls;
+    expect((await rest(await staffJwt(), `classes?id=eq.${id}`, { method: 'PATCH', body: { room_id, venue_id } })).status).toBe(204);
 }
 
 // A future live booking in a room that has classes: a class session over it must be refused.

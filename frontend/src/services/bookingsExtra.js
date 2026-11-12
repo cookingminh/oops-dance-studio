@@ -3,8 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { unwrap } from './errors';
 
 // Read-only helpers for the bookings calendar: the class sessions that hold a room on given days,
-// shown behind the bookings so staff see why a slot is taken. RLS: staff read classes, schedules and
-// every instructor_attendance row.
+// shown behind the bookings so staff see why a slot is taken. Sessions at a rented studio (venue_id, no
+// room) hold no room and stay out. RLS: staff read classes, schedules and every instructor_attendance row.
 
 const CLASS_COLUMNS = `id, name, room_id, starts_on, ended_on,
     instructor:profiles!instructor_id(id, full_name, username),
@@ -24,7 +24,7 @@ export async function listRoomSessions({ from, until }) {
         supabase.from('classes').select(CLASS_COLUMNS).or(`ended_on.is.null,ended_on.gte.${from}`),
         supabase
             .from('instructor_attendance')
-            .select('id, class_id, room_id, date, status, start_time, end_time, is_extra, makes_up')
+            .select('id, class_id, room_id, venue_id, date, status, start_time, end_time, is_extra, makes_up')
             .gte('date', from)
             .lte('date', until)
             .or('is_extra.eq.true,status.eq.cancelled'),
@@ -67,7 +67,8 @@ export async function listRoomSessions({ from, until }) {
     for (const row of changes) {
         if (!row.is_extra || row.status === 'cancelled' || !row.start_time) continue;
         const cls = byId.get(row.class_id);
-        const roomId = row.room_id ?? cls?.room_id;
+        // A make-up at a venue holds no room, even if its class has since moved into one.
+        const roomId = row.venue_id ? null : row.room_id ?? cls?.room_id;
         if (!roomId) continue;
         sessions.push({
             key: `m${row.id}`,

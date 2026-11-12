@@ -16,6 +16,7 @@ import {
 import { deleteExpenseAndReceipt, listClassOptions, signReceiptUrls } from '@/services/expensesExtra';
 import { getStudioToday } from '@/services/studio';
 import { formatVnd } from '@/lib/format';
+import { expenseTitle, isAutomaticRent } from '@/lib/expenseCategories';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import ExpenseOverview from './ExpenseOverview';
@@ -134,9 +135,12 @@ const Expenses = () => {
         const source = expense.recurring_id ? recurringById.get(expense.recurring_id) : null;
         // While its recurring cost runs, the nightly check would add this month's copy again.
         const comesBack = source?.active && expense.month === thisMonth && (!source.ends_on || source.ends_on >= thisMonth);
-        const question = comesBack
-            ? t('Delete this month’s “{name}”? Its recurring cost is still running, so the nightly check adds it again. To skip a month, pause the recurring cost instead.', { name: expense.description })
-            : t('Delete “{name}” ({amount})? This can’t be undone.', { name: expense.description, amount: formatVnd(expense.amount) });
+        const name = expenseTitle(expense, t);
+        let question = comesBack
+            ? t('Delete this month’s “{name}”? Its recurring cost is still running, so the nightly check adds it again. To skip a month, pause the recurring cost instead.', { name })
+            : t('Delete “{name}” ({amount})? This can’t be undone.', { name, amount: formatVnd(expense.amount) });
+        // The nightly check charges a session's rent again while the session stands.
+        if (isAutomaticRent(expense)) question = t('Delete “{name}”? That session’s rent won’t be charged again. If the session didn’t happen, call it off instead: that takes its rent off too.', { name });
         if (!window.confirm(question)) return;
         run(expense.id, () => deleteExpenseAndReceipt(expense), t('Expense deleted.')).then((done) => done && reloadMonths());
     };

@@ -1,10 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, rest, rooms, staffJwt, studioToday } from './support.js';
+import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, putClassBack, putClassInRoom, rest, rooms, staffJwt, studioToday } from './support.js';
 
 // /admin/bookings as a calendar: class sessions as context, a free slot opens "New booking"
 // prefilled, a booking opens its dialog (approve / cancel), room lanes with "All rooms", a
 // press-and-drag range, month view, the list switch.
-// Works on its own date (≥ 40 days ahead) and deletes its bookings there afterwards.
+// Works on its own date (≥ 40 days ahead) and deletes its bookings there afterwards. The demo's classes are
+// taught at rented studios, so one is put into Room B for the run (and back afterwards).
 test.describe.configure({ mode: 'serial' });
 
 let page;
@@ -14,6 +15,7 @@ let guest;
 let guest2; // books the dragged range
 let bookingDate;
 let context; // a weekly class session in the booking's week: { name, date, start }
+let placed; // the class put into Room B (putClassInRoom)
 
 const lastName = (person) => person.full_name.split(' ').slice(-2).join(' ');
 const calendar = () => page.getByRole('region', { name: 'Bookings calendar' });
@@ -44,6 +46,7 @@ async function dragInLane(roomId, from, last) {
 test.beforeAll(async ({ browser }) => {
     [, roomB] = await rooms();
     [, , , guest, guest2] = await people('guest');
+    placed = await putClassInRoom([roomB]);
     const today = await studioToday();
     const jwt = await staffJwt();
     const classes = (await rest(jwt, 'classes?select=id,name,room_id,starts_on,ended_on,schedules:class_schedules(day_of_week,start_time,end_time)')).data;
@@ -75,6 +78,7 @@ test.beforeAll(async ({ browser }) => {
 
 test.afterAll(async () => {
     await deleteBookingsOn(bookingDate);
+    await putClassBack(placed);
     await page.close();
 });
 

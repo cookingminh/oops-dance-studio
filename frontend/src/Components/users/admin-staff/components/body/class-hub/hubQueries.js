@@ -7,7 +7,7 @@ import { signProofUrls } from '@/services/storage';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 const STUDENT = `${PERSON}, contact_number`;
-const SESSION = 'id, class_id, instructor_id, room_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at, checkout_late, cancel_reason, makes_up';
+const SESSION = 'id, class_id, instructor_id, room_id, venue_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at, checkout_late, cancel_reason, makes_up';
 
 // Light rows for the directory: every class's sessions in [from, to).
 export async function listSessionsBetween(from, to) {

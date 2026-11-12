@@ -117,6 +117,9 @@ export const ACTIONS = {
         transfer_assigned: 'Transfer assigned',
         transfer_ignored: 'Transfer ignored',
         transfer_reopened: 'Transfer back in the inbox',
+        extra_moved: 'Extra money moved',
+        extra_refunded: 'Extra money given back',
+        extra_move_undone: 'Extra money taken back',
     },
     expenses: {
         created: 'Added',
@@ -144,7 +147,15 @@ export const ACTIONS = {
         rate_set: 'Pay rate set',
         rate_removed: 'Pay rate removed',
     },
-    rooms: { created: 'Added', updated: 'Edited', photos_changed: 'Photos changed', deleted: 'Deleted' },
+    rooms: {
+        created: 'Added',
+        updated: 'Edited',
+        photos_changed: 'Photos changed',
+        deleted: 'Deleted',
+        venue_added: 'Rented studio added',
+        venue_changed: 'Rented studio edited',
+        venue_removed: 'Rented studio deleted',
+    },
     users: { account_created: 'Account created', account_deleted: 'Account deleted', role_changed: 'Role changed', profile_edited: 'Details edited' },
     settings: { updated: 'Changed' },
 };

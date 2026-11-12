@@ -278,6 +278,43 @@
         border-radius: 50%;
         background: var(--cal-primary);
     }
+
+    // Before opening / after closing: a dashed line on the grid's edge, the time beside it.
+    &.isOutside {
+        height: 0;
+        border-top: 2px dashed var(--cal-primary);
+        background: none;
+
+        &::before {
+            top: -6px;
+        }
+    }
+
+    &.is-after {
+        transform: translateY(-2px);
+    }
+
+    .calNowTime {
+        position: absolute;
+        left: 8px;
+        padding: .05rem .45rem;
+        border-radius: 999px;
+        background: var(--cal-primary);
+        color: #fff;
+        font-size: .64rem;
+        font-weight: 700;
+        line-height: 1.45;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &.is-before .calNowTime {
+        top: 4px;
+    }
+
+    &.is-after .calNowTime {
+        bottom: 4px;
+    }
 }
 
 // Lanes (e.g. rooms): every day split into fixed sub-columns, a light line between lanes and a

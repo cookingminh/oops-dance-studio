@@ -29,7 +29,7 @@ const PaymentCodeDialog = ({ invoice, settings, sandbox, onClose, onSimulate }) 
                     <InvoiceHead invoice={invoice} title={t('Payment code')} />
                 </ModalHeader>
                 <ModalBody className="tuDialogBody">
-                    <div className={`tuQrBox${url ? '' : ' isEmpty'}`}>
+                    <div className={`tuQrBox${url ? '' : ' isEmpty'}${url && sandbox ? ' isDemo' : ''}`}>
                         {url ? (
                             <>
                                 {!loaded && <span className="tuQrLoading" aria-hidden="true" />}

@@ -5,13 +5,14 @@ import { useAsync } from '@/hooks/useAsync';
 import { getFinanceByClass } from '@/services/finance';
 import { getClassRates, getDefaultSessionRate, setClassRate } from '@/services/payroll';
 import { attachReceipt, createExpense, listExpenses } from '@/services/expenses';
-import { categoryOf } from '@/lib/expenseCategories';
+import { categoryOf, expenseTitle, isAutomaticRent } from '@/lib/expenseCategories';
 import { formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import AsyncState from '@/ui/feedback/AsyncState';
 import SectionCard from '../../../../common/SectionCard';
 import ExpenseDialog from '../../../expenses/ExpenseDialog';
+import { AutoRentBadge } from '../../../expenses/ExpenseParts';
 import { monthOf, nextMonth, prevMonth } from '../../hubModel';
 import MoneyChart from './MoneyChart';
 import '../../../expenses/expenses.scss';
@@ -193,10 +194,11 @@ const MoneyTab = ({ ctx }) => {
                                 <li key={row.id}>
                                     <span className="hubCostWhen">{formatDate(row.spent_on, 'dayMonth')}</span>
                                     <span className="hubCostWhat">
-                                        <strong>{row.description}</strong>
+                                        <strong>{expenseTitle(row, t)}</strong>
                                         <small>
                                             {t(categoryOf(row.category).label)}
                                             {row.vendor ? ` · ${row.vendor}` : ''}
+                                            {isAutomaticRent(row) && <AutoRentBadge />}
                                         </small>
                                     </span>
                                     <span className="hubMoney">{formatVnd(row.amount)}</span>

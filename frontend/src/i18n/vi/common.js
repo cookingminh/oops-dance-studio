@@ -240,4 +240,8 @@ export default {
     'This class has sessions, attendance or payments on record. End the class instead of deleting it.': 'Lớp đã có buổi học, điểm danh hoặc học phí nên không xoá được. Hãy kết thúc lớp.',
     'The room was booked after this session was cancelled, so it can’t be reopened. Add a make-up session instead.':
         'Sau khi buổi này bị huỷ, phòng đã có người đặt nên không mở lại được. Hãy thêm buổi học bù.',
+    'Requests from guests, waiting for an answer': 'Yêu cầu của khách, đang chờ trả lời',
+    'request waiting for approval': 'yêu cầu đang chờ duyệt',
+    'requests waiting for approval': 'yêu cầu đang chờ duyệt',
+    'Open them in Bookings to approve or reject.': 'Bấm để mở trang Đặt phòng, duyệt hoặc từ chối ở đó.',
 };

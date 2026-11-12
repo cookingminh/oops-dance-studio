@@ -7,6 +7,8 @@ import { createClass, saveRoutine, setClassImage } from '@/services/classes';
 import { createSchedule, deleteSchedule } from '@/services/schedules';
 import { listInstructors } from '@/services/users';
 import { listRooms } from '@/services/rooms';
+import { listVenues } from '@/services/venues';
+import { placeColumns } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import ImagePicker from '@/ui/ImagePicker';
@@ -30,9 +32,10 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
     const toast = useToast();
     const instructors = useAsync(listInstructors, []);
     const rooms = useAsync(listRooms, []);
+    const venues = useAsync(listVenues, []);
 
     const [step, setStep] = useState(0);
-    const [form, setForm] = useState({ name: '', instructorId: '', roomId: '', price: '', startsOn: today ?? '' });
+    const [form, setForm] = useState({ name: '', instructorId: '', place: '', price: '', startsOn: today ?? '' });
     const [tried, setTried] = useState(false);
     const [created, setCreated] = useState(null);
     const [slots, setSlots] = useState([]);
@@ -55,7 +58,7 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
         if (Object.values(problems).some(Boolean)) return;
         setBusy(true);
         try {
-            const cls = await createClass({ ...form, roomId: form.roomId ? Number(form.roomId) : null });
+            const cls = await createClass({ ...form, ...placeColumns(form.place) });
             setCreated(cls);
             toast.success(t('{name} created.', { name: cls.name }));
             next();
@@ -205,6 +208,7 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
                                     onChange={setForm}
                                     instructors={instructors.data ?? []}
                                     rooms={rooms.data ?? []}
+                                    venues={venues.data ?? []}
                                     today={today}
                                     problems={problems}
                                     tried={tried}

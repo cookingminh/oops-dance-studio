@@ -5,13 +5,15 @@ import { fileURLToPath } from 'node:url';
 import { addDays, expectToast, isoWeekday, login, people, pickOption, rest, rooms, rpc, staffJwt, studioToday } from './support.js';
 
 // Routines by number of sessions and make-up sessions (Classes → Routines). A test class of its own
-// (one weekly session, tomorrow's weekday, one student) gets a 4-session routine starting today, then
-// a make-up session today: it gets a roll call, starts the routine and pulls its last session (the
-// shoot day) a week earlier. Everything the spec made is removed afterwards.
+// (one weekly session, tomorrow's weekday, one student, in a room) gets a 4-session routine starting today,
+// then a make-up session today: one at a second test class's time in that room is refused with its name;
+// one in a free hour gets a roll call, starts the routine and pulls its last session (the shoot day) a week
+// earlier. Everything the spec made is removed afterwards.
 
 test.describe.configure({ mode: 'serial' });
 
 const CLASS_NAME = 'E2E Routine Class';
+const NEIGHBOUR_NAME = 'E2E Routine Neighbour'; // meets today in the same room
 const TITLE = 'Ditto — NewJeans';
 const NOTE = 'E2E make-up';
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -21,7 +23,7 @@ let staff;
 let today;
 let cls; // { id, room_id }
 let student;
-let neighbour; // another class in the same room meeting today: { name, start, end }
+let neighbour; // the class in the same room meeting today: { name, start, end }
 let makeUp; // { start, end } a free hour in the room today
 
 const short = (iso) => new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(`${iso}T00:00:00`));
@@ -52,7 +54,7 @@ function serviceKey() {
 // Removes the test class and everything hanging off it (sessions, roll calls, routines, members,
 // invoices), whatever state an earlier run left it in.
 async function removeTestClasses() {
-    const found = (await rest(staff, `classes?select=id&name=eq.${encodeURIComponent(CLASS_NAME)}`)).data;
+    const found = (await rest(staff, `classes?select=id&name=in.(${[CLASS_NAME, NEIGHBOUR_NAME].map((name) => `"${encodeURIComponent(name)}"`).join(',')})`)).data;
     for (const { id } of found) {
         for (const table of ['student_attendance', 'instructor_attendance', 'class_lessons', 'class_students', 'class_schedules']) {
             const res = await rest(staff, `${table}?class_id=eq.${id}`, { method: 'DELETE' });
@@ -71,18 +73,24 @@ async function removeTestClasses() {
     }
 }
 
-// Busy stretches of a room on a day (bookings, classes meeting that day, make-ups) → first free hour.
-async function freeHour(roomId, date) {
+// Busy stretches of a room on a day (bookings, classes meeting that day but the test class, make-ups), in
+// minutes: [[from, to]].
+async function busyOn(roomId, date) {
     const weekday = isoWeekday(date);
     const bookings = (await rest(staff, `bookings?select=start_time,end_time&room_id=eq.${roomId}&date=eq.${date}&status=in.(pending,approved)`)).data;
     const classes = (await rest(staff, `classes?select=id,starts_on,ended_on,schedules:class_schedules(day_of_week,start_time,end_time)&room_id=eq.${roomId}`)).data;
     const extras = (await rest(staff, `instructor_attendance?select=start_time,end_time&room_id=eq.${roomId}&date=eq.${date}&is_extra=eq.true&status=neq.cancelled`)).data;
-    const busy = [
+    return [
         ...bookings,
         ...extras,
-        ...classes.filter((c) => c.id !== cls.id && c.starts_on <= date && (!c.ended_on || c.ended_on >= date))
+        ...classes.filter((c) => c.id !== cls?.id && c.starts_on <= date && (!c.ended_on || c.ended_on >= date))
             .flatMap((c) => c.schedules.filter((s) => s.day_of_week === weekday)),
     ].map((slot) => [toMinutes(slot.start_time), toMinutes(slot.end_time)]);
+}
+
+// The first free hour of a room on a day, on the half hour.
+async function freeHour(roomId, date) {
+    const busy = await busyOn(roomId, date);
     for (let start = 8 * 60; start + 60 <= 22 * 60; start += 30) {
         if (!busy.some(([from, to]) => from < start + 60 && to > start)) return { start: toClock(start), end: toClock(start + 60) };
     }
@@ -94,35 +102,32 @@ test.beforeAll(async ({ browser }) => {
     today = await studioToday();
     await removeTestClasses();
 
-    // A class meeting today in a room, to show what a make-up clashes with.
-    const weekday = isoWeekday(today);
-    const cancelledToday = new Set((await rest(staff, `instructor_attendance?select=class_id&date=eq.${today}&status=eq.cancelled`)).data.map((row) => row.class_id));
-    const classes = (await rest(staff, 'classes?select=id,name,room_id,starts_on,ended_on,schedules:class_schedules(day_of_week,start_time,end_time)&room_id=not.is.null&order=id')).data;
-    const busy = classes.find((c) => c.starts_on <= today && (!c.ended_on || c.ended_on >= today) && !cancelledToday.has(c.id)
-        && c.schedules.some((s) => s.day_of_week === weekday && /:(00|30):00$/.test(s.start_time) && /:(00|30):00$/.test(s.end_time)));
-    const slot = busy?.schedules.find((s) => s.day_of_week === weekday);
-    neighbour = busy ? { name: busy.name, start: slot.start_time.slice(0, 5), end: slot.end_time.slice(0, 5) } : null;
-    const roomId = busy?.room_id ?? (await rooms())[0].id;
-
-    // The test class: one weekly session on tomorrow's weekday, wherever the room is free.
+    // Two test classes in a room (the demo's classes are taught at rented studios): one meeting today in an
+    // hour the room is free today, to show what a make-up clashes with, and the class itself, on tomorrow's
+    // weekday; each takes the first weekly hour the room has free (no live booking then, every week).
+    const roomId = (await rooms())[0].id;
     const instructor = (await people('instructor'))[0];
-    const created = await rest(staff, 'classes?select=id,room_id', {
-        method: 'POST',
-        prefer: 'return=representation',
-        body: { name: CLASS_NAME, instructor_id: instructor.id, room_id: roomId, price: 500000 },
-    });
-    expect(created.status, JSON.stringify(created.data)).toBe(201);
-    cls = created.data[0];
-    const tomorrow = isoWeekday(addDays(today, 1));
-    let scheduled = false;
-    for (let start = 8 * 60; start + 60 <= 22 * 60 && !scheduled; start += 60) {
-        const res = await rest(staff, 'class_schedules', {
+    const busyToday = await busyOn(roomId, today);
+    const freeToday = (start) => !busyToday.some(([from, to]) => from < start + 60 && to > start);
+    const addClass = async (name, weekday, fits = () => true) => {
+        const made = await rest(staff, 'classes?select=id,room_id', {
             method: 'POST',
-            body: { class_id: cls.id, day_of_week: tomorrow, start_time: toClock(start), end_time: toClock(start + 60) },
+            prefer: 'return=representation',
+            body: { name, instructor_id: instructor.id, room_id: roomId, price: 500000 },
         });
-        scheduled = res.status === 201;
-    }
-    expect(scheduled, 'a free weekly hour for the test class').toBe(true);
+        expect(made.status, JSON.stringify(made.data)).toBe(201);
+        for (let start = 8 * 60; start + 60 <= 22 * 60; start += 60) {
+            if (!fits(start)) continue;
+            const slot = { start: toClock(start), end: toClock(start + 60) };
+            const res = await rest(staff, 'class_schedules', { method: 'POST', body: { class_id: made.data[0].id, day_of_week: weekday, start_time: slot.start, end_time: slot.end } });
+            if (res.status === 201) return { ...made.data[0], ...slot };
+        }
+        throw new Error(`no free weekly hour for ${name}`);
+    };
+    const near = await addClass(NEIGHBOUR_NAME, isoWeekday(today), freeToday);
+    neighbour = { name: NEIGHBOUR_NAME, start: near.start, end: near.end };
+    const own = await addClass(CLASS_NAME, isoWeekday(addDays(today, 1)));
+    cls = { id: own.id, room_id: own.room_id };
 
     // One student, so the make-up session gets a roll call.
     student = (await people('guest')).at(-1);
@@ -180,7 +185,6 @@ test('the panel shows the routine’s progress and shoot day', async () => {
 });
 
 test('a make-up session in a busy room says what it clashes with', async () => {
-    test.skip(!neighbour, 'no class with a room meets today');
     await panel().getByRole('button', { name: 'Add a make-up session' }).first().click();
     const dialog = makeUpDialog();
     await expect(dialog.getByLabel('Date', { exact: true })).toHaveValue(today);

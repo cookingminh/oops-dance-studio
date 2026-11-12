@@ -41,10 +41,13 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261117001000_booking_auto_complete.sql` | an approved booking paid in full becomes completed by itself; completed bookings ahead hold their room |
 | `migrations/20261117000900_session_changes.sql` | call a session off with a reason (also ahead), move it to another day in one step, close the studio for a day, what changed for the class (`my_session_changes`) |
 | `migrations/20261117000800_booking_refunds.sql` | the cancellation policy (`booking_settings`), refunds owed and paid on bookings, guests cancel approved bookings, kept money counts as revenue |
+| `migrations/20261117001200_tuition_extra.sql` | extra tuition money (an invoice paid more than it costs): move it to another unpaid invoice or record it given back (`tuition_extra_moves`); undoing a payment takes moves back |
+| `migrations/20261117001300_venues.sql` | rented studios (`venues`): a class is taught in a room or at a venue, its sessions follow; each session taught at a venue becomes a `venue_rent` expense (daily job `venue-rent`); demo classes moved to two venues (`seed_demo_venues`) |
+| `migrations/20261117001400_demo_november.sql` | the demo becomes the studio's November timetable (classes, teachers, six rented studios; Newbie classes opening next month) |
 | `migrations/20261117000700_routine_promos.sql` | a routine's promo: the instructor's clip (bucket `class-promos`) or a YouTube link, set with `lesson_set_promo` |
 | `functions/bank-webhook/` | Edge Function: SePay webhook → `tuition_record_transfer` (API key in `BANK_WEBHOOK_KEY`). `handler_test.ts` unit-tests it |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users (and names the admin in the activity log). `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
-| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments, routine promos, booking refunds, session changes, paid = completed, check-in window) |
+| `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments, routine promos, booking refunds, session changes, paid = completed, check-in window, tuition extra money, rented studios) |
 | `seed.sql` | local demo data (runs on `supabase db reset`) |
 | `../scripts/demo-images.mjs` | uploads demo photos to Storage (instructor avatars, class photo, room photos) and sets `avatar_path` / `image_path` / `image_paths` |
 | `../scripts/demo-assets/` | the demo photos, WebP (instructor cut-outs keep their transparency) |
@@ -116,9 +119,9 @@ Password for every demo account: **`OopsDemo@2026`** (local only — never reuse
 |---|---|
 | `admin@demo.oopsdance.test` | admin |
 | `staff@demo.oopsdance.test` | staff |
-| `instructor@demo.oopsdance.test` | instructor **Ami** — teaches every day, so check-in works any day |
+| `instructor@demo.oopsdance.test` | instructor **Đỗ Linh** — Trending, Choreo CG (and Newbie 1 from next month) |
 | `guest@demo.oopsdance.test` | guest — has enrolments, past and upcoming bookings |
-| `instructor2@` Bin · `instructor3@` Đỗ Linh · `instructor4@` Chaeng · `instructor5@` Duc Bo | instructors |
+| `instructor2@` Soleck · `instructor3@` An Trinh · `instructor4@` Vân Anh · `instructor5@` Đức Anh | instructors |
 | `guest02@…` … `guest15@demo.oopsdance.test` | guests |
 
 The five instructors are the studio's teachers as named on the legacy homepage, with their

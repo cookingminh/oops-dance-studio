@@ -9,12 +9,13 @@ import { toAppError, unwrap } from './errors';
 // Expense { id, spent_on 'yyyy-MM-dd', month 'yyyy-MM-01' (generated), category, amount, description,
 //   vendor, class_id (a cost that belongs to one class: camera crew for its shoot, its costumes…),
 //   method 'transfer' | 'cash' | null, receipt_path (private bucket `receipts`), recurring_id,
-//   created_by, created_at, updated_at, class: { id, name } | null, author: { id, full_name, username } | null }
+//   session_id (an automatic studio rent: the session at a rented studio it is for; lib/expenseCategories.js),
+//   created_by (null: added by the system), created_at, updated_at, class: { id, name } | null, author: { id, full_name, username } | null }
 //
 // RLS: admins see and change everything; staff add petty costs and see / change only their own.
 // Recurring expenses (rent, internet…) are admin only; the daily job adds each on its day of the month.
 
-const EXPENSE = `id, spent_on, month, category, amount, description, vendor, class_id, method, receipt_path, recurring_id,
+const EXPENSE = `id, spent_on, month, category, amount, description, vendor, class_id, method, receipt_path, recurring_id, session_id,
     created_by, created_at, updated_at, class:classes!class_id(id, name), author:profiles!created_by(id, full_name, username)`;
 
 const FIELDS = ['spent_on', 'category', 'amount', 'description', 'vendor', 'class_id', 'method'];
