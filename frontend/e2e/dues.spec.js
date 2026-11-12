@@ -1,6 +1,7 @@
 // What students and guests still have to pay is pushed to them: a bell in /profile with a QR button per
 // item, a badge on the menu page, and once a day a friendly reminder in the corner ("Later" = not again
-// today). The data: an approved booking still waiting for its deposit, two days ahead.
+// today). The data: an approved booking still waiting for its deposit, two days ahead. The guest may owe more (the
+// demo makes some tuition late at random), so the reminder is checked for a payment, the bell for the deposit.
 import { test, expect } from '@playwright/test';
 import { addDays, login, rest, rpc, staffJwt, studioToday, token } from './support.js';
 
@@ -38,8 +39,9 @@ test.describe.serial('reminders to pay', () => {
         await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('oops-pay-nudge')).forEach((key) => localStorage.removeItem(key)));
         await page.goto('/profile');
 
+        // The most urgent thing to pay: the deposit, or a tuition the demo made late.
         const nudge = page.getByRole('status', { name: 'Payment reminder' });
-        await expect(nudge).toContainText(/deposit/);
+        await expect(nudge.getByRole('button', { name: /^Pay / })).toBeVisible();
         await nudge.getByRole('button', { name: 'Later' }).click();
         await expect(nudge).toHaveCount(0);
 

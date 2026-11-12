@@ -90,7 +90,7 @@ test('the image dialog previews the Classes card and saves which part of the ima
 });
 
 test('the timetable photo dialog zooms the round photo and the poster follows', async () => {
-    await setupCard('Photo on the timetable').getByRole('button', { name: 'Change photo' }).click();
+    await setupCard('Photo on the timetable').getByRole('button', { name: 'Change the round photo' }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByRole('heading', { name: 'Preview on the timetable' })).toBeVisible();
     await expect(dialog.locator('.frmPoster .ttDisc')).toBeVisible();
