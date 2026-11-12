@@ -133,25 +133,24 @@ Mỗi **khoá** là một bài: *tên bài*, *số buổi* (mặc định 8), *n
 - Cuối mỗi khoá: quay video, dán **link YouTube** vào khoá (tab Bài nhảy) → video hiện ở trang `/classes` (phần
   "lên hình") và trong trang lớp của học viên.
 
-### Promo bài tiếp theo (giáo viên tự quay)
+### Promo bài tiếp theo (staff / admin đăng)
 
-Khi studio đã lên **bài tiếp theo** cho lớp, giáo viên của lớp quay một **clip promo** ngắn (15–60 giây: một đoạn nhảy
-và vài lời giới thiệu) để học viên biết sắp học gì và quyết định học tiếp, còn khách biết lớp sắp học bài nào.
+Khi studio đã lên **bài tiếp theo** cho lớp, studio đăng một **clip promo** ngắn (15–60 giây: một đoạn nhảy và vài lời
+giới thiệu) để học viên biết sắp học gì và quyết định học tiếp, còn khách biết lớp sắp học bài nào. Giáo viên không cần
+làm gì trên app: trang của giáo viên không còn khối promo hay lời nhắc quay promo.
 
-- **Nơi làm**: giáo viên vào *Lớp của tôi* → khối **Promo bài tiếp theo** (trang *Tổng quan* có thẻ "Quay N promo" dẫn
-  thẳng tới đó). Có hai cách:
-  - **Tải clip lên** từ điện thoại hoặc máy tính: MP4/MOV/WebM, tối đa 50 MB (khoảng 1 phút), tối đa 3 phút. Hệ thống
-    kiểm tra clip phát được, lấy một khung hình làm ảnh bìa, có thanh % khi tải lên.
-  - **Dán link YouTube**: Shorts hay video thường đều được; để chế độ *công khai* hoặc *không công khai* (không để
-    *riêng tư*). Không tốn dung lượng của studio, không giới hạn độ dài.
-  - Thêm **một câu gửi học viên** (không bắt buộc, ≤ 200 ký tự). Sau đó có thể *Thay clip*, *Sửa câu*, *Gỡ*.
-- **Hạn**: trước khi **mở gia hạn** khoá mới (khi khoá đang học còn 2 buổi) — lúc học viên được hỏi có học tiếp không.
-  Thẻ ghi *Hạn …*, hoặc *Cần ngay* khi học viên đang trả lời rồi.
+- **Nơi làm**: staff / admin vào lớp → tab **Bài nhảy** → dòng promo của bài sắp tới → *Tải lên*. Có hai cách:
+  - **Dán link YouTube** (cách thường dùng): Shorts hay video thường đều được; để chế độ *công khai* hoặc *không công
+    khai* (không để *riêng tư*). Không tốn dung lượng của studio, không giới hạn độ dài.
+  - **Tải clip lên**: MP4/MOV/WebM, tối đa 50 MB (khoảng 1 phút), tối đa 3 phút. Hệ thống kiểm tra clip phát được,
+    lấy một khung hình làm ảnh bìa, có thanh % khi tải lên.
+  - Thêm **một câu gửi học viên** (không bắt buộc, ≤ 200 ký tự). Sau đó có thể *Thay*, *Gỡ*.
+- **Nên đăng trước khi mở gia hạn** khoá mới (khi khoá đang học còn 2 buổi) — lúc học viên được hỏi có học tiếp không.
 - **Ai xem**: học viên của lớp (trang lớp: *Bài tiếp theo* + nút *Xem promo*; trang Học phí: nút *Xem promo* ngay cạnh
   câu hỏi "Học tiếp khoá …?"), khách ở trang `/classes` (phần **Bài tiếp theo**, kèm nút *Nhận buổi học miễn phí*).
   Trang công khai hiện promo của bài sắp tới, và bài vừa bắt đầu trong 7 ngày.
-- **Staff**: tab *Bài nhảy* của lớp hiện promo của từng bài (ai đăng, ngày, xem/thay/gỡ, staff cũng tải lên thay được);
-  chuông việc cần làm nhắc "*Lớp X chưa có promo cho bài tiếp theo*" khi bài mới bắt đầu trong 14 ngày.
+- **Nhắc việc**: tab *Bài nhảy* của lớp hiện promo của từng bài (ai đăng, ngày, xem/thay/gỡ); chuông việc cần làm của
+  staff nhắc "*Lớp X chưa có promo cho bài tiếp theo*" khi bài mới bắt đầu trong 14 ngày.
 - **Dọn dẹp**: mỗi lớp chỉ giữ promo của bài đang học và bài sắp tới; khi đăng promo mới, file promo của các bài đã
   xong tự bị xoá. Xoá một bài cũng xoá clip promo của bài đó.
 

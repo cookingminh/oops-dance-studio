@@ -11,17 +11,16 @@ import ClassTuitionLine from '../tuition/ClassTuitionLine';
 
 // Everything about one class on one screen: who/where, (students) tuition, the routine it is
 // learning (sessions held, shoot day), the next session (instructors check in from here), the next
-// routine's promo (instructors upload it, students watch it), the coming week and attendance (own,
+// routine's promo (students watch it; staff add it), the coming week and attendance (own,
 // or the students'). A change in the next 7 days (a session called off, a make-up) shows first.
-// onChanged() reloads the classes.
-export const ClassView = ({ cls, today, now, isInstructor, onCheck, onChanged }) => (
+export const ClassView = ({ cls, today, now, isInstructor, onCheck }) => (
     <div className={`pfClassView${isInstructor ? ' isInstructor' : ''}`}>
         <ClassBanner cls={cls} today={today} isInstructor={isInstructor} />
         <ClassChanges cls={cls} today={today} />
         {!isInstructor && <ClassTuitionLine classId={cls.id} />}
         <LessonCard cls={cls} today={today} isInstructor={isInstructor} />
         <NextSessionCard cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={onCheck} />
-        <PromoCard cls={cls} isInstructor={isInstructor} onChanged={onChanged} />
+        {!isInstructor && <PromoCard cls={cls} />}
         <WeekStrip cls={cls} today={today} now={now} notes={false} />
         {isInstructor ? <ClassRoster cls={cls} today={today} /> : <StudentProgress cls={cls} />}
     </div>

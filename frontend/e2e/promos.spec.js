@@ -1,6 +1,7 @@
-// Routine promos: the instructor films a short clip of their class's next routine; students watch it in
-// their class and before they renew, visitors on /classes; staff are reminded, see who made it, can
-// swap it for a YouTube Short and take it off. The routine ends without a promo, as it started.
+// Routine promos: staff add a short clip of a class's next routine on its Routines tab (instructors no longer
+// manage promos); students watch it in their class and before they renew, visitors on /classes; staff are
+// reminded, see who made it, can swap it for a YouTube Short and take it off. The routine ends without a
+// promo, as it started.
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test, expect } from '@playwright/test';
@@ -68,27 +69,26 @@ test.describe.serial('routine promos', () => {
         await expect(page.getByText(`${t.cls.name} has no promo for its next routine`)).toBeVisible();
     });
 
-    test('the instructor films it: the overview asks, the class card takes the clip', async ({ page }) => {
-        await login(page, 'instructor@demo.oopsdance.test');
-        const nudge = page.locator('.pfPromoNudge');
-        await expect(nudge).toContainText(song(t.next.title));
-        await nudge.getByRole('link', { name: `Upload the promo of “${t.next.title}”` }).click();
-        await expect(page).toHaveURL(new RegExp(`class=${t.cls.id}&promo=1`));
-
-        const card = page.locator('.pfPromo');
-        await expect(card).toContainText('Promo for the next routine');
-        await card.getByTestId('promo-file').setInputFiles(CLIP);
-        await expect(card.locator('.prFile')).toContainText('promo.webm');
-        await card.getByLabel('A line for students (optional)').fill(CAPTION);
-        await card.getByRole('button', { name: 'Publish promo' }).click();
+    test('staff add it on the class’s Routines tab', async ({ page }) => {
+        await login(page, 'staff@demo.oopsdance.test');
+        await page.goto(`/admin/classes/${t.cls.id}?tab=routines`);
+        await page.getByRole('button', { name: `Upload the promo of “${t.next.title}”` }).click();
+        const uploader = page.locator('.rtPromo.isUploading');
+        await uploader.getByTestId('promo-file').setInputFiles(CLIP);
+        await expect(uploader.locator('.prFile')).toContainText('promo.webm');
+        await uploader.getByLabel('A line for students (optional)').fill(CAPTION);
+        await uploader.getByRole('button', { name: 'Publish promo' }).click();
         await expectToast(page, `Promo published for “${t.next.title}”.`);
-        await expect(card).toContainText('Published');
-        await expect(card).toContainText(CAPTION);
-        await expect(card.locator('video')).toHaveAttribute('src', /\/class-promos\//);
+        await expect(page.locator('.rtPromo').filter({ hasText: CAPTION })).toContainText('Uploaded by');
+    });
 
-        await page.goto('/profile');
+    test('instructors are not asked for promos and have no promo card', async ({ page }) => {
+        await login(page, 'instructor@demo.oopsdance.test');
         await expect(page.locator('.pfSnapshotCard .pfLesson').first()).toBeVisible();
-        await expect(page.locator('.pfPromoNudge').filter({ hasText: song(t.next.title) })).toHaveCount(0);
+        await expect(page.locator('.pfPromoNudge')).toHaveCount(0);
+        await page.goto(`/profile/my-classes?class=${t.cls.id}`);
+        await expect(page.locator('.pfClassView')).toBeVisible();
+        await expect(page.locator('.pfPromo')).toHaveCount(0);
     });
 
     test('students watch it in their class and while deciding to renew', async ({ page }) => {

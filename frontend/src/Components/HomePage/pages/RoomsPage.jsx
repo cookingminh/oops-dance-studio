@@ -42,7 +42,7 @@ const RoomsPage = () => {
                 facts={[
                     { label: t('Rooms'), value: list.length || '—' },
                     { label: t('Per hour, from'), value: cheapest === null ? '—' : `${Math.round(cheapest / 1000)}k` },
-                    { label: t('Open every day'), value: '08–22' },
+                    { label: t('Open every day'), value: '8:00–22:00' },
                 ]}
             />
             <Search rooms={rooms} selectedRoom={selectedRoom} onSelectRoom={setSelectedRoom} />

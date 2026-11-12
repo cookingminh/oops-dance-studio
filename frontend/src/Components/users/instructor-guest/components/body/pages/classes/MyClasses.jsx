@@ -71,7 +71,7 @@ const MyClasses = () => {
                                 renderMeta={(cls) => <NextLine cls={cls} today={today} now={now} />}
                             />
                             <ClassPanel classes={classes} selectedId={selectedId} idPrefix="my-classes">
-                                {(cls) => <ClassView cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={setChecking} onChanged={data.reload} />}
+                                {(cls) => <ClassView cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={setChecking} />}
                             </ClassPanel>
                         </>
                     )}

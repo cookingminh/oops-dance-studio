@@ -24,7 +24,6 @@ import MakeUpTag from '../../../../../admin-staff/components/body/class-manager/
 import LateTag from '../../../../../admin-staff/components/common/checkins/LateTag';
 import { reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
 import { Hero, StatGrid, UpNext } from './OverviewParts';
-import PromoNudge from './PromoNudge';
 
 async function load(userId) {
     const [classData, stats, history] = await Promise.all([loadInstructorClasses(userId), myStats(), listMyInstructorAttendance(userId)]);
@@ -109,7 +108,6 @@ const InstructorOverview = () => {
                 ]}
             />
 
-            <PromoNudge classes={classes} />
 
             <SectionCard
                 className="pfTodayCard"
