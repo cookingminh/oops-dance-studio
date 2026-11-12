@@ -1,6 +1,6 @@
-// Instructor check-ins: the "Late check-out" pill (staff pages, the instructor's history) and the staff
-// "Edit check-in/out times" dialog (a portal: .adminPortal carries the --ad-* tokens, the dialog chrome
-// .rtDialog* / .scg* comes from routines.scss and sessionChanges.scss).
+// Instructor check-ins: the "Late check-out" pill (staff pages, the instructor's history) and the editor staff
+// open from a check-in / check-out tile of the session modal (CheckEditor.jsx; inside .adminPortal, so the
+// --ad-* tokens are there).
 
 .ckLateTag {
     display: inline-flex;
@@ -29,53 +29,133 @@
     color: hsl(28, 85%, 30%);
 }
 
-.ckDialog {
-    .ckTimes {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: .75rem;
-    }
+.ckEditor {
+    display: grid;
+    gap: .8rem;
+    padding: .85rem .9rem .8rem;
+    border: 1.5px solid var(--ad-primary-tint);
+    border-radius: 14px;
+    background: var(--ad-surface);
+    box-shadow: 0 10px 24px -18px hsla(0, 50%, 25%, .5);
+    animation: ckOpen .22s var(--ad-ease, ease) both;
+}
 
-    .ckLate {
-        display: grid;
-        justify-items: start;
-        gap: .45rem;
+@keyframes ckOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
     }
+}
 
-    .ckLabel {
-        font-size: .78rem;
-        font-weight: 700;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        color: var(--ad-subtle);
-    }
+.ckEditorTitle {
+    color: var(--ad-text);
+    font-size: .88rem;
+    font-weight: 700;
+}
 
-    .ckHint {
-        display: flex;
-        align-items: flex-start;
-        gap: .4rem;
-        font-size: .85rem;
-        line-height: 1.45;
+.ckEditorTimes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: .7rem;
+}
+
+.ckClock {
+    display: grid;
+    gap: .4rem;
+}
+
+// The typed time reads big and in even digits.
+.ckClockInput {
+    font-size: 1.05rem !important;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .02em;
+    color: var(--ad-text) !important;
+}
+
+.ckEditorLabel {
+    color: var(--ad-muted);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.ckReason {
+    display: grid;
+    gap: .4rem;
+}
+
+// One-tap picks: quick times, ready-made reasons.
+.ckPicks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+
+    button {
+        padding: .22rem .65rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
         color: var(--ad-muted);
+        font-size: .78rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color .2s ease, background-color .2s ease, color .2s ease;
 
-        svg {
-            flex-shrink: 0;
-            margin-top: .15rem;
+        &:hover:not(:disabled) {
+            border-color: var(--ad-primary-tint);
+            color: var(--ad-primary);
+        }
+
+        &[aria-pressed='true'],
+        &[aria-checked='true'] {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
         }
     }
 }
 
-@media screen and (max-width: 560px) {
-    .ckDialog .ckTimes {
-        grid-template-columns: minmax(0, 1fr);
+.ckLateBox {
+    max-width: none;
+    align-items: flex-start;
+
+    span,
+    small {
+        display: block;
     }
 
-    .ckDialog .ckLate .segmented {
-        width: 100%;
+    small {
+        color: var(--ad-subtle);
+        font-size: .76rem;
+    }
+}
 
-        button {
-            flex: 1 1 0;
-            justify-content: center;
-        }
+.ckProblem {
+    display: flex;
+    align-items: flex-start;
+    gap: .4rem;
+    color: var(--ad-primary);
+    font-size: .82rem;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+}
+
+.ckEditorActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .4rem;
+
+    .ckRemove {
+        margin-right: auto;
     }
 }

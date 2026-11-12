@@ -126,7 +126,15 @@ test('an earlier session left open waits for review, and the sidebar badge count
     // The instructor checked in but never checked out (as if nobody closed it).
     await rest(staff, `instructor_attendance?id=eq.${closed.original.id}`, { method: 'PATCH', body: { status: 'in_progress' } });
     await page.goto('/admin/attendance');
-    const item = page.locator('.reviewCard .reviewItem').filter({ hasText: closed.name }).filter({ hasText: 'never checked out' });
+    // That session's row (the class may have another session waiting for review, e.g. one the demo left open).
+    const { date } = closed.original;
+    const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
+    const item = page
+        .locator('.reviewCard .reviewItem')
+        .filter({ hasText: closed.name })
+        .filter({ hasText: weekday })
+        .filter({ has: page.locator('.reviewDate strong', { hasText: new RegExp(`^${Number(date.slice(8))}$`) }) })
+        .filter({ hasText: 'never checked out' });
     await expect(item).toBeVisible();
     await expect(badge).toHaveText(String(before + 1));
 

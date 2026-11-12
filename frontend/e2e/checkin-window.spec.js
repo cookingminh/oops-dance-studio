@@ -139,26 +139,27 @@ test('checking out more than 10 minutes after the end warns first, works, and ma
     await expect(insPage.locator('.historyDiv').getByText('Late check-out').first()).toBeVisible();
 });
 
-test('staff correct a forgotten check-out with a reason; the late mark follows the times', async () => {
+test('staff correct a forgotten check-out from its tile; the late mark follows the times', async () => {
     await setRow({ ...NOT_IN, status: 'in_progress', start_time: '09:00', end_time: '10:00', checkin_at: `${today}T09:02:00+07:00` });
 
     await staffPage.goto(`/admin/attendance?class=${session.class_id}&day=${today}`);
     const modal = staffPage.locator('.sessionModal');
     await expect(modal).toContainText(session.className);
-    await modal.getByRole('button', { name: 'Edit check-in/out times' }).click();
+    await modal.getByRole('button', { name: /^Check-out: Not yet/ }).click();
 
-    const dialog = staffPage.locator('.ckDialog');
-    await expect(dialog.getByLabel('Check-in', { exact: true })).toHaveValue('09:02');
-    await expect(dialog.getByLabel('Check-out', { exact: true })).toHaveValue('');
-    await dialog.getByLabel('Check-out', { exact: true }).fill('10:25');
-    // Auto: 25 minutes after the end is late.
-    await expect(dialog).toContainText('Late: more than 10 minutes after the end (10:00).');
-    const save = dialog.getByRole('button', { name: 'Save the times' });
-    await expect(save).toBeDisabled(); // a reason first
-    await dialog.getByRole('button', { name: 'Forgot to check out' }).click();
-    await save.click();
+    // The editor opens under the tiles: the session's end ready, "forgot to check out" picked.
+    const editor = modal.locator('.ckEditor');
+    await expect(editor).toContainText('Correct the check-out');
+    const time = editor.getByLabel('Check-out', { exact: true });
+    await expect(time).toHaveValue('10:00');
+    await expect(editor.getByRole('radio', { name: 'Forgot to check out' })).toHaveAttribute('aria-checked', 'true');
+    await time.fill('1025'); // typed the 24-hour way
+    await expect(time).toHaveValue('10:25');
+    // 25 minutes after the end: late, by the times.
+    await expect(editor.getByRole('checkbox', { name: /Counts as a late check-out/ })).toBeChecked();
+    await editor.getByRole('button', { name: 'Save' }).click();
     await expectToast(staffPage, 'Check-in times corrected.');
-    await expect(dialog).toHaveCount(0);
+    await expect(editor).toHaveCount(0);
 
     const row = await rowNow();
     expect(row).toMatchObject({ status: 'completed', checkout_late: true });
@@ -167,11 +168,12 @@ test('staff correct a forgotten check-out with a reason; the late mark follows t
     await expect(modal.locator('.smLateLine')).toContainText('Late check-out');
     await expect(modal.locator('.smLateLine')).toContainText('More than 10 minutes after the end (10:00).');
 
-    // Excused: staff mark it not late.
-    await modal.getByRole('button', { name: 'Edit check-in/out times' }).click();
-    await dialog.getByRole('button', { name: 'Not late', exact: true }).click();
-    await dialog.getByRole('textbox', { name: /^Reason/ }).fill('E2E kept back by the studio');
-    await dialog.getByRole('button', { name: 'Save the times' }).click();
+    // Excused: kept back by the studio unmarks it.
+    await modal.getByRole('button', { name: /^Check-out: 10:25/ }).click();
+    await expect(editor.getByRole('radio', { name: 'Wrong time' })).toHaveAttribute('aria-checked', 'true');
+    await editor.getByRole('radio', { name: 'Kept back by the studio' }).click();
+    await expect(editor.getByRole('checkbox', { name: /Counts as a late check-out/ })).not.toBeChecked();
+    await editor.getByRole('button', { name: 'Save' }).click();
     await expectToast(staffPage, 'Check-in times corrected.');
     expect(await rowNow()).toMatchObject({ status: 'completed', checkout_late: false });
     await expect(modal.locator('.smLateLine')).toHaveCount(0);
@@ -200,5 +202,5 @@ test('the activity log has each correction, with the reason and before → after
     await expect(changed.getByRole('row', { name: /Status/ })).toContainText('Completed');
     await drawer.getByRole('button', { name: 'Close' }).click();
     // The excuse is in the log too, on its own line (a correction is never folded into a run).
-    await expect(entries.filter({ hasText: 'E2E kept back by the studio' }).first()).toContainText(`${staff.name} corrected ${me.name}’s check-in times`);
+    await expect(entries.filter({ hasText: 'Kept back by the studio' }).first()).toContainText(`${staff.name} corrected ${me.name}’s check-in times`);
 });

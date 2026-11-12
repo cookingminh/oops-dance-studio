@@ -115,7 +115,7 @@ const Footer = () => {
                 </p>
                 <p>
                     {t('Web Developed by')}{' '}
-                    <a href="https://nminh.com" target="_blank" rel="noopener noreferrer">
+                    <a href="https://leo-pham.vercel.app" target="_blank" rel="noopener noreferrer">
                         Nminh <LuArrowUpRight aria-hidden="true" />
                     </a>
                 </p>

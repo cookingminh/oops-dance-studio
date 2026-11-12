@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Avatar, Button, Image, Modal, ModalBody, ModalContent, ModalHeader, Select, SelectItem, Textarea } from '@nextui-org/react';
-import { LuCheck, LuImage, LuUserCog } from 'react-icons/lu';
+import { LuCheck, LuImage, LuPencil, LuUserCog } from 'react-icons/lu';
 import { formatClock } from '@/lib/format';
 import { avatarUrl } from '@/services/storage';
 import { useI18n } from '@/i18n/i18nContext';
@@ -9,16 +9,25 @@ import { personName } from './sessionModel';
 
 // The pieces of the session modal. Labels passed in are already translated.
 
-// Check-in or check-out: the time and the proof photo (click to see it large).
-export const CheckStep = ({ label, proofLabel, at, proof, onView }) => {
+// Check-in or check-out: the time and the proof photo (click to see it large). With `onEdit` the tile is a
+// button that opens the time's editor (`editing` while it is open).
+export const CheckStep = ({ label, proofLabel, at, proof, onView, onEdit, editing = false, editLabel }) => {
     const { t } = useI18n();
+    const time = at ? formatClock(at) : t('Not yet');
+    const Main = onEdit ? 'button' : 'span';
+    const mainProps = onEdit ? { type: 'button', onClick: onEdit, 'aria-expanded': editing, 'aria-label': `${label}: ${time}. ${editLabel}`, title: editLabel } : {};
     return (
-        <li className={`smCheck${at ? ' isDone' : ''}`}>
-            <span className="smCheckMark" aria-hidden="true">{at && <LuCheck />}</span>
-            <span className="smCheckText">
-                <small>{label}</small>
-                <strong>{at ? formatClock(at) : t('Not yet')}</strong>
-            </span>
+        <li className={`smCheck${at ? ' isDone' : ''}${onEdit ? ' isEditable' : ''}${editing ? ' isEditing' : ''}`}>
+            <Main className="smCheckMain" {...mainProps}>
+                <span className="smCheckMark" aria-hidden="true">{at && <LuCheck />}</span>
+                <span className="smCheckText">
+                    <small>{label}</small>
+                    <strong>
+                        {time}
+                        {onEdit && <LuPencil className="smCheckEdit" aria-hidden="true" />}
+                    </strong>
+                </span>
+            </Main>
             {proof ? (
                 <button type="button" className="smProof" aria-label={t('View proof photo')} title={proofLabel} onClick={() => onView({ url: proof, label: proofLabel })}>
                     <img src={proof} alt="" />

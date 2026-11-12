@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from '@nextui-org/react';
-import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClipboardEdit, LuClock, LuListChecks, LuRotateCcw } from 'react-icons/lu';
+import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClock, LuListChecks, LuRotateCcw } from 'react-icons/lu';
 import { updateInstructorAttendance } from '@/services/attendance';
 import { classImageUrl } from '@/services/storage';
 import { formatClock, formatTime } from '@/lib/format';
@@ -14,7 +14,7 @@ import MakeUpTag from '../../body/class-manager/routines/MakeUpTag';
 import { classPath, sessionTimes } from '../../body/class-hub/hubModel';
 import { useStudioClock } from '../useStudioClock';
 import RescheduleDialog from '../session-changes/RescheduleDialog';
-import EditCheckDialog from '../checkins/EditCheckDialog';
+import CheckEditor from '../checkins/CheckEditor';
 import LateTag from '../checkins/LateTag';
 import { changeDay, reasonText } from '../session-changes/changeText';
 import RollCall from './RollCall';
@@ -27,8 +27,8 @@ import './sessionModal.scss';
 // One class session in a dialog, the same on the attendance page and on the class page: when and
 // where, who teaches (a substitute for this session), the check-in / check-out with proof photos,
 // approve / reopen, call off or move it (today or ahead, also before its record exists), the note and
-// the students' roll call. Staff correct the check-in / check-out times with a reason (a late check-out is
-// marked). A session called off says why and when it is made up — the make-up is scheduled through the
+// the students' roll call. Staff correct the check-in / check-out times from their tiles, with a reason (a late
+// check-out is marked). A session called off says why and when it is made up — the make-up is scheduled through the
 // same dialog, also for a day already past, so it says which day it replaces; a make-up says which day
 // it replaces. It loads the session itself and reloads after every change; `onChanged` tells the page to
 // refresh its own data.
@@ -44,7 +44,8 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const detail = useSessionDetail(cls.id, date, version);
     const [busy, setBusy] = useState(null); // 'approve' | 'cancel' | 'reopen' | 'substitute' | 'note'
     const [proof, setProof] = useState(null);
-    const [changing, setChanging] = useState(null); // 'move' (call off / move) | 'makeUp' (make-up of a called-off session) | 'times'
+    const [changing, setChanging] = useState(null); // 'move' (call off / move) | 'makeUp' (make-up of a called-off session)
+    const [editingCheck, setEditingCheck] = useState(null); // 'in' | 'out': the tile whose time is being corrected
     const rollRef = useRef(null);
 
     const loaded = detail.data !== undefined;
@@ -59,6 +60,9 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const madeUp = detail.data?.makeUp ?? null;
     const reason = reasonText(row?.cancel_reason, t);
     const place = placeOf(row, cls);
+    // A forgotten check-out, a wrong time: staff correct them from the tiles, with a reason (logged).
+    const canEditTimes = Boolean(row) && !cancelled && !readOnly && date <= today;
+    const toggleCheck = (which) => () => setEditingCheck((open) => (open === which ? null : which));
 
     // "Take roll call": on a narrow screen the roll call sits below the session, so bring it up.
     useEffect(() => {
@@ -171,21 +175,48 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
 
                                 {row && !cancelled && (
                                     <ol className="smChecks">
-                                        <CheckStep label={t('Check-in')} proofLabel={t('Check-in proof')} at={row.checkin_at} proof={row.checkin_proof_url} onView={setProof} />
-                                        <CheckStep label={t('Check-out')} proofLabel={t('Check-out proof')} at={row.checkout_at} proof={row.checkout_proof_url} onView={setProof} />
+                                        <CheckStep
+                                            label={t('Check-in')}
+                                            proofLabel={t('Check-in proof')}
+                                            at={row.checkin_at}
+                                            proof={row.checkin_proof_url}
+                                            onView={setProof}
+                                            onEdit={canEditTimes ? toggleCheck('in') : undefined}
+                                            editing={editingCheck === 'in'}
+                                            editLabel={row.checkin_at ? t('Correct the check-in') : t('Set the check-in')}
+                                        />
+                                        <CheckStep
+                                            label={t('Check-out')}
+                                            proofLabel={t('Check-out proof')}
+                                            at={row.checkout_at}
+                                            proof={row.checkout_proof_url}
+                                            onView={setProof}
+                                            onEdit={canEditTimes ? toggleCheck('out') : undefined}
+                                            editing={editingCheck === 'out'}
+                                            editLabel={row.checkout_at ? t('Correct the check-out') : t('Set the check-out')}
+                                        />
                                     </ol>
                                 )}
+                                {editingCheck && canEditTimes && (
+                                    <CheckEditor
+                                        key={`${editingCheck}-${row.id}`}
+                                        which={editingCheck}
+                                        session={current}
+                                        today={today}
+                                        now={now}
+                                        onCancel={() => setEditingCheck(null)}
+                                        onSaved={() => {
+                                            setEditingCheck(null);
+                                            refresh();
+                                        }}
+                                    />
+                                )}
+                                {canEditTimes && !editingCheck && <p className="smHint">{t('Tap a time to correct it.')}</p>}
                                 {row?.checkout_late && !cancelled && (
                                     <p className="smLateLine">
                                         <LateTag />
                                         <span>{current.end ? t('More than 10 minutes after the end ({end}).', { end: current.end }) : t('More than 10 minutes after the end.')}</span>
                                     </p>
-                                )}
-                                {/* A forgotten check-out, a wrong time: staff set them, with a reason (logged). */}
-                                {row && !cancelled && !readOnly && date <= today && (
-                                    <Button size="sm" variant="flat" className="smEditTimes" startContent={<LuClipboardEdit aria-hidden="true" />} isDisabled={Boolean(busy)} onPress={() => setChanging('times')}>
-                                        {t('Edit check-in/out times')}
-                                    </Button>
                                 )}
                                 {!row && loaded && (
                                     <p className="smHint">{date >= today ? t('The check-in record is created with the week’s records.') : t('No check-in record for this day.')}</p>
@@ -296,16 +327,6 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                 </ModalContent>
             </Modal>
             {proof && <ProofDialog proof={proof} onClose={() => setProof(null)} />}
-            {changing === 'times' && (
-                <EditCheckDialog
-                    session={current}
-                    onClose={() => setChanging(null)}
-                    onDone={() => {
-                        setChanging(null);
-                        refresh();
-                    }}
-                />
-            )}
             {(changing === 'move' || changing === 'makeUp') && (
                 <RescheduleDialog
                     session={current}

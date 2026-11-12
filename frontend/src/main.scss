@@ -1827,6 +1827,12 @@ h2 {
 
 }
 
+// NextUI dialogs: the close (×) button sits in the corner before the header in the page; a header that is
+// positioned (an accent bar, a picture) would cover it and swallow the click. Keep it on top.
+section[role='dialog'] > button.absolute {
+    z-index: 30;
+}
+
 ::selection {
     background: var(--PrimaryColor);
     color: var(--whiteColor);

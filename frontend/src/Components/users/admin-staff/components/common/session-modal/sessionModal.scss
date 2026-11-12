@@ -319,10 +319,62 @@ $amber-soft: hsl(40, 95%, 92%);
     .smCheck {
         display: flex;
         align-items: center;
-        gap: .6rem;
-        padding: .6rem .7rem;
         border-radius: 14px;
         background: var(--ad-surface-2);
+        transition: background-color .2s ease, box-shadow .2s ease;
+
+        > .smProof {
+            margin-right: .55rem;
+        }
+    }
+
+    .smCheckMain {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: .6rem;
+        min-width: 0;
+        padding: .6rem .7rem;
+        border: 0;
+        border-radius: 14px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+    }
+
+    // Staff: a tile opens its time's editor.
+    .smCheck.isEditable {
+        cursor: pointer;
+
+        .smCheckMain {
+            cursor: pointer;
+        }
+
+        &:hover {
+            box-shadow: inset 0 0 0 1.5px var(--ad-primary-tint);
+        }
+    }
+
+    .smCheck.isEditing {
+        background: var(--ad-primary-soft);
+        box-shadow: inset 0 0 0 2px var(--ad-primary);
+    }
+
+    .smCheckEdit {
+        display: inline-block; // Tailwind's base makes svg a block
+        margin-left: .3rem;
+        color: var(--ad-subtle);
+        font-size: .8rem;
+        vertical-align: -.05em;
+        opacity: .6;
+        transition: opacity .2s ease, color .2s ease;
+    }
+
+    .smCheck.isEditable:hover .smCheckEdit,
+    .smCheck.isEditing .smCheckEdit {
+        color: var(--ad-primary);
+        opacity: 1;
     }
 
     .smCheckMark {
@@ -349,17 +401,21 @@ $amber-soft: hsl(40, 95%, 92%);
         line-height: 1.25;
 
         small {
+            overflow: hidden;
             color: var(--ad-subtle);
             font-size: .76rem;
             font-weight: 600;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
 
         strong {
             font-size: .98rem;
+            white-space: nowrap;
         }
     }
 
-    // A late check-out, then "Edit check-in/out times", under the two steps.
+    // A late check-out, under the two steps.
     .smLateLine {
         display: flex;
         flex-wrap: wrap;
@@ -367,10 +423,6 @@ $amber-soft: hsl(40, 95%, 92%);
         gap: .4rem;
         font-size: .85rem;
         color: var(--ad-muted);
-    }
-
-    .smEditTimes {
-        justify-self: start;
     }
 
     .smCheck:not(.isDone) .smCheckText strong {
