@@ -167,7 +167,7 @@ test('the New class wizard creates a class with a weekly session and its first r
     // 1. Details (no room: a test class blocks nothing; it starts today by default).
     await dialog.getByLabel('Class Name').fill(NAME);
     await pickOption(page, dialog, 'Instructor', teacher.full_name);
-    await dialog.getByLabel('Price (VND)').fill('500000');
+    await dialog.getByLabel('Price per course').fill('500000');
     await dialog.getByRole('button', { name: 'Create class' }).click();
     await expectToast(page, `${NAME} created.`);
 

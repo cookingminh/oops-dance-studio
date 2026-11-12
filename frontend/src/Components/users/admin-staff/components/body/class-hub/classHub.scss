@@ -1008,6 +1008,253 @@ $blue-soft: hsl(217, 85%, 95%);
     }
 }
 
+// New class · details (WizardSteps.jsx DetailsStep): the form in titled groups beside a live preview of the
+// class as the website's poster timetable will show it.
+.adminPortal .ncDetails {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 14.5rem;
+    align-items: start;
+    gap: 1.6rem;
+}
+
+.adminPortal .ncForm {
+    display: grid;
+    gap: 1.3rem;
+}
+
+.adminPortal .ncGroup {
+    display: grid;
+    gap: .75rem;
+}
+
+.adminPortal .ncGroupTitle {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: 0;
+    color: var(--ad-muted);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+
+    svg {
+        font-size: .95rem;
+        color: var(--ad-primary);
+    }
+
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        margin-left: .35rem;
+        background: var(--ad-border);
+    }
+}
+
+.adminPortal .ncPair {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: .75rem;
+}
+
+// The level as chips, each with the timetable's brush circle.
+.adminPortal .ncLevelField {
+    display: grid;
+    gap: .45rem;
+}
+
+.adminPortal .ncFieldLabel {
+    color: var(--ad-text);
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+.adminPortal .ncLevels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.adminPortal .ncLevel {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .28rem .75rem .28rem .32rem;
+    border: 1.5px solid var(--ad-border);
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+
+    i {
+        width: 1.3rem;
+        height: 1.3rem;
+        background: center / 100% 100% no-repeat;
+        transition: transform .3s var(--ad-ease);
+    }
+
+    &.isNone i {
+        opacity: .5;
+        filter: grayscale(1) brightness(1.25);
+    }
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--lvl) 45%, var(--ad-border));
+    }
+
+    &.isOn {
+        border-color: var(--lvl);
+        background: color-mix(in srgb, var(--lvl) 11%, white);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--lvl) 15%, transparent);
+
+        i {
+            transform: scale(1.12) rotate(-8deg);
+        }
+    }
+
+    &.isNone.isOn {
+        border-color: var(--ad-muted);
+        background: var(--ad-surface-2);
+        box-shadow: none;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.adminPortal .ncHint {
+    color: var(--ad-subtle);
+    font-size: .78rem;
+    line-height: 1.4;
+}
+
+// The price: grouped digits, the đồng sign, the other classes' prices as one-tap picks.
+.adminPortal .ncPrice {
+    display: grid;
+    gap: .45rem;
+}
+
+// main.scss greys every <input>; the typed price reads like the other fields.
+.adminPortal .ncPrice input {
+    color: var(--ad-text);
+    font-variant-numeric: tabular-nums;
+}
+
+.adminPortal .ncUnit {
+    color: var(--ad-muted);
+    font-weight: 700;
+}
+
+.adminPortal .ncQuick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+
+    button {
+        padding: .18rem .6rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .76rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color .2s ease, color .2s ease, background-color .2s ease;
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+            color: var(--ad-primary);
+        }
+
+        &[aria-pressed='true'] {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            color: var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+}
+
+// The preview: a dark poster cell with the class's round badge, and what was filled in.
+.adminPortal .ncPreview {
+    position: sticky;
+    top: 0;
+    display: grid;
+    justify-items: center;
+    gap: .85rem;
+    padding: .95rem .95rem 1.1rem;
+    border-radius: 18px;
+    background:
+        radial-gradient(120% 70% at 50% 0%, hsla(30, 16%, 32%, .6), transparent 65%),
+        linear-gradient(180deg, #2a2522 0%, #191614 100%);
+    color: #fff;
+}
+
+.adminPortal .ncPreviewLabel {
+    justify-self: start;
+    color: hsla(0, 0%, 100%, .6);
+    font-size: .64rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.adminPortal .ncPreviewStage {
+    width: 10.5rem;
+}
+
+.adminPortal .ncFacts {
+    display: grid;
+    gap: .45rem;
+    width: 100%;
+    margin: 0;
+    padding-top: .75rem;
+    border-top: 1px solid hsla(0, 0%, 100%, .12);
+
+    div {
+        display: flex;
+        justify-content: space-between;
+        gap: .6rem;
+        font-size: .78rem;
+        line-height: 1.35;
+    }
+
+    dt {
+        flex-shrink: 0;
+        color: hsla(0, 0%, 100%, .55);
+    }
+
+    dd {
+        margin: 0;
+        color: #fff;
+        font-weight: 600;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media screen and (max-width: 720px) {
+    .adminPortal .ncDetails,
+    .adminPortal .ncPair {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminPortal .ncPreview {
+        display: none;
+    }
+}
+
 .adminPortal .hubDoneIcon {
     display: grid;
     place-items: center;
@@ -2334,6 +2581,11 @@ a.hubWhoName:hover {
         display: block;
         position: absolute;
         top: 1.9rem;
+    }
+
+    // Room for the current step's name under the dots.
+    .adminPortal .hubSteps {
+        padding-bottom: 1.15rem;
     }
 }
 

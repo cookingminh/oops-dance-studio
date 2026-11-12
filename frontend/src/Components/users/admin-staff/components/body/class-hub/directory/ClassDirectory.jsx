@@ -179,6 +179,7 @@ const ClassDirectory = () => {
             {wizard && (
                 <NewClassWizard
                     today={data.data?.today}
+                    prices={[...new Set(active.map((cls) => Number(cls.price)).filter((price) => price > 0))].sort((a, b) => a - b).slice(0, 4)}
                     onClose={() => setWizard(false)}
                     onCreated={reload}
                     onOpen={(id) => {

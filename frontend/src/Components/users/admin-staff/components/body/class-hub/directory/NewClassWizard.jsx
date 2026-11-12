@@ -27,7 +27,7 @@ const slide = {
 // "New class" in steps. The class is created after step 1, so each later step saves straight away
 // (a session that clashes with the room is reported at once) and closing early keeps what was
 // done. The last step opens the new class's page to add students.
-const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
+const NewClassWizard = ({ today, prices = [], onClose, onCreated, onOpen }) => {
     const { t, tn, formatDate } = useI18n();
     const toast = useToast();
     const instructors = useAsync(listInstructors, []);
@@ -179,11 +179,11 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
         <Modal
             isOpen
             onOpenChange={(open) => !open && close()}
-            size="2xl"
+            size="4xl"
             placement="center"
             scrollBehavior="inside"
             isDismissable={!busy}
-            classNames={{ base: 'hubDialog adminPortal' }}
+            classNames={{ base: 'hubDialog hubWizard adminPortal' }}
         >
             <ModalContent>
                 <ModalHeader className="hubWizardHead">
@@ -212,6 +212,7 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
                                     today={today}
                                     problems={problems}
                                     tried={tried}
+                                    prices={prices}
                                 />
                             )}
                             {step === 1 && <SessionsStep slots={slots} busy={busy} error={slotError} onAdd={addSlot} onRemove={removeSlot} />}

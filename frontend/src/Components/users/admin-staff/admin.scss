@@ -22,6 +22,8 @@
     --ad-muted: hsl(240, 4%, 44%);
     --ad-subtle: hsl(240, 4%, 60%);
     --ad-primary: hsl(0, 66%, 43%);
+    // NextUI's focus ring (inputs, buttons) in the brand red instead of its blue.
+    --nextui-focus: 0 66% 43%;
     --ad-primary-strong: hsl(0, 66%, 36%);
     --ad-primary-soft: hsl(0, 85%, 96%);
     --ad-primary-tint: hsl(0, 70%, 88%);

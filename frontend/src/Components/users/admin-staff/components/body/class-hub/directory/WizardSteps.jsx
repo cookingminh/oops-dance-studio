@@ -1,79 +1,180 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Avatar, Button, Input, Select, SelectItem } from '@nextui-org/react';
-import { LuMusic, LuPlus, LuX } from 'react-icons/lu';
+import { LuMusic, LuPlus, LuSparkles, LuUsers, LuWallet, LuX } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
 import { TIME_OPTIONS, WEEKDAYS, formatTime, formatVnd, toMinutes } from '@/lib/format';
+import { placeColumns } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
+import TimetableDisc from '@/ui/timetable/TimetableDisc';
+import { AVATAR_FRAME } from '@/ui/timetable/timetableFrame';
 import PlaceField from '../../../common/PlaceField';
-import LevelField from '../../../common/LevelField';
-import { bySlot } from '../hubModel';
+import LevelPicker from '../../../common/LevelPicker';
+import { groupDigits, parseAmountInput } from '../../expenses/expensesModel';
+import { bySlot, personName } from '../hubModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
 
-// Step 1: what the class is. `form` { name, instructorId, place (lib/place.js key), price, startsOn, level ('' = none) }.
-export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today, problems, tried }) => {
+// The price as typed: digits grouped (1.200.000), "800k" / "1.2m" as shorthands (expensesModel.js).
+const PriceField = ({ value, onChange, prices, isInvalid, errorMessage }) => {
+    const { t } = useI18n();
+    return (
+        <div className="ncPrice">
+            <Input
+                label={t('Price per course')}
+                isRequired
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="0"
+                value={groupDigits(value)}
+                onValueChange={(text) => onChange(String(parseAmountInput(text) ?? ''))}
+                endContent={<span className="ncUnit">₫</span>}
+                isInvalid={isInvalid}
+                errorMessage={errorMessage}
+                description={isInvalid ? undefined : t('Type 800k for short.')}
+            />
+            {prices.length > 0 && (
+                <div className="ncQuick" role="group" aria-label={t('Prices of the other classes')}>
+                    {prices.map((amount) => (
+                        <button key={amount} type="button" aria-pressed={Number(value) === amount} onClick={() => onChange(String(amount))}>
+                            {groupDigits(amount)}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// How the class will look on the website's poster timetable, as the form fills in.
+const DetailsPreview = ({ form, instructor, place }) => {
+    const { t, formatDate } = useI18n();
+    const avatar = instructor?.avatar_path ? avatarUrl(instructor.avatar_path, instructor.updated_at) : null;
+    return (
+        <aside className="ncPreview" aria-label={t('Preview on the website')}>
+            <span className="ncPreviewLabel">{t('On the website')}</span>
+            <div className="ncPreviewStage">
+                <TimetableDisc
+                    name={form.name.trim() || t('Class name')}
+                    level={form.level || null}
+                    photo={avatar ? { src: avatar, alt: '', frame: AVATAR_FRAME } : null}
+                />
+            </div>
+            <dl className="ncFacts">
+                <div>
+                    <dt>{t('Instructor')}</dt>
+                    <dd>{instructor ? personName(instructor) : '—'}</dd>
+                </div>
+                <div>
+                    <dt>{t('Where')}</dt>
+                    <dd>{place?.name ?? t('Not set')}</dd>
+                </div>
+                <div>
+                    <dt>{t('Fee')}</dt>
+                    <dd>{form.price !== '' ? formatVnd(form.price) : '—'}</dd>
+                </div>
+                <div>
+                    <dt>{t('First day')}</dt>
+                    <dd>{form.startsOn ? formatDate(form.startsOn, 'long') : '—'}</dd>
+                </div>
+            </dl>
+        </aside>
+    );
+};
+
+// Step 1: what the class is. `form` { name, instructorId, place (lib/place.js key), price, startsOn, level ('' = none) };
+// `prices` = the other classes' prices, offered as quick picks.
+export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today, problems, tried, prices = [] }) => {
     const { t } = useI18n();
     const set = (field) => (value) => onChange({ ...form, [field]: value });
     const show = (key) => tried && problems[key];
+    const instructor = instructors.find((person) => person.id === form.instructorId);
+    const { roomId, venueId } = placeColumns(form.place);
+    const place = roomId ? rooms.find((room) => room.id === roomId) : venueId ? venues.find((venue) => venue.id === venueId) : null;
+
     return (
-        <div className="hubWizardGrid">
-            <Input
-                autoFocus
-                label={t('Class Name')}
-                isRequired
-                value={form.name}
-                onValueChange={set('name')}
-                maxLength={80}
-                isInvalid={show('name')}
-                errorMessage={show('name') ? t('Give the class a name.') : undefined}
-                className="isWide"
-            />
-            <Select
-                label={t('Instructor')}
-                isRequired
-                classNames={POPOVER}
-                placeholder={instructors.length ? t('Select an instructor') : t('No instructors yet')}
-                selectedKeys={form.instructorId ? [form.instructorId] : []}
-                onChange={(event) => set('instructorId')(event.target.value)}
-                isInvalid={show('instructor')}
-                errorMessage={show('instructor') ? t('Choose who teaches it.') : undefined}
-            >
-                {instructors.map((person) => (
-                    <SelectItem
-                        key={person.id}
-                        textValue={person.full_name || person.username}
-                        startContent={<Avatar {...AVATAR_DEFAULTS} size="sm" src={avatarUrl(person.avatar_path, person.updated_at) ?? undefined} name={person.full_name} />}
-                    >
-                        {person.full_name || person.username}
-                    </SelectItem>
-                ))}
-            </Select>
-            <PlaceField value={form.place} onChange={set('place')} rooms={rooms} venues={venues} roomHint={t('Optional. A class without a room blocks no room.')} />
-            <Input
-                label={t('Price (VND)')}
-                type="number"
-                min={0}
-                step={1000}
-                isRequired
-                value={form.price}
-                onValueChange={set('price')}
-                description={!show('price') && form.price ? t('Per course: {amount}', { amount: formatVnd(form.price) }) : t('What one course (routine) costs.')}
-                isInvalid={show('price')}
-                errorMessage={show('price') ? t('Enter a price of 0 or more.') : undefined}
-            />
-            <DateField
-                label={t('Starts on')}
-                value={form.startsOn}
-                onChange={set('startsOn')}
-                isRequired
-                description={form.startsOn > today ? t('An upcoming class: it takes sign-ups now and meets from this day.') : t('Today or a later day.')}
-                isInvalid={show('startsOn')}
-                errorMessage={show('startsOn') ? t('Pick today or a later day.') : undefined}
-            />
-            <LevelField value={form.level} onChange={set('level')} />
+        <div className="ncDetails">
+            <div className="ncForm">
+                <section className="ncGroup" aria-labelledby="ncGroupClass">
+                    <h3 className="ncGroupTitle" id="ncGroupClass">
+                        <LuSparkles aria-hidden="true" /> {t('The class')}
+                    </h3>
+                    <Input
+                        autoFocus
+                        label={t('Class Name')}
+                        placeholder={t('e.g. Girlstyle 3')}
+                        isRequired
+                        value={form.name}
+                        onValueChange={set('name')}
+                        maxLength={80}
+                        isInvalid={show('name')}
+                        errorMessage={show('name') ? t('Give the class a name.') : undefined}
+                    />
+                    <LevelPicker value={form.level} onChange={set('level')} hint={t('Colours the class on the website timetable.')} />
+                </section>
+
+                <section className="ncGroup" aria-labelledby="ncGroupWho">
+                    <h3 className="ncGroupTitle" id="ncGroupWho">
+                        <LuUsers aria-hidden="true" /> {t('Who and where')}
+                    </h3>
+                    <div className="ncPair">
+                        <Select
+                            label={t('Instructor')}
+                            isRequired
+                            classNames={POPOVER}
+                            placeholder={instructors.length ? t('Select an instructor') : t('No instructors yet')}
+                            selectedKeys={form.instructorId ? [form.instructorId] : []}
+                            onChange={(event) => set('instructorId')(event.target.value)}
+                            isInvalid={show('instructor')}
+                            errorMessage={show('instructor') ? t('Choose who teaches it.') : undefined}
+                            startContent={
+                                instructor ? (
+                                    <Avatar {...AVATAR_DEFAULTS} className="h-6 w-6 shrink-0" src={avatarUrl(instructor.avatar_path, instructor.updated_at) ?? undefined} name={personName(instructor)} />
+                                ) : null
+                            }
+                        >
+                            {instructors.map((person) => (
+                                <SelectItem
+                                    key={person.id}
+                                    textValue={personName(person)}
+                                    startContent={<Avatar {...AVATAR_DEFAULTS} size="sm" src={avatarUrl(person.avatar_path, person.updated_at) ?? undefined} name={personName(person)} />}
+                                >
+                                    {personName(person)}
+                                </SelectItem>
+                            ))}
+                        </Select>
+                        <PlaceField value={form.place} onChange={set('place')} rooms={rooms} venues={venues} roomHint={t('Optional: you can set it later.')} />
+                    </div>
+                </section>
+
+                <section className="ncGroup" aria-labelledby="ncGroupFee">
+                    <h3 className="ncGroupTitle" id="ncGroupFee">
+                        <LuWallet aria-hidden="true" /> {t('Fee and first day')}
+                    </h3>
+                    <div className="ncPair">
+                        <PriceField
+                            value={form.price}
+                            onChange={set('price')}
+                            prices={prices}
+                            isInvalid={show('price')}
+                            errorMessage={show('price') ? t('Enter a price of 0 or more.') : undefined}
+                        />
+                        <DateField
+                            label={t('Starts on')}
+                            value={form.startsOn}
+                            onChange={set('startsOn')}
+                            isRequired
+                            description={form.startsOn > today ? t('Opens later: it takes sign-ups now.') : t('Today or a later day.')}
+                            isInvalid={show('startsOn')}
+                            errorMessage={show('startsOn') ? t('Pick today or a later day.') : undefined}
+                        />
+                    </div>
+                </section>
+            </div>
+            <DetailsPreview form={form} instructor={instructor} place={place} />
         </div>
     );
 };

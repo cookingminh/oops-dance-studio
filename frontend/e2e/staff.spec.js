@@ -154,7 +154,7 @@ test('creates a class with an image (classes insert + class-images upload)', asy
     await page.getByRole('button', { name: 'New class' }).click();
     await dialog.getByLabel('Class Name').fill(CLASS_NAME);
     await pickOption(page, dialog, 'Instructor', instructors[0].full_name);
-    await dialog.getByLabel('Price (VND)').fill('500000');
+    await dialog.getByLabel('Price per course').fill('500000');
     await dialog.getByRole('button', { name: 'Create class' }).click();
     await expectToast(page, `${CLASS_NAME} created.`);
     // Weekly sessions and the routine come later, from the class page.

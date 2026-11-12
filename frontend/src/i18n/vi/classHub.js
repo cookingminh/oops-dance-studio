@@ -337,4 +337,20 @@ export default {
     'What to collect across the classes, bank transfers and each class’s tuition.': 'Khoản cần thu của các lớp, chuyển khoản và học phí từng lớp.',
     'Class added. Add its weekly sessions and its first routine next.': 'Đã thêm lớp. Tiếp theo, thêm lịch học hằng tuần và bài nhảy đầu tiên.',
     'Each routine is learned over a number of sessions, ends with the video shoot and is the course students pay for.': 'Mỗi bài nhảy học trong vài buổi, cuối bài quay video, và là một khoá — học viên đóng học phí theo khoá.',
+
+    // New class · details (WizardSteps.jsx)
+    'The class': 'Lớp học',
+    'e.g. Girlstyle 3': 'VD: Girlstyle 3',
+    'Who and where': 'Giáo viên và nơi học',
+    'Optional: you can set it later.': 'Không bắt buộc, có thể chọn sau.',
+    'Fee and first day': 'Học phí và ngày khai giảng',
+    'Price per course': 'Học phí mỗi khoá',
+    'Type 800k for short.': 'Gõ tắt 800k cũng được.',
+    'Prices of the other classes': 'Học phí các lớp khác',
+    'Opens later: it takes sign-ups now.': 'Khai giảng sau, nhận đăng ký từ bây giờ.',
+    'Preview on the website': 'Xem trước trên website',
+    'Class name': 'Tên lớp',
+    Where: 'Nơi học',
+    Fee: 'Học phí',
+    'First day': 'Khai giảng',
 };
