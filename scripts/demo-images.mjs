@@ -7,7 +7,7 @@
 //   node demo-images.mjs           # SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY from ../.env
 //
 // Sources (read only, committed):
-//   scripts/demo-assets/<teacher>.webp             → avatars/{instructor_id}/avatar.webp    (profiles.avatar_path)
+//   scripts/demo-assets/<teacher>.webp             → avatars/{instructor_id}/avatar-{hash}.webp (profiles.avatar_path)
 //   scripts/demo-assets/class_*.webp               → class-images/{class_id}/{uuid}.webp    (classes.image_path = first)
 //   scripts/demo-assets/timetable_*.webp           → class-images/{class_id}/{uuid}.webp    (classes.timetable_photo_path)
 //   frontend/src/assets/images/room{N}-*.webp      → site-assets/rooms/{room_id}/{file}     (rooms.image_paths, in order)
@@ -99,9 +99,15 @@ async function uploadAvatarsAndClassPhotos(db, log) {
     const src = resolve(DEMO_ASSETS_DIR, file);
     const { data: profile } = await db.from("profiles").select("id").eq("email", email).maybeSingle();
     if (!profile || !existsSync(src)) { log(`  skip avatar ${email} (${profile ? "no file" : "no user"})`); continue; }
-    const path = `${profile.id}/avatar${extname(file).toLowerCase()}`;
+    // Named after its content (as the app names a new picture), so a changed photo gets a new URL and
+    // browsers that cached the old one show the new one; the folder's other pictures are removed.
+    const hash = createHash("sha256").update(await readFile(src)).digest("hex").slice(0, 8);
+    const path = `${profile.id}/avatar-${hash}${extname(file).toLowerCase()}`;
     await upload(db, "avatars", path, src);
     await setColumn(db, "profiles", "avatar_path", path, profile.id, email);
+    const { data: old } = await db.storage.from("avatars").list(profile.id);
+    const stale = (old ?? []).map((o) => `${profile.id}/${o.name}`).filter((p) => p !== path);
+    if (stale.length) await db.storage.from("avatars").remove(stale);
     avatars++;
   }
 

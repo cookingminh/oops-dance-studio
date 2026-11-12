@@ -184,7 +184,7 @@ export default {
         'Mỗi lớp học trọn một bài trong tháng. Bài hát, giáo viên và lịch học trong tuần đều có ngay dưới đây.',
 
     // /rooms: header, room cards and how booking works
-    'Book a practice room': 'Đặt phòng tập nhảy',
+    'Book a practice room': 'Đặt phòng tập',
     'The rooms': 'Các phòng tập',
     'How booking works': 'Cách đặt phòng',
     'Per hour, from': 'Giá mỗi giờ từ',

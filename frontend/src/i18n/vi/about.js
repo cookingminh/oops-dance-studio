@@ -5,7 +5,7 @@ export default {
     // Hero
     'We are': 'Chúng mình là',
     'A Hanoi dance crew since 2017. We started out filming K-pop covers with friends after class; today we run Oops! Dance Studio and teach the routines we love to perform.':
-        'Nhóm nhảy Hà Nội từ năm 2017. Chúng mình bắt đầu từ những video cover K-pop quay cùng bạn bè sau giờ học; giờ đây chúng mình có Oops! Dance Studio và dạy chính những bài nhảy mình mê biểu diễn.',
+        '(Trang này NM nhờ AI bịa nên update sau nhé ^^) Nhóm nhảy Hà Nội từ năm 2017. Chúng mình bắt đầu từ những video cover K-pop quay cùng bạn bè sau giờ học; giờ đây chúng mình có Oops! Dance Studio và dạy chính những bài nhảy mình mê biểu diễn.',
     'Hà Nội': 'Hà Nội',
     'Since 2017': 'Từ 2017',
     'K-pop cover · hip-hop · breaking': 'Cover K-pop · hip-hop · breaking',

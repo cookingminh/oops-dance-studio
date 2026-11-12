@@ -34,9 +34,10 @@ async function upload(bucket, path, file, { upsert = false } = {}) {
     return path;
 }
 
-// `file` must already be prepared with prepareImage().
+// `file` must already be prepared with prepareImage(). Each picture gets a new name, so every page (and every
+// browser that cached the old one) shows the new picture at once; the caller removes the old file.
 export function uploadAvatar(userId, file) {
-    return upload(BUCKETS.avatars, `${userId}/avatar.${extensionFor(file)}`, file, { upsert: true });
+    return upload(BUCKETS.avatars, `${userId}/avatar-${crypto.randomUUID().slice(0, 8)}.${extensionFor(file)}`, file);
 }
 
 export function uploadClassImage(classId, file) {

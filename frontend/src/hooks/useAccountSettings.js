@@ -68,7 +68,7 @@ export function useAvatarUpload() {
         try {
             const path = await uploadAvatar(user.id, file);
             await updateProfile(user.id, { avatar_path: path });
-            // A different extension means a different object; drop the old one.
+            // A new picture is a new object (services/storage.js); drop the old one.
             if (user.avatar_path && user.avatar_path !== path) await removeFiles(BUCKETS.avatars, [user.avatar_path]);
             await refreshProfile();
             clear();
