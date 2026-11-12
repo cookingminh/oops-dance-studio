@@ -1,7 +1,7 @@
 // Extra tuition money on the staff Tuition page: an invoice paid more than it costs shows "… extra" under
 // its amount and in To do → Extra money; the dialog moves the extra onto the student's other unpaid course,
 // undoing the payment takes it back off that course, and giving the extra back is recorded. Uses a student
-// with two unpaid courses (never guest@, the student tuition spec's); puts both invoices back as found.
+// with two (or more) unpaid courses (never guest@, the student tuition spec's); puts both invoices back as found.
 import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
@@ -89,7 +89,10 @@ test('an invoice paid too much shows its extra, which pays the student’s other
     await row(from).getByRole('button', { name: `${vnd(EXTRA)} extra` }).click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toContainText('Extra money');
-    await expect(dialog.getByRole('radio', { checked: true })).toContainText(to.class_name);
+    // Every other unpaid course of the student is offered (the demo may leave more than two): pick this test's.
+    const target = dialog.getByRole('radio').filter({ hasText: to.class_name }).filter({ hasText: courseOf(to) });
+    await target.click();
+    await expect(target).toHaveAttribute('aria-checked', 'true');
     await expect(dialog.getByLabel('Amount (VND)')).toHaveValue(String(EXTRA));
     await dialog.getByRole('button', { name: `Move ${vnd(EXTRA)}` }).click();
     await expectToast(page, `${vnd(EXTRA)} moved to “${courseOf(to)}”.`);
