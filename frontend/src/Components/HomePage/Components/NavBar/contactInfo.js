@@ -1,5 +1,7 @@
 // The studio's contact details, shared by the contact dialog, the footer and the call-to-action banners.
 export const ADDRESS = 'Tầng 7, Số 25 Trung Phụng, Đống Đa, Hà Nội';
+// Where the studio's own rooms are, as the timetable's "Classes held at …" line names a place.
+export const AREA = 'Trung Phụng';
 export const MAP_URL = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(ADDRESS)}`;
 export const PHONE = { display: '079 618 0646', tel: 'tel:0796180646', raw: '0796180646' };
 export const EMAIL = 'oopsdancestudio@gmail.com';

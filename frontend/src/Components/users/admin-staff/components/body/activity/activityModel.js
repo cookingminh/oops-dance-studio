@@ -157,7 +157,7 @@ export const ACTIONS = {
         venue_removed: 'Rented studio deleted',
     },
     users: { account_created: 'Account created', account_deleted: 'Account deleted', role_changed: 'Role changed', profile_edited: 'Details edited' },
-    settings: { updated: 'Changed' },
+    settings: { updated: 'Changed', timetable_template: 'Website timetable' },
 };
 export const actionLabel = (area, action) => ACTIONS[area]?.[action] ?? action;
 

@@ -52,6 +52,28 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
   giá/giờ × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và báo cáo). Buổi bị huỷ thì không tính (đã tính rồi
   mà huỷ sau thì tự xoá). Phòng A/B và đặt phòng giữ nguyên để dùng lại khi studio mở cửa lại.
 
+### Lịch học trên website
+
+Trang **Lớp học** của website (`/classes`) có lịch học trong tuần, với **hai kiểu** để chọn:
+
+- **Poster** (mặc định): giống tờ lịch in của studio — các ngày xếp hàng ngang, mỗi lớp là một ảnh tròn của giáo viên
+  trên nền màu theo **cấp độ** của lớp; chú thích màu nằm dưới lịch.
+- **Nền đỏ**: kiểu đầu tiên — mỗi ngày một cột trên nền giấy đỏ, tên lớp trên nét cọ. Kiểu này không dùng màu cấp độ.
+
+**Chọn kiểu** (staff và admin đều đổi được): *Lớp học* → tab *Lịch học* → ô **Trên website** ngay trên lịch tuần →
+bấm vào kiểu muốn dùng. Lưu ngay, không cần bấm thêm; kiểu đang dùng có nhãn *Đang dùng*. Khách đang mở trang thì tải
+lại là thấy kiểu mới. Link *Xem trên website* mở lịch học của website ở thẻ mới. Mỗi lần đổi được ghi vào *Activity*
+(ai đổi, đổi sang kiểu nào, trước đó là kiểu nào).
+
+**Cấp độ của lớp**: *Newbie* (đỏ), *Cơ bản* (nâu), *Nâng cao* (vàng) hoặc *Chưa có cấp độ* (xám). Chọn ở ô **Cấp độ**:
+
+- khi tạo lớp (*Lớp mới*, bước đầu tiên);
+- ở trang lớp → tab *Setting* → khung *Chi tiết* → *Lưu thông tin*;
+- hoặc ⋮ trên đầu trang lớp → *Sửa thông tin*.
+
+Cấp độ hiện thành nhãn nhỏ trên thẻ lớp trong danh sách lớp và quyết định màu của lớp trên lịch Poster. Lớp chưa chọn
+cấp độ hiện màu xám trên Poster.
+
 ### Vòng đời một lớp
 
 ```mermaid
@@ -372,7 +394,8 @@ gì thêm:
 - **Học phí**: thu tiền (tiền mặt: tên nhân viên; chuyển khoản: "hệ thống"), miễn, mở lại, đổi số tiền, huỷ, học viên
   trả lời gia hạn, gán / bỏ qua chuyển khoản.
 - **Lớp, bài nhảy, học viên**: tạo / sửa / kết thúc lớp, đổi lịch, lên bài, thêm video, xếp lớp, rời lớp.
-- **Chi phí, lương, phòng, tài khoản, cài đặt**: thêm / sửa / xoá; chốt / trả phiếu lương; đổi vai trò; tạo / xoá tài khoản.
+- **Chi phí, lương, phòng, tài khoản, cài đặt**: thêm / sửa / xoá; chốt / trả phiếu lương; đổi vai trò; tạo / xoá tài khoản;
+  đổi kiểu lịch học trên website.
 
 Những dòng do hệ thống **tự tạo** (buổi dạy hằng tuần, danh sách điểm danh, hoá đơn) không ghi; việc tự động chỉ ghi
 khi đáng biết: tiền về từ ngân hàng, hoá đơn bị huỷ do không trả lời gia hạn, học viên rời lớp sau khoá, có người tự
@@ -443,5 +466,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Khung giờ check-in, check-out muộn | `20261117001100_checkin_window.sql` | `instructor_check_in`, `instructor_check_out`, `session_edit_check` |
 | Trả đủ = Hoàn thành | `20261117001000_booking_auto_complete.sql` | trigger `booking_auto_complete` |
 | Huỷ đặt phòng & hoàn tiền | `20261117000800_booking_refunds.sql` | `cancel_booking`, `booking_cancel_quote`, `booking_refund`, `booking_settings` |
+| Lịch học trên website, cấp độ lớp | `20261117001500_timetable_templates.sql` | `site_settings`, `site_set_timetable_template`, `classes.level`, `seed_demo_levels` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

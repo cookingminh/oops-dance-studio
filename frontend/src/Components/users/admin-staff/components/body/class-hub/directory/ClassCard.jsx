@@ -5,9 +5,11 @@ import { LuMusic } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
 import { formatVnd } from '@/lib/format';
 import { placeOf } from '@/lib/place';
+import { levelOf } from '@/lib/classLevel';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import { fadeUp } from '../../../common/motion';
+import { LevelDot } from '../../../common/LevelField';
 import { ClassImage, FlagChips, MiniBar, PhaseBadge, ScheduleChips } from '../HubParts';
 import { classPath, percent, personName } from '../hubModel';
 
@@ -69,7 +71,7 @@ const CardStats = ({ item, view, isAdmin }) => {
     );
 };
 
-// One class in the directory: photo, name, phase, instructor, weekly times, the view's numbers and
+// One class in the directory: photo, name (and level), phase, instructor, weekly times, the view's numbers and
 // what needs attention. The whole card opens the class page.
 const ClassCard = ({ item, view, isAdmin }) => {
     const { t } = useI18n();
@@ -87,6 +89,12 @@ const ClassCard = ({ item, view, isAdmin }) => {
                 <span className="hubCardBody">
                     <span className="hubCardTitle">
                         <strong>{cls.name}</strong>
+                        {cls.level && (
+                            <span className="hubTag hubLevelTag">
+                                <LevelDot value={cls.level} />
+                                {t(levelOf(cls.level).label)}
+                            </span>
+                        )}
                     </span>
                     <span className="hubTeacher">
                         <Avatar {...AVATAR_DEFAULTS} size="sm" className="hubAvatarXs" src={avatarUrl(cls.instructor?.avatar_path, cls.instructor?.updated_at) ?? undefined} name={teacher} />

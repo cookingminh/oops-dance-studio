@@ -15,7 +15,7 @@ export default {
     Inactive: 'Ngừng dùng',
     'Its rent ({rent}/h × each session’s length) is added to the class’s costs after each session.':
         'Tiền thuê ({rent}/giờ × thời lượng buổi) tự cộng vào chi phí của lớp sau mỗi buổi.',
-    'Name, instructor, where it’s taught, price and start date': 'Tên, giáo viên, nơi dạy, học phí và ngày bắt đầu',
+    'Name, instructor, where it’s taught, price, start date and level': 'Tên, giáo viên, nơi dạy, học phí, ngày bắt đầu và cấp độ',
     '{count} sessions a week · colours show where': '{count} buổi/tuần · mỗi màu là một nơi dạy',
     '{venue} is a rented studio: check with them that it’s free then.': '{venue} là studio thuê ngoài: nhớ hỏi bên đó xem giờ này còn trống không.',
     'The studio': 'Studio',

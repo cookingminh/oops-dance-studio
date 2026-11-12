@@ -1,0 +1,451 @@
+// The poster timetable (PosterTimetable.jsx): the studio's printed monthly schedule — a dark grainy card,
+// a tall serif title with the month on a pill, a white-ruled grid of days, round photos in the level colours.
+
+.ttPoster {
+    --tt-cream: #f8e8b8;
+    --tt-line: hsla(36, 35%, 93%, .92);
+    --tt-pill: #b5795c;
+    --tt-pill-ink: #fff4dc;
+
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: clamp(1.3rem, 3vw, 2.6rem) clamp(1rem, 3.6vw, 3.2rem) clamp(1.4rem, 3vw, 2.4rem);
+    border-radius: 28px;
+    background:
+        radial-gradient(110% 60% at 50% 0%, hsla(30, 16%, 32%, .55), transparent 62%),
+        radial-gradient(80% 55% at 100% 100%, hsla(20, 18%, 24%, .45), transparent 70%),
+        linear-gradient(180deg, #282321 0%, #191614 100%);
+    color: #fff;
+    box-shadow: 0 30px 60px -32px hsla(20, 30%, 8%, .85);
+
+    // Paper grain, like the printed poster.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        opacity: .2;
+        mix-blend-mode: overlay;
+        pointer-events: none;
+    }
+
+    &.isEmpty {
+        min-height: 16rem;
+    }
+}
+
+.ttEmpty,
+.hpTimetableEmpty {
+    color: hsla(0, 0%, 100%, .85);
+}
+
+.ttEmpty {
+    padding: 2rem 0;
+    text-align: center;
+}
+
+// While the page learns which look to use.
+.hpTimetableWaiting {
+    min-height: 32rem;
+    border-radius: 28px;
+    background: hsl(20, 10%, 92%);
+}
+
+// Title ====================>
+
+.ttHead {
+    display: flex;
+    justify-content: center;
+    margin-bottom: clamp(1rem, 2.6vw, 2.1rem);
+}
+
+.ttTitleWrap {
+    position: relative;
+    padding-top: clamp(1rem, 2.3vw, 1.9rem);
+    text-align: center;
+}
+
+.ttPoster .ttTitle {
+    padding: 0;
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-size: clamp(3.1rem, 10.5vw, 8.6rem);
+    font-weight: 400;
+    line-height: .95;
+    letter-spacing: -.01em;
+    text-transform: uppercase;
+    color: var(--tt-cream);
+    text-shadow: 0 10px 30px hsla(30, 40%, 5%, .45);
+}
+
+.ttMonth {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    z-index: 1;
+    transform: translateX(-50%);
+    padding: .22em .95em .12em;
+    border: 2px solid hsla(25, 30%, 8%, .55);
+    border-radius: 999px;
+    background: var(--tt-pill);
+    color: var(--tt-pill-ink);
+    font-family: var(--hp-display);
+    font-size: clamp(1.05rem, 2.7vw, 2.25rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: .01em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: 0 8px 20px -10px hsla(0, 0%, 0%, .7);
+}
+
+// Grid ====================>
+
+.ttGridWrap {
+    overflow-x: auto;
+}
+
+.ttGrid {
+    width: 100%;
+    min-width: 44rem;
+    table-layout: fixed;
+    border-collapse: collapse;
+
+    th,
+    td {
+        border: 2px solid var(--tt-line);
+    }
+
+    th {
+        height: clamp(3.3rem, 5.6vw, 4.6rem);
+        padding: .3rem;
+        font-family: var(--hp-display);
+        font-size: clamp(1.2rem, 2.3vw, 1.95rem);
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: .02em;
+        text-align: center;
+        vertical-align: middle;
+        color: #fff;
+
+        abbr {
+            text-decoration: none;
+        }
+
+        &.isToday {
+            background: hsla(42, 80%, 72%, .14);
+            color: var(--tt-cream);
+        }
+    }
+
+    td {
+        padding: .75rem .45rem .85rem;
+        text-align: center;
+        vertical-align: middle;
+
+        &.isToday {
+            background: hsla(42, 80%, 72%, .05);
+        }
+    }
+}
+
+.ttToday {
+    display: block;
+    margin-top: .3rem;
+    font-size: .6rem;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+
+// A session: the time on a pill over the round photo ====================>
+
+.ttSlot {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 9.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: default;
+}
+
+button.ttSlot {
+    cursor: pointer;
+
+    &:hover .ttDisc {
+        transform: translateY(-3px) scale(1.035);
+        box-shadow: inset 0 0 0 2px hsla(0, 0%, 100%, .16), 0 16px 26px -12px hsla(0, 0%, 0%, .8);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--tt-cream);
+        outline-offset: 4px;
+        border-radius: 14px;
+    }
+}
+
+.ttTime {
+    position: relative;
+    z-index: 2;
+    margin-bottom: -.3rem;
+    padding: .2rem .6rem .12rem;
+    border-radius: 999px;
+    background: var(--tt-pill);
+    color: var(--tt-pill-ink);
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(.6rem, .95vw, .8rem);
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+    box-shadow: 0 3px 8px -3px hsla(0, 0%, 0%, .6);
+}
+
+.ttDisc {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--lvl) 80%, white), var(--lvl) 68%);
+    box-shadow: inset 0 0 0 2px hsla(0, 0%, 100%, .12), 0 10px 22px -12px hsla(0, 0%, 0%, .75);
+    transition: transform .35s var(--hp-ease), box-shadow .35s var(--hp-ease);
+
+    // The photo fills the circle, head and shoulders, below the curved name.
+    img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 50% 14%;
+        transform: scale(1.6) translateY(10%);
+        transform-origin: 50% 25%;
+    }
+}
+
+.ttArc {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+
+    text {
+        fill: #fff;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        letter-spacing: .01em;
+        paint-order: stroke;
+        stroke: hsla(12, 55%, 16%, .4);
+        stroke-width: 1.4px;
+        stroke-linejoin: round;
+    }
+}
+
+.ttDisc.is-advanced .ttArc text {
+    stroke: hsla(28, 85%, 28%, .6);
+}
+
+// Phones: one row per day ====================>
+
+.ttDays {
+    margin: 0;
+    padding: 0;
+    border-top: 2px solid var(--tt-line);
+    list-style: none;
+}
+
+.ttDay {
+    display: grid;
+    grid-template-columns: 3.6rem minmax(0, 1fr);
+    gap: .8rem;
+    align-items: center;
+    padding: .85rem 0;
+    border-bottom: 2px solid var(--tt-line);
+    cursor: default;
+
+    &.isToday {
+        background: linear-gradient(90deg, hsla(42, 80%, 72%, .12), transparent 70%);
+    }
+}
+
+.ttDayName {
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    padding-left: .2rem;
+
+    b {
+        font-family: var(--hp-display);
+        font-size: 1.45rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    small {
+        font-size: .58rem;
+        font-weight: 600;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: hsla(0, 0%, 100%, .62);
+    }
+}
+
+.ttDay.isToday .ttDayName {
+    color: var(--tt-cream);
+
+    small {
+        color: var(--tt-cream);
+    }
+}
+
+.ttDaySlots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .75rem .6rem;
+
+    .ttSlot {
+        width: 5.7rem;
+    }
+
+    .ttTime {
+        font-size: .6rem;
+    }
+}
+
+.ttRest {
+    font-size: .85rem;
+    color: hsla(0, 0%, 100%, .5);
+}
+
+// Key and places ====================>
+
+.ttFoot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.4rem 2rem;
+    margin-top: clamp(1.3rem, 2.8vw, 2.3rem);
+}
+
+.ttLegend {
+    display: grid;
+    gap: .55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        font-size: clamp(.92rem, 1.5vw, 1.2rem);
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        color: hsla(0, 0%, 100%, .92);
+        cursor: default;
+    }
+
+    i {
+        flex-shrink: 0;
+        width: 1.55rem;
+        height: 1.55rem;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px hsla(0, 0%, 100%, .15);
+    }
+}
+
+.ttWhere {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .6rem;
+    max-width: 31rem;
+    margin-left: auto;
+    text-align: right;
+
+    p {
+        font-size: clamp(.78rem, 1.15vw, .9rem);
+        line-height: 1.55;
+        letter-spacing: .02em;
+        text-transform: uppercase;
+        color: hsla(0, 0%, 100%, .8);
+
+        strong {
+            font-weight: 700;
+            color: #fff;
+        }
+    }
+}
+
+// logo-mark.webp has white margins and a caption: show the red square only (as the navbar does).
+.ttLogo {
+    position: relative;
+    display: block;
+    width: 3.1rem;
+    height: 3.1rem;
+    overflow: hidden;
+    border-radius: 10px;
+    background: hsl(355, 68%, 45%);
+
+    img {
+        position: absolute;
+        left: -27.6%;
+        top: -20.3%;
+        width: 155.2%;
+        max-width: none;
+        height: auto;
+    }
+}
+
+.ttFanpage {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .35rem .8rem .35rem .55rem;
+    border: 1px solid hsla(0, 0%, 100%, .22);
+    border-radius: 999px;
+    color: hsla(0, 0%, 100%, .9);
+    font-size: .8rem;
+    font-weight: 600;
+    transition: background-color .2s ease, color .2s ease;
+
+    svg {
+        font-size: 1.15rem;
+    }
+
+    &:hover {
+        background: #fff;
+        color: #1877f2;
+    }
+}
+
+@media screen and (max-width: 719px) {
+    .ttPoster {
+        border-radius: 22px;
+    }
+
+    .ttFoot {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ttWhere {
+        align-items: flex-start;
+        margin-left: 0;
+        text-align: left;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ttDisc {
+        transition: none;
+    }
+}

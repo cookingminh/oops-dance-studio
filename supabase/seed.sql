@@ -371,6 +371,9 @@ select public.seed_demo_finance();
 -- Newbie 1 and Newbie 2 open on the first Wednesday of next month, a few students already in.
 select public.seed_demo_classes();
 
+-- Class levels (the poster timetable's colours): Newbie, the Choreo classes advanced, the rest basic.
+select public.seed_demo_levels();
+
 -- Room deposits paid by transfer, each with its transfer (the booking's payment history).
 select public.seed_demo_booking_payments();
 

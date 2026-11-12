@@ -24,6 +24,7 @@ import { buildDirectory, loadDirectory } from './directoryData';
 import ClassCard from './ClassCard';
 import TodayList from './TodayList';
 import NewClassWizard from './NewClassWizard';
+import WebsiteTimetablePicker from './WebsiteTimetablePicker';
 
 const EMPTY_TEXT = {
     today: 'No class meets today.',
@@ -33,8 +34,9 @@ const EMPTY_TEXT = {
 };
 
 // /admin/classes: every class, by what you need to see — today's sessions, the month of each
-// running class, classes opening later, past ones and the weekly timetable. A card opens the
-// class's own page; "New class" walks through details, sessions, first routine and photo.
+// running class, classes opening later, past ones and the weekly timetable (with the look the website's
+// timetable uses). A card opens the class's own page; "New class" walks through details, sessions, first
+// routine and photo.
 const ClassDirectory = () => {
     const { t, tn, dayName } = useI18n();
     const toast = useToast();
@@ -158,6 +160,7 @@ const ClassDirectory = () => {
                 )}
                 {view === 'timetable' && (
                     <div className="hubTimetable">
+                        <WebsiteTimetablePicker />
                         <WeeklyTimetable
                             state={{ ...data, data: data.data ? active : undefined }}
                             today={data.data?.today}

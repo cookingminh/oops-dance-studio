@@ -290,6 +290,17 @@ export default {
     '{count} has already paid.': '{count} người đã đóng tiền.',
     '{count} have already paid.': '{count} người đã đóng tiền.',
 
+    // The class's level (class forms) and the website timetable's look (Timetable view)
+    Level: 'Cấp độ',
+    'Colours the class on the website timetable.': 'Quyết định màu của lớp trên lịch học ở website.',
+    'On the website': 'Trên website',
+    'How the Classes page shows the timetable.': 'Kiểu lịch học hiện ở trang Lớp học của website.',
+    'See it on the website': 'Xem trên website',
+    'Days across, a round photo per class, coloured by level — like the printed schedule.':
+        'Các ngày xếp hàng ngang, mỗi lớp một ảnh tròn, màu theo cấp độ, giống tờ lịch in của studio.',
+    'One column per day, brush-stroke badges on red paper.': 'Mỗi ngày một cột, tên lớp trên nét cọ, nền giấy đỏ.',
+    'The website now shows the {template} timetable.': 'Website đã chuyển sang lịch học kiểu {template}.',
+
     // Elsewhere in the admin (page descriptions, the class form)
     'Every class in one place: students, sessions, tuition, routines and money.': 'Quản lý mọi lớp ở một nơi: học viên, buổi học, học phí, bài nhảy và thu chi.',
     'What to collect across the classes, bank transfers and each class’s tuition.': 'Khoản cần thu của các lớp, chuyển khoản và học phí từng lớp.',

@@ -35,7 +35,7 @@ const NewClassWizard = ({ today, onClose, onCreated, onOpen }) => {
     const venues = useAsync(listVenues, []);
 
     const [step, setStep] = useState(0);
-    const [form, setForm] = useState({ name: '', instructorId: '', place: '', price: '', startsOn: today ?? '' });
+    const [form, setForm] = useState({ name: '', instructorId: '', place: '', price: '', startsOn: today ?? '', level: '' });
     const [tried, setTried] = useState(false);
     const [created, setCreated] = useState(null);
     const [slots, setSlots] = useState([]);

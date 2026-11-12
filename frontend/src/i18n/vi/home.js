@@ -131,6 +131,18 @@ export default {
     Today: 'Hôm nay',
     'Rest day': 'Ngày nghỉ',
     '{name} with {instructor}, {start}–{end}': '{name} cùng {instructor}, {start}–{end}',
+    'Classes held at': 'Các cơ sở tại',
+    'Class levels': 'Cấp độ lớp',
+
+    // Class levels (lib/classLevel.js) and the two timetable looks (services/site.js)
+    Newbie: 'Newbie',
+    Basic: 'Cơ bản',
+    'No level': 'Chưa có cấp độ',
+    'Newbie classes': 'Lớp Newbie',
+    'Basic classes': 'Lớp cơ bản',
+    'Advanced classes': 'Lớp nâng cao',
+    Poster: 'Poster',
+    'Red card': 'Nền đỏ',
 
     // Instructors
     'The team': 'Đội ngũ',

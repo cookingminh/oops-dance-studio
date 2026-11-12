@@ -9,6 +9,7 @@ import { useToast } from '@/ui/feedback/toastContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
 import PlaceField from '../../../../common/PlaceField';
+import LevelField from '../../../../common/LevelField';
 import { personName } from '../../hubModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
@@ -19,6 +20,7 @@ const fromClass = (cls) => ({
     place: placeKeyOf(cls),
     price: String(cls.price),
     startsOn: cls.starts_on,
+    level: cls.level ?? '',
 });
 
 // The class's details in place. The start date can only move while the class hasn't started. Moving the
@@ -102,6 +104,7 @@ const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved
                 isInvalid={problems.startsOn}
                 description={notStarted ? t('Still upcoming: you can move the first day.') : t('The class has started; its first day stays.')}
             />
+            <LevelField value={form.level} onChange={set('level')} isDisabled={readOnly} />
             {!readOnly && (
                 <div className="hubFormActions isWide">
                     <Button variant="light" isDisabled={!dirty || saving} onPress={() => setForm(fromClass(cls))}>

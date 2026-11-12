@@ -321,6 +321,13 @@ export default {
     '{count} changes: {action}': '{count} thay đổi: {action}',
     '{actor} made {count} changes: {action}': '{actor} đã thực hiện {count} thay đổi: {action}',
 
+    // The website timetable's look
+    'Website timetable': 'Lịch học trên website',
+    '{actor} switched the website timetable to {template}': '{actor} đã đổi lịch học trên website sang kiểu {template}',
+    'Before: {template}': 'Trước đó: {template}',
+    'Switched {count} time': 'Đổi {count} lần',
+    'Switched {count} times': 'Đổi {count} lần',
+
     // Extra tuition money
     'Extra money moved': 'Chuyển tiền dư',
     'Extra money given back': 'Trả lại tiền dư',

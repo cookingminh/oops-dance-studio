@@ -89,6 +89,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `booking-refunds.spec.js` | cancellation policy and refunds: the policy on the booking form, a guest cancels an approved booking ahead (50 % quoted, "the studio will refund …"), the refund to-do and "Refunded by transfer", staff cancel a booking paid in full (completed) as the studio (everything back; another amount needs a reason; change the refund), the "To refund" list, the admin's policy editor on its card beside the room prices (staff read only) |
 | `booking-rooms.spec.js` | rooms inside Bookings: `/admin/rooms` → Rooms & prices (no Rooms item in the menu), each room's price and booking facts, the cancellation policy card, change a room's price and put it back, "See this room's calendar"; a booking ahead paid in full is completed by itself (solid, "Paid up", no Mark completed) and still cancellable by the guest and the studio |
 | `checkin-window.spec.js` | the instructor check-in window and late check-out: a session in 30 minutes says "Check-in opens at …" (and the server refuses), one that is over says to ask the studio, a check-out more than 10 minutes after the end warns and is marked late; staff correct a forgotten check-out with a reason in the session dialog (late mark from the times, then excused), today's board badge, the activity log entries with before → after |
+| `timetable-templates.spec.js` | the website timetable's look: staff pick the Red card above the directory's weekly timetable and /classes shows it, the arrow keys go back to the Poster, the switch on the Activity page; a class's level set in its details form (shown on its card) and cleared (the look ends on Poster, the level is put back) |
 
 ```bash
 # from the repository root, once per stack reset
@@ -108,9 +109,11 @@ reset. CI runs them on every push.
 src/
   App.jsx                 routes + guards (lazy-loaded areas)
   lib/                    supabase client, image preparation (HEIC → JPEG, resize, WebP), formatting,
-                          place.js (a class's or session's place: room or rented studio)
+                          place.js (a class's or session's place: room or rented studio), classLevel.js (a
+                          class's level — Newbie / Basic / Advanced — and its colour on the website timetable)
   services/               the only code that talks to Supabase: auth, users, rooms, classes,
-                          schedules, bookings, attendance, stats, storage, studio, errors
+                          schedules, bookings, attendance, stats, storage, studio, errors, site (the
+                          website's choices: which look the public timetable uses, `site_settings`)
   auth/                   AuthProvider (session + profile), RequireRole, PublicOnly, roles
   hooks/useAsync.js       loading / error / reload state for service calls
   i18n/                   English / Vietnamese: provider, t()/tn(), date formatting, vi/*.js dictionaries
@@ -122,10 +125,13 @@ src/
                           bundled — ../scripts/demo-images.mjs uploads them to site-assets for the seed
   Components/
     HomePage/             public site: PublicLayout (navbar, footer, page transitions), pages/ (one per
-                          route), Components/ (sections; About/aboutContent.js holds the About copy)
+                          route), Components/ (sections; About/aboutContent.js holds the About copy;
+                          Classes/Components/timetable/ = the two looks of the weekly timetable — the
+                          printed-poster grid and the red card — picked from site_settings)
     Login, Register, ResetPassword, Logout
     Table                 table template
-    users/admin-staff/    /admin area
+    users/admin-staff/    /admin area; components/common/ holds the shared pieces (PlaceField = where a
+                          class is taught, LevelField = its level, used by the class forms and the wizard)
     users/instructor-guest/  /profile area
 e2e/                      Playwright specs + fixtures (see above)
 ```

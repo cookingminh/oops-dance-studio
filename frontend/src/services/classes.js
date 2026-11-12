@@ -11,7 +11,7 @@ const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // A routine (class_lessons) with its class video and its promo (services/promos.js).
 const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, title, video_url, ${PROMO_COLUMNS}`;
 // A class is taught in a room or at a rented studio (venue), never both (lib/place.js).
-const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, venue_id, created_at,
+const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, venue_id, level, created_at,
     starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
@@ -24,13 +24,15 @@ const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
 // `lesson` is not written here: it mirrors the latest row of class_lessons (see setClassLesson).
 // `startsOn` ('yyyy-MM-dd') is optional: a class opening later takes students now and bills from then.
 // The place is a room or a venue: both columns are written, so moving to one clears the other.
-const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, price, startsOn }) => ({
+// `level` ('newbie' | 'basic' | 'advanced' | '' = none, lib/classLevel.js) is written only when the form has it.
+const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, price, startsOn, level }) => ({
     name: name.trim(),
     instructor_id: instructorId,
     room_id: roomId || null,
     venue_id: roomId ? null : venueId || null,
     price: Number(price),
     ...(startsOn ? { starts_on: startsOn } : {}),
+    ...(level !== undefined ? { level: level || null } : {}),
 });
 
 // Class lifecycle (supabase/migrations/20261114000100_class_lifecycle.sql): a class runs from

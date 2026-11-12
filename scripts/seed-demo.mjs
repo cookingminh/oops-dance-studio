@@ -455,6 +455,8 @@ async function seedTuition() {
   console.log(`✓ finance: ${finance.expenses} expenses (${finance.recurring} recurring), ${finance.switched} switched invoices`);
   const classes = await must(db.rpc("seed_demo_classes"), "seed_demo_classes");
   console.log(`✓ classes: Newbie 1 and Newbie 2 opening ${classes.opens_on} (#${classes.upcoming_classes.join(", #")})`);
+  const levelled = await must(db.rpc("seed_demo_levels"), "seed_demo_levels");
+  console.log(`✓ class levels: ${levelled} classes (Newbie / basic / advanced)`);
   // The studio's rooms are closed for now: the classes are taught in two rented studios (rent charged per session).
   await must(db.rpc("seed_demo_venues"), "seed_demo_venues");
   console.log("✓ venues: the six rented studios on the timetable, each class at its own, rent charged for sessions taught");

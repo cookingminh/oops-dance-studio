@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import ImagePicker from '@/ui/ImagePicker';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import PlaceField from '../../../../common/PlaceField';
+import LevelField from '../../../../common/LevelField';
 
 // Create or edit a class. Schedules are managed separately (each schedule belongs to one class).
 const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved }) => {
@@ -19,6 +20,7 @@ const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved
         instructorId: classRow?.instructor_id ?? '',
         place: placeKeyOf(classRow),
         price: classRow ? String(classRow.price) : '',
+        level: classRow?.level ?? '',
     });
     const [image, setImage] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -84,6 +86,7 @@ const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved
                         isInvalid={priceInvalid}
                         errorMessage={priceInvalid ? t('Enter a price of 0 or more.') : undefined}
                     />
+                    <LevelField value={form.level} onChange={set('level')} isDisabled={saving} />
                     {isNew && <ImagePicker label={t('Upload Class Image (optional)')} onChange={setImage} isDisabled={saving} />}
                 </ModalBody>
                 <ModalFooter>

@@ -4,6 +4,7 @@ import { refundPolicyLines } from '@/services/bookingRefunds';
 import { VOID_REASONS } from '../tuition/tuitionModel';
 import { reasonText } from '../../common/session-changes/changeText';
 import { checkReasonText } from '../../common/checkins/checkEdit';
+import { timetableLookLabel } from '../class-hub/hubModel';
 import { ROLE_LABELS, changedFields } from './activityFields';
 import { actionLabel, areaOf, isSelf } from './activityModel';
 
@@ -348,11 +349,22 @@ const USERS = (row, fmt) => {
     return out && { key: out[0], facts: out[1] };
 };
 
-const SETTINGS = (row, fmt) =>
-    row.action === 'updated' && {
+const SETTINGS = (row, fmt) => {
+    const m = row.meta ?? {};
+    // The website timetable's look (site_set_timetable_template): 'poster' | 'brush', and the one before.
+    if (row.action === 'timetable_template') {
+        const look = (value) => fmt.t(timetableLookLabel(value));
+        return {
+            key: '{actor} switched the website timetable to {template}',
+            vars: { template: look(m.template) },
+            facts: [m.from && fmt.t('Before: {template}', { template: look(m.from) })],
+        };
+    }
+    return row.action === 'updated' && {
         key: row.label === 'Payroll' ? '{actor} changed the payroll settings' : '{actor} changed the tuition settings',
         facts: [fieldsFact(row, fmt)],
     };
+};
 
 const AREA_SENTENCES = {
     bookings: BOOKINGS,
@@ -411,6 +423,14 @@ const PLURALS = {
     'payroll.payslip_finalized': (rows, fmt) => ({ key: '{actor} finalized {count} payslips for {month}', facts: [fmt.t('{amount} in total', { amount: money(sumOf(rows, 'total')) })] }),
     'payroll.payslip_paid': (rows, fmt) => ({ key: '{actor} paid {count} payslips for {month}', facts: [fmt.t('{amount} in total', { amount: money(sumOf(rows, 'total')) })] }),
     'users.account_created': (rows, fmt, system) => (system ? { key: '{count} people signed up' } : null),
+    // Switched back and forth: where it ended up (the newest row), how often, and what it was before the first switch.
+    'settings.timetable_template': (rows, fmt) => ({
+        key: '{actor} switched the website timetable to {template}',
+        facts: [
+            fmt.tn(rows.length, 'Switched {count} time', 'Switched {count} times'),
+            rows.at(-1).meta?.from && fmt.t('Before: {template}', { template: fmt.t(timetableLookLabel(rows.at(-1).meta.from)) }),
+        ],
+    }),
 };
 
 // Each student counts once, with their latest mark (a mark changed twice is one student).

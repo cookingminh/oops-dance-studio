@@ -42,6 +42,7 @@ import { unwrap } from './errors';
 //   users      account_created (actor null = signed up themselves) · account_deleted · role_changed [role, from]
 //              profile_edited [email, role]
 //   settings   updated (label 'Payroll' | 'Tuition'; see changes)
+//              timetable_template (entity site_settings, label 'Website') [template, from]
 // `changes` (plain edits): { column: { from, to } }.
 
 export const ACTIVITY_AREAS = ['bookings', 'classes', 'routines', 'students', 'sessions', 'roll_call', 'tuition', 'expenses', 'payroll', 'rooms', 'users', 'settings'];

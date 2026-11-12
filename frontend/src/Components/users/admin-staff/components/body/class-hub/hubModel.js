@@ -31,6 +31,13 @@ export const TABS = [
 // The directory's views.
 export const VIEWS = ['today', 'month', 'upcoming', 'past', 'timetable'];
 
+// The two looks of the website timetable (services/site.js TIMETABLE_TEMPLATES), as the Timetable view offers them.
+export const TIMETABLE_LOOKS = [
+    { key: 'poster', label: 'Poster', text: 'Days across, a round photo per class, coloured by level — like the printed schedule.' },
+    { key: 'brush', label: 'Red card', text: 'One column per day, brush-stroke badges on red paper.' },
+];
+export const timetableLookLabel = (key) => TIMETABLE_LOOKS.find((look) => look.key === key)?.label ?? key;
+
 // ---- Dates ---------------------------------------------------------------------------
 
 export const shiftDay = (isoDate, days) => toIsoDate(addDays(parseISO(isoDate), days));

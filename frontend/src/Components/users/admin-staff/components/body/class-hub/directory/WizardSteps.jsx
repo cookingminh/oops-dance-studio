@@ -8,11 +8,12 @@ import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
 import PlaceField from '../../../common/PlaceField';
+import LevelField from '../../../common/LevelField';
 import { bySlot } from '../hubModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
 
-// Step 1: what the class is. `form` { name, instructorId, place (lib/place.js key), price, startsOn }.
+// Step 1: what the class is. `form` { name, instructorId, place (lib/place.js key), price, startsOn, level ('' = none) }.
 export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today, problems, tried }) => {
     const { t } = useI18n();
     const set = (field) => (value) => onChange({ ...form, [field]: value });
@@ -72,6 +73,7 @@ export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today,
                 isInvalid={show('startsOn')}
                 errorMessage={show('startsOn') ? t('Pick today or a later day.') : undefined}
             />
+            <LevelField value={form.level} onChange={set('level')} />
         </div>
     );
 };

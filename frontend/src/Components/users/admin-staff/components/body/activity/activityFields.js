@@ -1,5 +1,6 @@
 import { formatClock, formatTime, formatVnd } from '@/lib/format';
 import { categoryOf } from '@/lib/expenseCategories';
+import { levelOf } from '@/lib/classLevel';
 import { METHOD_LABELS, RENEWAL, VOID_REASONS } from '../tuition/tuitionModel';
 import { classPath } from '../class-hub/hubModel';
 import { studioDateOf } from './activityModel';
@@ -97,6 +98,7 @@ const FIELD_LABELS = {
     avatar_path: 'Photo',
     content: 'Transfer content',
     month: 'Month',
+    level: 'Level',
 };
 // Where one column name means different things per table.
 const ENTITY_LABELS = {
@@ -145,6 +147,7 @@ export function formatValue(column, value, entity, fmt) {
     if (column === 'renewal') return t(RENEWAL[value]?.label ?? value);
     if (column === 'void_reason') return t(VOID_REASONS[value] ?? value);
     if (column === 'category') return t(categoryOf(value).label);
+    if (column === 'level') return t(levelOf(value).label);
     if (column === 'deposit_status') return t(DEPOSIT_LABELS[value] ?? value);
     if (column === 'status') return t(STATUS_LABELS[entity]?.[value] ?? value);
     if (typeof value === 'boolean') return t(value ? 'Yes' : 'No');
@@ -201,6 +204,9 @@ export function recordLink(row, lookups) {
             return inClass('tuition') ?? { to: '/admin/tuition', page: 'Tuition' };
         case 'class_pay_rates':
             return inClass('money') ?? { to: '/admin/payroll', page: 'Payroll' };
+        case 'site_settings':
+            // The website timetable's look is picked above the directory's weekly timetable.
+            return { to: '/admin/classes?view=timetable', page: 'Classes' };
         case 'bank_transfers':
         case 'tuition_settings':
             return { to: '/admin/tuition', page: 'Tuition' };
