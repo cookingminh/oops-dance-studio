@@ -28,7 +28,7 @@ export function marksByKey(marks) {
 
 // A session object for an instructor_attendance row (the class from `classes` when it's there).
 export function sessionOfRow(row, classes) {
-    const cls = classes.find((item) => item.id === row.class_id) ?? { ...row.class, id: row.class_id, room: row.room, venue: row.venue };
+    const cls = classes.find((item) => item.id === row.class_id) ?? { ...row.class, id: row.class_id, room: row.room, venue: row.venue, venue_room: row.venue_room };
     return { key: sessionKey(row.class_id, row.date), cls, date: row.date, row, extra: Boolean(row.is_extra), ...sessionTimes(cls, row.date, row) };
 }
 

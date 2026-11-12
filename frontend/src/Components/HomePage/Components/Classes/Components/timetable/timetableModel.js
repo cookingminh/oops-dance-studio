@@ -22,11 +22,11 @@ const byTime = (a, b) => a.start.localeCompare(b.start) || a.cls.name.localeComp
 export const daysOf = (sessions) =>
     WEEKDAYS.map((day) => ({ ...day, sessions: sessions.filter((s) => s.day_of_week === day.value).sort(byTime) }));
 
-// How a place reads in "Classes held at …": a rented studio by its area (the first part of its address —
-// "Đê La Thành nhỏ, Hà Nội" → "Đê La Thành nhỏ"), the studio's own rooms by the studio's area.
+// How a place reads in "Classes held at …": a rented studio by its public name (its area, e.g. "Đê La Thành
+// nhỏ" — never the studio's own name), the studio's own rooms by the studio's area.
 const areaOf = (place) => {
     if (place.kind === 'room') return AREA;
-    return (place.address ?? '').split(',')[0].trim() || place.name;
+    return place.name || (place.address ?? '').split(',')[0].trim();
 };
 
 // The places of the week, each once, in the order the week reaches them (Monday first, earliest first).

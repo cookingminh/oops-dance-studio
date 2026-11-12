@@ -41,15 +41,26 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
      lớp); có 3 số đếm *Học tiếp · Nghỉ · Chưa trả lời*. Trước khi mở gia hạn: "Tự mở khi còn 2 buổi (ngày …)" + *Mở
      ngay*.
   5. **Bài nhảy**: khoá đang học, lập khoá tiếp theo, video, học bù.
-  6. **Tiền** (admin): học phí thu được, lương giáo viên, chi phí riêng của lớp, lãi gộp 6 tháng, mức lương/buổi.
+  6. **Thu chi** (admin): học phí thu được, lương giáo viên, chi phí riêng của lớp, lãi gộp 6 tháng, mức lương/buổi.
+     Phần **Thu chi theo ngày** là một **lịch tháng**: mỗi ngày hiện tiền vào (xanh), tiền ra (đỏ) và buổi học (kèm phòng
+     nếu học ở studio thuê). Bấm một ngày → hộp thoại của ngày đó: **đổi phòng** cho buổi hôm đó (studio thuê đổi sang
+     phòng khác → tiền thuê đã tính tự tính lại theo giá phòng mới), **sửa / xoá khoản chi** (ví dụ studio giảm giá thì
+     sửa số tiền — đổi phòng sau đó sẽ tính lại theo giá phòng), **thêm khoản chi** cho đúng ngày đó (ví dụ mua nước),
+     xem **học phí thu trong ngày**. Có nút chuyển sang dạng *Danh sách*. Khoản chi tự động (tiền thuê) chỉ admin thấy;
+     staff thấy các khoản mình nhập.
   7. **Thiết lập**: thông tin, lịch tuần, ảnh, kết thúc / mở lại / xoá lớp.
 - **Nơi học**: mỗi lớp học ở **một phòng của studio** (Phòng A, Phòng B) **hoặc một studio thuê ngoài** (ví dụ Studio
-  Baladi Vũ Thạnh, Studio Thỏ (Đê La Thành nhỏ), Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo. Học viên, giáo
-  viên thấy tên và địa chỉ (kèm link bản đồ); **giá thuê chỉ staff/admin thấy**.
-- **Studio thuê ngoài** (trang *Đặt phòng* → *Phòng & studio*): thêm / sửa tên, địa chỉ, link bản đồ, **giá thuê mỗi
-  giờ**, ngưng dùng. Studio đã từng có lớp dạy thì chỉ ngưng dùng được, không xoá.
+  Baladi Vũ Thạnh, Studio Thỏ, Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân) — và nếu studio đó có nhiều phòng thì
+  **một phòng của nó** (ví dụ Studio Thỏ · Phòng lớn), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo.
+- **Tên studio thuê không hiện ra ngoài** (đó là thương hiệu của studio khác): website và học viên chỉ thấy **tên hiển
+  thị** — vị trí, ví dụ "Bà Triệu", "Đê La Thành nhỏ" — kèm địa chỉ và link bản đồ. Staff, giáo viên, admin thấy tên thật
+  và phòng ("Studio Thỏ · Phòng lớn"). **Giá thuê chỉ staff/admin thấy**.
+- **Studio thuê ngoài** (trang *Đặt phòng* → *Phòng & studio*): thêm / sửa tên, **tên hiển thị trên website** (để trống thì
+  lấy phần đầu của địa chỉ), địa chỉ, link bản đồ, **giá thuê mỗi giờ** (giá khi không chọn phòng nào), **các phòng** —
+  mỗi phòng một giá thuê theo giờ — và ngưng dùng. Studio / phòng đã từng có lớp dạy thì chỉ ngưng dùng được, không xoá.
 - **Tiền thuê tự thành chi phí**: mỗi buổi dạy ở studio thuê ngoài, khi buổi kết thúc → chi phí *Thuê studio ngoài* =
-  giá/giờ × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và báo cáo). Buổi bị huỷ thì không tính (đã tính rồi
+  giá/giờ **của phòng** (hoặc của studio nếu không chọn phòng) × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và
+  báo cáo). Hôm nào studio đổi phòng thì sửa ở *Thu chi* của lớp (bấm vào ngày đó). Buổi bị huỷ thì không tính (đã tính rồi
   mà huỷ sau thì tự xoá). Phòng A/B và đặt phòng giữ nguyên để dùng lại khi studio mở cửa lại.
 
 ### Lịch học trên website

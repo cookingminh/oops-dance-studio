@@ -40,11 +40,15 @@ const INVALID_INPUT_REASONS = [
     [/check-out comes after check-in/i, 'The check-out time must be after the check-in time.'],
     [/a check-in time is needed/i, 'Enter the check-in time.'],
     [/^say why/i, 'Please give a reason.'],
-    // Rented studios (venue_save) and a class's place (classes_one_place).
+    // Rented studios and their rooms (venue_save) and a class's place (classes_one_place).
     [/give the studio a name/i, 'Give the studio a name (up to 100 characters).'],
     [/already a studio called/i, 'There is already a rented studio with this name.'],
     [/map link must start with https/i, 'The map link must start with https://.'],
     [/the rent must be 0 or more/i, 'The rent must be 0 or more.'],
+    [/name on the website is up to/i, 'The name on the website is up to 80 characters.'],
+    [/two rooms have the same name/i, 'Two rooms have the same name.'],
+    [/give each room a name/i, 'Give each room a name (up to 60 characters).'],
+    [/room's rent must be 0 or more/i, 'A room’s rent must be 0 or more.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
 ];
 

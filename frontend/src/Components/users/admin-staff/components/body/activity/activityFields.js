@@ -17,6 +17,7 @@ const FIELD_LABELS = {
     end_time: 'End',
     room_id: 'Room',
     venue_id: 'Rented studio',
+    venue_room_id: 'Room at the studio',
     guest_id: 'Guest',
     deposit: 'Deposit',
     full_payment: 'Full payment',
@@ -118,7 +119,7 @@ const SUMMARY_LABELS = {
 const ENTITY_LABELS = {
     classes: { name: 'Class Name' },
     rooms: { name: 'Room Name', price: 'Price per hour' },
-    venues: { name: 'Studio name', address: 'Address', map_url: 'Map link', rent_per_hour: 'Rent per hour', active: 'In use' },
+    venues: { name: 'Studio name', public_name: 'Name on the website', address: 'Address', map_url: 'Map link', rent_per_hour: 'Rent per hour', active: 'In use' },
 };
 export const fieldLabel = (column, entity) => ENTITY_LABELS[entity]?.[column] ?? FIELD_LABELS[column] ?? column.replace(/_/g, ' ');
 
@@ -157,6 +158,7 @@ export function formatValue(column, value, entity, fmt) {
     if (PEOPLE.has(column)) return fmt.people?.get(value)?.name || '—';
     if (column === 'room_id') return fmt.rooms?.get(value) ?? `#${value}`;
     if (column === 'venue_id') return fmt.venues?.get(value) ?? `#${value}`;
+    if (column === 'venue_room_id') return fmt.venueRooms?.get(value)?.name ?? `#${value}`;
     if (column === 'class_id' || column === 'switched_from') return fmt.classes?.get(value) ?? `#${value}`;
     if (column === 'day_of_week') return fmt.dayName(value);
     if (column === 'role') return t(ROLE_LABELS[value] ?? value);

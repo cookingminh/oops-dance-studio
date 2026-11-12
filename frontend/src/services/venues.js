@@ -1,24 +1,43 @@
 import { supabase } from '@/lib/supabase';
 import { unwrap } from './errors';
 
-// Rented studios (supabase/migrations/20261117001300_venues.sql, api-contract §3 venues): while the studio's
-// own rooms are closed, classes are taught in studios rented by the hour. A class is taught in a room
-// (classes.room_id) or at a venue (classes.venue_id), never both; its sessions follow it.
+// Rented studios (supabase/migrations/20261117001300_venues.sql, 20261117001800_venue_rooms.sql, api-contract §3
+// venues): while the studio's own rooms are closed, classes are taught in studios rented by the hour. A class is
+// taught in a room (classes.room_id) or at a venue (classes.venue_id), never both, maybe in one of the venue's
+// rooms (classes.venue_room_id); its sessions follow it.
 //
-// Venue { id, name, address, map_url, rent_per_hour, note, active, created_at, updated_at }
-// Everyone may read id, name, address, map_url and active; the rent and the note are staff's (venues_list()),
-// so never select * on the table.
+// Venue { id, name, public_name, address, map_url, rent_per_hour, note, active, created_at, updated_at,
+//         rooms: [VenueRoom] (listVenues) }
+// VenueRoom { id, venue_id, name, rent_per_hour, active, position }
+// `name` is the studio's own (another studio's brand): the app shows it to staff, instructors and admins; the
+// website and students see `public_name` (its area, e.g. "Bà Triệu"). Visitors can't read `name` at all.
+// Everyone signed in may read id, name, public_name, address, map_url and active, and a room's id, venue_id, name,
+// active and position; the rents and the note are staff's (venues_list(), venue_rooms_list()), so never select *.
 
-// Embed for a class or a session: `venue:venues!venue_id(${VENUE_EMBED})`.
-export const VENUE_EMBED = 'id, name, address, map_url';
+// Embed for a class or a session: `venue:venues!venue_id(${VENUE_EMBED})`, with its room
+// `venue_room:venue_rooms!venue_room_id(${VENUE_ROOM_EMBED})`.
+export const VENUE_EMBED = 'id, name, public_name, address, map_url';
+export const VENUE_ROOM_EMBED = 'id, name';
+// A class's or a session's whole place, embedded: one of the studio's rooms, or a rented studio and its room.
+export const PLACE_EMBEDS = `room:rooms!room_id(id, name), venue:venues!venue_id(${VENUE_EMBED}),
+    venue_room:venue_rooms!venue_room_id(${VENUE_ROOM_EMBED})`;
 
-// Staff: every venue with its rent and note, active ones first, then by name.
+// Staff: every rented studio's rooms with their rents, by studio, in the studio's order.
+export async function listVenueRooms() {
+    return unwrap(await supabase.rpc('venue_rooms_list'));
+}
+
+// Staff: every venue with its rent, note and rooms (in order, inactive ones too), active venues first, then by name.
 export async function listVenues() {
-    return unwrap(await supabase.rpc('venues_list'));
+    const [venues, rooms] = await Promise.all([supabase.rpc('venues_list').then(unwrap), listVenueRooms()]);
+    return venues.map((venue) => ({ ...venue, rooms: rooms.filter((room) => room.venue_id === venue.id) }));
 }
 
 // Staff: add (no id) or change a venue → the venue. Logged in the activity log.
-export async function saveVenue(id, { name, address, mapUrl, rent, note, active }) {
+//   publicName  the name on the website ('' = the first part of the address)
+//   rooms       the whole ordered list of its rooms [{ id?, name, rent, active? }] (undefined = leave them as they
+//               are): rooms left out are deleted, or set inactive when a class or a session was in them.
+export async function saveVenue(id, { name, publicName, address, mapUrl, rent, note, active, rooms }) {
     return unwrap(
         await supabase.rpc('venue_save', {
             p_id: id ?? null,
@@ -28,6 +47,10 @@ export async function saveVenue(id, { name, address, mapUrl, rent, note, active 
             p_rent: Number(rent) || 0,
             p_note: note?.trim() || null,
             p_active: active,
+            p_public_name: publicName?.trim() || null,
+            p_rooms: rooms
+                ? rooms.map((room) => ({ ...(room.id ? { id: room.id } : {}), name: room.name.trim(), rent: Number(room.rent) || 0, active: room.active ?? true }))
+                : null,
         })
     );
 }
@@ -43,29 +66,34 @@ export async function runVenueRent() {
     return unwrap(await supabase.rpc('venue_rent_run'));
 }
 
-// Staff: the classes taught at a venue that haven't ended by `today` → [{ id, name, venue_id }].
+// Staff: the classes taught at a venue that haven't ended by `today` → [{ id, name, venue_id, venue_room_id }].
 export async function listVenueClasses(today) {
     return unwrap(
         await supabase
             .from('classes')
-            .select('id, name, venue_id')
+            .select('id, name, venue_id, venue_room_id')
             .not('venue_id', 'is', null)
             .or(`ended_on.is.null,ended_on.gte.${today}`)
             .order('name')
     );
 }
 
-// The automatic rent rows of a month ('yyyy-MM-01'): [{ amount, venue_id, vendor }] (vendor: the studio's
-// name when it was charged). Expenses RLS: only admins see them (they are the system's, not a staff
-// member's), so staff get [].
+// The automatic rent rows of a month ('yyyy-MM-01'): [{ amount, venue_id, venue_room_id, vendor }] (vendor: the
+// studio's name when it was charged, "Studio · Room" in a room). Expenses RLS: only admins see them (they are
+// the system's, not a staff member's), so staff get [].
 export async function listVenueRent(month) {
     const rows = unwrap(
         await supabase
             .from('expenses')
-            .select('amount, vendor, session:instructor_attendance!session_id(venue_id)')
+            .select('amount, vendor, session:instructor_attendance!session_id(venue_id, venue_room_id)')
             .eq('category', 'venue_rent')
             .eq('month', month)
             .is('created_by', null)
     );
-    return rows.map((row) => ({ amount: Number(row.amount) || 0, venue_id: row.session?.venue_id ?? null, vendor: row.vendor }));
+    return rows.map((row) => ({
+        amount: Number(row.amount) || 0,
+        venue_id: row.session?.venue_id ?? null,
+        venue_room_id: row.session?.venue_room_id ?? null,
+        vendor: row.vendor,
+    }));
 }

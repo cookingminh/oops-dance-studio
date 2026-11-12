@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { toAppError, unwrap } from '@/services/errors';
 import { signProofUrls } from '@/services/storage';
+import { PLACE_EMBEDS } from '@/services/venues';
 
 // Read-only queries the class hub needs that src/services/ doesn't have yet (candidates for a
 // services/classHub.js). RLS: staff and admins read every class, session, roll call and invoice.
@@ -40,12 +41,14 @@ export async function listPastStats(classIds) {
     return { sessions, invoices };
 }
 
-// One class's sessions in [from, to) with the instructor teaching each and signed proof photos.
+// One class's sessions in [from, to) with the instructor teaching each, signed proof photos and the session's own
+// place (a room, or a rented studio and its room).
 export async function listClassSessions(classId, from, to) {
     const rows = unwrap(
         await supabase
             .from('instructor_attendance')
-            .select(`${SESSION}, checkin_proof_path, checkout_proof_path, details, instructor:profiles!instructor_id(${PERSON})`)
+            .select(`${SESSION}, venue_room_id, checkin_proof_path, checkout_proof_path, details, instructor:profiles!instructor_id(${PERSON}),
+                ${PLACE_EMBEDS}`)
             .eq('class_id', classId)
             .gte('date', from)
             .lt('date', to)

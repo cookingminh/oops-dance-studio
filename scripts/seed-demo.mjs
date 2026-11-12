@@ -459,6 +459,7 @@ async function seedTuition() {
   console.log(`✓ class levels: ${levelled} classes (Newbie / basic / advanced)`);
   // The studio's rooms are closed for now: the classes are taught in two rented studios (rent charged per session).
   await must(db.rpc("seed_demo_venues"), "seed_demo_venues");
+  await must(db.rpc("seed_demo_venue_rooms"), "seed_demo_venue_rooms");
   console.log("✓ venues: the six rented studios on the timetable, each class at its own, rent charged for sessions taught");
 }
 

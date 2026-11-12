@@ -489,6 +489,90 @@
     }
 }
 
+// The name the website shows (visitors and students never see the studio's own name).
+.adminShell .venuePublic {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .2rem .45rem;
+    margin: -.35rem 0 0;
+    font-size: .85rem;
+    color: var(--ad-muted);
+
+    svg {
+        flex-shrink: 0;
+        color: var(--ad-subtle);
+    }
+
+    strong {
+        color: var(--ad-text);
+        font-weight: 700;
+    }
+}
+
+// A studio with rooms: each room with its rent and the classes in it, then the studio's own rent.
+.adminShell .venueRoomsBlock {
+    display: grid;
+    gap: .5rem;
+    padding-top: .8rem;
+    border-top: 1px dashed var(--ad-border);
+}
+
+.adminShell .venueRoomList {
+    display: grid;
+    gap: .45rem;
+
+    > li {
+        display: grid;
+        gap: .4rem;
+        min-width: 0;
+        padding: .6rem .7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+
+        &.isInactive {
+            background: var(--ad-surface-2);
+        }
+
+        > .venueMuted {
+            font-size: .85rem;
+        }
+    }
+
+    .venueRoomHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .2rem .5rem;
+
+        strong {
+            font-size: .95rem;
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .venueRoomRent {
+        margin-left: auto;
+        font-family: var(--ad-display);
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ad-primary);
+        white-space: nowrap;
+    }
+}
+
+.adminShell .venueCard.isInactive .venueRoomRent {
+    color: var(--ad-muted);
+}
+
+.adminShell .venueRoomFallback {
+    margin: 0;
+    font-size: .82rem;
+    color: var(--ad-muted);
+}
+
 .adminShell .venueNote {
     display: flex;
     align-items: flex-start;
@@ -556,6 +640,92 @@
 
     .venueDialogSwitch {
         max-width: none;
+    }
+
+    // The rooms editor: a row per room (name, price per hour, move up / use again / remove).
+    .venueRoomsEditor {
+        display: grid;
+        gap: .6rem;
+        min-width: 0;
+        margin: 0;
+        padding: .85rem .9rem .9rem;
+        border: 1px solid var(--ad-border);
+        border-radius: var(--ad-radius);
+        background: var(--ad-surface-2);
+
+        legend {
+            float: left;
+            width: 100%;
+            font-size: .92rem;
+            font-weight: 700;
+        }
+    }
+
+    .venueRoomsIntro,
+    .venueRoomsNote {
+        margin: 0;
+        font-size: .8rem;
+        line-height: 1.4;
+        color: var(--ad-muted);
+    }
+
+    .venueRoomsNote {
+        padding: .45rem .6rem;
+        border-radius: 10px;
+        background: var(--ad-surface);
+    }
+
+    .venueRoomRows {
+        display: grid;
+        gap: .5rem;
+    }
+
+    .venueRoomRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 4.75rem;
+        align-items: start;
+        gap: .4rem;
+
+        &.isInactive {
+            opacity: .75;
+        }
+
+        @media (max-width: 480px) {
+            grid-template-columns: minmax(0, 1fr) 4.75rem;
+
+            > :nth-child(2) {
+                grid-row: 2;
+            }
+        }
+    }
+
+    .venueRoomTools {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        min-height: 3rem;
+    }
+
+    .venueDanger:hover {
+        color: var(--ad-primary);
+    }
+
+    .venueBadge {
+        padding: .05rem .4rem;
+        border-radius: 999px;
+        border: 1px solid var(--ad-border);
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .65rem;
+        font-weight: 700;
+        letter-spacing: .03em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .venueRoomAdd {
+        justify-self: start;
+        font-weight: 600;
     }
 
     .venueSwitchText {

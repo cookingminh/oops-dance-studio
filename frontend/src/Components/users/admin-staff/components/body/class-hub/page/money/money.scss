@@ -1,0 +1,821 @@
+// The Money tab's month by day: the calendar (or list) card and the day dialog. Tokens --ad-* come from
+// admin.scss (.adminShell, and .adminPortal on dialogs, which render outside the shell).
+
+$in: hsl(152, 62%, 29%);
+$in-soft: hsl(150, 60%, 94%);
+$out: hsl(0, 70%, 44%);
+$out-soft: hsl(0, 85%, 96.5%);
+$tone-good: hsl(152, 60%, 38%);
+$tone-live: hsl(217, 75%, 50%);
+$tone-alert: hsl(30, 90%, 45%);
+$tone-idle: hsl(220, 12%, 62%);
+$tone-muted: hsl(240, 5%, 72%);
+
+// Shared (card + dialog) ==========================================================
+
+:is(.adminShell, .adminPortal) {
+    .mcMoney {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+
+        &.isIn {
+            color: $in;
+        }
+
+        &.isOut {
+            color: $out;
+        }
+    }
+
+    .mcEmpty {
+        color: var(--ad-subtle);
+        font-size: .88rem;
+
+        &.isCentered {
+            padding: 1.5rem 0;
+            text-align: center;
+        }
+    }
+
+    .mcCostMain {
+        display: grid;
+        min-width: 0;
+        line-height: 1.3;
+
+        strong {
+            overflow: hidden;
+            font-weight: 600;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        small {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .1rem .45rem;
+            color: var(--ad-subtle);
+            font-size: .8rem;
+        }
+    }
+}
+
+// The card ===========================================================================
+
+.adminShell .mcCard .mcViews button {
+    height: 2rem;
+    padding: 0 .8rem;
+    font-size: .88rem;
+}
+
+// The pay rate on one line: the amount, then its buttons; the note under both.
+.adminShell .mcRateCard .hubRate {
+    grid-template-columns: minmax(0, 26rem) auto;
+    justify-content: start;
+    align-items: start;
+    column-gap: 1rem;
+
+    .hubRateActions {
+        padding-top: .5rem;
+    }
+
+    .hubFootnote {
+        grid-column: 1 / -1;
+        margin-top: 0;
+    }
+}
+
+// Calendar -------------------------------------------------------------------------------
+
+.adminShell .mcCal {
+    container: mccal / inline-size;
+    display: grid;
+    gap: 6px;
+}
+
+.adminShell .mcWeekdays,
+.adminShell .mcWeek {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.adminShell .mcWeekdays {
+    padding: 0 .55rem .1rem;
+    color: var(--ad-subtle);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.adminShell .mcWeek {
+    transition: opacity .2s ease;
+}
+
+.adminShell .mcCal.isBusy .mcWeek {
+    opacity: .5;
+}
+
+.adminShell .mcShort {
+    display: none;
+}
+
+.adminShell .mcDay {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: .3rem;
+    min-width: 0;
+    min-height: 6.1rem;
+    padding: .45rem .55rem .5rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 12px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s var(--ad-ease);
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+        transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    // Nothing in, out or taught: the day stays in the background.
+    &.isQuiet {
+        border-color: hsl(20, 10%, 94%);
+        background: hsla(0, 0%, 100%, .45);
+
+        .mcDayNum {
+            color: var(--ad-subtle);
+            font-weight: 600;
+        }
+    }
+
+    &.isToday {
+        border-color: var(--ad-primary-tint);
+        box-shadow: inset 0 0 0 1px var(--ad-primary-tint);
+
+        .mcDayNum {
+            background: var(--ad-primary);
+            color: #fff;
+        }
+    }
+}
+
+.adminShell .mcBlank {
+    min-height: 1px;
+}
+
+.adminShell .mcDayNum {
+    display: grid;
+    place-items: center;
+    width: 1.65rem;
+    height: 1.65rem;
+    margin: -.1rem 0 0 -.25rem;
+    border-radius: 999px;
+    font-size: .86rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.adminShell .mcSession {
+    --tone: #{$tone-idle};
+    display: flex;
+    align-items: center;
+    gap: .32rem;
+    min-width: 0;
+    color: var(--ad-muted);
+    font-size: .72rem;
+    font-weight: 600;
+    line-height: 1.2;
+
+    &.tone-good {
+        --tone: #{$tone-good};
+    }
+
+    &.tone-live {
+        --tone: #{$tone-live};
+    }
+
+    &.tone-alert {
+        --tone: #{$tone-alert};
+    }
+
+    &.tone-muted {
+        --tone: #{$tone-muted};
+    }
+
+    &.isOff .mcSessionText {
+        color: var(--ad-subtle);
+        text-decoration: line-through;
+    }
+}
+
+.adminShell .mcDot {
+    flex-shrink: 0;
+    width: .5rem;
+    height: .5rem;
+    border-radius: 50%;
+    background: var(--tone);
+}
+
+.adminShell .mcSessionText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.adminShell .mcAmounts {
+    display: grid;
+    gap: .05rem;
+    margin-top: auto;
+    font-size: .78rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+
+    > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .mcIn {
+        color: $in;
+    }
+
+    .mcOut {
+        color: $out;
+    }
+}
+
+.adminShell .mcLegend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem 1.2rem;
+    margin-top: .5rem;
+    color: var(--ad-muted);
+    font-size: .8rem;
+
+    span {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+
+        &::before {
+            content: '';
+            width: .6rem;
+            height: .6rem;
+            border-radius: 3px;
+        }
+    }
+
+    .mcKeyIn::before {
+        background: $in;
+    }
+
+    .mcKeyOut::before {
+        background: $out;
+    }
+
+    .mcKeySession::before {
+        border-radius: 50%;
+        background: $tone-good;
+    }
+}
+
+// A narrow grid (phones, a narrow window): short amounts, the session as a dot in the corner.
+@container mccal (max-width: 640px) {
+    .adminShell .mcCal {
+        .mcLong {
+            display: none;
+        }
+
+        .mcShort {
+            display: inline;
+        }
+
+        .mcWeekdays,
+        .mcWeek {
+            gap: 3px;
+        }
+
+        .mcWeekdays {
+            padding: 0;
+            text-align: center;
+            letter-spacing: 0;
+        }
+
+        .mcDay {
+            align-items: center;
+            gap: .15rem;
+            min-height: 3.9rem;
+            padding: .3rem .15rem .35rem;
+            border-radius: 9px;
+            text-align: center;
+
+            &:hover {
+                transform: none;
+            }
+        }
+
+        .mcDayNum {
+            width: 1.45rem;
+            height: 1.45rem;
+            margin: 0;
+            font-size: .78rem;
+        }
+
+        .mcSession {
+            position: absolute;
+            top: .3rem;
+            right: .3rem;
+        }
+
+        .mcSessionText {
+            display: none;
+        }
+
+        .mcDot {
+            width: .42rem;
+            height: .42rem;
+        }
+
+        .mcAmounts {
+            justify-items: center;
+            width: 100%;
+            font-size: .66rem;
+            letter-spacing: -.02em;
+        }
+    }
+}
+
+// List -----------------------------------------------------------------------------------
+
+.adminShell .mcList {
+    display: grid;
+
+    li {
+        border-bottom: 1px solid var(--ad-border);
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+}
+
+.adminShell .mcListRow {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .8rem;
+    width: 100%;
+    padding: .6rem .5rem;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .2s ease;
+
+    &:hover {
+        background: var(--ad-surface-2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: -2px;
+    }
+}
+
+.adminShell .mcListWhen {
+    color: var(--ad-muted);
+    font-size: .86rem;
+    white-space: nowrap;
+}
+
+// The day dialog (portal) =========================================================
+
+.mcDialog {
+    // The part under the header passes the column layout on, so with scrollBehavior="inside" the body
+    // scrolls and the footer stays inside (as .tuDialog > form does).
+    > .mcDialogMain {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .mcDialogBody > * {
+        flex-shrink: 0;
+    }
+
+    .mcDialogHeader {
+        display: grid;
+        gap: .15rem;
+        padding-right: 3rem;
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .mcKicker {
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--ad-primary);
+    }
+
+    .mcDialogTitle {
+        font-family: var(--ad-display);
+        font-size: 1.25rem;
+        font-weight: 700;
+        line-height: 1.25;
+        color: var(--ad-text);
+
+        &::first-letter {
+            text-transform: uppercase;
+        }
+    }
+
+    .mcDialogBody {
+        gap: 1.35rem;
+        padding-top: 1.1rem;
+        padding-bottom: 1.2rem;
+    }
+
+    .mcDialogFooter {
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--ad-border);
+    }
+
+    .mcSection {
+        display: grid;
+        gap: .6rem;
+    }
+
+    .mcSectionHead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        color: var(--ad-subtle);
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+
+        .mcMoney {
+            font-size: .9rem;
+            letter-spacing: 0;
+        }
+    }
+
+    .mcFine {
+        color: var(--ad-muted);
+        font-size: .82rem;
+        line-height: 1.45;
+    }
+
+    // The session ----------------------------------------------------------------------
+    .mcSessions {
+        display: grid;
+        gap: .6rem;
+    }
+
+    .mcSessionItem {
+        display: grid;
+        gap: .6rem;
+        padding: .85rem 1rem .9rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface-2);
+
+        &.isOff .mcSessionTime {
+            color: var(--ad-subtle);
+            text-decoration: line-through;
+        }
+    }
+
+    .mcSessionHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .mcSessionTime {
+        font-family: var(--ad-display);
+        font-size: 1.1rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mcChip {
+        padding: .12rem .55rem;
+        border-radius: 999px;
+        background: hsl(220, 14%, 92%);
+        color: hsl(220, 12%, 38%);
+        font-size: .74rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        &.tone-good {
+            background: $in-soft;
+            color: $in;
+        }
+
+        &.tone-live {
+            background: hsl(217, 85%, 95%);
+            color: hsl(217, 70%, 42%);
+        }
+
+        &.tone-alert {
+            background: hsl(40, 95%, 92%);
+            color: hsl(30, 85%, 32%);
+        }
+
+        &.tone-muted {
+            background: hsl(240, 5%, 93%);
+            color: var(--ad-subtle);
+        }
+    }
+
+    .mcPlace {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        color: var(--ad-muted);
+        font-size: .9rem;
+        font-weight: 600;
+
+        svg {
+            flex-shrink: 0;
+            color: var(--ad-subtle);
+        }
+    }
+
+    .mcRooms {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .mcRoom {
+        position: relative;
+        display: grid;
+        gap: .05rem;
+        min-width: 8.5rem;
+        padding: .5rem .85rem .55rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+        color: var(--ad-text);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+
+        &:hover:not(:disabled) {
+            border-color: hsl(20, 10%, 80%);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+
+        &.isOn {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            box-shadow: 0 6px 16px -10px hsla(0, 66%, 43%, .6);
+            cursor: default;
+        }
+
+        &:disabled:not(.isOn) {
+            cursor: progress;
+            opacity: .65;
+        }
+    }
+
+    .mcRoomName {
+        font-size: .9rem;
+        font-weight: 700;
+    }
+
+    .mcRoomRent {
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mcRoomSpin {
+        position: absolute;
+        top: 50%;
+        right: .5rem;
+        transform: translateY(-50%);
+    }
+
+    // Costs and income -------------------------------------------------------------------
+    .mcCosts,
+    .mcIncome {
+        display: grid;
+        overflow: hidden;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+
+        > li {
+            border-bottom: 1px solid var(--ad-border);
+
+            &:last-child {
+                border-bottom: 0;
+            }
+        }
+    }
+
+    .mcCost {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: .75rem;
+        padding: .55rem .4rem .55rem .7rem;
+
+        &.isEditing {
+            display: block;
+            padding: .85rem .9rem;
+            background: var(--ad-surface-2);
+        }
+
+        // There is room in the dialog: a long title wraps instead of being cut.
+        .mcCostMain strong {
+            white-space: normal;
+        }
+    }
+
+    .mcRowActions {
+        display: flex;
+        gap: .1rem;
+
+        button {
+            color: var(--ad-muted);
+        }
+
+        .mcDanger:hover {
+            color: $out;
+        }
+    }
+
+    .mcCostForm {
+        display: grid;
+        gap: .7rem;
+    }
+
+    .mcCostFields {
+        display: grid;
+        grid-template-columns: 10rem minmax(0, 1fr) 11rem;
+        gap: .6rem;
+
+        &:not(:has(.mcCostCategory)) {
+            grid-template-columns: 10rem minmax(0, 1fr);
+        }
+    }
+
+    .mcUnit {
+        color: var(--ad-subtle);
+        font-weight: 700;
+    }
+
+    .mcCostAmount input {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .mcCostActions {
+        display: flex;
+        justify-content: flex-end;
+        gap: .4rem;
+    }
+
+    .mcIncome > li {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        gap: .75rem;
+        padding: .6rem .9rem;
+    }
+
+    .mcAdd,
+    .mcTuitionLink {
+        justify-self: start;
+    }
+
+    .mcDayTotal {
+        display: grid;
+        line-height: 1.2;
+
+        span {
+            color: var(--ad-subtle);
+            font-size: .74rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        strong {
+            font-family: var(--ad-display);
+            font-size: 1.25rem;
+            font-variant-numeric: tabular-nums;
+
+            &.isIn {
+                color: $in;
+            }
+
+            &.isOut {
+                color: $out;
+            }
+        }
+    }
+
+    // Add a cost --------------------------------------------------------------------------
+    .mcAddBody {
+        gap: 1.1rem;
+    }
+
+    .mcAddRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 1rem;
+        align-items: start;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .mcDay {
+        transition: none;
+
+        &:hover {
+            transform: none;
+        }
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .mcDialog {
+        .mcCostFields,
+        .mcCostFields:not(:has(.mcCostCategory)),
+        .mcAddRow {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        // The amount over its two buttons, at the right of the text.
+        .mcCost {
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            row-gap: .1rem;
+
+            > .exCatIcon,
+            .mcCostMain {
+                grid-row: 1 / span 2;
+            }
+
+            .mcMoney {
+                grid-column: 3;
+                justify-self: end;
+            }
+
+            .mcRowActions {
+                grid-column: 3;
+                justify-content: flex-end;
+            }
+        }
+
+        .mcRoom {
+            flex: 1 1 8rem;
+            min-width: 0;
+        }
+    }
+
+    .adminShell .mcListRow {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .1rem .6rem;
+
+        .mcListWhen {
+            grid-column: 1 / -1;
+            font-size: .78rem;
+        }
+    }
+
+    .adminShell .mcRateCard .hubRate {
+        grid-template-columns: minmax(0, 1fr);
+
+        .hubRateActions {
+            padding-top: 0;
+        }
+    }
+}

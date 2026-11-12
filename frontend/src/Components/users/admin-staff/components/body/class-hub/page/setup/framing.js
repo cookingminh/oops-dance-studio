@@ -55,7 +55,8 @@ export function publicRowOf(cls, position) {
         instructor_name: instructorNameOf(cls),
         instructor_avatar_path: cls.instructor?.avatar_path ?? null,
         schedules: weeklySlots(cls).map(({ day_of_week, start_time, end_time }) => ({ day_of_week, start_time, end_time })),
-        room_name: cls.room?.name ?? cls.venue?.name ?? null,
+        // As the website names it: a rented studio by its public name, never its own.
+        room_name: cls.room?.name ?? cls.venue?.public_name ?? null,
         venue_address: cls.venue?.address ?? null,
         venue_map_url: cls.venue?.map_url ?? null,
         place_kind: cls.room ? 'room' : cls.venue ? 'venue' : null,

@@ -382,6 +382,9 @@ select public.seed_demo_booking_payments();
 -- The rooms and their bookings stay (for when the studio reopens).
 select public.seed_demo_venues();
 
+-- Two of the studios rent out rooms at their own prices; their classes are in one of them.
+select public.seed_demo_venue_rooms();
+
 -- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
 select public.seed_demo_activity();
 

@@ -14,8 +14,9 @@ import VenueDialog from './VenueDialog';
 const nothing = () => Promise.resolve([]);
 
 // "Rented studios", under the rooms: the studios rented by the hour where classes are taught while the
-// rooms are closed. Staff and admins add, change and remove them; a studio classes were taught at can only
-// be set inactive. The rent of each session taught there becomes an expense of its class by itself.
+// rooms are closed, each with the name the website shows and its rooms (each with its own rent). Staff and
+// admins add, change and remove them; a studio classes were taught at can only be set inactive. The rent of
+// each session taught there (its room's, else the studio's) becomes an expense of its class by itself.
 const VenuesSection = ({ today, isAdmin }) => {
     const { t } = useI18n();
     const toast = useToast();
@@ -27,11 +28,13 @@ const VenuesSection = ({ today, isAdmin }) => {
     const [editing, setEditing] = useState(undefined); // undefined = closed, null = new, or a venue
     const [busyId, setBusyId] = useState(null);
 
-    // By its session's studio; a rent whose session was deleted since goes by the name it was charged under.
+    // By its session's studio; a rent whose session was deleted since goes by the name it was charged under
+    // ("Studio", or "Studio · Room" in one of its rooms).
+    const chargedAt = (vendor, venue) => vendor === venue.name || Boolean(vendor?.startsWith(`${venue.name} · `));
     const rentOf = (venue) =>
         isAdmin
             ? (rent.data ?? [])
-                .filter((row) => (row.venue_id ? row.venue_id === venue.id : row.vendor === venue.name))
+                .filter((row) => (row.venue_id ? row.venue_id === venue.id : chargedAt(row.vendor, venue)))
                 .reduce((sum, row) => sum + row.amount, 0)
             : null;
     const classesOf = (id) => (classes.data ?? []).filter((cls) => cls.venue_id === id);
@@ -49,7 +52,16 @@ const VenuesSection = ({ today, isAdmin }) => {
             else if (!venue.active) toast.info(t('Classes were taught at {name}, so it stays on record. It is already inactive.', { name: venue.name }));
             else if (window.confirm(t('Classes were taught at {name}, so it can’t be deleted. Set it inactive instead? It leaves the class pickers and its history stays.', { name: venue.name }))) {
                 try {
-                    await saveVenue(venue.id, { name: venue.name, address: venue.address, mapUrl: venue.map_url, rent: venue.rent_per_hour, note: venue.note, active: false });
+                    // Its rooms stay as they are (no `rooms`); the name on the website is sent back as it is.
+                    await saveVenue(venue.id, {
+                        name: venue.name,
+                        publicName: venue.public_name,
+                        address: venue.address,
+                        mapUrl: venue.map_url,
+                        rent: venue.rent_per_hour,
+                        note: venue.note,
+                        active: false,
+                    });
                     toast.success(t('{name} is inactive.', { name: venue.name }));
                     venues.reload();
                 } catch (inner) {
@@ -98,10 +110,13 @@ const VenuesSection = ({ today, isAdmin }) => {
                 <VenueDialog
                     key={editing?.id ?? 'new'}
                     venue={editing}
+                    classes={editing ? classesOf(editing.id) : []}
                     onClose={() => setEditing(undefined)}
                     onSaved={() => {
                         setEditing(undefined);
                         venues.reload();
+                        // A removed room in use is set inactive; the classes' rooms are shown again.
+                        classes.reload();
                     }}
                 />
             )}

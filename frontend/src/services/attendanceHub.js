@@ -1,16 +1,19 @@
 import { supabase } from '@/lib/supabase';
 import { unwrap } from './errors';
 import { signProofUrls } from './storage';
+import { PLACE_EMBEDS } from './venues';
 
 // Read-only queries for the session calendars (the Attendance page and a class's Sessions tab).
-// Light rows: the session modal loads one session's proofs and roll call itself. RLS: staff and
-// admins read every session and roll call.
+// Light rows: the session modal loads one session's proofs and roll call itself. Each row has its own place
+// (lib/place.js placeOf(row, cls): a room, or a rented studio and its room). RLS: staff and admins read every
+// session and roll call.
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
-const SESSION = `id, class_id, instructor_id, room_id, venue_id, date, status, is_extra, start_time, end_time, checkin_at, checkout_at, details,
-    cancel_reason, makes_up, checkout_late,
+const SESSION = `id, class_id, instructor_id, room_id, venue_id, venue_room_id, date, status, is_extra, start_time, end_time, checkin_at,
+    checkout_at, details, cancel_reason, makes_up, checkout_late,
     checkin_proof_path, checkout_proof_path,
-    instructor:profiles!instructor_id(${PERSON})`;
+    instructor:profiles!instructor_id(${PERSON}),
+    ${PLACE_EMBEDS}`;
 
 // Sessions (instructor_attendance) from `from` to `until` (inclusive), of one class or of all.
 export async function listSessionRows({ from, until, classId } = {}) {

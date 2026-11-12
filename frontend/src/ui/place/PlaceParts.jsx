@@ -1,4 +1,5 @@
 import { LuDoorOpen, LuExternalLink, LuMapPin } from 'react-icons/lu';
+import { addressAfterName } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import './place.scss';
 
@@ -15,7 +16,8 @@ export const PlaceIcon = ({ place, className }) => {
 export const MapLink = ({ place, compact = false, className = '' }) => {
     const { t } = useI18n();
     if (!place?.mapUrl) return null;
-    const label = t('Open {name} in Maps', { name: place.name });
+    // The studio, not its room: the map shows the building.
+    const label = t('Open {name} in Maps', { name: place.studio ?? place.name });
     return (
         <a
             className={`placeMapLink${compact ? ' isCompact' : ''} ${className}`.trim()}
@@ -33,15 +35,19 @@ export const MapLink = ({ place, compact = false, className = '' }) => {
 };
 
 // The place's name; a rented studio adds its address and the map link (on their own line when `stacked`).
+// The address leaves out a first part the name already says ("Bà Triệu" · "Hà Nội", not "Bà Triệu, Hà Nội").
 // `empty`: what to say when the class has no place.
-export const PlaceDetails = ({ place, empty = null, stacked = false }) => (
-    <span className={`placeDetails${stacked ? ' isStacked' : ''}`}>
-        <span className="placeName">{place?.name ?? empty}</span>
-        {(place?.address || place?.mapUrl) && (
-            <span className="placeWhere">
-                {place.address && <span className="placeAddress">{place.address}</span>}
-                <MapLink place={place} />
-            </span>
-        )}
-    </span>
-);
+export const PlaceDetails = ({ place, empty = null, stacked = false }) => {
+    const address = addressAfterName(place);
+    return (
+        <span className={`placeDetails${stacked ? ' isStacked' : ''}`}>
+            <span className="placeName">{place?.name ?? empty}</span>
+            {(address || place?.mapUrl) && (
+                <span className="placeWhere">
+                    {address && <span className="placeAddress">{address}</span>}
+                    <MapLink place={place} />
+                </span>
+            )}
+        </span>
+    );
+};

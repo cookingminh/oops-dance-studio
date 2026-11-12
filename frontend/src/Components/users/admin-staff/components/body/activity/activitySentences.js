@@ -80,10 +80,26 @@ const BOOKINGS = (row, fmt) => {
     return keys[row.action] && { key: keys[row.action], vars: { amount: row.action === 'refund_changed' ? money(m.refund) : amount, from: money(m.from), to: money(m.to) }, facts };
 };
 
-// Where a class was ('from') / is ('to') taught, from an edit of its room or rented studio. A class has one
-// place, so a column the edit didn't change was empty on both sides.
+// A rented studio's room, as staff call it: "Studio Thỏ · Phòng lớn".
+const venueRoomName = (fmt, id) => {
+    const room = fmt.venueRooms?.get(id);
+    if (!room) return `#${id}`;
+    const venue = fmt.venues?.get(room.venueId);
+    return venue ? `${venue} · ${room.name}` : room.name;
+};
+
+const PLACE_COLUMNS = ['room_id', 'venue_id', 'venue_room_id'];
+
+// Where a class was ('from') / is ('to') taught, from an edit of its room, its rented studio or the studio's room.
+// A class has one place, so a room or studio column the edit didn't change was empty on both sides — except the
+// rented studio when only its room changed: then it is the other side's room's studio.
 const placeName = (fmt, side, changes) => {
-    const venue = changes.venue_id?.[side];
+    const venueRoom = changes.venue_room_id?.[side];
+    if (venueRoom) return venueRoomName(fmt, venueRoom);
+    let venue = changes.venue_id?.[side];
+    if (!venue && !('venue_id' in changes) && 'venue_room_id' in changes) {
+        venue = fmt.venueRooms?.get(changes.venue_room_id[side === 'to' ? 'from' : 'to'])?.venueId;
+    }
     if (venue) return fmt.venues?.get(venue) ?? `#${venue}`;
     const room = changes.room_id?.[side];
     return room ? fmt.rooms?.get(room) ?? `#${room}` : null;
@@ -92,10 +108,10 @@ const placeName = (fmt, side, changes) => {
 // "{actor} moved {class} to {place}" when an edit changed where it is taught; the other fields as facts.
 function classMoved(row, fmt) {
     const changes = row.changes ?? {};
-    if (!('venue_id' in changes) && !('room_id' in changes)) return null;
+    if (!PLACE_COLUMNS.some((column) => column in changes)) return null;
     const to = placeName(fmt, 'to', changes);
     const from = placeName(fmt, 'from', changes);
-    const others = Object.fromEntries(Object.entries(changes).filter(([column]) => column !== 'venue_id' && column !== 'room_id'));
+    const others = Object.fromEntries(Object.entries(changes).filter(([column]) => !PLACE_COLUMNS.includes(column)));
     return {
         key: to ? '{actor} moved {class} to {place}' : '{actor} took {class} out of its room or studio',
         vars: { class: row.label, place: to },
@@ -316,19 +332,43 @@ const ROOMS = (row, fmt) => {
     return keys[row.action] && { key: keys[row.action], facts };
 };
 
-// A rented studio (area rooms, entity venues): added with its rent and address, changed (rent from → to,
-// set inactive or active again, other fields), removed.
+// What happened to a rented studio's rooms, from meta.rooms_before → meta.rooms ([{ name, rent, active }] in
+// order; set only when they changed): "Rooms: Phòng 3 added, Phòng 2 removed, Phòng 1 220.000 ₫ → 230.000 ₫".
+// A renamed room reads as one removed and one added. A new studio lists its rooms with their rents.
+function roomsFact(m, fmt) {
+    if (!Array.isArray(m.rooms) || !Array.isArray(m.rooms_before)) return '';
+    if (!m.rooms_before.length) {
+        return m.rooms.length ? fmt.t('Rooms: {changes}', { changes: m.rooms.map((room) => `${room.name} ${money(room.rent)}`).join(', ') }) : '';
+    }
+    const key = (room) => String(room.name ?? '').trim().toLocaleLowerCase('vi');
+    const before = new Map(m.rooms_before.map((room) => [key(room), room]));
+    const after = new Set(m.rooms.map(key));
+    const parts = [];
+    for (const room of m.rooms) {
+        const old = before.get(key(room));
+        if (!old) parts.push(fmt.t('{name} added', { name: room.name }));
+        else if (Number(old.rent) !== Number(room.rent)) parts.push(`${room.name} ${money(old.rent)} → ${money(room.rent)}`);
+        if (old && old.active && !room.active) parts.push(fmt.t('{name} set inactive', { name: room.name }));
+        if (old && !old.active && room.active) parts.push(fmt.t('{name} in use again', { name: room.name }));
+    }
+    for (const room of m.rooms_before) if (!after.has(key(room))) parts.push(fmt.t('{name} removed', { name: room.name }));
+    return fmt.t('Rooms: {changes}', { changes: parts.length ? parts.join(', ') : fmt.t('new order') });
+}
+
+// A rented studio (area rooms, entity venues): added with its rent, address and rooms, changed (rent from → to,
+// set inactive or active again, its rooms, other fields), removed.
 function venueSentence(row, fmt) {
     const m = row.meta ?? {};
     const c = row.changes ?? {};
     const rent = money(m.rent) && fmt.t('{price} per hour', { price: money(m.rent) });
-    if (row.action === 'venue_added') return { key: '{actor} added the rented studio {title}', facts: [rent, m.address] };
+    if (row.action === 'venue_added') return { key: '{actor} added the rented studio {title}', facts: [rent, m.address, roomsFact(m, fmt)] };
     if (row.action === 'venue_removed') return { key: '{actor} deleted the rented studio {title}', facts: [] };
     if (row.action !== 'venue_changed') return null;
     const others = Object.fromEntries(Object.entries(c).filter(([column]) => !['rent_per_hour', 'active', 'name'].includes(column)));
     const facts = [
         c.name && fmt.t('Was {name}', { name: c.name.from }),
         c.rent_per_hour && fmt.t('Rent {from} → {to} per hour', { from: money(c.rent_per_hour.from), to: money(c.rent_per_hour.to) }),
+        roomsFact(m, fmt),
         fieldsFact({ ...row, changes: others }, fmt),
     ];
     if (c.active) {

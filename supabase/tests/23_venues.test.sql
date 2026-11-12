@@ -5,7 +5,7 @@
 --   * the public timetable names the venue and gives its address
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(27);
+select plan(28);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -85,7 +85,9 @@ select is((select v.address from public.venues v where v.name = 'Studio Test Thu
 select throws_like($$ select v.rent_per_hour from public.venues v $$, '%permission denied%', 'but not the rent');
 select is((select count(*) from public.venues_list()), 0::bigint, 'nor the staff list');
 select tests.login_anon();
-select is((select count(*) from public.venues v where v.name = 'Studio Test Thuê'), 1::bigint, 'anyone sees the studio by name');
+select is((select count(*) from public.venues v where v.public_name = 'Số 1 Phố Test'), 1::bigint,
+  'a visitor sees the studio by its public name (its address''s first part)');
+select throws_like($$ select v.name from public.venues v $$, '%permission denied%', 'never by its own name (another studio''s brand)');
 
 -- ---------------------------------------------------------------------------
 -- A class moves to the venue
@@ -103,7 +105,8 @@ overriding system value values (900232, 900231, '00000000-0000-4000-b000-0000000
 select is((tests.session(900232)).venue_id, tests.venue_id('Studio Test Thuê'), 'a new session takes the class''s venue');
 
 select tests.login_anon();
-select is((select c.room_name from public.list_public_classes() c where c.id = 900231), 'Studio Test Thuê', 'the timetable names the venue');
+select is((select c.room_name from public.list_public_classes() c where c.id = 900231), 'Số 1 Phố Test',
+  'the timetable names the venue by its public name, not the studio''s own');
 select is((select c.venue_address from public.list_public_classes() c where c.id = 900231), 'Số 1 Phố Test', 'with its address');
 
 -- ---------------------------------------------------------------------------

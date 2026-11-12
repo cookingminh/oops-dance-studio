@@ -1,18 +1,17 @@
 import { supabase } from '@/lib/supabase';
 import { unwrap } from './errors';
 import { signProofUrls, uploadProof } from './storage';
-import { VENUE_EMBED } from './venues';
+import { PLACE_EMBEDS } from './venues';
 
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // start_time / end_time / is_extra: a make-up session's own times (regular sessions take theirs from the schedule).
 // checkout_late: checked out more than 10 minutes after the end (20261117001100_checkin_window).
-// The session's own place (room or rented studio) and its class's: lib/place.js placeOf(row, row.class).
-const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, venue_id, date, checkin_at, checkout_at, checkout_late, status,
-    checkin_proof_path, checkout_proof_path, details, start_time, end_time, is_extra,
+// The session's own place (room, or rented studio and its room) and its class's: lib/place.js placeOf(row, row.class).
+const INSTRUCTOR_ATTENDANCE_SELECT = `id, class_id, instructor_id, room_id, venue_id, venue_room_id, date, checkin_at, checkout_at,
+    checkout_late, status, checkin_proof_path, checkout_proof_path, details, start_time, end_time, is_extra,
     class:classes!class_id(id, name, image_path, schedules:class_schedules(id, day_of_week, start_time, end_time),
-        room:rooms!room_id(id, name), venue:venues!venue_id(${VENUE_EMBED})),
-    room:rooms!room_id(id, name),
-    venue:venues!venue_id(${VENUE_EMBED})`;
+        ${PLACE_EMBEDS}),
+    ${PLACE_EMBEDS}`;
 
 export const INSTRUCTOR_ATTENDANCE_STATUSES = ['pending', 'waiting', 'in_progress', 'completed', 'cancelled'];
 export const STUDENT_ATTENDANCE_STATUSES = ['pending', 'absent', 'attend'];
@@ -112,10 +111,9 @@ export async function listStudentAttendance({ date }) {
             .from('student_attendance')
             .select(`id, class_id, student_id, date, status, details,
                 student:profiles!student_id(${PERSON}, contact_number, date_of_birth),
-                class:classes!class_id(id, name, image_path, room_id, venue_id,
+                class:classes!class_id(id, name, image_path, room_id, venue_id, venue_room_id,
                     instructor:profiles!instructor_id(${PERSON}),
-                    room:rooms!room_id(id, name),
-                    venue:venues!venue_id(${VENUE_EMBED}),
+                    ${PLACE_EMBEDS},
                     schedules:class_schedules(id, day_of_week, start_time, end_time))`)
             .eq('date', date)
             .order('class_id')

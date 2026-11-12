@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { unwrap } from './errors';
-import { VENUE_EMBED } from './venues';
+import { VENUE_EMBED, VENUE_ROOM_EMBED } from './venues';
 
 // Read-only extras for the payslip dialog (admin), next to services/payroll.js.
 
@@ -15,10 +15,11 @@ export async function getPayslipClasses(classIds) {
     const rows = unwrap(
         await supabase
             .from('classes')
-            .select(`id, name, image_path, instructor_id, room_id, venue_id, starts_on, ended_on, final_schedule,
+            .select(`id, name, image_path, instructor_id, room_id, venue_id, venue_room_id, starts_on, ended_on, final_schedule,
                 instructor:profiles!instructor_id(${PERSON}),
                 room:rooms!room_id(id, name, size),
                 venue:venues!venue_id(${VENUE_EMBED}),
+                venue_room:venue_rooms!venue_room_id(${VENUE_ROOM_EMBED}),
                 schedules:class_schedules(id, day_of_week, start_time, end_time)`)
             .in('id', ids)
     );

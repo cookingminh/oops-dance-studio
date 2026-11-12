@@ -3,24 +3,25 @@ import { getStudioToday } from './studio';
 import { unwrap } from './errors';
 import { BUCKETS, removeFiles, uploadClassImage } from './storage';
 import { PROMO_BUCKET, PROMO_COLUMNS } from './promos';
-import { VENUE_EMBED } from './venues';
+import { VENUE_EMBED, VENUE_ROOM_EMBED } from './venues';
 
 // Column hints (!instructor_id, !room_id, …) are required: classes and profiles are also linked
 // through class_students / attendance, so PostgREST can't pick the relationship on its own.
 const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // A routine (class_lessons) with its class video and its promo (services/promos.js).
 const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, title, video_url, ${PROMO_COLUMNS}`;
-// A class is taught in a room or at a rented studio (venue), never both (lib/place.js).
+// A class is taught in a room or at a rented studio (venue, maybe in one of its rooms), never both (lib/place.js).
 // The pictures on the website (supabase/migrations/20261117001600_timetable_photos.sql): the class image with the
 // part of it the card shows (image_pos_x / _y, CSS object-position %), and the round photo on the poster timetable
 // with its frame (null path = the instructor's avatar).
 const PICTURE_COLUMNS = `image_path, image_pos_x, image_pos_y,
     timetable_photo_path, timetable_photo_x, timetable_photo_y, timetable_photo_zoom`;
-const CLASS_SELECT = `id, name, price, lesson, ${PICTURE_COLUMNS}, instructor_id, room_id, venue_id, level, created_at,
-    starts_on, ended_on, end_reason, final_schedule,
+const CLASS_SELECT = `id, name, price, lesson, ${PICTURE_COLUMNS}, instructor_id, room_id, venue_id, venue_room_id, level,
+    created_at, starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
     venue:venues!venue_id(${VENUE_EMBED}),
+    venue_room:venue_rooms!venue_room_id(${VENUE_ROOM_EMBED}),
     schedules:class_schedules(id, day_of_week, start_time, end_time),
     lessons:class_lessons(${LESSON_COLUMNS})`;
 const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
@@ -28,13 +29,22 @@ const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
 
 // `lesson` is not written here: it mirrors the latest row of class_lessons (see setClassLesson).
 // `startsOn` ('yyyy-MM-dd') is optional: a class opening later takes students now and bills from then.
-// The place is a room or a venue: both columns are written, so moving to one clears the other.
+// The place (lib/place.js placeColumns) is a room, a venue or a room of a venue: every column is written, so moving
+// to one clears the others. For a venue's room only the room is written: the server sets its venue from it (and
+// moving to another venue drops the room). `venueRoomId` is written only when the form gives a place.
 // `level` ('newbie' | 'basic' | 'advanced' | '' = none, lib/classLevel.js) is written only when the form has it.
-const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, price, startsOn, level }) => ({
+const placeFields = ({ roomId, venueId, venueRoomId }) => {
+    if (venueRoomId) return { room_id: null, venue_room_id: venueRoomId };
+    return {
+        room_id: roomId || null,
+        venue_id: roomId ? null : venueId || null,
+        ...(venueRoomId !== undefined ? { venue_room_id: null } : {}),
+    };
+};
+const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, venueRoomId, price, startsOn, level }) => ({
     name: name.trim(),
     instructor_id: instructorId,
-    room_id: roomId || null,
-    venue_id: roomId ? null : venueId || null,
+    ...placeFields({ roomId, venueId, venueRoomId }),
     price: Number(price),
     ...(startsOn ? { starts_on: startsOn } : {}),
     ...(level !== undefined ? { level: level || null } : {}),

@@ -56,7 +56,7 @@ const SetupTab = ({ ctx }) => {
     return (
         <>
             <SectionCard icon={LuSettings2} title={t('Details')} subtitle={ended ? t('An ended class can’t be edited. Reopen it first.') : t('Name, instructor, where it’s taught, price, start date and level')}>
-                <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
+                <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.venue_room_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
             </SectionCard>
 
             <div className="hubTrio">

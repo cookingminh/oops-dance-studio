@@ -4,7 +4,7 @@ import { Avatar, Button, Input, Select, SelectItem } from '@nextui-org/react';
 import { LuMusic, LuPlus, LuSparkles, LuUsers, LuWallet, LuX } from 'react-icons/lu';
 import { avatarUrl } from '@/services/storage';
 import { TIME_OPTIONS, WEEKDAYS, formatTime, formatVnd, toMinutes } from '@/lib/format';
-import { placeColumns } from '@/lib/place';
+import { placeColumns, placeLabel } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import DateField from '@/ui/DateField';
@@ -92,8 +92,10 @@ export const DetailsStep = ({ form, onChange, instructors, rooms, venues, today,
     const set = (field) => (value) => onChange({ ...form, [field]: value });
     const show = (key) => tried && problems[key];
     const instructor = instructors.find((person) => person.id === form.instructorId);
-    const { roomId, venueId } = placeColumns(form.place);
-    const place = roomId ? rooms.find((room) => room.id === roomId) : venueId ? venues.find((venue) => venue.id === venueId) : null;
+    const { roomId, venueId, venueRoomId } = placeColumns(form.place);
+    // The preview shows the website: a rented studio (or one of its rooms) by its public name.
+    const venue = venueRoomId ? venues.find((item) => item.rooms?.some((room) => room.id === venueRoomId)) : venues.find((item) => item.id === venueId);
+    const place = roomId ? rooms.find((room) => room.id === roomId) : venue ? { name: placeLabel(venue, null, { audience: 'public' }) } : null;
 
     return (
         <div className="ncDetails">
