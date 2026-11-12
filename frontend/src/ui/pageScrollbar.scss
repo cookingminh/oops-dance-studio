@@ -1,0 +1,83 @@
+// The floating page scrollbar (PageScrollbar.jsx): an invisible rail down the right edge with a slim
+// brand-red thumb that fades in while the page scrolls or the pointer is on the rail.
+
+.pageScroll {
+    position: fixed;
+    top: 6px;
+    right: 0;
+    bottom: 6px;
+    z-index: 1001; // over the public navbar (1000)
+    display: none;
+    width: 14px;
+
+    // A faint track while the pointer is on it, so the click-to-page area reads.
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 3px;
+        bottom: 0;
+        width: 9px;
+        border-radius: 99px;
+        background: hsla(0, 0%, 50%, .14);
+        opacity: 0;
+        transition: opacity .2s ease;
+    }
+
+    &:hover::before,
+    &.isDragging::before {
+        opacity: 1;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .pageScroll:not(.isIdle) {
+        display: block;
+    }
+}
+
+.pageScrollThumb {
+    position: absolute;
+    top: 0;
+    right: 4px;
+    width: 6px;
+    min-height: 36px;
+    border-radius: 99px;
+    background: var(--PrimaryColor);
+    // A light hairline keeps it visible on a dark hero as well as on white.
+    box-shadow: 0 0 0 1px hsla(0, 0%, 100%, .4), 0 2px 6px hsla(0, 40%, 15%, .25);
+    opacity: 0;
+    transition: opacity .45s ease, width .15s ease, right .15s ease;
+    will-change: transform;
+}
+
+.pageScroll.isAwake .pageScrollThumb {
+    opacity: .8;
+    transition-duration: .15s, .15s, .15s;
+}
+
+.pageScroll:hover .pageScrollThumb,
+.pageScroll.isDragging .pageScrollThumb {
+    right: 3px;
+    width: 8px;
+    opacity: 1;
+    transition-duration: .15s, .15s, .15s;
+}
+
+// A dialog locks the page (overflow: hidden on <html>): nothing to scroll then.
+html[style*='overflow: hidden'] .pageScroll {
+    display: none;
+}
+
+@media print {
+    .pageScroll {
+        display: none !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pageScrollThumb,
+    .pageScroll::before {
+        transition: none;
+    }
+}

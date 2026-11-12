@@ -9,6 +9,7 @@ import { DASHBOARD_ROLES, PROFILE_ROLES } from '@/auth/roles';
 import { ToastProvider } from '@/ui/feedback/ToastProvider';
 import { Loading } from '@/ui/feedback/AsyncState';
 import DemoBanner from '@/ui/DemoBanner';
+import PageScrollbar from '@/ui/PageScrollbar';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import PublicLayout from './Components/HomePage/PublicLayout';
 import HomeLanding from './Components/HomePage/pages/HomeLanding';
@@ -86,6 +87,7 @@ const App = () => (
                     <AuthProvider>
                         <AppRoutes />
                         <DemoBanner />
+                        <PageScrollbar />
                     </AuthProvider>
                 </ToastProvider>
             </RouterAwareUI>

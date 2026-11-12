@@ -1832,14 +1832,48 @@ h2 {
     color: var(--whiteColor);
 }
 
+// Scroll areas inside the page (lists, dialogs, tables): a slim rounded thumb on a clear track, brand red
+// while pointed at.
 ::-webkit-scrollbar {
     width: 10px;
-    background: var(--greyBg);
+    height: 10px;
+    background: transparent;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--PrimaryColor);
-    border-radius: 10px;
+    border: 3px solid transparent;
+    border-radius: 99px;
+    background: hsla(240, 4%, 46%, .38) padding-box;
+
+    &:hover,
+    &:active {
+        background-color: var(--PrimaryColor);
+    }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: hsla(240, 4%, 46%, .45) transparent;
+    }
+}
+
+// The window's own scrollbar is hidden on mouse / trackpad screens: ui/PageScrollbar.jsx floats a slim one
+// over the page instead, so no strip runs down the side of the page. Touch screens keep theirs.
+@media (hover: hover) and (pointer: fine) {
+    html {
+        scrollbar-width: none;
+    }
+
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
 }
 
 // Vietnamese: CSS `capitalize` (used on status chips) would capitalise every word ("Chờ Duyệt").
