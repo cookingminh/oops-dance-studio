@@ -88,8 +88,10 @@ select throws_like(
 -- ---------------------------------------------------------------------------
 -- A cancelled session pushes the end back
 -- ---------------------------------------------------------------------------
+-- (The weekly session may already have its session this week, made when the schedule was added.)
 insert into public.instructor_attendance (class_id, instructor_id, room_id, date, status)
-values (900131, '00000000-0000-4000-b000-000000000132', 900131, tests.today() + 1, 'cancelled');
+values (900131, '00000000-0000-4000-b000-000000000132', 900131, tests.today() + 1, 'cancelled')
+on conflict (class_id, date) do update set status = excluded.status;
 select is(tests.ends('Now'), tests.today() + 15, 'a cancelled session pushes the end a week later');
 
 -- ---------------------------------------------------------------------------

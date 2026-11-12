@@ -223,8 +223,13 @@ test('a make-up session today, and its roll call', async () => {
     await pickOption(page, dialog, 'To', '21:30');
     await dialog.getByRole('button', { name: 'Add session' }).click();
     await expectToast(page, 'Make-up session added on');
-    const made = (await rest(staff, `instructor_attendance?select=date,is_extra,start_time,status&class_id=eq.${classId}`)).data;
+    const made = (await rest(staff, `instructor_attendance?select=date,is_extra,start_time,status&class_id=eq.${classId}&date=eq.${today}`)).data;
     expect(made).toEqual([{ date: today, is_extra: true, start_time: '20:00:00', status: 'pending' }]);
+    // The weekly session the wizard added (tomorrow) already has its session, when tomorrow is still this week.
+    if (isoWeekday(today) < 7) {
+        const weekly = (await rest(staff, `instructor_attendance?select=is_extra,status&class_id=eq.${classId}&date=eq.${addDays(today, 1)}`)).data;
+        expect(weekly).toEqual([{ is_extra: false, status: 'pending' }]);
+    }
 
     // The calendar shows it today with its tag; a click opens the session with its roll call.
     const item = page.locator('.sessionCalendar').getByRole('button', { name: /20:00–21:30.*Make-up/ });

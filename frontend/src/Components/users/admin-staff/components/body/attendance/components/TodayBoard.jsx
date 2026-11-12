@@ -94,35 +94,29 @@ const TodayBoard = ({ state, today, isReadOnly, onOpen, onChanged, onViewProof, 
             title={t('Today')}
             subtitle={subtitle}
             actions={
-                <>
-                    <Button variant="flat" startContent={<LuPlus aria-hidden="true" />} isLoading={busy === 'roll'} onPress={createRolls}>
-                        {t('Create today’s roll calls')}
-                    </Button>
-                    <Button variant="light" startContent={<LuCalendarPlus aria-hidden="true" />} isLoading={busy === 'week'} onPress={createWeek}>
-                        {t('Create this week’s records')}
-                    </Button>
-                    <Button variant="flat" color="danger" startContent={<LuCloudLightning aria-hidden="true" />} onPress={onCloseDay}>
-                        {t('Close for a day')}
-                    </Button>
-                </>
+                <Button variant="flat" color="danger" startContent={<LuCloudLightning aria-hidden="true" />} onPress={onCloseDay}>
+                    {t('Close for a day')}
+                </Button>
             }
         >
             {(noRecord > 0 || noRoll > 0) && (
                 <div className="atNotices">
                     {noRecord > 0 && (
-                        <p className="inlineNotice">
+                        <p className="inlineNotice atCatchUp">
                             <LuInfo aria-hidden="true" />
-                            {tn(
-                                noRecord,
-                                '{count} class on today’s timetable has no record yet. Create this week’s records to add it.',
-                                '{count} classes on today’s timetable have no record yet. Create this week’s records to add them.'
-                            )}
+                            <span>{tn(noRecord, '{count} class on today’s timetable has no session yet.', '{count} classes on today’s timetable have no session yet.')}</span>
+                            <Button size="sm" variant="flat" startContent={<LuCalendarPlus aria-hidden="true" />} isLoading={busy === 'week'} onPress={createWeek}>
+                                {t('Create them')}
+                            </Button>
                         </p>
                     )}
                     {noRoll > 0 && (
-                        <p className="inlineNotice">
+                        <p className="inlineNotice atCatchUp">
                             <LuInfo aria-hidden="true" />
-                            {tn(noRoll, '{count} class today has no roll call yet. Create today’s roll calls to add it.', '{count} classes today have no roll call yet. Create today’s roll calls to add them.')}
+                            <span>{tn(noRoll, '{count} class today has no roll call yet.', '{count} classes today have no roll call yet.')}</span>
+                            <Button size="sm" variant="flat" startContent={<LuPlus aria-hidden="true" />} isLoading={busy === 'roll'} onPress={createRolls}>
+                                {t('Create them')}
+                            </Button>
                         </p>
                     )}
                 </div>

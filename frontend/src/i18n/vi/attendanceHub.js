@@ -6,8 +6,6 @@ export default {
 
     // Today
     'Create today’s roll calls': 'Tạo điểm danh hôm nay',
-    '{count} class today has no roll call yet. Create today’s roll calls to add it.': '{count} lớp hôm nay chưa có danh sách điểm danh. Bấm “Tạo điểm danh hôm nay” để thêm.',
-    '{count} classes today have no roll call yet. Create today’s roll calls to add them.': '{count} lớp hôm nay chưa có danh sách điểm danh. Bấm “Tạo điểm danh hôm nay” để thêm.',
     'Open the session: {name}, {time}': 'Mở buổi học: {name}, {time}',
     'Cancel the session of {name}': 'Huỷ buổi học của lớp {name}',
 
@@ -40,4 +38,10 @@ export default {
     // Class page: Sessions tab
     'Sessions of {name}': 'Các buổi học của {name}',
     'Every roll call of this class, student by student': 'Mọi lần điểm danh của lớp, theo từng học viên',
+    // Today: what the automatic jobs didn't cover, created on the spot
+    '{count} class on today’s timetable has no session yet.': '{count} lớp trong lịch hôm nay chưa có buổi học.',
+    '{count} classes on today’s timetable have no session yet.': '{count} lớp trong lịch hôm nay chưa có buổi học.',
+    '{count} class today has no roll call yet.': '{count} lớp hôm nay chưa có danh sách điểm danh.',
+    '{count} classes today have no roll call yet.': '{count} lớp hôm nay chưa có danh sách điểm danh.',
+    'Create them': 'Tạo bù',
 };

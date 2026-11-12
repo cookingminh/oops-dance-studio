@@ -192,7 +192,8 @@ test('a make-up session in a busy room says what it clashes with', async () => {
     await pickOption(page, dialog, 'To', neighbour.end);
     await dialog.getByRole('button', { name: 'Add session' }).click();
     await expect(dialog.getByRole('alert')).toContainText(neighbour.name);
-    expect((await rest(staff, `instructor_attendance?select=id&class_id=eq.${cls.id}`)).data).toEqual([]);
+    // No make-up today (the class's weekly sessions later this week are there by themselves).
+    expect((await rest(staff, `instructor_attendance?select=id&class_id=eq.${cls.id}&date=eq.${today}`)).data).toEqual([]);
 });
 
 test('adds a make-up session today: a roll call, and the shoot day moves a week earlier', async () => {
@@ -206,7 +207,7 @@ test('adds a make-up session today: a roll call, and the shoot day moves a week 
     await dialog.getByRole('button', { name: 'Add session' }).click();
     await expectToast(page, 'Make-up session added');
 
-    const sessions = (await rest(staff, `instructor_attendance?select=date,status,is_extra,start_time,end_time,details&class_id=eq.${cls.id}`)).data;
+    const sessions = (await rest(staff, `instructor_attendance?select=date,status,is_extra,start_time,end_time,details&class_id=eq.${cls.id}&is_extra=eq.true`)).data;
     expect(sessions).toEqual([{ date: today, status: 'pending', is_extra: true, start_time: `${makeUp.start}:00`, end_time: `${makeUp.end}:00`, details: NOTE }]);
     const rollCall = (await rest(staff, `student_attendance?select=student_id,date,status&class_id=eq.${cls.id}`)).data;
     expect(rollCall).toEqual([{ student_id: student.id, date: today, status: 'pending' }]);

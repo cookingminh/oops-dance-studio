@@ -1,4 +1,4 @@
-# Oops Dance Studio — API contract (v1.24)
+# Oops Dance Studio — API contract (v1.25)
 
 The single source of truth for the API between the backend (`supabase/`) and the frontend (`frontend/`): schema, roles, row-level security, RPC functions, the Edge Function, Storage, scheduled jobs, auth and environment.
 - Any change to the backend's behaviour is written back into this file and logged in the Changelog at the bottom.
@@ -490,6 +490,18 @@ The frontend maps these codes to UI messages.
 - `activity-prune`: `25 17 * * *`, which is 00:25 ICT daily → `activity_prune()` (log rows older than 400 days)
 - `venue-rent`: `20 17 * * *`, which is 00:20 ICT daily → `venue_rent_run()` (rented studios' rent for the sessions taught)
 
+**Catch-up between the jobs** (migration `20261117001700_session_catch_up.sql`, triggers, not logged on their own):
+- `class_schedules` insert / update (class, day, times) / delete, and `classes` update of `starts_on` / `ended_on` →
+  `private.class_catch_up(class)`: this week's missing sessions for that class are made from now on (not for a day already
+  past, nor today's when its start time has passed), and this week's untouched ones from today on that no weekly session
+  (or the class's run) asks for any more are deleted with their pending roll-call rows (`status = 'pending'`, not
+  `is_extra`, no `checkin_at`, no student marked). Today's roll call is made for the class's session today while it is
+  `pending` / `waiting` / `in_progress`.
+- `class_students` insert (joined by today, not left) → a pending roll-call row today when the class's session today is
+  `pending` / `waiting` / `in_progress`.
+- `generate_instructor_attendance()` / `generate_student_attendance()` stay for data the triggers didn't cover; the admin
+  Today card offers them only when something is missing.
+
 ## 9. Auth
 
 - **Google / Facebook (OAuth)**: `supabase.auth.signInWithOAuth({ provider, options: { redirectTo: <origin>/login } })`. Disabled until the owner creates the OAuth apps: `[auth.external.google]` / `[auth.external.facebook]` in `supabase/config.toml` (local) or Dashboard → Authentication → Providers (hosted); redirect URI `https://<project>.supabase.co/auth/v1/callback`. The frontend shows a provider's button only when it is listed in `VITE_AUTH_PROVIDERS`. OAuth sign-ups become guests; their name comes from `full_name` or `name` (migration `20261116000300_oauth_profiles.sql`).
@@ -588,6 +600,7 @@ Demo logins (the local password lives in `supabase/README.md`):
 - v1.21 (2026-11-17, backend): rented studios — §3 `venues`, `classes.venue_id`, `instructor_attendance.venue_id`, expense category `venue_rent` and `expenses.session_id`; §4 RLS row; §5 venue RPCs, `list_public_classes` / `my_session_changes` name the place; §8 job `venue-rent`; §11 `seed_demo_venues()` (the running demo classes are taught at Studio Baladi Vũ Thạnh and Studio Thỏ; the old premises' rent stops).
 - v1.22 (2026-11-17, demo): §11 the demo is the studio's November timetable — five teachers (Đỗ Linh, Soleck, An Trinh, Vân Anh, Đức Anh), six running classes + two Newbie classes opening next month, six rented studios; `seed_demo_finance`, `seed_demo_tuition`, `seed_demo_classes`, `seed_demo_venues` replaced (migration `20261117001400_demo_november.sql`).
 - v1.23 (2026-11-17, backend + frontend): website timetable looks and class levels — §3 `classes.level` (`newbie | basic | advanced`), table `site_settings` (`timetable_template` `poster` | `brush`, default `poster`), activity `settings · timetable_template`; §4 RLS row; §5 `site_set_timetable_template` (admins and staff), `list_public_classes` returns `level`; §11 `seed_demo_levels()`. Migration `20261117001500_timetable_templates.sql`. The admin Classes page's Timetable view picks the look; the class forms set the level.
+- v1.25 (2026-11-17, backend + frontend): sessions and roll calls follow changes made after the jobs ran — §8 "Catch-up between the jobs": a weekly session added / moved / removed, a class's first or last day changed, a student joining today. Migration `20261117001700_session_catch_up.sql`. The attendance Today card drops its "Create today's roll calls" / "Create this week's records" buttons and shows a "Create them" button only in the notice when something is missing.
 - v1.24 (2026-11-17, backend + frontend): framing a class's pictures — §3 `classes.image_pos_x/_y` (which part of the image the website's class card shows), `classes.timetable_photo_path` and its frame `timetable_photo_x/_y/_zoom` (the class's own round photo on the poster timetable; null = the instructor's avatar); §5 `list_public_classes` returns all six; §7 `class-images` also holds the timetable photos; §11 the demo classes get their teachers' cut-outs. Migration `20261117001600_timetable_photos.sql`. The class page's Setup tab frames both with a live preview (the real Classes page card; the poster's round badge with its time).
 - v1.18 (2026-11-17, backend): §3 an approved booking paid in full becomes `completed` (and holds its room ahead); `cancel_booking` / `studio_close_day` take completed bookings that haven't started.
 - v1.17 (2026-11-17, backend): §3 `instructor_attendance.cancel_reason`, `makes_up`; §5 `session_cancel`, `session_move`, `studio_close_day`, `my_session_changes`; `generate_student_attendance` skips called-off weekly sessions.

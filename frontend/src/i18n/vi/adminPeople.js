@@ -132,10 +132,6 @@ export default {
     '{done} of {total} done': 'Xong {done}/{total}',
     'Loading today…': 'Đang tải lịch hôm nay…',
     'Create this week’s records': 'Tạo bảng chấm công tuần này',
-    '{count} class on today’s timetable has no record yet. Create this week’s records to add it.':
-        'Có {count} lớp trong lịch hôm nay chưa có trong bảng chấm công. Bấm “Tạo bảng chấm công tuần này” để thêm.',
-    '{count} classes on today’s timetable have no record yet. Create this week’s records to add them.':
-        'Có {count} lớp trong lịch hôm nay chưa có trong bảng chấm công. Bấm “Tạo bảng chấm công tuần này” để thêm.',
     'No sessions scheduled today.': 'Hôm nay không có buổi dạy nào.',
 
     // Users page: People (user-manager). Some keys are also used by Profile settings.

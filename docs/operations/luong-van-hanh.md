@@ -247,7 +247,8 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
 - **Một trang *Điểm danh*** (`/admin/attendance`) gộp điểm danh học viên và chấm công giáo viên. Hai trang cũ
   (*Học viên*, *Chấm công giáo viên*) tự chuyển về đây.
   - **Hôm nay** (truy cập nhanh): mọi buổi hôm nay theo giờ, có check-in/out kèm ảnh, số học viên đã điểm danh x/y, và
-    nút *Điểm danh*, *Đánh dấu hoàn thành*, *Huỷ*. Có nút *Tạo danh sách điểm danh hôm nay* / *Tạo buổi dạy tuần này*.
+    nút *Điểm danh*, *Đánh dấu hoàn thành*, *Huỷ*. Buổi học và danh sách điểm danh **tự có** (xem §13); chỉ khi còn
+    thiếu (dữ liệu cũ, hoặc một buổi thêm vào sau giờ học hôm nay) mới hiện dòng nhắc kèm nút *Tạo bù*.
   - **Cần xem lại**: các buổi đã qua mà chưa ai chốt.
   - **Tất cả buổi học** dạng **lịch** (tuần / tháng), lọc theo giáo viên, lớp, trạng thái; nút *Danh sách* để tìm
     kiếm và xuất CSV.
@@ -435,6 +436,14 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | 00:15 | Thêm chi phí định kỳ đến ngày |
 | 00:20 | Tính tiền thuê studio ngoài cho các buổi đã dạy |
 | 00:25 | Xoá nhật ký hoạt động cũ hơn 400 ngày |
+
+**Tự cập nhật ngay khi có thay đổi** (không cần chờ tới giờ chạy, không cần bấm nút):
+- Thêm / dời / xoá **buổi học hằng tuần** của lớp, hoặc đổi ngày khai giảng / ngày kết thúc của lớp → các buổi còn lại của
+  **tuần này** đi theo ngay: buổi còn thiếu được tạo (từ bây giờ trở đi — ngày đã qua, hay buổi hôm nay đã tới giờ, thì
+  không tạo); buổi không còn khớp lịch mà chưa ai đụng tới (chưa check-in, chưa điểm danh ai) thì bỏ. Tuần sau vẫn do việc
+  00:00 thứ Hai tạo.
+- **Thêm học viên** vào lớp có buổi hôm nay (chưa xong) → học viên có tên trong danh sách điểm danh hôm nay.
+- Những thay đổi này không ghi thêm dòng nào vào trang *Hoạt động* (chỉ dòng của thay đổi gốc, ví dụ "thêm buổi học").
 
 ---
 

@@ -107,7 +107,8 @@ select is((tests.session(900191, tests.next_dow(3, 1))).status::text, 'cancelled
 
 -- A session that happened can't be called off; reopening forgets the reason.
 insert into public.instructor_attendance (class_id, instructor_id, room_id, date, status)
-values (900191, '00000000-0000-4000-b000-000000000192', 900191, tests.next_dow(5), 'completed');
+values (900191, '00000000-0000-4000-b000-000000000192', 900191, tests.next_dow(5), 'completed')
+on conflict (class_id, date) do update set status = excluded.status;  -- this week's may exist already
 select tests.login_as('00000000-0000-4000-b000-000000000191');
 select throws_like($$ select public.session_cancel(900191, tests.next_dow(5), 'Storm') $$, 'INVALID_STATE:%', 'not one that happened');
 update public.instructor_attendance set status = 'pending' where class_id = 900191 and date = tests.next_dow(3, 1);

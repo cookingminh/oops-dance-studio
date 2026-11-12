@@ -61,7 +61,9 @@ insert into public.classes (id, name, instructor_id, room_id, price, starts_on)
 values (900231, 'Venue Class', '00000000-0000-4000-b000-000000000232', 900231, 500000, public.studio_today() - 30);
 insert into public.class_schedules (class_id, day_of_week, start_time, end_time)
 values (900231, extract(isodow from public.studio_today() + 2)::smallint, '18:00', '19:30');
--- A session two days ahead (in the room), and one taught yesterday 18:00–19:30.
+-- A session two days ahead (in the room), and one taught yesterday 18:00–19:30. (Adding the weekly session may
+-- have made this week's session already; the test's own rows replace it.)
+delete from public.instructor_attendance where class_id = 900231;
 insert into public.instructor_attendance (id, class_id, instructor_id, room_id, date, status)
 overriding system value values (900231, 900231, '00000000-0000-4000-b000-000000000232', 900231, public.studio_today() + 2, 'pending');
 

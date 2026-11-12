@@ -186,6 +186,13 @@ test('adds a schedule to the class (ISO weekday)', async () => {
     await expect(classPage().getByText(/Tue\s*08:00/)).toBeVisible();
     const res = await rest(await staffJwt(), `class_schedules?select=day_of_week,start_time&class_id=eq.${classId}`);
     expect(res.data).toEqual([{ day_of_week: 2, start_time: '08:00:00' }]);
+    // This week's Tuesday session comes at once while that day is still ahead; never for a day already past.
+    const weekday = isoWeekday(today);
+    if (weekday !== 2) {
+        const tuesday = addDays(today, 2 - weekday);
+        const sessions = (await rest(await staffJwt(), `instructor_attendance?select=date&class_id=eq.${classId}&date=eq.${tuesday}`)).data;
+        expect(sessions).toHaveLength(weekday < 2 ? 1 : 0);
+    }
 });
 
 test('the class page shows the uploaded image', async () => {
@@ -246,11 +253,10 @@ test('adds the class video: YouTube links only (class_lessons.video_url)', async
 });
 
 // Attendance (/admin/attendance): today's roll calls and check-ins; class members live on the class page.
-test('generates today\'s student attendance from the UI', async () => {
+test('the Today card asks for no "create" step: sessions and roll calls come by themselves', async () => {
     await page.goto('/admin/attendance');
     await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: /Create today/ }).click();
-    await expectToast(page, /attendance records for today|already exist/);
+    await expect(page.getByRole('button', { name: /Create today|Create this week/ })).toHaveCount(0);
 });
 
 test('enrols a student (the class members link opens the class page)', async () => {
@@ -280,13 +286,10 @@ test('deletes the class (cascade + image removed)', async () => {
     expect((await rest(await staffJwt(), `classes?select=id&id=eq.${classId}`)).data).toEqual([]);
 });
 
-test('generates this week\'s instructor attendance from the UI', async () => {
-    // The old page's address still works.
+test('the old attendance records address leads to the Attendance page', async () => {
     await page.goto('/admin/attendance-records');
     await expect(page).toHaveURL(/\/admin\/attendance$/);
     await expect(page.getByRole('region', { name: 'Sessions calendar' })).toBeVisible();
-    await page.getByRole('button', { name: /Create this week/ }).click();
-    await expectToast(page, /records for this week|already exist/);
 });
 
 test('staff sees proof photos through signed URLs', async () => {

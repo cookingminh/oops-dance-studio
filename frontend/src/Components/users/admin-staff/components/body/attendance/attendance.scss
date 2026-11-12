@@ -15,6 +15,17 @@ $amber-soft: hsl(40, 95%, 92%);
     .inlineNotice {
         margin: 0;
     }
+
+    // Something the automatic jobs didn't cover (data from before, a session added after it started):
+    // the button creates it on the spot.
+    .atCatchUp {
+        flex-wrap: wrap;
+
+        span {
+            flex: 1;
+            min-width: 12rem;
+        }
+    }
 }
 
 .adminShell .atToday {
