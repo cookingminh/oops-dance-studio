@@ -195,8 +195,10 @@ test('the class page shows the uploaded image', async () => {
 test('replaces the class image', async () => {
     await classPage().getByRole('button', { name: `More for ${CLASS_NAME}` }).click();
     await page.getByRole('menuitem', { name: 'Change image' }).click();
+    // The framing dialog: a new image (previewed on the Classes page card), saved with its position.
     await dialog.locator('input[type=file]').setInputFiles(PROOF);
-    await dialog.getByRole('button', { name: 'Change Image' }).click();
+    await expect(dialog.locator('.hpClassCard .hpClassMedia img')).toHaveAttribute('src', /^blob:/);
+    await dialog.getByRole('button', { name: 'Save' }).click();
     await expectToast(page, 'Class image updated.');
 });
 

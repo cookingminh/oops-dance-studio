@@ -1,6 +1,7 @@
 import { LuAlertTriangle, LuBanknote, LuCalendarX, LuMusic, LuVideoOff } from 'react-icons/lu';
 import { classImageUrl } from '@/services/storage';
 import { formatTime } from '@/lib/format';
+import { imagePositionOf } from '@/lib/classImage';
 import { useI18n } from '@/i18n/i18nContext';
 import { weeklySlots } from './hubModel';
 
@@ -54,11 +55,11 @@ export const FlagChips = ({ flags }) => {
     );
 };
 
-// The class photo, or the brand gradient with a music note.
+// The class photo (cropped where staff framed it for the website), or the brand gradient with a music note.
 export const ClassImage = ({ cls, className = '' }) => {
     const url = classImageUrl(cls.image_path);
     return url ? (
-        <img className={`hubImage ${className}`} src={url} alt="" loading="lazy" />
+        <img className={`hubImage ${className}`} src={url} alt="" loading="lazy" style={{ objectPosition: imagePositionOf(cls) }} />
     ) : (
         <span className={`hubImage isPlaceholder ${className}`} aria-hidden="true">
             <LuMusic />

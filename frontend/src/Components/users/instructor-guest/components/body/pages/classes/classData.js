@@ -11,7 +11,7 @@ import { toIsoDate } from '@/lib/format';
 import { placeOf, publicPlaceOf } from '@/lib/place';
 
 // Both roles' classes in one shape, so the class views don't care who is looking:
-//   { id, name, image_path, instructorName, instructorAvatar, place (lib/place.js), schedules, lessons,
+//   { id, name, image_path, image_pos_x, image_pos_y, instructorName, instructorAvatar, place (lib/place.js), schedules, lessons,
 //     routines (lesson_progress rows + video_url and promo_*: the routine now, next and before),
 //     joinedAt?, attendance? (student: own roll calls),
 //     students? ({ …profile, joinedAt, leavesAfter }), rollCalls?, todaySession?,
@@ -57,6 +57,8 @@ export async function loadStudentClasses(userId) {
             id: cls.id,
             name: cls.name,
             image_path: cls.image_path,
+            image_pos_x: cls.image_pos_x,
+            image_pos_y: cls.image_pos_y,
             instructorName: cls.instructor_name,
             instructorAvatar: avatarUrl(cls.instructor_avatar_path),
             place: publicPlaceOf(cls),
@@ -96,6 +98,8 @@ export async function loadInstructorClasses(userId) {
             id: cls.id,
             name: cls.name,
             image_path: cls.image_path,
+            image_pos_x: cls.image_pos_x,
+            image_pos_y: cls.image_pos_y,
             instructorName: cls.instructor?.full_name || cls.instructor?.username,
             instructorAvatar: avatarUrl(cls.instructor?.avatar_path, cls.instructor?.updated_at),
             place: placeOf(cls),

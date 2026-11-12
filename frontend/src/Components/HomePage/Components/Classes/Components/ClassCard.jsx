@@ -1,9 +1,11 @@
 import { LuMapPin, LuMusic } from 'react-icons/lu';
 import { avatarUrl, classImageUrl } from '@/services/storage';
 import { formatTime, formatVnd } from '@/lib/format';
+import { imagePositionOf } from '@/lib/classImage';
 import { publicPlaceOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { PlaceDetails } from '@/ui/place/PlaceParts';
+import './classCard.scss';
 
 const initials = (name) =>
     name
@@ -16,15 +18,17 @@ const initials = (name) =>
 // One class from list_public_classes(): photo, coach, this month's song, weekly times, where (a rented
 // studio's address and map link) and price.
 // `anchor` gives it an id (#class-<id>) the timetable can jump to; a new `flash` value pulses its outline.
-const ClassCard = ({ item, anchor = false, flash = 0 }) => {
+// `imageSrc` shows another picture than the saved one (the staff's preview of a file not uploaded yet).
+const ClassCard = ({ item, anchor = false, flash = 0, imageSrc }) => {
     const { t, dayName } = useI18n();
     const place = publicPlaceOf(item);
+    const src = imageSrc ?? classImageUrl(item.image_path);
     return (
         <article id={anchor ? `class-${item.id}` : undefined} className="hpClassCard">
             {flash > 0 && <span key={flash} className="hpClassFlash" aria-hidden="true" />}
             <div className="hpClassMedia">
-                {item.image_path ? (
-                    <img src={classImageUrl(item.image_path)} alt={item.name} loading="lazy" />
+                {src ? (
+                    <img src={src} alt={item.name} loading="lazy" style={{ objectPosition: imagePositionOf(item) }} />
                 ) : (
                     <span className="hpClassPlaceholder" aria-hidden="true">
                         {initials(item.name)}

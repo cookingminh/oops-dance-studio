@@ -1213,6 +1213,14 @@ $blue-soft: hsl(217, 85%, 95%);
     align-items: start;
 }
 
+// Setup: the weekly sessions, then the two pictures on the website (image, timetable photo) side by side.
+.adminShell .hubTrio {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    align-items: start;
+}
+
 // Overview ===============================================================================
 
 .adminShell .hubTiles {
@@ -2096,9 +2104,22 @@ a.hubWhoName:hover {
     .adminShell .hubDuo {
         grid-template-columns: minmax(0, 1fr);
     }
+
+    // The weekly sessions across the top, the pictures under them.
+    .adminShell .hubTrio {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+
+        > :first-child {
+            grid-column: 1 / -1;
+        }
+    }
 }
 
 @media screen and (max-width: 767px) {
+    .adminShell .hubTrio {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
     .adminShell .hubDirectory .hubSearch {
         width: 100%;
     }

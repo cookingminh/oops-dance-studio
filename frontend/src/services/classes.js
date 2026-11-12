@@ -11,7 +11,12 @@ const PERSON = 'id, username, full_name, email, avatar_path, updated_at';
 // A routine (class_lessons) with its class video and its promo (services/promos.js).
 const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, title, video_url, ${PROMO_COLUMNS}`;
 // A class is taught in a room or at a rented studio (venue), never both (lib/place.js).
-const CLASS_SELECT = `id, name, price, lesson, image_path, instructor_id, room_id, venue_id, level, created_at,
+// The pictures on the website (supabase/migrations/20261117001600_timetable_photos.sql): the class image with the
+// part of it the card shows (image_pos_x / _y, CSS object-position %), and the round photo on the poster timetable
+// with its frame (null path = the instructor's avatar).
+const PICTURE_COLUMNS = `image_path, image_pos_x, image_pos_y,
+    timetable_photo_path, timetable_photo_x, timetable_photo_y, timetable_photo_zoom`;
+const CLASS_SELECT = `id, name, price, lesson, ${PICTURE_COLUMNS}, instructor_id, room_id, venue_id, level, created_at,
     starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
@@ -127,18 +132,71 @@ export async function updateClass(id, fields) {
     return unwrap(await supabase.from('classes').update(CLASS_FIELDS(fields)).eq('id', id).select(CLASS_SELECT).single());
 }
 
-export async function setClassImage(classRow, imageFile) {
-    const path = await uploadClassImage(classRow.id, imageFile);
+// Writes `fields` to the class, with a new file uploaded first into `column` when there is one. The old file of
+// that column goes once the row points at the new one (a new file is removed again if the write fails).
+async function writeClassPicture(classRow, column, file, fields) {
+    const path = file ? await uploadClassImage(classRow.id, file) : null;
     let updated;
     try {
         updated = unwrap(
-            await supabase.from('classes').update({ image_path: path }).eq('id', classRow.id).select(CLASS_SELECT).single()
+            await supabase
+                .from('classes')
+                .update(path ? { ...fields, [column]: path } : fields)
+                .eq('id', classRow.id)
+                .select(CLASS_SELECT)
+                .single()
         );
     } catch (error) {
-        await removeFiles(BUCKETS.classImages, [path]);
+        if (path) await removeFiles(BUCKETS.classImages, [path]);
         throw error;
     }
-    if (classRow.image_path && classRow.image_path !== path) await removeFiles(BUCKETS.classImages, [classRow.image_path]);
+    if (path && classRow[column] && classRow[column] !== path) await removeFiles(BUCKETS.classImages, [classRow[column]]);
+    return updated;
+}
+
+// A whole number in [min, max] (the columns' checks); `fallback` when it isn't a number.
+const within = (value, min, max, fallback) => {
+    const number = Math.round(Number(value));
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : fallback;
+};
+
+// The class image: a new file (optional) and which part of it the website's card shows — `position`
+// { x, y } (0–100, CSS object-position %; optional, e.g. a new class keeps the centre).
+export async function setClassImage(classRow, imageFile, position) {
+    const fields = position ? { image_pos_x: within(position.x, 0, 100, 50), image_pos_y: within(position.y, 0, 100, 50) } : {};
+    return writeClassPicture(classRow, 'image_path', imageFile, fields);
+}
+
+// ---- The photo on the poster timetable -------------------------------------------
+// A class's own round photo (often a cut-out of the instructor), placed by its frame { x, y, zoom }: the photo's
+// point (x %, y %) sits in the middle of the circle and the photo is zoom % of the circle wide (ui/timetable).
+const frameColumns = (frame) => ({
+    timetable_photo_x: within(frame?.x, 0, 100, 50),
+    timetable_photo_y: within(frame?.y, 0, 100, 50),
+    timetable_photo_zoom: within(frame?.zoom, 50, 300, 100),
+});
+
+// A new photo (replacing the old one, whose file goes) with its frame.
+export async function setTimetablePhoto(classRow, file, frame) {
+    return writeClassPicture(classRow, 'timetable_photo_path', file, frameColumns(frame));
+}
+
+// Only the frame of the photo the class already has.
+export async function setTimetablePhotoFrame(classRow, frame) {
+    return writeClassPicture(classRow, 'timetable_photo_path', null, frameColumns(frame));
+}
+
+// Back to the instructor's avatar: the photo's file goes and the frame starts over.
+export async function removeTimetablePhoto(classRow) {
+    const updated = unwrap(
+        await supabase
+            .from('classes')
+            .update({ timetable_photo_path: null, ...frameColumns(null) })
+            .eq('id', classRow.id)
+            .select(CLASS_SELECT)
+            .single()
+    );
+    await removeFiles(BUCKETS.classImages, [classRow.timetable_photo_path]);
     return updated;
 }
 
@@ -146,7 +204,7 @@ export async function setClassImage(classRow, imageFile) {
 // payments) is refused with IN_USE — end it instead (endClass).
 export async function deleteClass(classRow) {
     unwrap(await supabase.from('classes').delete().eq('id', classRow.id));
-    await removeFiles(BUCKETS.classImages, [classRow.image_path]);
+    await removeFiles(BUCKETS.classImages, [classRow.image_path, classRow.timetable_photo_path]);
 }
 
 // How many classes a user is enrolled in (a guest sees only their own rows).

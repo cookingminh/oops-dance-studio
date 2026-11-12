@@ -4,6 +4,7 @@ import { LuCalendarDays, LuMusic, LuSparkles, LuUsers } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { PlaceIcon } from '@/ui/place/PlaceParts';
 import { classImageUrl } from '@/services/storage';
+import { imagePositionOf } from '@/lib/classImage';
 import { formatTime, isoWeekdayOf, toIsoDate } from '@/lib/format';
 import { reasonText } from '../../../../../admin-staff/components/common/session-changes/changeText';
 import { classHue, nextSessionOf, secondsUntil, splitDuration, startsInText, useStudioNow } from '../../profileHelpers';
@@ -22,7 +23,7 @@ export const ClassThumb = ({ cls, className = '' }) => {
     const src = classImageUrl(cls.image_path);
     return (
         <span className={`pfThumb ${className}`} style={hueStyle(cls)} aria-hidden="true">
-            {src ? <img src={src} alt="" /> : <LuMusic />}
+            {src ? <img src={src} alt="" style={{ objectPosition: imagePositionOf(cls) }} /> : <LuMusic />}
         </span>
     );
 };
@@ -41,7 +42,7 @@ export const ClassBanner = ({ cls, today, isInstructor }) => {
     return (
         <div className="pfBanner" style={hueStyle(cls)}>
             {src ? (
-                <img className="pfBannerImg" src={src} alt="" />
+                <img className="pfBannerImg" src={src} alt="" style={{ objectPosition: imagePositionOf(cls) }} />
             ) : (
                 <span className="pfBannerArt" aria-hidden="true">
                     <i />

@@ -99,6 +99,20 @@ const FIELD_LABELS = {
     content: 'Transfer content',
     month: 'Month',
     level: 'Level',
+    image_pos_x: 'Image: left – right',
+    image_pos_y: 'Image: up – down',
+    timetable_photo_path: 'Timetable photo',
+    timetable_photo_x: 'Timetable photo: left – right',
+    timetable_photo_y: 'Timetable photo: up – down',
+    timetable_photo_zoom: 'Timetable photo: zoom',
+};
+// Shorter names for the one-line "Changed: …" fact, where one move of a picture changes a few columns at once.
+const SUMMARY_LABELS = {
+    image_pos_x: 'Image position',
+    image_pos_y: 'Image position',
+    timetable_photo_x: 'Timetable photo',
+    timetable_photo_y: 'Timetable photo',
+    timetable_photo_zoom: 'Timetable photo',
 };
 // Where one column name means different things per table.
 const ENTITY_LABELS = {
@@ -123,7 +137,9 @@ const MONEY = new Set(['deposit', 'full_payment', 'real_income', 'bank_transfer'
     'monthly_salary', 'bonuses', 'deductions', 'total', 'session_rate', 'default_session_rate', 'rent_per_hour']);
 const DATES = new Set(['date', 'starts_on', 'ended_on', 'joined_at', 'leaves_after', 'due_date', 'spent_on', 'ends_on', 'date_of_birth']);
 const STAMPS = new Set(['checkin_at', 'checkout_at', 'paid_at', 'finalized_at', 'received_at']);
-const FILES = new Set(['image_path', 'avatar_path', 'receipt_path']);
+const FILES = new Set(['image_path', 'avatar_path', 'receipt_path', 'timetable_photo_path']);
+// A picture's position (0–100) and the timetable photo's zoom are percents.
+const PERCENTS = new Set(['image_pos_x', 'image_pos_y', 'timetable_photo_x', 'timetable_photo_y', 'timetable_photo_zoom']);
 const PEOPLE = new Set(['instructor_id', 'guest_id', 'student_id', 'profile_id']);
 
 // One value of `changes`, readable: money in VND, dates, times, statuses and names translated.
@@ -136,6 +152,7 @@ export function formatValue(column, value, entity, fmt) {
     if (column === 'start_time' || column === 'end_time') return formatTime(value);
     if (STAMPS.has(column)) return `${fmt.formatDate(studioDateOf(value), 'short')} ${formatClock(value)}`;
     if (FILES.has(column)) return t('Uploaded');
+    if (PERCENTS.has(column)) return `${value}%`;
     if (column === 'image_paths') return tn(value.length, '{count} photo', '{count} photos');
     if (PEOPLE.has(column)) return fmt.people?.get(value)?.name || '—';
     if (column === 'room_id') return fmt.rooms?.get(value) ?? `#${value}`;
@@ -169,7 +186,7 @@ export function changeRows(row, fmt) {
 export function changedFields(row, fmt) {
     const columns = Object.keys(row.changes ?? {});
     if (!columns.length) return '';
-    const labels = [...new Set(columns.map((column) => fmt.t(fieldLabel(column, row.entity))))];
+    const labels = [...new Set(columns.map((column) => fmt.t(SUMMARY_LABELS[column] ?? fieldLabel(column, row.entity))))];
     return labels.length > 3 ? fmt.t('{fields} and {count} more', { fields: labels.slice(0, 2).join(', '), count: labels.length - 2 }) : labels.join(', ');
 }
 

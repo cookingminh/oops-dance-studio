@@ -17,11 +17,11 @@ import LinkButton from '@/ui/LinkButton';
 import SectionCard from '../../../common/SectionCard';
 import { useStaffTasks } from '../../../../tasks/staffTasks';
 import ClassForm from '../../class-manager/components/classes/ClassForm';
-import ChangeClassImageForm from '../../class-manager/components/classes/ChangeClassImageForm';
 import { getClassHistory } from '../hubQueries';
 import { HUB_BASE, TABS, phaseBadge } from '../hubModel';
 import ClassHeader from './ClassHeader';
 import EnrolDialog from './EnrolDialog';
+import ClassImageDialog from './setup/ClassImageDialog';
 import OverviewTab from './tabs/OverviewTab';
 import StudentsTab from './tabs/StudentsTab';
 import SessionsTab from './tabs/SessionsTab';
@@ -240,8 +240,8 @@ const ClassPage = () => {
                 />
             )}
             {dialog === 'image' && (
-                <ChangeClassImageForm
-                    classRow={cls}
+                <ClassImageDialog
+                    cls={cls}
                     onClose={() => setDialog(null)}
                     onSaved={() => {
                         setDialog(null);

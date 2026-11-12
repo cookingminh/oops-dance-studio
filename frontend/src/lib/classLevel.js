@@ -1,10 +1,10 @@
 // A class's level (classes.level): what the poster timetable colours each class by, keyed under the grid —
-// the colours of the studio's printed schedule. Labels are English i18n keys.
+// the colours of the studio's printed schedule (the brush circles in assets/images/timetable-circle-*.webp). Labels are English i18n keys.
 
 export const LEVELS = [
-    { value: 'newbie', label: 'Newbie', legend: 'Newbie classes', color: '#c4321f', ink: '#fff' },
-    { value: 'basic', label: 'Basic', legend: 'Basic classes', color: '#b5795c', ink: '#fff' },
-    { value: 'advanced', label: 'Advanced', legend: 'Advanced classes', color: '#f2bf2f', ink: '#fff' },
+    { value: 'newbie', label: 'Newbie', legend: 'Newbie classes', color: '#ca2300', ink: '#fff' },
+    { value: 'basic', label: 'Basic', legend: 'Basic classes', color: '#bc765a', ink: '#fff' },
+    { value: 'advanced', label: 'Advanced', legend: 'Advanced classes', color: '#ffbf01', ink: '#fff' },
 ];
 
 // A class without a level: a neutral warm grey.

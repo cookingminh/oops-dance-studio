@@ -90,6 +90,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `booking-rooms.spec.js` | rooms inside Bookings: `/admin/rooms` → Rooms & prices (no Rooms item in the menu), each room's price and booking facts, the cancellation policy card, change a room's price and put it back, "See this room's calendar"; a booking ahead paid in full is completed by itself (solid, "Paid up", no Mark completed) and still cancellable by the guest and the studio |
 | `checkin-window.spec.js` | the instructor check-in window and late check-out: a session in 30 minutes says "Check-in opens at …" (and the server refuses), one that is over says to ask the studio, a check-out more than 10 minutes after the end warns and is marked late; staff correct a forgotten check-out with a reason in the session dialog (late mark from the times, then excused), today's board badge, the activity log entries with before → after |
 | `timetable-templates.spec.js` | the website timetable's look: staff pick the Red card above the directory's weekly timetable and /classes shows it, the arrow keys go back to the Poster, the switch on the Activity page; a class's level set in its details form (shown on its card) and cleared (the look ends on Poster, the level is put back) |
+| `class-photos.spec.js` | framing a class's pictures in its Setup tab: the image dialog previews the real Classes card, the up–down slider moves the picture and Save shows it on /classes; the timetable photo dialog zooms the round photo and the poster follows (the frames are put back) |
 
 ```bash
 # from the repository root, once per stack reset
@@ -110,7 +111,8 @@ src/
   App.jsx                 routes + guards (lazy-loaded areas)
   lib/                    supabase client, image preparation (HEIC → JPEG, resize, WebP), formatting,
                           place.js (a class's or session's place: room or rented studio), classLevel.js (a
-                          class's level — Newbie / Basic / Advanced — and its colour on the website timetable)
+                          class's level — Newbie / Basic / Advanced — and its colour on the website timetable),
+                          classImage.js (the part of a class image every crop shows, as staff framed it)
   services/               the only code that talks to Supabase: auth, users, rooms, classes,
                           schedules, bookings, attendance, stats, storage, studio, errors, site (the
                           website's choices: which look the public timetable uses, `site_settings`)
@@ -119,7 +121,9 @@ src/
   i18n/                   English / Vietnamese: provider, t()/tn(), date formatting, vi/*.js dictionaries
   ui/                     shared UI: toasts, loading/empty/error states, pickers, avatars, demo banner;
                           ui/guide/ the (?) page guide (one dialog with worked examples), ui/place/ where a
-                          class is taught (room or rented studio)
+                          class is taught (room or rented studio), ui/timetable/ the poster timetable's round
+                          class badge (TimetableDisc: level circle, the photo placed by its frame, the name on
+                          an arc), shared by the website and the staff's preview
   guides/                 the page guides' content, one file per page (registered in guides/index.js)
   assets/                 compressed images (WebP) and videos (720p MP4); room*.webp are not
                           bundled — ../scripts/demo-images.mjs uploads them to site-assets for the seed
@@ -127,11 +131,16 @@ src/
     HomePage/             public site: PublicLayout (navbar, footer, page transitions), pages/ (one per
                           route), Components/ (sections; About/aboutContent.js holds the About copy;
                           Classes/Components/timetable/ = the two looks of the weekly timetable — the
-                          printed-poster grid and the red card — picked from site_settings)
+                          printed-poster grid and the red card — picked from site_settings; ClassCard.jsx
+                          brings its own classCard.scss, so the staff can preview the real card)
     Login, Register, ResetPassword, Logout
     Table                 table template
     users/admin-staff/    /admin area; components/common/ holds the shared pieces (PlaceField = where a
-                          class is taught, LevelField = its level, used by the class forms and the wizard)
+                          class is taught, LevelField = its level, used by the class forms and the wizard);
+                          body/class-hub/page/setup/ the class page's Setup parts, among them the framing
+                          dialogs (ClassImageDialog: the class image and its position, previewed on the real
+                          Classes card; TimetablePhotoDialog: the round timetable photo, zoom and position,
+                          previewed on the poster's badge; both drag-to-move, FramingParts.jsx / framing.js)
     users/instructor-guest/  /profile area
 e2e/                      Playwright specs + fixtures (see above)
 ```
@@ -146,7 +155,7 @@ Conventions:
   `formatDate()` / `dayName()` / `monthName()` for dates. Data (class, room and people names, songs) is not translated.
   In development, `window.__i18nMissing` lists Vietnamese lookups that have no translation yet. The EN | VI switch
   is stored in `localStorage` (`oops-lang`); first-time visitors get Vietnamese if their browser language is Vietnamese.
-- Images are stored as Storage paths. Public buckets use `getPublicUrl`; attendance proofs are private and shown through signed URLs. Room photos come from `rooms.image_paths` (bucket `site-assets`); a room without photos shows the studio photo.
+- Images are stored as Storage paths. Public buckets use `getPublicUrl`; attendance proofs are private and shown through signed URLs. Room photos come from `rooms.image_paths` (bucket `site-assets`); a room without photos shows the studio photo. A class's image is cropped where staff framed it (`classes.image_pos_x` / `_y`, `lib/classImage.js`); its round photo on the poster timetable is `classes.timetable_photo_path` with its frame (`_x`, `_y`, `_zoom`), else the instructor's avatar.
 
 ## Deploy
 

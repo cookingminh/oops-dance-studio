@@ -74,6 +74,24 @@ lại là thấy kiểu mới. Link *Xem trên website* mở lịch học của 
 Cấp độ hiện thành nhãn nhỏ trên thẻ lớp trong danh sách lớp và quyết định màu của lớp trên lịch Poster. Lớp chưa chọn
 cấp độ hiện màu xám trên Poster.
 
+**Ảnh của lớp trên website**: trang lớp → tab *Setting* có hai khung **Ảnh** và **Ảnh trên lịch học**. Mỗi khung mở một
+hộp thoại: bên trái chọn ảnh và căn chỉnh, bên phải là **bản xem trước y như trên website**. Kéo ảnh ngay trong bản xem
+trước, hoặc dùng các thanh trượt; *Đặt lại* đưa về mặc định. Chưa bấm **Lưu** thì website chưa đổi gì (*Đóng* là bỏ).
+
+- **Ảnh** (ảnh lớp, thường là poster dọc) → *Đổi ảnh*. Thẻ lớp ở trang *Lớp học* chỉ hiện một khúc ngang của ảnh; ô
+  **Vị trí** chọn khúc nào (*Trái – phải*, *Lên – xuống*). Ví dụ muốn thấy tên lớp ở đầu poster thì kéo ảnh xuống. Poster
+  dọc chỉ dịch lên – xuống (thanh *Trái – phải* bị khoá vì ảnh đã hiện hết chiều ngang). Bản xem trước là đúng thẻ lớp
+  của website, với tên, giáo viên, bài đang học, giờ học, nơi học và học phí. *Lưu* tải ảnh mới lên (nếu có chọn) và lưu
+  vị trí. Ảnh nhỏ trong danh sách lớp, đầu trang lớp và trang lớp của học viên / giáo viên cũng cắt theo vị trí này.
+- **Ảnh trên lịch học** (ảnh tròn trên lịch Poster) → *Tải ảnh lên* / *Đổi ảnh*. Mỗi lớp có thể có ảnh riêng, thường là
+  ảnh giáo viên đã tách nền; cùng một giáo viên có thể dùng ảnh khác nhau cho từng lớp. Lớp chưa có ảnh riêng thì lịch
+  dùng **ảnh đại diện** của giáo viên (khung ghi *Đang dùng ảnh đại diện của …*). Đẹp nhất là ảnh PNG nền trong suốt,
+  khuôn mặt ở giữa. Chỉnh **Thu phóng** (50–300 %), *Trái – phải*,
+  *Lên – xuống*, hoặc kéo ảnh trong vòng tròn cho khuôn mặt nằm giữa; bản xem trước là vòng tròn đúng màu cấp độ, tên lớp
+  và giờ học như trên Poster. *Gỡ ảnh* đưa lịch về lại ảnh đại diện (bấm *Lưu* mới gỡ thật).
+- Ảnh cũ bị thay hoặc gỡ được xoá khỏi kho ảnh. Mỗi lần lưu được ghi vào *Activity*, ví dụ "… đã sửa lớp Trending ·
+  Đã đổi: Vị trí ảnh lớp".
+
 ### Vòng đời một lớp
 
 ```mermaid
@@ -467,5 +485,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Trả đủ = Hoàn thành | `20261117001000_booking_auto_complete.sql` | trigger `booking_auto_complete` |
 | Huỷ đặt phòng & hoàn tiền | `20261117000800_booking_refunds.sql` | `cancel_booking`, `booking_cancel_quote`, `booking_refund`, `booking_settings` |
 | Lịch học trên website, cấp độ lớp | `20261117001500_timetable_templates.sql` | `site_settings`, `site_set_timetable_template`, `classes.level`, `seed_demo_levels` |
+| Vị trí ảnh lớp, ảnh tròn trên lịch học | `20261117001600_timetable_photos.sql` | `classes.image_pos_x/_y`, `classes.timetable_photo_path/_x/_y/_zoom`, `list_public_classes` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

@@ -11,8 +11,10 @@ import { ClassImage } from '../../HubParts';
 import { bySlot, weeklySlots } from '../../hubModel';
 import DetailsForm from '../setup/DetailsForm';
 import EndClassPanel from '../setup/EndClassPanel';
+import TimetablePhotoCard from '../setup/TimetablePhotoCard';
 
-// Setup: details, weekly sessions, image — and the danger zone (end / reopen / delete).
+// Setup: details, weekly sessions, the pictures on the website (image, timetable photo) — and the danger zone
+// (end / reopen / delete).
 // ?end=1 scrolls to the danger zone (the header's "End class").
 const SetupTab = ({ ctx }) => {
     const { cls, today, badge, instructors, rooms, venues, history, canDelete, changed, params, openImage, reopen, remove } = ctx;
@@ -57,7 +59,7 @@ const SetupTab = ({ ctx }) => {
                 <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
             </SectionCard>
 
-            <div className="hubDuo">
+            <div className="hubTrio">
                 <SectionCard
                     icon={LuCalendarClock}
                     title={t('Weekly sessions')}
@@ -105,6 +107,8 @@ const SetupTab = ({ ctx }) => {
                 >
                     <ClassImage cls={cls} className="isPreview" />
                 </SectionCard>
+
+                <TimetablePhotoCard cls={cls} onChanged={changed} />
             </div>
 
             <div ref={dangerRef}>

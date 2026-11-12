@@ -9,6 +9,7 @@
 // Sources (read only, committed):
 //   scripts/demo-assets/<teacher>.webp             → avatars/{instructor_id}/avatar.webp    (profiles.avatar_path)
 //   scripts/demo-assets/class_*.webp               → class-images/{class_id}/{uuid}.webp    (classes.image_path = first)
+//   scripts/demo-assets/timetable_*.webp           → class-images/{class_id}/{uuid}.webp    (classes.timetable_photo_path)
 //   frontend/src/assets/images/room{N}-*.webp      → site-assets/rooms/{room_id}/{file}     (rooms.image_paths, in order)
 //   scripts/demo-assets/promo_*.mp4 / .jpg         → class-promos/{class_id}/{lesson_id}/…  (class_lessons.promo_*)
 // Missing sources are skipped with a note. Idempotent: deterministic object
@@ -45,6 +46,18 @@ const CLASS_IMAGES = [
   ["Girlstyle 1", ["class_girlstyle_1.webp"]],
   ["Newbie 1", ["class_newbie.webp"]],
   ["Newbie 2", ["class_newbie.webp"]],
+];
+// Each class's photo on the poster timetable: cut-outs, square, the face in the middle (as on the printed
+// schedule, Đỗ Linh smiles for Trending and wears the white jacket for Newbie 1 and Choreo CG).
+const TIMETABLE_PHOTOS = [
+  ["Trending", "timetable_dolinh_smile.webp"],
+  ["Choreo CG", "timetable_dolinh.webp"],
+  ["Newbie 1", "timetable_dolinh.webp"],
+  ["K-pop Dance", "timetable_ducanh.webp"],
+  ["Girlstyle 1", "timetable_antrinh.webp"],
+  ["Girlstyle 2", "timetable_vananh.webp"],
+  ["Choreo BT", "timetable_soleck.webp"],
+  ["Newbie 2", "timetable_soleck.webp"],
 ];
 // Demo room → prefix of its bundled photo set (the frontend's old position rule).
 const ROOM_PHOTOS = [
@@ -107,7 +120,18 @@ async function uploadAvatarsAndClassPhotos(db, log) {
     if (paths.length) await setColumn(db, "classes", "image_path", paths[0], cls.id, className);
     classPhotos += paths.length;
   }
-  log(`✓ images: ${avatars} instructor avatars, ${classPhotos} class photos`);
+
+  let timetablePhotos = 0;
+  for (const [className, file] of TIMETABLE_PHOTOS) {
+    const { data: cls } = await db.from("classes").select("id").eq("name", className).maybeSingle();
+    const src = resolve(DEMO_ASSETS_DIR, file);
+    if (!cls || !existsSync(src)) { log(`  skip timetable photo for "${className}" (${cls ? "no file" : "no class"})`); continue; }
+    const path = `${cls.id}/${stableUuid(`oops-demo:${file}`)}${extname(file).toLowerCase()}`;
+    await upload(db, "class-images", path, src);
+    await setColumn(db, "classes", "timetable_photo_path", path, cls.id, className);
+    timetablePhotos++;
+  }
+  log(`✓ images: ${avatars} instructor avatars, ${classPhotos} class photos, ${timetablePhotos} timetable photos`);
 }
 
 async function uploadRoomPhotos(db, log) {

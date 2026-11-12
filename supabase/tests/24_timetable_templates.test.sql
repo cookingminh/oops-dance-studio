@@ -1,9 +1,10 @@
 -- The website timetable (api-contract §3 site_settings, §5 Website):
 --   * everyone reads which timetable look the website uses; admins and staff change it, which is logged
 --   * a class has a level (newbie / basic / advanced, or none) and the public timetable returns it
+--   * a class may have its own photo on the timetable (else the instructor's avatar is shown)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(17);
+select plan(19);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -46,6 +47,8 @@ select tests.create_user('00000000-0000-4000-b000-000000000241', 'site-staff@tes
 select tests.create_user('00000000-0000-4000-b000-000000000242', 'site-teacher@test.local', 'instructor', 'Site Teacher');
 select tests.create_user('00000000-0000-4000-b000-000000000243', 'site-guest@test.local', 'guest', 'Site Guest');
 update public.site_settings set timetable_template = 'poster' where id = 1;
+-- Count only this test's switches (a used database may already have some; rolled back at the end).
+delete from public.activity_log where area = 'settings' and action = 'timetable_template';
 insert into public.classes (id, name, instructor_id, price, starts_on, level)
 values (900241, 'Level Class', '00000000-0000-4000-b000-000000000242', 500000, public.studio_today() - 30, 'advanced');
 
@@ -91,6 +94,12 @@ select is((select level from public.list_public_classes() where id = 900241), 'a
 select tests.login_as('00000000-0000-4000-b000-000000000241');
 update public.classes set level = null where id = 900241;
 select is((select level from public.list_public_classes() where id = 900241), null, 'a class can have no level');
+
+update public.classes set timetable_photo_path = '900241/timetable.webp' where id = 900241;
+select is((select timetable_photo_path from public.list_public_classes() where id = 900241), '900241/timetable.webp',
+  'staff give a class its own timetable photo, and the public timetable returns it');
+update public.classes set timetable_photo_path = null where id = 900241;
+select is((select timetable_photo_path from public.list_public_classes() where id = 900241), null, 'or none (the avatar then)');
 
 select * from finish();
 rollback;

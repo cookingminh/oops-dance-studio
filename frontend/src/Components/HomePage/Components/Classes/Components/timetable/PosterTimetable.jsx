@@ -1,7 +1,9 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { TiSocialFacebook } from 'react-icons/ti';
-import { avatarUrl } from '@/services/storage';
-import { LEVELS, levelOf } from '@/lib/classLevel';
+import { avatarUrl, classImageUrl } from '@/services/storage';
+import { LEVELS } from '@/lib/classLevel';
+import TimetableDisc from '@/ui/timetable/TimetableDisc';
+import { AVATAR_FRAME, LEVEL_CIRCLES } from '@/ui/timetable/timetableFrame';
 import { useI18n } from '@/i18n/i18nContext';
 import logoMark from '@/assets/images/logo-mark.webp';
 import { SOCIALS } from '../../../NavBar/contactInfo';
@@ -29,27 +31,17 @@ const useNarrow = () => {
 // Advanced classes go to the bottom rows, as on the printed schedule.
 const rankOf = (cls) => (cls.level === 'advanced' ? 1 : 0);
 
-// Font size (viewBox units) that keeps the name on the arc: about 112 units of it read comfortably.
-const arcFontSize = (name) => Math.max(7, Math.min(12.5, 112 / Math.max(name.length * 0.66, 1)));
-
-// The round badge: the instructor's photo on the level colour, the class name curving along the top.
-const Disc = ({ cls }) => {
-    const pathId = `ttArc${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-    const level = levelOf(cls.level);
-    return (
-        <span className={`ttDisc is-${level.value ?? 'none'}`} style={{ '--lvl': level.color }} aria-hidden="true">
-            {cls.instructor_avatar_path && <img className="instructor" src={avatarUrl(cls.instructor_avatar_path)} alt={cls.instructor_name} loading="lazy" />}
-            <svg className="ttArc" viewBox="0 0 100 100" focusable="false">
-                <path id={pathId} d="M 15.6 57.3 A 35 35 0 1 1 84.4 57.3" fill="none" />
-                <text style={{ fontSize: arcFontSize(cls.name) }}>
-                    <textPath href={`#${pathId}`} startOffset="50%" textAnchor="middle">
-                        {cls.name}
-                    </textPath>
-                </text>
-            </svg>
-        </span>
-    );
-};
+// The class's own timetable photo (placed as staff framed it), else its instructor's avatar.
+const photoOf = (cls) =>
+    cls.timetable_photo_path
+        ? {
+              src: classImageUrl(cls.timetable_photo_path),
+              alt: cls.instructor_name,
+              frame: { x: cls.timetable_photo_x ?? 50, y: cls.timetable_photo_y ?? 50, zoom: cls.timetable_photo_zoom ?? 100 },
+          }
+        : cls.instructor_avatar_path
+          ? { src: avatarUrl(cls.instructor_avatar_path), alt: cls.instructor_name, frame: AVATAR_FRAME }
+          : null;
 
 const Slot = ({ session, onPick }) => {
     const { t } = useI18n();
@@ -71,7 +63,7 @@ const Slot = ({ session, onPick }) => {
             <span className="ttTime" aria-hidden="true">
                 {session.start}-{session.end}
             </span>
-            <Disc cls={session.cls} />
+            <TimetableDisc name={session.cls.name} level={session.cls.level} photo={photoOf(session.cls)} />
         </Tag>
     );
 };
@@ -157,7 +149,7 @@ const PosterTimetable = ({ sessions, today, todayDow, onPick, emptyText }) => {
                     <ul className="ttLegend" aria-label={t('Class levels')}>
                         {levels.map((level) => (
                             <li key={level.value}>
-                                <i style={{ background: level.color }} aria-hidden="true" />
+                                <i style={{ backgroundImage: `url(${LEVEL_CIRCLES[level.value]})` }} aria-hidden="true" />
                                 {t(level.legend)}
                             </li>
                         ))}
