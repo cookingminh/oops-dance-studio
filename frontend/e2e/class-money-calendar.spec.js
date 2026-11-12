@@ -76,7 +76,9 @@ test.beforeAll(async ({ browser }) => {
     }
     test.skip(!target, 'needs a demo class at a rented studio with two rooms and a charged session');
 
-    original = { room: target.session.venue_room_id ?? null, amount: Number(target.rent.amount), vendor: target.rent.vendor, description: target.rent.description };
+    // At a studio a session is always in one of its rooms.
+    expect(target.session.venue_room_id, 'the session’s room').toBeTruthy();
+    original = { room: target.session.venue_room_id, amount: Number(target.rent.amount), vendor: target.rent.vendor, description: target.rent.description };
     // Another room than the session's, whose price gives another rent than the one charged.
     other = rooms.find((room) => room.id !== original.room && rentFor(room.rent_per_hour, target.minutes) !== original.amount) ?? rooms.find((room) => room.id !== original.room);
     // A leftover of an interrupted run would change the day's totals.
@@ -97,7 +99,7 @@ test.afterAll(async () => {
             'put the rent back'
         );
         await rest(admin, `expenses?description=eq.${encodeURIComponent(WATER)}`, { method: 'DELETE' });
-        expect((await sessionRow()).venue_room_id ?? null).toBe(original.room);
+        expect((await sessionRow()).venue_room_id).toBe(original.room);
         expect(Number((await rentRow()).amount)).toBe(original.amount);
         expect(await waterRows()).toHaveLength(0);
     }
@@ -139,6 +141,11 @@ test('a day: the session moves to another room and its rent follows', async () =
     await expect(dialog()).toBeVisible();
     await expect(dialog().locator('.mcDialogTitle')).toHaveText(`${longDate(target.session.date)} · ${cls.name}`);
     await expect(rentItem()).toContainText(dots(original.amount));
+
+    // The picker lists the studio's rooms only: a session at a studio is always in one of them.
+    await expect(dialog().getByRole('radio')).toHaveCount(rooms.length);
+    await expect(dialog().getByRole('radio', { name: /particular room/i })).toHaveCount(0);
+    await expect(dialog().getByRole('radio', { checked: true })).toHaveCount(1);
 
     const expected = rentFor(other.rent_per_hour, target.minutes);
     const pick = dialog().getByRole('radio', { name: new RegExp(`^${other.name}`) });

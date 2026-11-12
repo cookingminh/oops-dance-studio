@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { addDays, expectToast, login, pickOption, rest, rpc, studioToday, token } from './support.js';
 
-// Rented studios (venues): staff add one in Bookings → Rooms & prices with the name the website shows, change its
-// rent and give it rooms (each with its own rent), put a class in one of the rooms in its Setup tab, and the class
-// header and the instructor's page name it "Studio · Room" with its address and map link — while the website and
-// the class's students only ever see its public name (the studio's own name is another studio's brand). Once a
-// session in the room has ended, the room's rent is an expense of the class, marked "Automatic" (admins see those
-// rows). A room a class was in can't be deleted: it is set inactive.
+// Rented studios (venues): staff add one in Bookings → Rooms & prices with the name the website shows and its first
+// room (a studio always has at least one; the rent lives on the rooms), then rename that room and add another, put a
+// class in one of the rooms in its Setup tab, and the class header and the instructor's page name it "Studio · Room"
+// with its address and map link — while the website and the class's students only ever see its public name (the
+// studio's own name is another studio's brand). Once a session in the room has ended, the room's rent is an expense
+// of the class, marked "Automatic" (admins see those rows). A room a class was in can't be deleted: it is set
+// inactive; the last room in use can't be removed at all.
 // Independent of the demo data: the spec makes its own studio, takes any running class and puts it back,
 // and removes what it added (studio and its rooms, the past session it adds, its rent).
 
@@ -74,41 +75,52 @@ test.afterAll(async () => {
     if (venue) expect([200, 204]).toContain((await rpc(staff.jwt, 'venue_delete', { p_id: venue.id })).status);
 });
 
-test('staff add a rented studio with its name on the website, change its rent and give it rooms', async ({ page }) => {
+test('staff add a rented studio with its name on the website and its first room, then give it a second room', async ({ page }) => {
     await login(page, 'staff@demo.oopsdance.test');
     await page.goto('/admin/bookings?view=rooms');
     const section = page.locator('.venueSection');
     await section.getByRole('button', { name: 'Add a rented studio' }).click();
 
     const dialog = page.getByRole('dialog');
+    // No price of the studio's own: it starts with one room, "Phòng 1", whose price is needed; it can't be removed.
+    await expect(dialog.getByLabel('Rent per hour (VND)')).toHaveCount(0);
+    let row = dialog.locator('.venueRoomRow');
+    await expect(row).toHaveCount(1);
+    await expect(row.getByLabel('Room name')).toHaveValue('Phòng 1');
+    await expect(row.getByRole('button', { name: 'Remove Phòng 1' })).toBeDisabled();
+    await expect(dialog.getByText('A studio has at least one room, so its only room can’t be removed.')).toBeVisible();
+
     await dialog.getByLabel('Studio name').fill(VENUE);
     await dialog.getByLabel('Name on the website').fill(PUBLIC);
     await dialog.getByLabel('Address').fill(ADDRESS);
     await dialog.getByLabel('Map link').fill('http://maps.example/e2e');
-    await dialog.getByLabel('Rent per hour (VND)').fill('240000');
     await dialog.getByRole('button', { name: 'Add studio' }).click();
-    // Map links are https only (checked before it is sent).
+    // Map links are https only, and the room needs its price (checked before it is sent).
     await expect(dialog.getByText('The map link must start with https://.')).toBeVisible();
+    await expect(row.getByText('Enter a price of 0 or more.')).toBeVisible();
     await dialog.getByLabel('Map link').fill('');
+    await row.getByLabel('Price per hour (VND)').fill('240000');
     await dialog.getByRole('button', { name: 'Add studio' }).click();
     await expectToast(page, `${VENUE} added.`);
 
     const venue = await venueByName(VENUE);
-    expect(venue).toMatchObject({ address: ADDRESS, public_name: PUBLIC, rent_per_hour: 240000, active: true });
+    expect(venue).toMatchObject({ address: ADDRESS, public_name: PUBLIC, active: true });
     venueId = venue.id;
+    const first = await roomsOf(venueId);
+    expect(first.map(({ name, rent_per_hour, active }) => ({ name, rent_per_hour, active }))).toEqual([{ name: 'Phòng 1', rent_per_hour: 240000, active: true }]);
+    roomId = first[0].id;
 
     const card = section.locator(`[data-venue="${venueId}"]`);
     await expect(card).toContainText(ADDRESS);
-    await expect(card).toContainText(/240[.,]000/);
     await expect(card.locator('.venuePublic')).toContainText(PUBLIC);
+    await expect(card.locator(`[data-room="${roomId}"]`)).toContainText('Phòng 1');
+    await expect(card.locator(`[data-room="${roomId}"]`)).toContainText(/240[.,]000/);
     // Without a map link, "Open in Maps" searches the address.
     await expect(card.getByRole('link', { name: `Open ${VENUE} in Maps` })).toHaveAttribute('href', /google\.com\/maps\/search\/.*query=/);
 
-    // A new rent, and two rooms with their own prices (two rooms can't share a name).
+    // The room renamed with a new price, and a second room (two rooms can't share a name).
     await card.getByRole('button', { name: `Edit ${VENUE}` }).click();
-    await dialog.getByLabel('Rent per hour (VND)').fill('260000');
-    await dialog.getByRole('button', { name: 'Add a room' }).click();
-    let row = dialog.locator('.venueRoomRow').last();
+    row = dialog.locator('.venueRoomRow').first();
     await row.getByLabel('Room name').fill(ROOM);
     await row.getByLabel('Price per hour (VND)').fill('300000');
     await dialog.getByRole('button', { name: 'Add a room' }).click();
@@ -118,20 +130,20 @@ test('staff add a rented studio with its name on the website, change its rent an
     await dialog.getByRole('button', { name: 'Save studio' }).click();
     await expect(dialog.getByText('Two rooms have this name.').first()).toBeVisible();
     await row.getByLabel('Room name').fill(ROOM_2);
+    // With two rooms, either can be removed.
+    await expect(dialog.getByRole('button', { name: `Remove ${ROOM}`, exact: true })).toBeEnabled();
     await dialog.getByRole('button', { name: 'Save studio' }).click();
     await expectToast(page, `${VENUE} saved.`);
 
-    expect((await venueByName(VENUE)).rent_per_hour).toBe(260000);
     const rooms = await roomsOf(venueId);
-    expect(rooms.map(({ name, rent_per_hour, active }) => ({ name, rent_per_hour, active }))).toEqual([
-        { name: ROOM, rent_per_hour: 300000, active: true },
-        { name: ROOM_2, rent_per_hour: 150000, active: true },
+    expect(rooms.map(({ id, name, rent_per_hour, active }) => ({ id, name, rent_per_hour, active }))).toEqual([
+        { id: roomId, name: ROOM, rent_per_hour: 300000, active: true },
+        { id: rooms[1].id, name: ROOM_2, rent_per_hour: 150000, active: true },
     ]);
-    roomId = rooms[0].id;
-    // The card lists the rooms with their prices; the studio's own rent is the price without a room.
+    // The card lists the rooms with their prices.
     await expect(card.locator(`[data-room="${roomId}"]`)).toContainText(ROOM);
     await expect(card.locator(`[data-room="${roomId}"]`)).toContainText(/300[.,]000/);
-    await expect(card.locator('.venueRoomFallback')).toContainText(/260[.,]000/);
+    await expect(card.locator(`[data-room="${rooms[1].id}"]`)).toContainText(/150[.,]000/);
 });
 
 test('staff put a class in one of its rooms in Setup; staff and the instructor see "Studio · Room"', async ({ page, browser }) => {
@@ -235,7 +247,7 @@ test('a session that ended in the room becomes an automatic rent expense of the 
     await expect(page.locator('.alogSentence, .alogChildText').filter({ hasText: `moved ${cls.name} to ${VENUE} · ${ROOM}` }).first()).toBeVisible();
 });
 
-test('a room a class was in can’t be deleted: removing it sets it inactive', async ({ page }) => {
+test('a room a class was in can’t be deleted: removing it sets it inactive; the last room stays', async ({ page }) => {
     await login(page, 'staff@demo.oopsdance.test');
     await page.goto('/admin/bookings?view=rooms');
     const card = page.locator(`[data-venue="${venueId}"]`);
@@ -251,15 +263,26 @@ test('a room a class was in can’t be deleted: removing it sets it inactive', a
     await dialog.getByRole('button', { name: `Remove ${ROOM}`, exact: true }).click();
     expect(asked).toContain(cls.name);
     await expect(dialog.getByText(/stays on record as inactive, out of the class pickers/)).toBeVisible();
-    // Nothing was ever in the other one: it goes.
-    await dialog.getByRole('button', { name: `Remove ${ROOM_2}`, exact: true }).click();
+    // The other one is now the studio's only room: it can't go.
+    await expect(dialog.getByRole('button', { name: `Remove ${ROOM_2}`, exact: true })).toBeDisabled();
+    await expect(dialog.getByText('A studio has at least one room, so its only room can’t be removed.')).toBeVisible();
     await dialog.getByRole('button', { name: 'Save studio' }).click();
     await expectToast(page, `${VENUE} saved.`);
 
-    expect((await roomsOf(venueId)).map(({ id, active }) => ({ id, active }))).toEqual([{ id: roomId, active: false }]);
+    const rooms = await roomsOf(venueId);
+    expect(rooms.map(({ id, name, active }) => ({ id, name, active }))).toEqual([
+        { id: roomId, name: ROOM, active: false },
+        { id: rooms[1].id, name: ROOM_2, active: true },
+    ]);
     // The class is still in it, so the card keeps it, marked inactive.
     const room = card.locator(`[data-room="${roomId}"]`);
     await expect(room).toContainText('Inactive');
     await expect(room).toContainText(cls.name);
-    await expect(card).not.toContainText(ROOM_2);
+    await expect(card).toContainText(ROOM_2);
+
+    // The server refuses a studio without a room in use too.
+    const refused = await rpc(staff.jwt, 'venue_save', { p_id: venueId, p_name: VENUE, p_public_name: PUBLIC, p_address: ADDRESS, p_rooms: [] });
+    expect(refused.status).toBe(400);
+    expect(JSON.stringify(refused.data)).toContain('a studio needs at least one room');
+    expect((await roomsOf(venueId)).filter((item) => item.active)).toHaveLength(1);
 });

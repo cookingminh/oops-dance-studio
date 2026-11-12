@@ -326,10 +326,6 @@
             background: var(--ad-surface);
             color: var(--ad-subtle);
         }
-
-        .venueRent strong {
-            color: var(--ad-muted);
-        }
     }
 }
 
@@ -392,26 +388,6 @@
 
 .adminShell .venueMuted {
     color: var(--ad-subtle);
-}
-
-.adminShell .venueRent {
-    display: flex;
-    align-items: baseline;
-    gap: .4rem;
-    padding-top: .8rem;
-    border-top: 1px dashed var(--ad-border);
-
-    strong {
-        font-family: var(--ad-display);
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: var(--ad-primary);
-    }
-
-    span {
-        font-size: .9rem;
-        color: var(--ad-muted);
-    }
 }
 
 .adminShell .venueFacts {
@@ -510,17 +486,12 @@
     }
 }
 
-// A studio with rooms: each room with its rent and the classes in it, then the studio's own rent.
-.adminShell .venueRoomsBlock {
-    display: grid;
-    gap: .5rem;
-    padding-top: .8rem;
-    border-top: 1px dashed var(--ad-border);
-}
-
+// A studio's rooms (one or more): each with its rent and the classes in it.
 .adminShell .venueRoomList {
     display: grid;
     gap: .45rem;
+    padding-top: .8rem;
+    border-top: 1px dashed var(--ad-border);
 
     > li {
         display: grid;
@@ -564,12 +535,6 @@
 }
 
 .adminShell .venueCard.isInactive .venueRoomRent {
-    color: var(--ad-muted);
-}
-
-.adminShell .venueRoomFallback {
-    margin: 0;
-    font-size: .82rem;
     color: var(--ad-muted);
 }
 
@@ -673,6 +638,11 @@
         padding: .45rem .6rem;
         border-radius: 10px;
         background: var(--ad-surface);
+
+        &.isError {
+            color: var(--ad-primary-strong);
+            background: var(--ad-primary-soft);
+        }
     }
 
     .venueRoomRows {

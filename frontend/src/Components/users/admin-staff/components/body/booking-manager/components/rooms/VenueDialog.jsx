@@ -2,23 +2,26 @@ import { useRef, useState } from 'react';
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Switch, Textarea } from '@nextui-org/react';
 import { LuArrowUp, LuCheck, LuMapPin, LuPlus, LuRotateCcw, LuTrash2 } from 'react-icons/lu';
 import { saveVenue } from '@/services/venues';
-import { formatVnd } from '@/lib/format';
 import { mapLinkOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 
 const fold = (text) => text.trim().toLocaleLowerCase('vi');
+// A new studio's first room (the server's name for it too).
+const FIRST_ROOM = { key: 'new0', id: null, name: 'Phòng 1', rent: '', active: true };
 
+// The rent lives on the rooms: a studio has at least one (a new one starts with "Phòng 1", its price to fill in).
 const fromVenue = (venue) => ({
     name: venue?.name ?? '',
     publicName: venue?.public_name ?? '',
     address: venue?.address ?? '',
     mapUrl: venue?.map_url ?? '',
-    rent: venue ? String(venue.rent_per_hour ?? 0) : '',
     note: venue?.note ?? '',
     active: venue?.active ?? true,
     // `key`: the row's React key (a saved room's id, or a new one's own).
-    rooms: (venue?.rooms ?? []).map((room) => ({ key: `r${room.id}`, id: room.id, name: room.name, rent: String(room.rent_per_hour ?? 0), active: room.active })),
+    rooms: venue?.rooms?.length
+        ? venue.rooms.map((room) => ({ key: `r${room.id}`, id: room.id, name: room.name, rent: String(room.rent_per_hour ?? 0), active: room.active }))
+        : [FIRST_ROOM],
 });
 
 // What a room row is missing, if anything: 'name' | 'duplicate' and / or 'rent'.
@@ -34,8 +37,8 @@ function roomProblems(rooms) {
     });
 }
 
-// Add or change a rented studio: name, the name on the website, address, map link, rent per hour, its rooms
-// (each with its own rent), a note for staff and whether classes can still be put there (inactive: out of the
+// Add or change a rented studio: name, the name on the website, address, map link, its rooms (at least one, each
+// with its rent per hour), a note for staff and whether classes can still be put there (inactive: out of the
 // pickers, history kept). `venue` null = a new one. `classes` [{ id, name, venue_room_id }]: the classes taught
 // there now, so removing a room they are in asks first.
 const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
@@ -50,26 +53,22 @@ const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
     const setRooms = (change) => setForm((old) => ({ ...old, rooms: change(old.rooms) }));
     const setRoom = (key, field) => (value) => setRooms((rooms) => rooms.map((room) => (room.key === key ? { ...room, [field]: value } : room)));
 
-    const rent = Number(form.rent);
     const roomIssues = roomProblems(form.rooms);
+    // The last room in use can't go: a studio has at least one.
+    const inUse = form.rooms.filter((room) => room.active).length;
     const problems = {
         name: !form.name.trim(),
         mapUrl: Boolean(form.mapUrl.trim()) && !/^https:\/\//i.test(form.mapUrl.trim()),
-        rent: form.rent === '' || Number.isNaN(rent) || rent < 0,
-        rooms: roomIssues.some((issue) => issue.name || issue.rent),
+        rooms: inUse === 0 || roomIssues.some((issue) => issue.name || issue.rent),
     };
     const show = (key) => tried && problems[key];
     const mapPreview = mapLinkOf({ map_url: problems.mapUrl ? null : form.mapUrl.trim(), address: form.address.trim() });
     // What the website shows when the name on the website is left empty (the server's rule).
     const publicFallback = form.address.split(',')[0].trim() || form.name.trim();
-    const hasRooms = form.rooms.some((room) => room.active);
-    let rentHint = t('{rent} an hour: a 90-minute session costs {session}.', { rent: formatVnd(rent), session: formatVnd(Math.round((rent * 1.5) / 1000) * 1000) });
-    if (problems.rent) rentHint = t('Each session taught there adds its rent to the class’s costs.');
-    if (hasRooms) rentHint = t('The price when a class here has no room picked. Each room has its own price below.');
 
     const addRoom = () => {
         nextKey.current += 1;
-        setRooms((rooms) => [...rooms, { key: `new${nextKey.current}`, id: null, name: '', rent: form.rent || '', active: true }]);
+        setRooms((rooms) => [...rooms, { key: `new${nextKey.current}`, id: null, name: '', rent: '', active: true }]);
     };
     const moveUp = (index) =>
         setRooms((rooms) => {
@@ -169,32 +168,21 @@ const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
                                 )
                             }
                         />
-                        <Input
-                            label={t('Rent per hour (VND)')}
-                            type="number"
-                            min={0}
-                            step={1000}
-                            isRequired
-                            value={form.rent}
-                            onValueChange={set('rent')}
-                            isInvalid={show('rent')}
-                            errorMessage={show('rent') ? t('Enter a price of 0 or more.') : undefined}
-                            description={rentHint}
-                        />
-
                         <fieldset className="venueRoomsEditor">
                             <legend>{t('Rooms')}</legend>
                             <p className="venueRoomsIntro">
-                                {t('A studio with more than one room: add each with its own price per hour. A class then picks its room in Setup.')}
+                                {t('A studio has at least one room, each with its own price per hour. Add more only if it has several: a class then picks its room in Setup.')}
                             </p>
                             {form.rooms.length > 0 && (
-                                <ol className="venueRoomRows">
+                                <ol className="venueRoomRows" aria-label={t('Rooms')}>
                                     {form.rooms.map((room, index) => {
                                         const issue = tried ? roomIssues[index] : {};
+                                        const last = room.active && inUse === 1;
                                         return (
                                             <li key={room.key} className={`venueRoomRow${room.active ? '' : ' isInactive'}`} data-room={room.id ?? 'new'}>
                                                 <Input
                                                     size="sm"
+                                                    isRequired
                                                     label={t('Room name')}
                                                     maxLength={60}
                                                     value={room.name}
@@ -208,6 +196,7 @@ const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
                                                 />
                                                 <Input
                                                     size="sm"
+                                                    isRequired
                                                     label={t('Price per hour (VND)')}
                                                     type="number"
                                                     min={0}
@@ -247,6 +236,8 @@ const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
                                                         variant="light"
                                                         className="venueDanger"
                                                         aria-label={t('Remove {name}', { name: room.name || t('this room') })}
+                                                        title={last ? t('A studio has at least one room.') : undefined}
+                                                        isDisabled={last}
                                                         onPress={() => removeRoom(room)}
                                                     >
                                                         <LuTrash2 />
@@ -256,6 +247,12 @@ const VenueDialog = ({ venue, classes = [], onClose, onSaved }) => {
                                         );
                                     })}
                                 </ol>
+                            )}
+                            {inUse === 1 && <p className="venueRoomsNote">{t('A studio has at least one room, so its only room can’t be removed.')}</p>}
+                            {inUse === 0 && (
+                                <p className="venueRoomsNote isError" role="alert">
+                                    {t('A studio needs at least one room in use: add one or use one again.')}
+                                </p>
                             )}
                             {removedSaved && (
                                 <p className="venueRoomsNote" role="status">

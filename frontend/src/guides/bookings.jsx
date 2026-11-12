@@ -145,7 +145,7 @@ export default {
                 {
                     id: 'rooms',
                     title: t('Rooms & prices'),
-                    body: t('Each room’s hourly price, how busy it is this week and this month, what it earned this month and its next booking. The pencil edits the room; See this room’s calendar shows that room alone. Under the rooms, Rented studios lists the studios where classes are taught, with their rent per hour.'),
+                    body: t('Each room’s hourly price, how busy it is this week and this month, what it earned this month and its next booking. The pencil edits the room; See this room’s calendar shows that room alone. Under the rooms, Rented studios lists the studios where classes are taught, each with its rooms and their rent per hour.'),
                     example: (
                         <ExFields
                             title={`Phòng A · ${formatVnd(250000)} ${t('per hour')}`}

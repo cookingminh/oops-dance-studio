@@ -2,7 +2,8 @@
 // its rooms), the "Rented studios" section of Bookings → Rooms & prices, the automatic studio rent in Expenses, and
 // their Activity lines.
 // Terms: rented studio → studio thuê ngoài · where it's taught / place → nơi dạy · rent → tiền thuê / giá thuê ·
-// inactive → ngừng dùng · a rented studio's room → phòng · name on the website → tên hiển thị trên website.
+// inactive → ngừng dùng · a rented studio's room → phòng (every studio has at least one; the rent is the room's) ·
+// name on the website → tên hiển thị trên website.
 export default {
     // Where a class is taught (src/ui/place, lib/place.js)
     'Open {name} in Maps': 'Mở {name} trên bản đồ',
@@ -14,12 +15,8 @@ export default {
     'Rented studios': 'Studio thuê ngoài',
     '{rent}/h': '{rent}/giờ',
     Inactive: 'Ngừng dùng',
-    'Its rent ({rent}/h × each session’s length) is added to the class’s costs after each session.':
-        'Tiền thuê ({rent}/giờ × thời lượng buổi) tự cộng vào chi phí của lớp sau mỗi buổi.',
     'The room’s rent ({rent}/h × each session’s length) is added to the class’s costs after each session.':
         'Tiền thuê phòng ({rent}/giờ × thời lượng buổi) tự cộng vào chi phí của lớp sau mỗi buổi.',
-    'No room picked': 'Chưa chọn phòng',
-    'The studio’s price: {rent}': 'Giá chung của studio: {rent}',
     'Name, instructor, where it’s taught, price, start date and level': 'Tên, giáo viên, nơi dạy, học phí, ngày bắt đầu và cấp độ',
     '{count} sessions a week · colours show where': '{count} buổi/tuần · mỗi màu là một nơi dạy',
     '{venue} is a rented studio: check with them that it’s free then.': '{venue} là studio thuê ngoài: nhớ hỏi bên đó xem giờ này còn trống không.',
@@ -32,11 +29,8 @@ export default {
     'No rented studios yet.': 'Chưa có studio thuê ngoài nào.',
     'No address yet': 'Chưa có địa chỉ',
     'Classes here': 'Lớp dạy ở đây',
-    'None right now': 'Hiện chưa có',
     'Visitors and students see this instead of the studio’s name.': 'Khách xem website và học viên thấy tên này thay cho tên studio.',
     'No classes in it': 'Chưa có lớp nào',
-    'No room picked: {rent}/h': 'Chưa chọn phòng: {rent}/giờ',
-    'Classes with no room picked': 'Lớp chưa chọn phòng',
     'Rent this month': 'Tiền thuê tháng này',
     'Delete {name}? This can’t be undone.': 'Xoá {name}? Không thể hoàn tác.',
     '{name} deleted.': 'Đã xoá {name}.',
@@ -63,13 +57,11 @@ export default {
     'The map link must start with https://.': 'Link bản đồ phải bắt đầu bằng https://.',
     'Without one, “Open in Maps” searches the address.': 'Không có link thì “Xem bản đồ” sẽ tìm theo địa chỉ.',
     'Optional. Paste the studio’s Google Maps link.': 'Không bắt buộc. Dán link Google Maps của studio.',
-    'Rent per hour (VND)': 'Giá thuê mỗi giờ (VND)',
-    'Each session taught there adds its rent to the class’s costs.': 'Mỗi buổi dạy ở đây sẽ cộng tiền thuê vào chi phí của lớp.',
-    '{rent} an hour: a 90-minute session costs {session}.': '{rent} một giờ: một buổi 90 phút mất {session}.',
-    'The price when a class here has no room picked. Each room has its own price below.':
-        'Giá áp dụng khi lớp dạy ở đây chưa chọn phòng. Mỗi phòng có giá riêng ở bên dưới.',
-    'A studio with more than one room: add each with its own price per hour. A class then picks its room in Setup.':
-        'Studio có nhiều phòng thì thêm từng phòng với giá thuê mỗi giờ riêng, rồi chọn phòng cho lớp trong mục Setting.',
+    'A studio has at least one room, each with its own price per hour. Add more only if it has several: a class then picks its room in Setup.':
+        'Studio nào cũng có ít nhất một phòng, mỗi phòng một giá thuê theo giờ. Chỉ thêm phòng khi studio có nhiều phòng: lúc đó lớp chọn phòng trong mục Setting.',
+    'A studio has at least one room.': 'Studio phải có ít nhất một phòng.',
+    'A studio has at least one room, so its only room can’t be removed.': 'Studio phải có ít nhất một phòng nên không bỏ được phòng duy nhất.',
+    'A studio needs at least one room in use: add one or use one again.': 'Studio cần ít nhất một phòng đang dùng: thêm phòng mới hoặc dùng lại một phòng.',
     'Room name': 'Tên phòng',
     'Give the room a name.': 'Đặt tên cho phòng.',
     'Two rooms have this name.': 'Có hai phòng trùng tên này.',
@@ -136,5 +128,7 @@ export default {
     'Two rooms have the same name.': 'Có hai phòng trùng tên.',
     'Give each room a name (up to 60 characters).': 'Đặt tên cho từng phòng (tối đa 60 ký tự).',
     'A room’s rent must be 0 or more.': 'Giá thuê phòng phải từ 0 trở lên.',
+    'A studio needs at least one room in use.': 'Studio cần ít nhất một phòng đang dùng.',
+    'Pick a room for this session.': 'Chọn phòng cho buổi này.',
     'A class is taught in one place: a room or a rented studio.': 'Mỗi lớp chỉ dạy ở một nơi: một phòng hoặc một studio thuê ngoài.',
 };

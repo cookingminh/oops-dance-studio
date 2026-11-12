@@ -355,19 +355,21 @@ function roomsFact(m, fmt) {
     return fmt.t('Rooms: {changes}', { changes: parts.length ? parts.join(', ') : fmt.t('new order') });
 }
 
-// A rented studio (area rooms, entity venues): added with its rent, address and rooms, changed (rent from → to,
-// set inactive or active again, its rooms, other fields), removed.
+// A rented studio (area rooms, entity venues): added with its address and rooms, changed (its rooms, set inactive
+// or active again, other fields), removed. The rent lives on the rooms: a row with them (meta.rooms) says the
+// rooms' prices; the studio's own rent (rent_per_hour, a mirror of its first room's) only reads in older rows.
 function venueSentence(row, fmt) {
     const m = row.meta ?? {};
     const c = row.changes ?? {};
-    const rent = money(m.rent) && fmt.t('{price} per hour', { price: money(m.rent) });
+    const withRooms = Array.isArray(m.rooms);
+    const rent = !withRooms && money(m.rent) && fmt.t('{price} per hour', { price: money(m.rent) });
     if (row.action === 'venue_added') return { key: '{actor} added the rented studio {title}', facts: [rent, m.address, roomsFact(m, fmt)] };
     if (row.action === 'venue_removed') return { key: '{actor} deleted the rented studio {title}', facts: [] };
     if (row.action !== 'venue_changed') return null;
     const others = Object.fromEntries(Object.entries(c).filter(([column]) => !['rent_per_hour', 'active', 'name'].includes(column)));
     const facts = [
         c.name && fmt.t('Was {name}', { name: c.name.from }),
-        c.rent_per_hour && fmt.t('Rent {from} → {to} per hour', { from: money(c.rent_per_hour.from), to: money(c.rent_per_hour.to) }),
+        !withRooms && c.rent_per_hour && fmt.t('Rent {from} → {to} per hour', { from: money(c.rent_per_hour.from), to: money(c.rent_per_hour.to) }),
         roomsFact(m, fmt),
         fieldsFact({ ...row, changes: others }, fmt),
     ];

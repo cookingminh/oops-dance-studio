@@ -4,17 +4,19 @@
 --     studio's brand): its area, e.g. "Bà Triệu". Left empty, it is the first part of the address (or the name).
 --     Visitors can no longer read venues.name; list_public_classes() gives the public name, and so does
 --     my_session_changes() to students. Staff, instructors and admins keep the studio's own name in the app.
---   * venue_rooms — a studio's rooms, each with its rent per hour; a studio without rooms keeps its one price.
---     A class can be taught in one room of its studio (classes.venue_room_id), and so can each session
---     (instructor_attendance.venue_room_id: copied from the class, and sessions not started yet follow the class).
---     The room always belongs to the studio: choosing a room sets the studio, moving to another studio drops it.
---   * A session's rent is its room's rent per hour, else the studio's.
---   * venue_save() also takes p_public_name and p_rooms (jsonb [{ id?, name, rent, active? }], in order): rooms
---     left out are deleted, or set inactive when a class or a session was in them. venue_rooms_list() gives staff
---     the rooms with their rents.
+--   * venue_rooms — a studio's rooms, each with its rent per hour. Every studio has at least one (a studio that had
+--     none gets "Phòng 1" at its old rent); the rent lives on the rooms (venues.rent_per_hour only mirrors the first
+--     active room's, for older readers). A class is taught in one room of its studio (classes.venue_room_id), and so
+--     is each session (instructor_attendance.venue_room_id: copied from the class; sessions not started yet follow
+--     the class). The room always belongs to the studio: choosing a room sets the studio, moving to another studio
+--     takes its first room, a studio picked without a room gets its first room.
+--   * A session's rent is its room's rent per hour.
+--   * venue_save() also takes p_public_name and p_rooms (jsonb [{ id?, name, rent, active? }], in order; at least one
+--     active room): rooms left out are deleted, or set inactive when a class or a session was in them. Without
+--     p_rooms, a studio that has no room yet gets "Phòng 1" at p_rent. venue_rooms_list() gives staff the rents.
 --   * session_set_venue_room(): staff move one session to another room of its studio (the room changed that
 --     day); a rent already charged for it is worked out again at the new room's rate.
---   * seed_demo_venue_rooms(): rooms for two of the demo studios.
+--   * seed_demo_venue_rooms(): two rooms at Studio Thỏ and at Baladi, one at every other demo studio.
 
 -- ---------------------------------------------------------------------------
 -- The website's name for a studio
@@ -72,7 +74,7 @@ alter table public.instructor_attendance
 create index instructor_attendance_venue_room_idx on public.instructor_attendance (venue_room_id) where venue_room_id is not null;
 
 -- The room belongs to the studio: picking a room sets the studio; moving to another studio (or a room of
--- the studio's own, or nowhere) drops the old room.
+-- the studio's own, or nowhere) drops the old room; at a studio without a room picked, its first room.
 create function private.venue_room_fits()
 returns trigger
 language plpgsql
@@ -87,6 +89,10 @@ begin
   end if;
   if new.venue_id is null then
     new.venue_room_id := null;
+  elsif new.venue_room_id is null then
+    -- Always in a room: the studio's first one.
+    select r.id into new.venue_room_id from public.venue_rooms r
+     where r.venue_id = new.venue_id order by r.active desc, r.position, r.id limit 1;
   end if;
   return new;
 end;
@@ -96,6 +102,15 @@ create trigger venue_room_fits before insert or update of venue_id, venue_room_i
   for each row execute function private.venue_room_fits();
 create trigger venue_room_fits before insert or update of venue_id, venue_room_id on public.instructor_attendance
   for each row execute function private.venue_room_fits();
+
+-- Every studio has a room: one that had none gets "Phòng 1" at its rent; classes and sessions there go in it.
+insert into public.venue_rooms (venue_id, name, rent_per_hour, position)
+select v.id, 'Phòng 1', v.rent_per_hour, 0 from public.venues v
+ where not exists (select 1 from public.venue_rooms r where r.venue_id = v.id);
+update public.classes c set venue_room_id = (select r.id from public.venue_rooms r where r.venue_id = c.venue_id order by r.position, r.id limit 1)
+ where c.venue_id is not null and c.venue_room_id is null;
+update public.instructor_attendance a set venue_room_id = (select r.id from public.venue_rooms r where r.venue_id = a.venue_id order by r.position, r.id limit 1)
+ where a.venue_id is not null and a.venue_room_id is null;
 
 -- A new session without a place takes its class's studio and room (the studio's own room is copied by
 -- whoever inserts it).
@@ -215,7 +230,8 @@ $$;
 drop function public.venue_save(bigint, text, text, text, numeric, text, boolean);
 
 -- Add (p_id null) or change a studio → the studio. p_rooms (when given) is the whole list of its rooms, in
--- order: [{ id?, name, rent, active? }]. Logged in the activity log (area 'rooms').
+-- order: [{ id?, name, rent, active? }], at least one active; without it, a studio with no room yet gets
+-- "Phòng 1" at p_rent. Logged in the activity log (area 'rooms').
 create function public.venue_save(
   p_id          bigint,
   p_name        text,
@@ -350,6 +366,18 @@ begin
     end loop;
   end if;
 
+  if p_rooms is null and not exists (select 1 from public.venue_rooms r where r.venue_id = v.id) then
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v.id, 'Phòng 1', round(p_rent), 0);
+  end if;
+  if not exists (select 1 from public.venue_rooms r where r.venue_id = v.id and r.active) then
+    raise exception 'INVALID_INPUT: a studio needs at least one room';
+  end if;
+  -- The studio's own rent only mirrors its first room's (older readers).
+  update public.venues set rent_per_hour = (select r.rent_per_hour from public.venue_rooms r
+                                             where r.venue_id = v.id and r.active order by r.position, r.id limit 1)
+   where id = v.id
+  returning * into v;
+
   select coalesce(jsonb_agg(jsonb_build_object('name', r.name, 'rent', r.rent_per_hour, 'active', r.active)
                             order by r.position, r.id), '[]'::jsonb)
     into v_rooms_after from public.venue_rooms r where r.venue_id = v.id;
@@ -373,8 +401,8 @@ revoke execute on function public.venue_save(bigint, text, text, text, numeric, 
 grant execute on function public.venue_save(bigint, text, text, text, numeric, text, boolean, text, jsonb), public.venue_rooms_list()
   to authenticated;
 
--- One session in another room of its studio (p_room null = no particular room: the studio's own rent). A rent
--- already charged for it follows the new rate (not logged on its own: the session's change is).
+-- One session in another room of its studio. A rent already charged for it follows the new rate (not logged on
+-- its own: the session's change is).
 create function public.session_set_venue_room(p_session bigint, p_room bigint)
 returns public.instructor_attendance
 language plpgsql
@@ -404,7 +432,10 @@ begin
   if a.status = 'cancelled' then
     raise exception 'INVALID_STATE: the session was called off';
   end if;
-  if p_room is not null and not exists (select 1 from public.venue_rooms x where x.id = p_room and x.venue_id = a.venue_id) then
+  if p_room is null then
+    raise exception 'INVALID_INPUT: pick a room';
+  end if;
+  if not exists (select 1 from public.venue_rooms x where x.id = p_room and x.venue_id = a.venue_id) then
     raise exception 'INVALID_INPUT: that room isn''t at this studio';
   end if;
 
@@ -527,7 +558,7 @@ as $$
 $$;
 
 -- ---------------------------------------------------------------------------
--- Demo: rooms at two of the studios
+-- Demo: two rooms at Studio Thỏ and at Baladi, one at every other studio
 -- ---------------------------------------------------------------------------
 create function public.seed_demo_venue_rooms()
 returns integer
@@ -542,21 +573,39 @@ declare
   v_big bigint;
   v_small bigint;
   v_one bigint;
+  v_made integer := 0;
 begin
-  if v_tho is null or v_baladi is null or exists (select 1 from public.venue_rooms) then
-    return 0;
-  end if;
-  insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_tho, 'Phòng lớn', 250000, 0) returning id into v_big;
-  insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_tho, 'Phòng nhỏ', 180000, 1) returning id into v_small;
-  insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_baladi, 'Phòng 1', 220000, 0) returning id into v_one;
-  insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_baladi, 'Phòng 2', 200000, 1);
-
   perform set_config('oops.activity', 'off', true);
-  update public.classes set venue_room_id = v_big where venue_id = v_tho and name in ('Trending', 'Girlstyle 1');
-  update public.classes set venue_room_id = v_small where venue_id = v_tho and venue_room_id is null;
-  update public.classes set venue_room_id = v_one where venue_id = v_baladi;
+  if v_tho is not null and not exists (select 1 from public.venue_rooms where venue_id = v_tho) then
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_tho, 'Phòng lớn', 250000, 0) returning id into v_big;
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_tho, 'Phòng nhỏ', 180000, 1) returning id into v_small;
+    update public.classes set venue_room_id = v_big where venue_id = v_tho and name in ('Trending', 'Girlstyle 1');
+    update public.classes set venue_room_id = v_small where venue_id = v_tho and venue_room_id is null;
+    v_made := v_made + 2;
+  end if;
+  if v_baladi is not null and not exists (select 1 from public.venue_rooms where venue_id = v_baladi) then
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_baladi, 'Phòng 1', 220000, 0) returning id into v_one;
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position) values (v_baladi, 'Phòng 2', 200000, 1);
+    update public.classes set venue_room_id = v_one where venue_id = v_baladi;
+    v_made := v_made + 2;
+  end if;
+  -- Every other studio: one room at its rent.
+  with made as (
+    insert into public.venue_rooms (venue_id, name, rent_per_hour, position)
+    select v.id, 'Phòng 1', v.rent_per_hour, 0 from public.venues v
+     where not exists (select 1 from public.venue_rooms r where r.venue_id = v.id)
+    returning 1)
+  select v_made + count(*)::int into v_made from made;
+  -- Classes and sessions there go in its first room (sessions not started yet follow their class's).
+  update public.classes c set venue_room_id = (select r.id from public.venue_rooms r where r.venue_id = c.venue_id order by r.position, r.id limit 1)
+   where c.venue_id is not null and c.venue_room_id is null;
+  update public.instructor_attendance a set venue_room_id = coalesce(
+           (select c.venue_room_id from public.classes c where c.id = a.class_id and c.venue_id = a.venue_id),
+           (select r.id from public.venue_rooms r where r.venue_id = a.venue_id order by r.position, r.id limit 1))
+   where a.venue_id is not null and a.venue_room_id is null;
+  update public.venues v set rent_per_hour = (select r.rent_per_hour from public.venue_rooms r where r.venue_id = v.id order by r.position, r.id limit 1);
   perform set_config('oops.activity', '', true);
-  return 4;
+  return v_made;
 end;
 $$;
 

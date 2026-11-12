@@ -174,9 +174,14 @@ export function formatValue(column, value, entity, fmt) {
     return String(value);
 }
 
+// The columns an edit changed, as they read: a rented studio's rent_per_hour only mirrors its first room's once it
+// has rooms (meta.rooms), so it isn't the studio's own change then.
+const changedColumns = (row) =>
+    Object.entries(row.changes ?? {}).filter(([column]) => !(row.entity === 'venues' && column === 'rent_per_hour' && Array.isArray(row.meta?.rooms)));
+
 // `changes` → [{ column, label, from, to }] (formatted), in the table's own order.
 export function changeRows(row, fmt) {
-    return Object.entries(row.changes ?? {}).map(([column, { from, to }]) => ({
+    return changedColumns(row).map(([column, { from, to }]) => ({
         column,
         label: fmt.t(fieldLabel(column, row.entity)),
         from: formatValue(column, from, row.entity, fmt),
@@ -186,7 +191,7 @@ export function changeRows(row, fmt) {
 
 // "Price, Room" — the fields an edit touched (for the one-line facts).
 export function changedFields(row, fmt) {
-    const columns = Object.keys(row.changes ?? {});
+    const columns = changedColumns(row).map(([column]) => column);
     if (!columns.length) return '';
     const labels = [...new Set(columns.map((column) => fmt.t(SUMMARY_LABELS[column] ?? fieldLabel(column, row.entity))))];
     return labels.length > 3 ? fmt.t('{fields} and {count} more', { fields: labels.slice(0, 2).join(', '), count: labels.length - 2 }) : labels.join(', ');

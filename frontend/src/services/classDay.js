@@ -21,7 +21,7 @@ export const studioDayOf = (timestamp) => (timestamp ? studioDate.format(new Dat
 
 const SESSION = 'id, class_id, date, status, is_extra, start_time, end_time, room_id, venue_id, venue_room_id, checkin_at, checkout_at, makes_up';
 
-// The class's sessions in a month. (attendanceHub.listSessionRows has no room at a rented studio.)
+// The class's sessions in a month, light (with the room at a rented studio).
 export async function listMonthSessions(classId, month) {
     return unwrap(
         await supabase
@@ -66,9 +66,9 @@ export async function loadClassMonth(classId, month) {
     return { costs, sessions, income, rooms };
 }
 
-// Staff: one session in another room of its studio (roomId null = no particular room, the studio's own price).
-// A rent already charged for it is worked out again at the new room's price. Refused for a session called off
-// (INVALID_STATE) or a room of another studio (INVALID_INPUT). → the session row.
+// Staff: one session in another room of its studio (a session at a studio is always in one of its rooms). A rent
+// already charged for it is worked out again at the new room's price. Refused for a session called off
+// (INVALID_STATE), no room or a room of another studio (INVALID_INPUT). → the session row.
 export async function setSessionRoom(sessionId, roomId) {
-    return unwrap(await supabase.rpc('session_set_venue_room', { p_session: sessionId, p_room: roomId ?? null }));
+    return unwrap(await supabase.rpc('session_set_venue_room', { p_session: sessionId, p_room: roomId }));
 }

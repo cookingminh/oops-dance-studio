@@ -1,12 +1,13 @@
 -- Rented studios' rooms and their name on the website (api-contract §3 venues / venue_rooms, §5 Venues):
---   * staff give a studio rooms with their own rents (venue_save p_rooms); a room left out goes, or turns
---     inactive when a class was in it;
---   * a class in a room is at that room's studio; moving it to another studio drops the room; its sessions
---     not started yet follow, and a session's rent is its room's;
+--   * every studio has at least one room; staff give it rooms with their own rents (venue_save p_rooms); a room
+--     left out goes, or turns inactive when a class was in it;
+--   * a class in a room is at that room's studio; at a studio without a room picked it takes the first room;
+--     moving it to another studio takes that one's first room; its sessions not started yet follow, and a
+--     session's rent is its room's;
 --   * the website and students see the studio's public name (its area), staff and instructors its own name.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(23);
+select plan(28);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -68,6 +69,11 @@ select is((select public_name from public.venues where name = 'Room Test Studio'
   'left empty, its public name is its address''s first part');
 select throws_like($$ select public.venue_save(null, 'Room Test Two', null, null, 0, null, true, null,
   '[{"name": "A"}, {"name": "a"}]'::jsonb) $$, 'INVALID_INPUT: two rooms have the same name', 'two rooms can''t share a name');
+select throws_like($$ select public.venue_save(null, 'Room Test Empty', null, null, 0, null, true, null, '[]'::jsonb) $$,
+  'INVALID_INPUT: a studio needs at least one room', 'a studio needs a room');
+select lives_ok($$ select public.venue_save(null, 'Room Test Plain', 'Phố Một, Hà Nội', null, 120000) $$, 'a studio saved without its rooms list…');
+select is((select string_agg(r.name || ':' || r.rent_per_hour, ', ') from public.venue_rooms_list() r join public.venues v on v.id = r.venue_id
+            where v.name = 'Room Test Plain'), 'Phòng 1:120000', '…gets "Phòng 1" at that rent');
 
 -- Names can swap, and a room removed can come back under its name, in one save.
 select public.venue_save(null, 'Room Swap Studio', null, null, 0, null, true, null, '[{"name": "A", "rent": 1000}, {"name": "B", "rent": 2000}]'::jsonb);
@@ -85,6 +91,9 @@ select lives_ok($$ select public.venue_save((select id from public.venues where 
 select tests.logout();
 insert into public.classes (id, name, instructor_id, price, starts_on)
 values (900261, 'Room Class', '00000000-0000-4000-b000-000000000262', 500000, public.studio_today() - 30);
+update public.classes set venue_id = (select id from public.venues where name = 'Room Test Studio') where id = 900261;
+select is(((select venue_room_id from public.classes where id = 900261)), tests.room('Big room'),
+  'a class put at a studio without a room picked is in its first room');
 update public.classes set venue_room_id = tests.room('Big room') where id = 900261;
 select is((select v.name from public.classes c join public.venues v on v.id = c.venue_id where c.id = 900261), 'Room Test Studio',
   'a class put in a room is at that room''s studio');
@@ -118,6 +127,10 @@ select tests.logout();
 select is((select amount from public.expenses e join public.instructor_attendance a on a.id = e.session_id
             where a.class_id = 900261 and a.date = public.studio_today() - 1), 450000::numeric,
   'its rent is worked out again: 1.5 h × 300,000');
+select tests.login_as('00000000-0000-4000-b000-000000000261');
+select throws_like($$ select public.session_set_venue_room(
+  (select id from public.instructor_attendance where class_id = 900261 and date = public.studio_today() - 1), null) $$,
+  'INVALID_INPUT: pick a room', 'a session is always in a room');
 select tests.login_as('00000000-0000-4000-b000-000000000262');
 select throws_like($$ select public.session_set_venue_room(
   (select id from public.instructor_attendance where class_id = 900261 and date = public.studio_today() - 1), null) $$,
@@ -131,12 +144,11 @@ select lives_ok($$ select public.venue_save((select id from public.venues where 
   'staff save the studio without the small room');
 select is(tests.rooms(), 'Big room:320000:true, Small room:160000:false', 'a used room turns inactive instead of going');
 
--- Moving the class to another studio drops the room.
+-- Moving the class to another studio takes that studio's first room.
 select tests.logout();
-update public.classes set venue_id = (select id from public.venues where name = 'Bà Triệu') where id = 900261
-  and exists (select 1 from public.venues where name = 'Bà Triệu');
-update public.classes set venue_id = null where id = 900261 and not exists (select 1 from public.venues where name = 'Bà Triệu');
-select is((select venue_room_id from public.classes where id = 900261), null, 'moving the class to another studio drops the room');
+update public.classes set venue_id = (select id from public.venues where name = 'Room Swap Studio') where id = 900261;
+select is((select venue_room_id from public.classes where id = 900261), tests.swap_room('B'),
+  'moving the class to another studio puts it in that studio''s first room');
 
 -- ---------------------------------------------------------------------------
 -- Who sees which name

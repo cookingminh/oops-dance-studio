@@ -7,25 +7,21 @@ import { PlaceIcon } from '@/ui/place/PlaceParts';
 const POPOVER = { popoverContent: 'adminPortal' };
 const NONE = 'none';
 
-// What the picker offers of the rented studios (services/venues.js listVenues, with their rooms): the active ones,
-// plus the class's own place if it was set inactive since. A studio with rooms offers its active rooms (the studio
-// alone only while it is the class's place); one without rooms is one option at its own price.
+// What the picker offers of the rented studios (services/venues.js listVenues, with their rooms): the active ones and
+// their active rooms, plus the class's own room if it (or its studio) was set inactive since. A class at a studio is
+// always in one of its rooms (the rent lives on the rooms).
 const offerOf = (venues, value) =>
     venues
         .map((venue) => {
             const rooms = (venue.rooms ?? []).filter((room) => room.active || value === `vroom:${room.id}`);
-            const shown = venue.active || value === `venue:${venue.id}` || rooms.some((room) => value === `vroom:${room.id}`);
-            return shown && { venue, rooms, hasRooms: rooms.length > 0 };
+            const shown = venue.active || rooms.some((room) => value === `vroom:${room.id}`);
+            return shown && rooms.length > 0 && { venue, rooms };
         })
         .filter(Boolean);
 
-// The rented studio (and its room) a picker key points at, or null.
+// The rented studio and its room a picker key points at, or null.
 function pickedOf(venues, value) {
     const [kind, id] = value.split(':');
-    if (kind === 'venue') {
-        const venue = venues.find((item) => String(item.id) === id);
-        return venue ? { venue, room: null } : null;
-    }
     if (kind !== 'vroom') return null;
     for (const venue of venues) {
         const room = (venue.rooms ?? []).find((item) => String(item.id) === id);
@@ -34,58 +30,49 @@ function pickedOf(venues, value) {
     return null;
 }
 
-// "Where it's taught": one of the studio's rooms, a rented studio or one of its rooms (lib/place.js keys 'room:1' /
-// 'venue:3' / 'vroom:7', '' = not set). Under a rented studio a hint says its rent (the room's, else the
-// studio's) becomes the class's cost; `roomHint` is what one of the studio's own rooms shows.
+// "Where it's taught": one of the studio's rooms or a room of a rented studio (lib/place.js keys 'room:1' /
+// 'vroom:7', '' = not set). A rented studio with one room is one option ("Bà Triệu", its room and price); one with
+// several lists them under its name. Under a rented studio's room a hint says its rent becomes the class's cost;
+// `roomHint` is what one of the studio's own rooms shows.
 const PlaceField = ({ value, onChange, rooms, venues, isDisabled = false, roomHint }) => {
     const { t } = useI18n();
     const offer = offerOf(venues, value);
     const picked = pickedOf(venues, value);
     const perHour = (rent) => t('{rent}/h', { rent: formatVnd(rent) });
-    let hint = roomHint;
-    if (picked?.room) {
-        hint = t('The room’s rent ({rent}/h × each session’s length) is added to the class’s costs after each session.', { rent: formatVnd(picked.room.rent_per_hour) });
-    } else if (picked) {
-        hint = t('Its rent ({rent}/h × each session’s length) is added to the class’s costs after each session.', { rent: formatVnd(picked.venue.rent_per_hour) });
-    }
+    const hint = picked
+        ? t('The room’s rent ({rent}/h × each session’s length) is added to the class’s costs after each session.', { rent: formatVnd(picked.room.rent_per_hour) })
+        : roomHint;
     const icon = (kind) => <PlaceIcon place={{ kind }} className="text-default-400" />;
     const inactive = (item) => (item.active ? null : t('Inactive'));
 
-    // A studio without rooms: one option.
-    const studioItem = ({ venue }) => (
-        <SelectItem key={`venue:${venue.id}`} textValue={venue.name} description={[perHour(venue.rent_per_hour), inactive(venue)].filter(Boolean).join(' · ')} startContent={icon('venue')}>
+    // A studio with one room: one option, "Bà Triệu" with "Phòng 1 · 250.000 ₫/h".
+    const studioItem = ({ venue, rooms: [room] }) => (
+        <SelectItem
+            key={`vroom:${room.id}`}
+            textValue={placeLabel(venue, room)}
+            description={[room.name, perHour(room.rent_per_hour), inactive(venue) ?? inactive(room)].filter(Boolean).join(' · ')}
+            startContent={icon('venue')}
+        >
             {venue.name}
         </SelectItem>
     );
-    // A studio with rooms: its own section, a room per option; the studio alone only while the class is there.
+    // A studio with several rooms: its own section, a room per option.
     const roomsSection = ({ venue, rooms: venueRooms }) => (
         <SelectSection key={`v${venue.id}`} title={[venue.name, inactive(venue)].filter(Boolean).join(' · ')} showDivider>
-            {[
-                value === `venue:${venue.id}` && (
-                    <SelectItem
-                        key={`venue:${venue.id}`}
-                        textValue={venue.name}
-                        description={t('The studio’s price: {rent}', { rent: perHour(venue.rent_per_hour) })}
-                        startContent={icon('venue')}
-                    >
-                        {t('No room picked')}
-                    </SelectItem>
-                ),
-                ...venueRooms.map((room) => (
-                    <SelectItem
-                        key={`vroom:${room.id}`}
-                        textValue={placeLabel(venue, room)}
-                        description={[perHour(room.rent_per_hour), inactive(room)].filter(Boolean).join(' · ')}
-                        startContent={icon('venue')}
-                    >
-                        {room.name}
-                    </SelectItem>
-                )),
-            ].filter(Boolean)}
+            {venueRooms.map((room) => (
+                <SelectItem
+                    key={`vroom:${room.id}`}
+                    textValue={placeLabel(venue, room)}
+                    description={[perHour(room.rent_per_hour), inactive(room)].filter(Boolean).join(' · ')}
+                    startContent={icon('venue')}
+                >
+                    {room.name}
+                </SelectItem>
+            ))}
         </SelectSection>
     );
 
-    const single = offer.filter((item) => !item.hasRooms);
+    const single = offer.filter((item) => item.rooms.length === 1);
     return (
         <Select
             label={t('Where it’s taught')}
@@ -113,7 +100,7 @@ const PlaceField = ({ value, onChange, rooms, venues, isDisabled = false, roomHi
                         {single.map(studioItem)}
                     </SelectSection>
                 ),
-                ...offer.filter((item) => item.hasRooms).map(roomsSection),
+                ...offer.filter((item) => item.rooms.length > 1).map(roomsSection),
                 <SelectSection key="none">
                     <SelectItem key={NONE} textValue={t('Not set')}>
                         {t('Not set')}

@@ -49,6 +49,8 @@ const INVALID_INPUT_REASONS = [
     [/two rooms have the same name/i, 'Two rooms have the same name.'],
     [/give each room a name/i, 'Give each room a name (up to 60 characters).'],
     [/room's rent must be 0 or more/i, 'A room’s rent must be 0 or more.'],
+    [/a studio needs at least one room/i, 'A studio needs at least one room in use.'],
+    [/^pick a room/i, 'Pick a room for this session.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
 ];
 

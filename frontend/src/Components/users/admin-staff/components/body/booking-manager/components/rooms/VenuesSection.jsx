@@ -16,7 +16,7 @@ const nothing = () => Promise.resolve([]);
 // "Rented studios", under the rooms: the studios rented by the hour where classes are taught while the
 // rooms are closed, each with the name the website shows and its rooms (each with its own rent). Staff and
 // admins add, change and remove them; a studio classes were taught at can only be set inactive. The rent of
-// each session taught there (its room's, else the studio's) becomes an expense of its class by itself.
+// each session taught there (its room's) becomes an expense of its class by itself.
 const VenuesSection = ({ today, isAdmin }) => {
     const { t } = useI18n();
     const toast = useToast();

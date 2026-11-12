@@ -251,11 +251,8 @@ export default {
     'Open the Tuition tab': 'Mở tab Học phí',
     'Day total (in − out)': 'Cả ngày (thu − chi)',
     'Room for this session': 'Phòng cho buổi này',
-    'No particular room': 'Không chọn phòng',
-    'The studio’s own price': 'Giá chung của studio',
     'No place set': 'Chưa chọn nơi học',
     'This session is now in {room}.': 'Buổi này đã chuyển sang {room}.',
-    'This session is no longer in a particular room.': 'Buổi này không còn gắn với phòng nào.',
     'The room can be changed once this session’s record exists (it is made the week the session runs).':
         'Đổi phòng được khi buổi này đã có trong bảng chấm công (hệ thống tạo vào tuần diễn ra buổi học).',
     'Rent already charged: {amount}. Picking another room works it out again at that room’s price.':

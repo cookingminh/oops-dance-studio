@@ -1,6 +1,6 @@
 // Where a class or one of its sessions is taught: one of the studio's rooms or a rented studio (venue,
-// services/venues.js), maybe in one of that studio's rooms (venue_rooms). A session's own place comes first
-// (rows that embed `room` / `venue`), then its class's.
+// services/venues.js) and one of that studio's rooms (venue_rooms: every studio has at least one). A session's own
+// place comes first (rows that embed `room` / `venue`), then its class's.
 //
 // Place { kind: 'room' | 'venue' | null, id, name, studio, roomName, address, mapUrl }
 //   name      how the place reads (placeLabel): staff and instructors see a rented studio's own name and its
@@ -69,8 +69,9 @@ export function addressAfterName(place) {
 }
 
 // The class's place as one picker key and back to the columns to write:
-//   'room:1' (a studio room) · 'venue:3' (a rented studio, no room picked) · 'vroom:7' (room 7 of a rented
-//   studio) · '' (not set).
+//   'room:1' (a studio room) · 'vroom:7' (room 7 of a rented studio) · '' (not set). At a rented studio a class is
+//   always in one of its rooms; 'venue:3' (the studio alone) only stands for a row without its room, which the
+//   server puts in the studio's first room.
 export const placeKeyOf = (cls) => {
     if (cls?.venue_room_id) return `vroom:${cls.venue_room_id}`;
     if (cls?.venue_id) return `venue:${cls.venue_id}`;

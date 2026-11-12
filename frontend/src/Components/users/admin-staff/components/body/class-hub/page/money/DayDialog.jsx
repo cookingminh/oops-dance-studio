@@ -85,7 +85,7 @@ const DayDialog = ({ cls, day, today, now, places, showRent, onClose, onChanged,
         try {
             await setSessionRoom(session.row.id, roomId);
             const room = places.rooms.find((item) => item.id === roomId);
-            toast.success(room ? t('This session is now in {room}.', { room: room.name }) : t('This session is no longer in a particular room.'));
+            toast.success(t('This session is now in {room}.', { room: room?.name ?? '' }));
             onChanged();
         } catch (error) {
             toast.error(error);

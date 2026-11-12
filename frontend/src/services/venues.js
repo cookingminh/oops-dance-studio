@@ -3,12 +3,14 @@ import { unwrap } from './errors';
 
 // Rented studios (supabase/migrations/20261117001300_venues.sql, 20261117001800_venue_rooms.sql, api-contract §3
 // venues): while the studio's own rooms are closed, classes are taught in studios rented by the hour. A class is
-// taught in a room (classes.room_id) or at a venue (classes.venue_id), never both, maybe in one of the venue's
-// rooms (classes.venue_room_id); its sessions follow it.
+// taught in a room (classes.room_id) or at a venue (classes.venue_id), never both; at a venue always in one of its
+// rooms (classes.venue_room_id: the server puts it in the first one when none is picked); its sessions follow it.
 //
 // Venue { id, name, public_name, address, map_url, rent_per_hour, note, active, created_at, updated_at,
 //         rooms: [VenueRoom] (listVenues) }
 // VenueRoom { id, venue_id, name, rent_per_hour, active, position }
+// Every venue has at least one active room and the rent lives on the rooms: venues.rent_per_hour only mirrors the
+// first active room's (for older readers), so never show it as the studio's own price.
 // `name` is the studio's own (another studio's brand): the app shows it to staff, instructors and admins; the
 // website and students see `public_name` (its area, e.g. "Bà Triệu"). Visitors can't read `name` at all.
 // Everyone signed in may read id, name, public_name, address, map_url and active, and a room's id, venue_id, name,
@@ -35,16 +37,20 @@ export async function listVenues() {
 
 // Staff: add (no id) or change a venue → the venue. Logged in the activity log.
 //   publicName  the name on the website ('' = the first part of the address)
-//   rooms       the whole ordered list of its rooms [{ id?, name, rent, active? }] (undefined = leave them as they
-//               are): rooms left out are deleted, or set inactive when a class or a session was in them.
+//   rooms       the whole ordered list of its rooms [{ id?, name, rent, active? }], at least one active
+//               (INVALID_INPUT otherwise); undefined = leave them as they are. Rooms left out are deleted, or set
+//               inactive when a class or a session was in them.
+//   rent        only without `rooms`: the price of the "Phòng 1" a venue without rooms gets (with `rooms`, the
+//               first active room's rent is sent)
 export async function saveVenue(id, { name, publicName, address, mapUrl, rent, note, active, rooms }) {
+    const firstRoom = rooms?.find((room) => room.active ?? true);
     return unwrap(
         await supabase.rpc('venue_save', {
             p_id: id ?? null,
             p_name: name,
             p_address: address?.trim() || null,
             p_map_url: mapUrl?.trim() || null,
-            p_rent: Number(rent) || 0,
+            p_rent: Number(firstRoom ? firstRoom.rent : rent) || 0,
             p_note: note?.trim() || null,
             p_active: active,
             p_public_name: publicName?.trim() || null,

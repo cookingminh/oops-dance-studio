@@ -5,10 +5,11 @@ import { useI18n } from '@/i18n/i18nContext';
 import { sessionState } from '../../hubModel';
 import { rentFor, rentOfSession, sessionPlace } from './moneyDays';
 
-// The class's session that day: time, how it went and where ("Studio · Room"). At a rented studio with rooms,
-// the room can be changed for this session only (session_set_venue_room); each choice shows the rent it means
-// for the session (admin), and a rent already charged is worked out again at the new room's price.
-//   session: monthSessions() entry   costs: the day's costs   onRoom(roomId | null)   saving: the room being set
+// The class's session that day: time, how it went and where ("Studio · Room"). At a rented studio with several
+// rooms, the room can be changed for this session only (session_set_venue_room): the picker lists the studio's
+// rooms, each with the rent it means for the session (admin); a rent already charged is worked out again at the new
+// room's price. A session at a studio is always in one of its rooms.
+//   session: monthSessions() entry   costs: the day's costs   onRoom(roomId)   saving: the room being set
 const DaySession = ({ session, cls, today, now, places, costs, showRent, saving, onRoom }) => {
     const { t } = useI18n();
     const state = sessionState(session, today, now);
@@ -16,17 +17,12 @@ const DaySession = ({ session, cls, today, now, places, costs, showRent, saving,
     const row = session.row;
     const cancelled = row?.status === 'cancelled';
     const rent = rentOfSession(costs, row?.id);
-    const hasRooms = Boolean(place.venue) && place.rooms.length > 0;
+    // Only a studio with more than one room leaves a choice.
+    const hasRooms = Boolean(place.venue) && place.rooms.length > 1;
     const canPick = hasRooms && row && !cancelled;
-    const current = row ? row.venue_room_id ?? null : null;
-    const studioRent = place.venue?.rent_per_hour;
+    const current = row?.venue_room_id ?? null;
 
-    const options = canPick
-        ? [
-            ...place.rooms.map((room) => ({ id: room.id, name: room.name, rent: rentFor(room.rent_per_hour, session.start, session.end) })),
-            { id: null, name: t('No particular room'), rent: rentFor(studioRent, session.start, session.end), hint: t('The studio’s own price') },
-        ]
-        : [];
+    const options = canPick ? place.rooms.map((room) => ({ id: room.id, name: room.name, rent: rentFor(room.rent_per_hour, session.start, session.end) })) : [];
 
     let note = null;
     if (hasRooms && !row) note = t('The room can be changed once this session’s record exists (it is made the week the session runs).');
@@ -52,7 +48,7 @@ const DaySession = ({ session, cls, today, now, places, costs, showRent, saving,
                         const checked = option.id === current;
                         return (
                             <button
-                                key={option.id ?? 'none'}
+                                key={option.id}
                                 type="button"
                                 role="radio"
                                 aria-checked={checked}
@@ -61,7 +57,7 @@ const DaySession = ({ session, cls, today, now, places, costs, showRent, saving,
                                 onClick={() => !checked && onRoom(option.id)}
                             >
                                 <span className="mcRoomName">{option.name}</span>
-                                {showRent && <span className="mcRoomRent">{option.rent ? formatVnd(option.rent) : option.hint ?? '—'}</span>}
+                                {showRent && <span className="mcRoomRent">{option.rent ? formatVnd(option.rent) : '—'}</span>}
                                 {saving === option.id && <Spinner size="sm" color="danger" className="mcRoomSpin" />}
                             </button>
                         );

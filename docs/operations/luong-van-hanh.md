@@ -51,15 +51,15 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
   7. **Thiết lập**: thông tin, lịch tuần, ảnh, kết thúc / mở lại / xoá lớp.
 - **Nơi học**: mỗi lớp học ở **một phòng của studio** (Phòng A, Phòng B) **hoặc một studio thuê ngoài** (ví dụ Studio
   Baladi Vũ Thạnh, Studio Thỏ, Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân) — và nếu studio đó có nhiều phòng thì
-  **một phòng của nó** (ví dụ Studio Thỏ · Phòng lớn), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo.
+  **một phòng của nó** (ví dụ Studio Thỏ · Phòng lớn; studio chỉ có một phòng thì tự vào phòng đó), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo.
 - **Tên studio thuê không hiện ra ngoài** (đó là thương hiệu của studio khác): website và học viên chỉ thấy **tên hiển
   thị** — vị trí, ví dụ "Bà Triệu", "Đê La Thành nhỏ" — kèm địa chỉ và link bản đồ. Staff, giáo viên, admin thấy tên thật
   và phòng ("Studio Thỏ · Phòng lớn"). **Giá thuê chỉ staff/admin thấy**.
 - **Studio thuê ngoài** (trang *Đặt phòng* → *Phòng & studio*): thêm / sửa tên, **tên hiển thị trên website** (để trống thì
-  lấy phần đầu của địa chỉ), địa chỉ, link bản đồ, **giá thuê mỗi giờ** (giá khi không chọn phòng nào), **các phòng** —
-  mỗi phòng một giá thuê theo giờ — và ngưng dùng. Studio / phòng đã từng có lớp dạy thì chỉ ngưng dùng được, không xoá.
+  lấy phần đầu của địa chỉ), địa chỉ, link bản đồ, **các phòng** — studio nào cũng có ít nhất **một phòng**, mỗi phòng
+  một giá thuê theo giờ; nhiều phòng thì thêm phòng — và ngưng dùng. Studio / phòng đã từng có lớp dạy thì chỉ ngưng dùng được, không xoá.
 - **Tiền thuê tự thành chi phí**: mỗi buổi dạy ở studio thuê ngoài, khi buổi kết thúc → chi phí *Thuê studio ngoài* =
-  giá/giờ **của phòng** (hoặc của studio nếu không chọn phòng) × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và
+  giá/giờ **của phòng** × số giờ của buổi, gắn vào lớp (tính vào lãi của lớp và
   báo cáo). Hôm nào studio đổi phòng thì sửa ở *Thu chi* của lớp (bấm vào ngày đó). Buổi bị huỷ thì không tính (đã tính rồi
   mà huỷ sau thì tự xoá). Phòng A/B và đặt phòng giữ nguyên để dùng lại khi studio mở cửa lại.
 
