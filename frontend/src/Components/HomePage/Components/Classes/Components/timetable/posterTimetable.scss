@@ -6,11 +6,21 @@
     --tt-line: hsla(36, 35%, 93%, .92);
     --tt-pill: #bc765a;
     --tt-pill-ink: #fff4dc;
+    // On a computer the whole poster fits the screen under the navbar: everything but the grid's rows (navbar,
+    // title row, day names, paddings) takes about --tt-fixed; the rows (--rows, set by the component) share the
+    // rest, and a disc is a row less its time pill — never smaller than 4.4rem nor bigger than 10.5rem.
+    --tt-fixed: 20.5rem;
+    --tt-row: calc((100vh - var(--tt-fixed)) / var(--rows, 4));
+    --tt-disc: clamp(4.4rem, calc(var(--tt-row) - 2.1rem), 10.5rem);
+
+    @supports (height: 100dvh) {
+        --tt-row: calc((100dvh - var(--tt-fixed)) / var(--rows, 4));
+    }
 
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    padding: clamp(1.3rem, 3vw, 2.6rem) clamp(1rem, 3.6vw, 3.2rem) clamp(1.4rem, 3vw, 2.4rem);
+    padding: clamp(1rem, 2vw, 1.6rem) clamp(1rem, 3vw, 2.6rem) clamp(1rem, 2vw, 1.4rem);
     border-radius: 28px;
     background:
         radial-gradient(110% 60% at 50% 0%, hsla(30, 16%, 32%, .55), transparent 62%),
@@ -55,22 +65,46 @@
 
 // Title ====================>
 
+// The title in the middle; on a computer the level key on its left and the places on its right.
 .ttHead {
-    display: flex;
-    justify-content: center;
-    margin-bottom: clamp(1rem, 2.6vw, 2.1rem);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: .9rem 1.6rem;
+    margin-bottom: clamp(.7rem, 1.4vw, 1.1rem);
+}
+
+.ttHeadSide.isEnd {
+    justify-self: end;
 }
 
 .ttTitleWrap {
     position: relative;
-    padding-top: clamp(1rem, 2.3vw, 1.9rem);
+    justify-self: center;
+    padding-top: clamp(.85rem, 1.6vw, 1.25rem);
     text-align: center;
+}
+
+// Not wide enough for three columns: the title on top, the key and the places under it.
+@media screen and (max-width: 1099px) {
+    .ttPoster {
+        --tt-fixed: 24.5rem; // the extra row of key and places
+    }
+
+    .ttHead {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .ttTitleWrap {
+        grid-row: 1;
+        grid-column: 1 / -1;
+    }
 }
 
 .ttPoster .ttTitle {
     padding: 0;
     font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    font-size: clamp(3.1rem, 10.5vw, 8.6rem);
+    font-size: clamp(2.6rem, min(6.4vw, 9vh), 5rem);
     font-weight: 400;
     line-height: .95;
     letter-spacing: -.01em;
@@ -91,7 +125,7 @@
     background: var(--tt-pill);
     color: var(--tt-pill-ink);
     font-family: var(--hp-display);
-    font-size: clamp(1.05rem, 2.7vw, 2.25rem);
+    font-size: clamp(.95rem, min(1.8vw, 2.6vh), 1.4rem);
     font-weight: 800;
     line-height: 1.1;
     letter-spacing: .01em;
@@ -118,10 +152,10 @@
     }
 
     th {
-        height: clamp(3.3rem, 5.6vw, 4.6rem);
-        padding: .3rem;
+        height: clamp(2.5rem, 4.6vh, 3.1rem);
+        padding: .25rem;
         font-family: var(--hp-display);
-        font-size: clamp(1.2rem, 2.3vw, 1.95rem);
+        font-size: clamp(1.1rem, 1.9vw, 1.55rem);
         font-weight: 900;
         line-height: 1;
         letter-spacing: .02em;
@@ -140,7 +174,7 @@
     }
 
     td {
-        padding: .6rem .3rem .7rem;
+        padding: .4rem .3rem .45rem;
         text-align: center;
         vertical-align: middle;
 
@@ -152,8 +186,8 @@
 
 .ttToday {
     display: block;
-    margin-top: .3rem;
-    font-size: .6rem;
+    margin-top: .15rem;
+    font-size: .55rem;
     font-weight: 700;
     letter-spacing: .16em;
     text-transform: uppercase;
@@ -166,7 +200,7 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 10.5rem;
+    max-width: var(--tt-disc, 10.5rem);
     padding: 0;
     border: 0;
     background: none;
@@ -279,18 +313,17 @@ button.ttSlot {
 
 // Key and places ====================>
 
+// Phones: under the list.
 .ttFoot {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1.4rem 2rem;
-    margin-top: clamp(1.3rem, 2.8vw, 2.3rem);
+    flex-direction: column;
+    gap: 1.2rem;
+    margin-top: 1.3rem;
 }
 
 .ttLegend {
     display: grid;
-    gap: .55rem;
+    gap: .4rem;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -298,34 +331,34 @@ button.ttSlot {
     li {
         display: flex;
         align-items: center;
-        gap: .75rem;
-        font-size: clamp(.92rem, 1.5vw, 1.2rem);
+        gap: .6rem;
+        font-size: clamp(.82rem, 1.1vw, .95rem);
         letter-spacing: .03em;
         text-transform: uppercase;
+        white-space: nowrap;
         color: hsla(0, 0%, 100%, .92);
         cursor: default;
     }
 
     i {
         flex-shrink: 0;
-        width: 1.7rem;
-        height: 1.7rem;
+        width: 1.3rem;
+        height: 1.3rem;
         background: center / 100% 100% no-repeat;
     }
 }
 
+// The logo beside the places line, the fanpage link under it.
 .ttWhere {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: .6rem;
-    max-width: 31rem;
-    margin-left: auto;
-    text-align: right;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: .45rem .75rem;
+    max-width: 24rem;
 
     p {
-        font-size: clamp(.78rem, 1.15vw, .9rem);
-        line-height: 1.55;
+        font-size: clamp(.7rem, .95vw, .8rem);
+        line-height: 1.45;
         letter-spacing: .02em;
         text-transform: uppercase;
         color: hsla(0, 0%, 100%, .8);
@@ -335,16 +368,25 @@ button.ttSlot {
             color: #fff;
         }
     }
+
+    .ttFanpage {
+        grid-column: 2;
+        justify-self: start;
+    }
+}
+
+.ttHeadSide.isEnd .ttWhere {
+    text-align: left;
 }
 
 // logo-mark.webp has white margins and a caption: show the red square only (as the navbar does).
 .ttLogo {
     position: relative;
     display: block;
-    width: 3.1rem;
-    height: 3.1rem;
+    width: 2.5rem;
+    height: 2.5rem;
     overflow: hidden;
-    border-radius: 10px;
+    border-radius: 9px;
     background: hsl(355, 68%, 45%);
 
     img {
@@ -361,11 +403,11 @@ button.ttSlot {
     display: inline-flex;
     align-items: center;
     gap: .3rem;
-    padding: .35rem .8rem .35rem .55rem;
+    padding: .25rem .7rem .25rem .45rem;
     border: 1px solid hsla(0, 0%, 100%, .22);
     border-radius: 999px;
     color: hsla(0, 0%, 100%, .9);
-    font-size: .8rem;
+    font-size: .74rem;
     font-weight: 600;
     transition: background-color .2s ease, color .2s ease;
 
@@ -384,15 +426,8 @@ button.ttSlot {
         border-radius: 22px;
     }
 
-    .ttFoot {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
     .ttWhere {
-        align-items: flex-start;
-        margin-left: 0;
-        text-align: left;
+        max-width: none;
     }
 }
 

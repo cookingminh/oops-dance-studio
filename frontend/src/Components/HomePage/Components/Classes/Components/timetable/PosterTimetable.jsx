@@ -84,13 +84,43 @@ const PosterTimetable = ({ sessions, today, todayDow, onPick, emptyText }) => {
     const dayShort = (day) => (lang === 'vi' ? day.short : dayName(day.value, 'short'));
     const month = today ? formatDate(today, 'month') : '';
 
+    const legend = levels.length > 0 && (
+        <ul className="ttLegend" aria-label={t('Class levels')}>
+            {levels.map((level) => (
+                <li key={level.value}>
+                    <i style={{ backgroundImage: `url(${LEVEL_CIRCLES[level.value]})` }} aria-hidden="true" />
+                    {t(level.legend)}
+                </li>
+            ))}
+        </ul>
+    );
+    const where = (
+        <div className="ttWhere">
+            <span className="ttLogo" aria-hidden="true">
+                <img src={logoMark} alt="" />
+            </span>
+            {places.length > 0 && (
+                <p>
+                    {t('Classes held at')} <strong>{places.join(', ')}</strong>
+                </p>
+            )}
+            <a className="ttFanpage" href={SOCIALS.facebook} target="_blank" rel="noopener noreferrer">
+                <TiSocialFacebook aria-hidden="true" /> {t('News on our fanpage')}
+            </a>
+        </div>
+    );
+
+    // On a computer the key and the places sit beside the title, so the whole poster fits the screen
+    // (--rows sizes the discs, posterTimetable.scss); on a phone they close the list.
     return (
-        <div className="ttPoster">
+        <div className="ttPoster" style={{ '--rows': Math.max(rows.length, 1) }}>
             <header className="ttHead">
+                {!narrow && <div className="ttHeadSide isStart">{legend}</div>}
                 <div className="ttTitleWrap">
                     {month && <p className="ttMonth">{month.charAt(0).toUpperCase() + month.slice(1)}</p>}
                     <h2 className="ttTitle">{t('Timetable')}</h2>
                 </div>
+                {!narrow && <div className="ttHeadSide isEnd">{where}</div>}
             </header>
 
             {emptyText ? (
@@ -144,31 +174,12 @@ const PosterTimetable = ({ sessions, today, todayDow, onPick, emptyText }) => {
                 </div>
             )}
 
-            <footer className="ttFoot">
-                {levels.length > 0 && (
-                    <ul className="ttLegend" aria-label={t('Class levels')}>
-                        {levels.map((level) => (
-                            <li key={level.value}>
-                                <i style={{ backgroundImage: `url(${LEVEL_CIRCLES[level.value]})` }} aria-hidden="true" />
-                                {t(level.legend)}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-                <div className="ttWhere">
-                    <span className="ttLogo" aria-hidden="true">
-                        <img src={logoMark} alt="" />
-                    </span>
-                    {places.length > 0 && (
-                        <p>
-                            {t('Classes held at')} <strong>{places.join(', ')}</strong>
-                        </p>
-                    )}
-                    <a className="ttFanpage" href={SOCIALS.facebook} target="_blank" rel="noopener noreferrer">
-                        <TiSocialFacebook aria-hidden="true" /> {t('News on our fanpage')}
-                    </a>
-                </div>
-            </footer>
+            {narrow && (
+                <footer className="ttFoot">
+                    {legend}
+                    {where}
+                </footer>
+            )}
         </div>
     );
 };
