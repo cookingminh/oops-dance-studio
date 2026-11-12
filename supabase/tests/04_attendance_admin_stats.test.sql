@@ -114,6 +114,8 @@ select tests.logout();
 -- ---------------------------------------------------------------------------
 -- instructor_check_in / instructor_check_out
 -- ---------------------------------------------------------------------------
+-- (Adding the weekly sessions may have made this week's sessions already; the test's own rows replace them.)
+delete from public.instructor_attendance where class_id in (900041, 900042);
 insert into public.instructor_attendance (id, class_id, instructor_id, room_id, date) values
   (900041, 900041, 'd0000000-0000-4000-8000-000000000003', 900041, public.studio_today()),
   (900042, 900041, 'd0000000-0000-4000-8000-000000000003', 900041, public.studio_today() + 1),

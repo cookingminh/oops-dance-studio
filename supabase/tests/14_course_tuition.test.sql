@@ -92,7 +92,8 @@ select ok(not tests.enrolled('00000000-0000-4000-b000-000000000143', 900141), 'o
 -- ---------------------------------------------------------------------------
 insert into public.class_students (class_id, student_id) values (900141, '00000000-0000-4000-b000-000000000144');
 insert into public.student_attendance (class_id, student_id, date, status)
-values (900141, '00000000-0000-4000-b000-000000000144', tests.today(), 'pending');
+values (900141, '00000000-0000-4000-b000-000000000144', tests.today(), 'pending')
+on conflict (class_id, student_id, date) do nothing;  -- joining today may have put them on it already
 delete from public.class_students where class_id = 900141 and student_id = '00000000-0000-4000-b000-000000000144';
 select is((select count(*)::int from public.student_attendance
             where class_id = 900141 and student_id = '00000000-0000-4000-b000-000000000144' and date >= tests.today()), 0,

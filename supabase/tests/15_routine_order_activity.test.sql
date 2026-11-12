@@ -105,6 +105,7 @@ select is((select count(*)::int from public.activity_log where entity = 'class_l
 
 -- A session: the instructor checks in, staff approve it.
 select tests.logout();
+delete from public.instructor_attendance where class_id = 900151 and date = tests.today();  -- made with the weekly session
 insert into public.instructor_attendance (id, class_id, instructor_id, date)
 overriding system value values (900151, 900151, '00000000-0000-4000-b000-000000000153', tests.today());
 select is((select count(*)::int from public.activity_log where entity = 'instructor_attendance' and entity_id = '900151'), 0,
