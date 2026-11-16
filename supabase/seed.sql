@@ -385,6 +385,10 @@ select public.seed_demo_venues();
 -- Two of the studios rent out rooms at their own prices; their classes are in one of them.
 select public.seed_demo_venue_rooms();
 
+-- Chat with the studio: a student waiting about a transfer, a guest asked whether it's sorted, yesterday's closed
+-- question, an instructor's answered one.
+select public.seed_demo_support();
+
 -- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
 select public.seed_demo_activity();
 

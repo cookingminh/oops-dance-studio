@@ -12,10 +12,10 @@ lương, chi phí và báo cáo. Viết cho chủ studio và staff; phần cuố
 
 | Vai trò | Vào đâu | Làm gì |
 |---|---|---|
-| Khách (chưa đăng nhập) | `/home`, `/classes`, `/rooms`, `/about` | Xem lớp, lịch tuần, video cuối khoá, tìm phòng trống, đăng ký tài khoản |
-| Học viên (`guest` có lớp) | `/profile` | Lớp của tôi, học phí (đóng bằng QR), gia hạn/dừng khoá, điểm danh, đặt phòng |
-| Giáo viên | `/profile` | Check-in/out có ảnh, lớp đang dạy, bài đang dạy, danh sách học viên |
-| Staff | `/admin` | **Lớp học** (trung tâm theo lớp), đặt phòng, học viên, chấm công giáo viên, học phí, chi phí của mình |
+| Khách (chưa đăng nhập) | `/home`, `/classes`, `/rooms`, `/about` | Xem lớp, lịch tuần, video cuối khoá, tìm phòng trống, đăng ký tài khoản; bubble chat mời đăng nhập để nhắn studio |
+| Học viên (`guest` có lớp) | `/profile` | Lớp của tôi, học phí (đóng bằng QR), gia hạn/dừng khoá, điểm danh, đặt phòng, chat với studio |
+| Giáo viên | `/profile` | Check-in/out có ảnh, lớp đang dạy, bài đang dạy, danh sách học viên, chat với studio |
+| Staff | `/admin` | **Lớp học** (trung tâm theo lớp), đặt phòng, học viên, chấm công giáo viên, học phí, chi phí của mình, trả lời tin nhắn |
 | Admin | `/admin` | Mọi thứ của staff + người dùng, lương, báo cáo tài chính, cài đặt thanh toán, toàn bộ chi phí |
 
 Ngôn ngữ: nút **EN / VI** ở thanh trên cùng, áp dụng cho toàn bộ app.
@@ -412,6 +412,38 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
 
 ---
 
+### Chat với studio (bubble chat và trang *Tin nhắn*)
+
+- **Ai dùng**: học viên, khách đặt phòng và giáo viên đã đăng nhập. Bubble chat nằm ở góc phải dưới, trang nào cũng có.
+  Người chưa đăng nhập bấm vào thì được mời đăng nhập, kèm hotline / fanpage / email. Staff và admin không có bubble: họ
+  trả lời ở trang **Tin nhắn** (`/admin/inbox`).
+- **Giờ chat** (giờ Việt Nam):
+  - 08:00–21:45: mở cuộc chat mới và nhắn bình thường.
+  - 21:45–22:00: không mở cuộc mới nữa; cuộc đang mở vẫn nhắn tiếp được đến 22:00.
+  - 22:00–08:00: không ai nhắn được, kể cả staff. Cuộc đang dở có thêm dòng "studio đã nghỉ, sáng mai staff làm tiếp"
+    và vẫn mở; sáng ra nó nằm ở đầu danh sách chờ.
+- **Hỏi**: chọn chủ đề, viết câu hỏi, có thể kèm 1 ảnh (ví dụ ảnh chuyển khoản).
+  - Học viên / khách: Đặt phòng · Lớp học & lịch học · Học phí & thanh toán · Nghỉ học & học bù · Tài khoản · Việc khác.
+  - Giáo viên: Check-in & giờ dạy · Lương · Dạy thay & xin nghỉ · Lớp & học viên của tôi · Tài khoản · Việc khác.
+  - Mỗi người chỉ có **một cuộc đang mở**; muốn hỏi thêm thì nhắn tiếp trong cuộc đó.
+- **Trả lời** (staff / admin, trang *Tin nhắn*):
+  - Ba tab: đang chờ studio (ai chờ lâu nhất lên đầu, có thời gian đã chờ), studio đã trả lời, đã đóng; lọc theo chủ đề.
+  - Bên cạnh cuộc chat là thẻ người hỏi: SĐT, lớp đang học, học phí chưa đóng, lượt đặt phòng sắp tới, trang họ đang
+    xem lúc hỏi.
+  - Ai trả lời đầu tiên thì nhận cuộc đó (hiện tên); có nút nhận và chuyển cho người khác.
+- **Đóng cuộc chat**:
+  1. Staff bấm hỏi đóng → người hỏi thấy "Đã xong chưa?" với hai nút.
+  2. *Xong rồi* → cuộc chat đóng hẳn; câu hỏi sau là một cuộc mới.
+  3. *Chưa* → cuộc chat mở lại và chờ staff. Họ nhắn tiếp thay vì bấm nút cũng tính là *Chưa*.
+  4. Không trả lời trong 24 giờ → tự đóng.
+- **Thông báo**: số đỏ trên bubble khi có tin studio chưa đọc. Staff thấy số người đang chờ cạnh menu *Tin nhắn* và một
+  dòng trong chuông (chờ quá 15 phút thì thành việc gấp). Tin mới hiện ngay trong khung chat đang mở. Chưa có email.
+- **Nhật ký**: trang *Activity* ghi ai nhận, chuyển, hỏi đóng, đóng cuộc chat; không ghi nội dung tin nhắn.
+- **Đổi giờ chat**: hiện sửa trong database (`site_settings`: `support_opens`, `support_last_start`, `support_closes`);
+  chưa có ô trong Setting.
+
+---
+
 ## 12. Nhật ký hoạt động (admin — *Activity*)
 
 Ai làm gì, lúc nào. Mỗi thao tác của một người được ghi lại **tự động** (trigger trong database), nên không cần làm
@@ -447,6 +479,7 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | 00:15 | Thêm chi phí định kỳ đến ngày |
 | 00:20 | Tính tiền thuê studio ngoài cho các buổi đã dạy |
 | 00:25 | Xoá nhật ký hoạt động cũ hơn 400 ngày |
+| Mỗi 5 phút | Chat: đóng các cuộc staff đã hỏi đóng mà 24 giờ không trả lời; sau 22:00 ghi chú "tạm dừng" vào cuộc đang dở |
 
 **Tự cập nhật ngay khi có thay đổi** (không cần chờ tới giờ chạy, không cần bấm nút):
 - Thêm / dời / xoá **buổi học hằng tuần** của lớp, hoặc đổi ngày khai giảng / ngày kết thúc của lớp → các buổi còn lại của
@@ -505,5 +538,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Huỷ đặt phòng & hoàn tiền | `20261117000800_booking_refunds.sql` | `cancel_booking`, `booking_cancel_quote`, `booking_refund`, `booking_settings` |
 | Lịch học trên website, cấp độ lớp | `20261117001500_timetable_templates.sql` | `site_settings`, `site_set_timetable_template`, `classes.level`, `seed_demo_levels` |
 | Vị trí ảnh lớp, ảnh tròn trên lịch học | `20261117001600_timetable_photos.sql` | `classes.image_pos_x/_y`, `classes.timetable_photo_path/_x/_y/_zoom`, `list_public_classes` |
+| Chat với studio | `20261117001900_support_chat.sql` | `support_status`, `support_start`, `support_send`, `support_inbox`, `support_request_close`, `support_run` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

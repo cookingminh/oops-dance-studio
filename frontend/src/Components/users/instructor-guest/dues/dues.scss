@@ -67,10 +67,11 @@
     }
 }
 
+// Above the chat bubble (ui/support-chat: 3.5rem at 1.5rem from the corner).
 .duesNudge {
     position: fixed;
     right: 1.5rem;
-    bottom: 1.5rem;
+    bottom: 5.85rem;
     z-index: 40;
     display: flex;
     gap: .85rem;
@@ -176,7 +177,7 @@
 @media (max-width: 640px) {
     .duesNudge {
         right: 1rem;
-        bottom: 1rem;
+        bottom: 5rem; // above the chat bubble (3.25rem at 1rem)
         left: 1rem;
         width: auto;
     }

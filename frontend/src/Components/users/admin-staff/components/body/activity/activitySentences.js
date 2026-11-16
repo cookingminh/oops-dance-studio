@@ -5,6 +5,7 @@ import { VOID_REASONS } from '../tuition/tuitionModel';
 import { reasonText } from '../../common/session-changes/changeText';
 import { checkReasonText } from '../../common/checkins/checkEdit';
 import { timetableLookLabel } from '../class-hub/hubModel';
+import { topicLabel } from '../inbox/inboxModel';
 import { ROLE_LABELS, changedFields } from './activityFields';
 import { actionLabel, areaOf, isSelf } from './activityModel';
 
@@ -408,6 +409,22 @@ const SETTINGS = (row, fmt) => {
     };
 };
 
+// Chat with the studio (support_threads): label = the person who asked, meta.category = the topic.
+const SUPPORT = (row, fmt) => {
+    const m = row.meta ?? {};
+    const topic = m.category ? fmt.t(topicLabel(m.category)) : '';
+    const out = {
+        claimed: [m.auto ? '{actor} answered {name}’s chat first and took it' : '{actor} took {name}’s chat', [topic]],
+        handed_over: ['{actor} handed {name}’s chat to {to}', [topic, m.from && fmt.t('It was with {name}', { name: m.from })]],
+        close_asked: ['{actor} asked {name} whether their chat is sorted', [topic]],
+        closed: [
+            m.by === 'system' || !row.actor_id ? '{name}’s chat closed by itself after 24 hours without an answer' : '{name} closed their chat',
+            [topic],
+        ],
+    }[row.action];
+    return out && { key: out[0], vars: { to: m.to ?? fmt.t('someone') }, facts: out[1] };
+};
+
 const AREA_SENTENCES = {
     bookings: BOOKINGS,
     classes: CLASSES,
@@ -421,6 +438,7 @@ const AREA_SENTENCES = {
     rooms: ROOMS,
     users: USERS,
     settings: SETTINGS,
+    support: SUPPORT,
 };
 
 export function describe(row, fmt) {
@@ -465,6 +483,10 @@ const PLURALS = {
     'payroll.payslip_finalized': (rows, fmt) => ({ key: '{actor} finalized {count} payslips for {month}', facts: [fmt.t('{amount} in total', { amount: money(sumOf(rows, 'total')) })] }),
     'payroll.payslip_paid': (rows, fmt) => ({ key: '{actor} paid {count} payslips for {month}', facts: [fmt.t('{amount} in total', { amount: money(sumOf(rows, 'total')) })] }),
     'users.account_created': (rows, fmt, system) => (system ? { key: '{count} people signed up' } : null),
+    'support.claimed': () => ({ key: '{actor} took {count} chats' }),
+    'support.handed_over': () => ({ key: '{actor} handed over {count} chats' }),
+    'support.close_asked': () => ({ key: '{actor} asked to close {count} chats' }),
+    'support.closed': (rows, fmt, system) => (system ? { key: '{count} chats closed by themselves after 24 hours' } : null),
     // Switched back and forth: where it ended up (the newest row), how often, and what it was before the first switch.
     'settings.timetable_template': (rows, fmt) => ({
         key: '{actor} switched the website timetable to {template}',

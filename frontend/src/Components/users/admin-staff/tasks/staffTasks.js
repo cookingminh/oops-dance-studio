@@ -9,6 +9,7 @@ import { getStudioToday } from '@/services/studio';
 import { hasPromo } from '@/services/promos';
 import { loadTuitionTodo } from '@/services/tuitionStaff';
 import { withOwnTimes } from '@/services/sessions';
+import { getSupportCounts } from '@/services/support';
 import { formatTime, formatVnd, isoWeekdayOf, studioTimeNow } from '@/lib/format';
 import { routineState, routinesByClass, sessionTimesOf, sessionWithoutRoutine } from '@/lib/lessons';
 
@@ -23,6 +24,9 @@ const ATTENDANCE_PAGE = '/admin/attendance';
 const sessionLink = (classId, date) => `${ATTENDANCE_PAGE}?class=${classId}&day=${date}`;
 const TUITION_PAGE = '/admin/tuition';
 const personName = (person) => person?.full_name || person?.username || null; // null → "An instructor"
+const INBOX_PAGE = '/admin/inbox';
+// Someone waiting longer than this for a chat answer is urgent.
+const SUPPORT_URGENT_MINUTES = 15;
 
 // Start / end ('HH:mm') of a class on a given date, from its weekly schedule. For a session row
 // (which may be a make-up with its own times) use sessionTimesOf(row) from lib/lessons.
@@ -96,6 +100,25 @@ function buildTuitionTasks({ overdue, unmatched, unanswered, extra = [] }) {
     return tasks;
 }
 
+// Chat: people waiting for an answer (one task), urgent once the longest has waited a quarter of an hour.
+function buildSupportTasks(support) {
+    if (!support?.waiting) return [];
+    const minutes = support.oldest_waiting_since ? Math.max(0, Math.floor((Date.now() - Date.parse(support.oldest_waiting_since)) / 60000)) : 0;
+    const hours = Math.floor(minutes / 60);
+    return [{
+        id: 'support-waiting',
+        kind: 'support',
+        tone: minutes > SUPPORT_URGENT_MINUTES ? 'urgent' : 'normal',
+        title: count(support.waiting, '{count} person is waiting for a chat answer', '{count} people are waiting for a chat answer'),
+        detail: minutes < 1
+            ? msg('Just asked')
+            : hours < 1
+                ? count(minutes, 'Longest wait: {count} minute', 'Longest wait: {count} minutes')
+                : count(hours, 'Longest wait: over {count} hour', 'Longest wait: over {count} hours'),
+        to: INBOX_PAGE,
+    }];
+}
+
 // A next routine starting within this many days should have its promo by now (services/promos.js).
 const PROMO_TASK_DAYS = 14;
 
@@ -161,7 +184,7 @@ export async function loadStaffTasks() {
     const today = await getStudioToday();
     const now = studioTimeNow();
     const weekday = isoWeekdayOf(today);
-    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition] = await Promise.all([
+    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition, support] = await Promise.all([
         // Make-up sessions carry their own times (withOwnTimes), regular ones the weekly slot.
         listOpenInstructorAttendance({ until: today }).then(withOwnTimes),
         listInstructorAttendance({ date: today }).then(withOwnTimes),
@@ -178,6 +201,8 @@ export async function loadStaffTasks() {
         listRefundsDue().catch(() => []),
         // Tuition is a newer feature: if it can't load, the other tasks still show.
         loadTuitionTodo(today).catch(() => null),
+        // The chat is newer still: if it can't load, the other tasks still show.
+        getSupportCounts().catch(() => null),
     ]);
 
     const attendance = [];
@@ -330,11 +355,12 @@ export async function loadStaffTasks() {
     }
 
     const tuitionTasks = tuition ? buildTuitionTasks(tuition) : [];
+    const supportTasks = buildSupportTasks(support);
 
     return {
         today,
         checkedAt: now,
-        tasks: [...attendance, ...studentTasks, ...lessonTasks, ...bookingTasks, ...tuitionTasks],
+        tasks: [...supportTasks, ...attendance, ...studentTasks, ...lessonTasks, ...bookingTasks, ...tuitionTasks],
         // Sidebar badges.
         counts: {
             [ATTENDANCE_PAGE]: attendance.length + studentTasks.length,
@@ -342,6 +368,8 @@ export async function loadStaffTasks() {
             '/admin/classes': lessonTasks.length,
             // Invoices to chase and transfers to sort (renewal answers are a reminder, not a count).
             [TUITION_PAGE]: tuition ? new Set(tuition.overdue.map((row) => row.student_id)).size + tuition.unmatched.length : 0,
+            // People waiting for a chat answer.
+            [INBOX_PAGE]: support?.waiting ?? 0,
         },
     };
 }

@@ -246,6 +246,9 @@ export function recordLink(row, lookups) {
         case 'venues':
             // Rooms and their prices, and the rented studios under them: the bookings page's "Rooms & prices" view.
             return ['deleted', 'venue_removed'].includes(row.action) ? null : { to: '/admin/bookings?view=rooms', page: 'Rooms & prices' };
+        case 'support_threads':
+            // The chat in the Inbox (also once closed: the Closed tab keeps it).
+            return row.entity_id ? { to: `/admin/inbox?thread=${row.entity_id}`, page: 'Inbox' } : null;
         case 'profiles':
             return row.subject_id && lookups?.people?.has(row.subject_id) ? { to: `/admin/users?person=${row.subject_id}`, page: 'Users' } : null;
         default:

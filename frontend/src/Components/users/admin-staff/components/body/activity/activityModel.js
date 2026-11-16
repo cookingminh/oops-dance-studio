@@ -6,6 +6,7 @@ import {
     LuDoorOpen,
     LuGraduationCap,
     LuListChecks,
+    LuMessagesSquare,
     LuMusic,
     LuReceipt,
     LuSettings,
@@ -43,6 +44,8 @@ export const AREAS = {
     rooms: { label: 'Rooms', icon: LuDoorOpen },
     users: { label: 'Accounts', icon: LuUsers },
     settings: { label: 'Settings', icon: LuSettings },
+    // Chat with the studio (support_* RPCs, migration 20261117001900): who took, handed over and closed chats.
+    support: { label: 'Chat', icon: LuMessagesSquare },
 };
 export const AREA_KEYS = ACTIVITY_AREAS.filter((key) => key in AREAS);
 export const areaOf = (key) => AREAS[key] ?? AREAS.settings;
@@ -158,6 +161,7 @@ export const ACTIONS = {
     },
     users: { account_created: 'Account created', account_deleted: 'Account deleted', role_changed: 'Role changed', profile_edited: 'Details edited' },
     settings: { updated: 'Changed', timetable_template: 'Website timetable' },
+    support: { claimed: 'Taken', handed_over: 'Handed over', close_asked: 'Asked to close', closed: 'Closed' },
 };
 export const actionLabel = (area, action) => ACTIONS[area]?.[action] ?? action;
 

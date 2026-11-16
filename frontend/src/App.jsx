@@ -10,6 +10,7 @@ import { ToastProvider } from '@/ui/feedback/ToastProvider';
 import { Loading } from '@/ui/feedback/AsyncState';
 import DemoBanner from '@/ui/DemoBanner';
 import PageScrollbar from '@/ui/PageScrollbar';
+import SupportChat from '@/ui/support-chat/SupportChat';
 import { I18nProvider } from '@/i18n/I18nProvider';
 import PublicLayout from './Components/HomePage/PublicLayout';
 import HomeLanding from './Components/HomePage/pages/HomeLanding';
@@ -87,6 +88,7 @@ const App = () => (
                     <AuthProvider>
                         <AppRoutes />
                         <DemoBanner />
+                        <SupportChat />
                         <PageScrollbar />
                     </AuthProvider>
                 </ToastProvider>

@@ -44,9 +44,12 @@ import { unwrap } from './errors';
 //              profile_edited [email, role]
 //   settings   updated (label 'Payroll' | 'Tuition'; see changes)
 //              timetable_template (entity site_settings, label 'Website') [template, from]
+//   support    claimed [category, auto (by answering first), to] · handed_over [category, to, from] ·
+//              close_asked [category] · closed [category, by: 'customer' | 'system'] (entity support_threads, label and
+//              subject the person who asked; actor null = the system; never the message text)
 // `changes` (plain edits): { column: { from, to } }.
 
-export const ACTIVITY_AREAS = ['bookings', 'classes', 'routines', 'students', 'sessions', 'roll_call', 'tuition', 'expenses', 'payroll', 'rooms', 'users', 'settings'];
+export const ACTIVITY_AREAS = ['bookings', 'classes', 'routines', 'students', 'sessions', 'roll_call', 'tuition', 'expenses', 'payroll', 'rooms', 'users', 'settings', 'support'];
 
 const PAGE_SIZE = 80;
 

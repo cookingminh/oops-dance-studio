@@ -12,6 +12,7 @@ import {
     LuListChecks,
     LuLogIn,
     LuLogOut,
+    LuMessagesSquare,
     LuMusic,
     LuPartyPopper,
     LuReceipt,
@@ -33,6 +34,7 @@ const ICONS = {
     tuition: LuReceipt,
     transfers: LuLandmark,
     renewals: LuRepeat,
+    support: LuMessagesSquare,
 };
 
 const GROUPS = [

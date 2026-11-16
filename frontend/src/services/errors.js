@@ -17,12 +17,13 @@ export const MESSAGES = {
     USERNAME_TAKEN: 'This username may already be taken. Please choose another one.',
     EMAIL_NOT_CONFIRMED: 'Please confirm your email address before logging in.',
     RATE_LIMITED: 'Too many attempts. Please wait a moment and try again.',
+    SUPPORT_CLOSED: 'The studio isn’t taking messages right now.',
     SESSION_EXPIRED: 'Your session has expired. Please log in again.',
     NETWORK: 'Can’t reach the server. Check your connection and try again.',
     UNKNOWN: 'Something went wrong. Please try again.',
 };
 
-const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|PAST_DATE|IN_USE)\b\s*:?\s*/;
+const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|PAST_DATE|IN_USE|SUPPORT_CLOSED|RATE_LIMITED)\b\s*:?\s*/;
 
 // Specific IN_USE reasons from the database.
 const CLASS_HAS_HISTORY = 'This class has sessions, attendance or payments on record. End the class instead of deleting it.';
@@ -51,6 +52,11 @@ const INVALID_INPUT_REASONS = [
     [/room's rent must be 0 or more/i, 'A room’s rent must be 0 or more.'],
     [/a studio needs at least one room/i, 'A studio needs at least one room in use.'],
     [/^pick a room/i, 'Pick a room for this session.'],
+    // Chat with the studio (support_start / support_send).
+    [/^pick a topic/i, 'Pick a topic for your question.'],
+    [/^write your question|^write a message/i, 'Write your message first.'],
+    [/up to 2000 characters/i, 'A message is up to 2,000 characters.'],
+    [/chat photo/i, 'The photo didn’t upload. Please choose it again.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
 ];
 

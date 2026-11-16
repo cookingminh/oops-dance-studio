@@ -261,3 +261,59 @@ export async function clashTarget() {
         booking,
     };
 }
+
+// ---------------------------------------------------------------------------
+// Chat with the studio (support_* RPCs)
+// ---------------------------------------------------------------------------
+const REPO = path.resolve(FRONTEND, '..');
+let serviceKeyCache;
+// The local service role key (SUPABASE_SERVICE_ROLE_KEY, else `supabase status`), or null.
+export async function serviceKey() {
+    if (serviceKeyCache !== undefined) return serviceKeyCache;
+    serviceKeyCache = process.env.SUPABASE_SERVICE_ROLE_KEY ?? null;
+    if (!serviceKeyCache) {
+        try {
+            const { execFileSync } = await import('node:child_process');
+            const env = execFileSync('supabase', ['status', '-o', 'env'], { cwd: REPO, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+            serviceKeyCache = env.match(/^SERVICE_ROLE_KEY="?([^"\n]+)"?$/m)?.[1] ?? null;
+        } catch {
+            serviceKeyCache = null;
+        }
+    }
+    return serviceKeyCache;
+}
+
+// The chat's hours all day long: 'open' (new questions too), 'last_call' (open chats only) or 'closed';
+// 'default' puts back 08:00 / 21:45 / 22:00. The specs set them so they don't depend on the time of day.
+const CHAT_HOURS = {
+    open: { support_opens: '00:00', support_last_start: '24:00', support_closes: '24:00' },
+    last_call: { support_opens: '00:00', support_last_start: '00:00', support_closes: '24:00' },
+    closed: { support_opens: '00:00', support_last_start: '00:00', support_closes: '00:00' },
+    default: { support_opens: '08:00', support_last_start: '21:45', support_closes: '22:00' },
+};
+export async function setChatHours(phase) {
+    const key = await serviceKey();
+    if (!key) throw new Error('The chat specs need the local service role key (SUPABASE_SERVICE_ROLE_KEY or `supabase status`).');
+    const res = await rest(key, 'site_settings?id=eq.1', { method: 'PATCH', body: CHAT_HOURS[phase], prefer: 'return=representation' });
+    if (res.status >= 300 || !Array.isArray(res.data) || res.data.length !== 1) throw new Error(`setChatHours(${phase}): ${JSON.stringify(res.data)}`);
+}
+
+// A new student account of the spec's own (sign-up, no email confirmation locally) → { email, id, jwt, name }.
+export async function signUpStudent(label, name) {
+    const email = testEmail(label);
+    const res = await fetch(`${API}/auth/v1/signup`, {
+        method: 'POST',
+        headers: { apikey: ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password: PASSWORD, data: { full_name: name } }),
+    });
+    const body = await res.json();
+    if (!body.access_token) throw new Error(`signUpStudent(${label}): ${JSON.stringify(body)}`);
+    return { email, id: body.user.id, jwt: body.access_token, name };
+}
+
+// Removes an account the spec made (its chats go with it).
+export async function deleteAccount(id) {
+    if (!id) return;
+    const admin = await token('admin@demo.oopsdance.test');
+    await adminUsers(admin.jwt, { action: 'delete', user_id: id });
+}

@@ -5,6 +5,7 @@ import {
     LuHistory,
     LuLayoutDashboard,
     LuLineChart,
+    LuMessagesSquare,
     LuPieChart,
     LuReceipt,
     LuTicket,
@@ -19,6 +20,7 @@ export const ADMIN_NAV = [
         group: 'Overview',
         items: [
             { to: '/admin', end: true, label: 'Dashboard', icon: LuLayoutDashboard, description: 'Today at the studio at a glance.' },
+            { to: '/admin/inbox', label: 'Inbox', icon: LuMessagesSquare, description: 'Questions from the chat bubble: answer them, hand them over, close them.' },
             { to: '/admin/charts', label: 'Charts', icon: LuPieChart, description: 'Revenue, bookings and enrolment over time.' },
             { to: '/admin/activity', label: 'Activity', icon: LuHistory, adminOnly: true, description: 'Who did what at the studio, and when.' },
         ],

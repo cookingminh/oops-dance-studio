@@ -22,6 +22,7 @@ $areas: (
     rooms: (hsl(198, 75%, 32%), hsl(198, 80%, 94%)),
     users: (hsl(215, 18%, 40%), hsl(215, 28%, 94.5%)),
     settings: (hsl(240, 5%, 38%), hsl(240, 6%, 94%)),
+    support: (hsl(292, 48%, 42%), hsl(292, 70%, 96%)),
 );
 
 @each $name, $pair in $areas {

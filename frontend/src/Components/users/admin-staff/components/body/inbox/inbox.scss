@@ -1,0 +1,786 @@
+// Inbox (/admin/inbox): the conversations, the open chat and who is asking. Tokens --ad-* come from
+// admin.scss (.adminShell; dialogs carry .adminPortal).
+
+// The bell's chat line (the bell lives in the top bar on every admin page; this sheet loads with the admin area).
+.taskPanel .taskIcon.kind-support {
+    background: hsl(292, 70%, 96%);
+    color: hsl(292, 48%, 42%);
+}
+
+.adminShell .inboxPage {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.adminShell .inboxHours {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: .5rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-muted);
+    font-size: .88rem;
+
+    svg {
+        flex-shrink: 0;
+        color: hsl(152, 60%, 32%);
+    }
+
+    &.is-last_call svg {
+        color: hsl(30, 85%, 40%);
+    }
+
+    &.is-closed {
+        border-color: hsl(236, 50%, 88%);
+        background: hsl(236, 80%, 97%);
+        color: hsl(236, 40%, 32%);
+
+        svg {
+            color: hsl(236, 48%, 50%);
+        }
+    }
+}
+
+// Three columns: list | chat | card. ----------------------------------------------------------------------
+
+.adminShell .inboxLayout {
+    --inbox-height: clamp(32rem, calc(100vh - 12.5rem), 58rem);
+    display: grid;
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr) minmax(15rem, 19rem);
+    gap: 1.25rem;
+    align-items: start;
+
+    &:not(.hasThread) {
+        grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    }
+}
+
+.adminShell .inboxPane {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: var(--inbox-height);
+    overflow: hidden;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius-lg);
+    background: var(--ad-surface);
+    box-shadow: var(--ad-shadow);
+}
+
+// The list -------------------------------------------------------------------------------------------------
+
+.adminShell .inboxListPane {
+    .inboxTabs {
+        flex-shrink: 0;
+        gap: 0;
+        margin: 0;
+        padding: .2rem .4rem 0;
+        border-bottom: 1px solid var(--ad-border);
+
+        button {
+            padding-inline: .6rem;
+            font-size: .9rem;
+        }
+
+        .hubTabLine {
+            right: .4rem;
+            left: .4rem;
+        }
+    }
+
+    .inboxTopic {
+        flex-shrink: 0;
+        padding: .75rem 1rem;
+        border-bottom: 1px solid var(--ad-border);
+
+        select {
+            width: 100%;
+            padding: .5rem .75rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 12px;
+            background: var(--ad-surface-2);
+            color: var(--ad-text);
+            font-size: .9rem;
+            cursor: pointer;
+        }
+    }
+}
+
+.adminShell .inboxListScroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.adminShell .inboxRows {
+    display: grid;
+}
+
+.adminShell .inboxRow {
+    display: grid;
+    gap: .3rem;
+    width: 100%;
+    padding: .85rem 1rem;
+    border-bottom: 1px solid var(--ad-border);
+    border-left: 3px solid transparent;
+    text-align: left;
+    cursor: pointer;
+    transition: background .15s ease;
+
+    &:hover {
+        background: var(--ad-surface-2);
+    }
+
+    &.isSelected {
+        border-left-color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+    }
+
+    &:focus-visible {
+        outline-offset: -3px;
+    }
+
+    .inboxRowTop {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        min-width: 0;
+    }
+
+    .inboxRowName {
+        overflow: hidden;
+        color: var(--ad-text);
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .inboxRowWhen {
+        flex-shrink: 0;
+        margin-left: auto;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        white-space: nowrap;
+    }
+
+    &.isUrgent .inboxRowWhen {
+        color: var(--ad-primary);
+        font-weight: 600;
+    }
+
+    .inboxRowTopic {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 500;
+    }
+
+    .inboxRowPreview {
+        display: -webkit-box;
+        overflow: hidden;
+        color: var(--ad-muted);
+        font-size: .88rem;
+        line-height: 1.4;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+
+        &.is-note {
+            font-style: italic;
+        }
+    }
+
+    .inboxRowWho {
+        color: var(--ad-subtle);
+    }
+
+    .inboxRowFoot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        color: var(--ad-subtle);
+        font-size: .78rem;
+    }
+
+    &.isUnread {
+        .inboxRowName {
+            font-weight: 700;
+        }
+
+        .inboxRowPreview {
+            color: var(--ad-text);
+        }
+    }
+}
+
+.adminShell .inboxUnread {
+    display: grid;
+    place-items: center;
+    min-width: 1.35rem;
+    height: 1.35rem;
+    padding: 0 .35rem;
+    border-radius: 999px;
+    background: var(--ad-primary);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.adminShell .inboxChip {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: .1rem .5rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: .72rem;
+    font-weight: 600;
+
+    &.isInstructor {
+        background: hsl(262, 80%, 96%);
+        color: hsl(262, 52%, 48%);
+    }
+
+    &.isClosing {
+        background: hsl(40, 95%, 92%);
+        color: hsl(30, 85%, 34%);
+    }
+}
+
+.adminShell .inboxEmpty,
+.adminShell .inboxPlaceholder {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: .4rem;
+    padding: 2.5rem 1.5rem;
+    color: var(--ad-muted);
+    text-align: center;
+
+    svg {
+        margin-bottom: .3rem;
+        color: var(--ad-subtle);
+        font-size: 2rem;
+    }
+
+    strong {
+        color: var(--ad-text);
+        font-weight: 600;
+    }
+
+    span {
+        max-width: 22rem;
+        font-size: .9rem;
+    }
+}
+
+.adminShell .inboxEmpty {
+    height: 100%;
+}
+
+// The chat ---------------------------------------------------------------------------------------------------
+
+.adminShell .inboxThreadHead {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    flex-shrink: 0;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--ad-border);
+
+    .inboxBack {
+        display: none;
+    }
+
+    .inboxThreadTitles {
+        flex: 1 1 14rem;
+        min-width: 0;
+
+        h2 {
+            overflow: hidden;
+            color: var(--ad-text);
+            font-family: var(--ad-display);
+            font-size: 1.3rem;
+            font-weight: 700;
+            line-height: 1.2;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        p {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: .25rem .6rem;
+            margin-top: .25rem;
+            color: var(--ad-muted);
+            font-size: .85rem;
+        }
+    }
+
+    .inboxActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+}
+
+.adminShell .inboxStatus {
+    padding: .1rem .55rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    font-size: .78rem;
+    font-weight: 600;
+
+    &.is-waiting {
+        background: hsl(40, 95%, 92%);
+        color: hsl(30, 85%, 34%);
+    }
+
+    &.is-urgent {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    &.is-answered {
+        background: hsl(152, 60%, 93%);
+        color: hsl(152, 60%, 28%);
+    }
+
+    &.is-closing {
+        background: hsl(212, 90%, 95.5%);
+        color: hsl(212, 72%, 40%);
+    }
+}
+
+.adminShell .inboxOwner {
+    color: var(--ad-subtle);
+}
+
+.adminShell .inboxMessages {
+    display: grid;
+    align-content: start;
+    gap: .25rem;
+    flex: 1;
+    min-height: 0;
+    padding: 1rem 1.25rem 1.25rem;
+    overflow-y: auto;
+    background: var(--ad-bg);
+}
+
+.adminShell .inboxDay {
+    display: grid;
+    gap: .55rem;
+}
+
+.adminShell .inboxDayLabel {
+    display: flex;
+    justify-content: center;
+    margin: .6rem 0 .2rem;
+
+    span {
+        padding: .15rem .7rem;
+        border-radius: 999px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+        font-size: .76rem;
+        font-weight: 600;
+    }
+}
+
+.adminShell .inboxMsg {
+    display: grid;
+    justify-items: start;
+    gap: .2rem;
+    max-width: min(34rem, 82%);
+
+    time {
+        color: var(--ad-subtle);
+        font-size: .72rem;
+    }
+
+    .inboxMsgWho {
+        color: var(--ad-muted);
+        font-size: .75rem;
+        font-weight: 600;
+    }
+
+    .inboxBubble {
+        display: grid;
+        gap: .4rem;
+        padding: .6rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px 16px 16px 4px;
+        background: var(--ad-surface);
+        color: var(--ad-text);
+        line-height: 1.45;
+
+        p {
+            color: inherit;
+            font-size: .93rem;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    &.is-studio {
+        justify-self: end;
+        justify-items: end;
+
+        .inboxBubble {
+            border-color: transparent;
+            border-radius: 16px 16px 4px 16px;
+            background: var(--ad-primary);
+            color: #fff;
+        }
+    }
+}
+
+.adminShell .inboxPhoto {
+    display: block;
+    overflow: hidden;
+    border-radius: 10px;
+
+    img {
+        display: block;
+        max-width: 100%;
+        max-height: 16rem;
+        object-fit: contain;
+    }
+
+    &.isLoading {
+        padding: 1.5rem 1rem;
+        background: hsla(0, 0%, 50%, .12);
+        font-size: .8rem;
+    }
+}
+
+.adminShell .inboxNote {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    justify-self: center;
+    max-width: 90%;
+    margin: .3rem 0;
+    padding: .3rem .8rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: .8rem;
+    text-align: center;
+
+    time {
+        color: var(--ad-subtle);
+        font-size: .72rem;
+    }
+
+    &.is-paused {
+        background: hsl(236, 80%, 96%);
+        color: hsl(236, 40%, 36%);
+    }
+
+    &.is-closed,
+    &.is-auto_closed {
+        background: hsl(152, 60%, 93%);
+        color: hsl(152, 60%, 26%);
+    }
+}
+
+.adminShell .inboxBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    flex-shrink: 0;
+    margin: 0;
+    padding: .7rem 1.25rem;
+    border-top: 1px solid var(--ad-border);
+    color: var(--ad-muted);
+    font-size: .86rem;
+    line-height: 1.4;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+
+    &.is-closing {
+        background: hsl(212, 90%, 97%);
+        color: hsl(212, 60%, 32%);
+    }
+
+    &.is-night {
+        border-top: 0;
+        padding: 0 0 .6rem;
+        color: hsl(236, 40%, 36%);
+    }
+
+    &.is-closed {
+        justify-content: center;
+        padding: 1rem 1.25rem;
+        background: var(--ad-surface-2);
+    }
+}
+
+.adminShell .inboxComposer {
+    flex-shrink: 0;
+    padding: .8rem 1rem;
+    border-top: 1px solid var(--ad-border);
+
+    .inboxComposerRow {
+        display: flex;
+        align-items: flex-end;
+        gap: .6rem;
+    }
+
+    textarea {
+        flex: 1;
+        min-width: 0;
+        min-height: 2.6rem;
+        max-height: 11.25rem;
+        padding: .6rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface-2);
+        color: var(--ad-text);
+        font: inherit;
+        font-size: .93rem;
+        line-height: 1.4;
+        resize: none;
+
+        &:focus {
+            border-color: var(--ad-primary-tint);
+            outline: 2px solid var(--ad-primary-soft);
+            background: var(--ad-surface);
+        }
+
+        &:disabled {
+            cursor: not-allowed;
+            opacity: .6;
+        }
+    }
+
+    .inboxAttach:disabled {
+        cursor: not-allowed;
+        opacity: .45;
+    }
+
+    .inboxSend {
+        flex-shrink: 0;
+        width: 2.6rem;
+        min-width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 12px;
+        font-size: 1.1rem;
+    }
+
+    .inboxCount {
+        margin-top: .3rem;
+        color: var(--ad-muted);
+        font-size: .75rem;
+        text-align: right;
+    }
+}
+
+.adminShell .inboxDraftPhoto {
+    position: relative;
+    width: fit-content;
+    margin-bottom: .6rem;
+
+    img {
+        display: block;
+        max-width: 9rem;
+        max-height: 7rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 10px;
+        object-fit: cover;
+    }
+
+    button {
+        position: absolute;
+        top: -.5rem;
+        right: -.5rem;
+        width: 1.7rem;
+        height: 1.7rem;
+        border-radius: 50%;
+        font-size: .9rem;
+    }
+}
+
+.adminShell .inboxGone {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: .8rem;
+    color: var(--ad-muted);
+}
+
+// Who is asking ----------------------------------------------------------------------------------------------
+
+.adminShell .inboxCard {
+    gap: 1.1rem;
+    padding: 1.25rem;
+    overflow-y: auto;
+    font-size: .9rem;
+
+    .inboxCardHead {
+        display: flex;
+        align-items: center;
+        gap: .8rem;
+
+        h3 {
+            margin-bottom: .2rem;
+            color: var(--ad-text);
+            font-family: var(--ad-display);
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+    }
+
+    .isMuted {
+        color: var(--ad-muted);
+    }
+
+    a {
+        color: var(--ad-primary);
+        font-weight: 500;
+        overflow-wrap: anywhere;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.adminShell .inboxFacts {
+    display: grid;
+    gap: .5rem;
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        min-width: 0;
+
+        svg {
+            flex-shrink: 0;
+            color: var(--ad-subtle);
+        }
+
+        a,
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
+
+.adminShell .inboxAskedFrom {
+    color: var(--ad-muted);
+    font-size: .82rem;
+
+    code {
+        padding: .1rem .35rem;
+        border-radius: 6px;
+        background: var(--ad-surface-2);
+        color: var(--ad-text);
+        font-size: .8rem;
+    }
+}
+
+.adminShell .inboxCardBlock {
+    display: grid;
+    gap: .4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--ad-border);
+
+    h4 {
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        color: var(--ad-muted);
+        font-size: .75rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+}
+
+.adminShell .inboxLinks {
+    display: grid;
+    gap: .3rem;
+}
+
+.adminShell .inboxCardMore {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    margin-top: auto;
+    padding-top: .5rem;
+}
+
+// Narrower screens ----------------------------------------------------------------------------------------
+
+// The card moves under the chat.
+@media screen and (max-width: 1280px) {
+    .adminShell .inboxLayout.hasThread {
+        grid-template-columns: minmax(17rem, 20rem) minmax(0, 1fr);
+
+        .inboxCard {
+            grid-column: 2;
+            height: auto;
+            overflow: visible;
+        }
+    }
+}
+
+// One column: the list, or the open chat (with a back button) and the card under it.
+@media screen and (max-width: 900px) {
+    .adminShell .inboxLayout,
+    .adminShell .inboxLayout.hasThread,
+    .adminShell .inboxLayout:not(.hasThread) {
+        grid-template-columns: minmax(0, 1fr);
+
+        .inboxCard {
+            grid-column: auto;
+        }
+    }
+
+    .adminShell .inboxLayout.hasThread .inboxListPane,
+    .adminShell .inboxLayout:not(.hasThread) .inboxPlaceholder {
+        display: none;
+    }
+
+    .adminShell .inboxLayout {
+        --inbox-height: clamp(26rem, calc(100dvh - 13.5rem), 52rem);
+    }
+
+    .adminShell .inboxThreadHead {
+        padding: .8rem 1rem;
+
+        .inboxBack {
+            display: grid;
+        }
+    }
+
+    .adminShell .inboxMessages {
+        padding: .8rem;
+    }
+
+    .adminShell .inboxMsg {
+        max-width: 88%;
+    }
+}

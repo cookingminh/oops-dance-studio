@@ -1,0 +1,984 @@
+// Chat with the studio: the bubble in the bottom-right corner and its panel (SupportChat.jsx).
+// It shows on the public pages and in /profile, so it carries its own tokens (the ContactModal's look).
+// Stacking: above the page and the dues reminder (z 40), under the mobile menu backdrop (45), NextUI modals (50),
+// the public navbar (1000) and toasts (9999). Full screen on phones, where it also covers the demo banner.
+
+.supportChat {
+    --sc-red: hsl(0, 66%, 43%);
+    --sc-red-dark: hsl(345, 62%, 32%);
+    --sc-ink: hsl(0, 0%, 12%);
+    --sc-muted: hsl(240, 4%, 44%);
+    --sc-border: hsl(20, 10%, 90%);
+    --sc-soft: hsl(20, 16%, 96.5%);
+    --sc-green: hsl(145, 63%, 40%);
+    --sc-ease: cubic-bezier(.22, 1, .36, 1);
+    --sc-gap: 1.5rem;
+    --sc-bubble: 3.5rem;
+
+    color: var(--sc-ink);
+    font-family: 'Spartan', sans-serif;
+
+    li {
+        cursor: auto;
+    }
+
+    // main.scss styles every p (grey, 13px) and h2 (padding): the chat sets its own.
+    p {
+        margin: 0;
+        color: inherit;
+        font-size: inherit;
+        line-height: 1.5;
+    }
+
+    h2,
+    h3 {
+        margin: 0;
+        padding: 0;
+        color: inherit;
+    }
+}
+
+// Everything below is nested in .supportChat, so it outranks main.scss and the base rules above.
+.supportChat {
+    // ---------------------------------------------------------------------------
+    // The bubble
+    // ---------------------------------------------------------------------------
+    .supportBubble {
+        position: fixed;
+        right: var(--sc-gap);
+        bottom: calc(var(--sc-gap) + env(safe-area-inset-bottom, 0px));
+        z-index: 44;
+        display: grid;
+        place-items: center;
+        width: var(--sc-bubble);
+        height: var(--sc-bubble);
+        border-radius: 50%;
+        background:
+            radial-gradient(circle at 30% 18%, hsla(40, 100%, 72%, .4), transparent 55%),
+            linear-gradient(135deg, hsl(0, 66%, 45%), var(--sc-red-dark));
+        color: #fff;
+        font-size: 1.55rem;
+        box-shadow: 0 14px 30px -12px hsla(0, 60%, 25%, .7), 0 2px 6px hsla(0, 0%, 0%, .12);
+        cursor: pointer;
+        transition: transform .3s var(--sc-ease), box-shadow .25s ease;
+
+        &:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 18px 34px -12px hsla(0, 60%, 25%, .75), 0 2px 6px hsla(0, 0%, 0%, .12);
+        }
+
+        &:focus-visible {
+            outline: 3px solid hsla(0, 66%, 43%, .4);
+            outline-offset: 3px;
+        }
+    }
+
+    // Online (the studio is answering) or not.
+    .supportDot {
+        position: absolute;
+        top: .15rem;
+        right: .15rem;
+        width: .85rem;
+        height: .85rem;
+        border: 2px solid #fff;
+        border-radius: 50%;
+
+        &.is-online {
+            background: var(--sc-green);
+        }
+
+        &.is-offline {
+            background: hsl(0, 0%, 68%);
+        }
+    }
+
+    // Replies not read yet.
+    .supportBadge {
+        position: absolute;
+        top: -.3rem;
+        left: -.3rem;
+        display: grid;
+        place-items: center;
+        min-width: 1.4rem;
+        height: 1.4rem;
+        padding: 0 .3rem;
+        border: 2px solid #fff;
+        border-radius: 999px;
+        background: var(--sc-ink);
+        color: #fff;
+        font-size: .72rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    // ---------------------------------------------------------------------------
+    // The panel
+    // ---------------------------------------------------------------------------
+    .supportPanel {
+        position: fixed;
+        right: var(--sc-gap);
+        bottom: calc(var(--sc-gap) + var(--sc-bubble) + .85rem + env(safe-area-inset-bottom, 0px));
+        z-index: 44;
+        display: flex;
+        flex-direction: column;
+        width: min(23rem, calc(100vw - 2rem));
+        height: min(36rem, calc(100vh - var(--sc-bubble) - 5.5rem));
+        overflow: hidden;
+        border: 1px solid var(--sc-border);
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 30px 70px -24px hsla(20, 30%, 15%, .45), 0 4px 14px hsla(0, 0%, 0%, .06);
+        transform-origin: bottom right;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .supportHead {
+        position: relative;
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: .7rem;
+        padding: .95rem .8rem .95rem 1rem;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at 85% 0%, hsla(40, 100%, 70%, .4), transparent 45%),
+            linear-gradient(135deg, hsl(0, 66%, 40%), var(--sc-red-dark));
+        color: #fff;
+
+        h2 {
+            font-family: 'League Spartan', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: #fff;
+        }
+    }
+
+    // logo-mark.webp has white margins; crop to the red square (as the contact dialog does).
+    .supportMark {
+        position: relative;
+        display: block;
+        flex-shrink: 0;
+        width: 2.4rem;
+        height: 2.4rem;
+        overflow: hidden;
+        border: 2px solid hsla(0, 0%, 100%, .7);
+        border-radius: 12px;
+        background: hsl(355, 68%, 45%);
+
+        img {
+            position: absolute;
+            width: 155.2%;
+            max-width: none;
+            left: -27.6%;
+            top: -20.3%;
+        }
+    }
+
+    .supportHeadText {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .supportStatusLine {
+        display: flex;
+        align-items: flex-start;
+        gap: .4rem;
+        margin-top: .25rem;
+        font-size: .76rem;
+        line-height: 1.3;
+        color: hsla(0, 0%, 100%, .88);
+    }
+
+    .supportDotInline {
+        flex-shrink: 0;
+        margin-top: .3rem;
+        width: .5rem;
+        height: .5rem;
+        border-radius: 50%;
+
+        &.is-online {
+            background: hsl(145, 70%, 62%);
+            box-shadow: 0 0 0 3px hsla(145, 70%, 62%, .25);
+        }
+
+        &.is-offline {
+            background: hsla(0, 0%, 100%, .55);
+        }
+    }
+
+    .supportIconBtn {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.15rem;
+        height: 2.15rem;
+        border-radius: 12px;
+        color: var(--sc-muted);
+        font-size: 1.15rem;
+        cursor: pointer;
+        transition: background .2s ease, color .2s ease;
+
+        &:hover:not(:disabled) {
+            background: var(--sc-soft);
+            color: var(--sc-ink);
+        }
+
+        &:disabled {
+            opacity: .5;
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-red);
+            outline-offset: 1px;
+        }
+
+        &.onDark {
+            color: hsla(0, 0%, 100%, .88);
+
+            &:hover {
+                background: hsla(0, 0%, 100%, .16);
+                color: #fff;
+            }
+
+            &:focus-visible {
+                outline-color: #fff;
+            }
+        }
+    }
+
+    .supportUrgent {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: .45rem;
+        padding: .5rem 1rem;
+        border-bottom: 1px solid hsl(40, 60%, 88%);
+        background: hsl(40, 100%, 96.5%);
+        color: hsl(25, 60%, 30%);
+        font-size: .78rem;
+        font-weight: 500;
+
+        svg {
+            flex-shrink: 0;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .supportBody {
+        flex: 1;
+        min-height: 0;
+        padding: 1rem 1.1rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .supportLoading {
+        display: grid;
+        place-items: center;
+        color: var(--sc-muted);
+        font-size: 1.4rem;
+    }
+
+    .supportSpin {
+        animation: supportSpin 1s linear infinite;
+    }
+
+    .supportFooter {
+        display: grid;
+        flex-shrink: 0;
+        gap: .6rem;
+        padding: .7rem .75rem calc(.7rem + env(safe-area-inset-bottom, 0px));
+        border-top: 1px solid var(--sc-border);
+        background: #fff;
+    }
+
+    .supportEmpty {
+        font-size: .85rem;
+        line-height: 1.5;
+        color: var(--sc-muted);
+    }
+
+    // Buttons
+    .supportPrimary,
+    .supportGhost {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .4rem;
+        padding: .55rem .95rem;
+        border-radius: 12px;
+        font-size: .83rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .2s ease, border-color .2s ease, transform .2s var(--sc-ease);
+
+        &:disabled {
+            opacity: .6;
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-red);
+            outline-offset: 2px;
+        }
+    }
+
+    .supportPrimary {
+        background: var(--sc-red);
+        color: #fff;
+
+        &:hover:not(:disabled) {
+            background: hsl(0, 66%, 37%);
+        }
+    }
+
+    .supportGhost {
+        border: 1px solid var(--sc-border);
+        background: #fff;
+        color: var(--sc-ink);
+
+        &:hover:not(:disabled) {
+            border-color: hsl(0, 0%, 75%);
+        }
+    }
+
+    .supportLinkBtn {
+        display: inline-flex;
+        align-self: flex-start;
+        align-items: center;
+        gap: .2rem;
+        color: var(--sc-red);
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Signed out, offline
+    // ---------------------------------------------------------------------------
+    .supportGuest,
+    .supportOffline,
+    .supportHistory {
+        display: flex;
+        flex-direction: column;
+        gap: .7rem;
+
+        h3 {
+            font-family: 'League Spartan', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        > p {
+            font-size: .85rem;
+            line-height: 1.55;
+            color: var(--sc-muted);
+        }
+    }
+
+    .supportLogin {
+        align-self: flex-start;
+    }
+
+    .supportGuest > p.supportOr,
+    .supportOffline > p.supportOr {
+        margin-top: .35rem;
+        color: var(--sc-ink);
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .supportOfflineIcon {
+        display: grid;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 14px;
+        background: hsl(230, 40%, 95%);
+        color: hsl(230, 35%, 42%);
+        font-size: 1.2rem;
+    }
+
+    .supportContacts {
+        display: grid;
+        gap: .4rem;
+
+        a {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: .6rem .75rem;
+            border: 1px solid var(--sc-border);
+            border-radius: 14px;
+            background: #fff;
+            color: var(--sc-ink);
+            transition: border-color .2s ease;
+
+            &:hover {
+                border-color: hsl(0, 70%, 86%);
+            }
+
+            svg {
+                flex-shrink: 0;
+                color: var(--sc-red);
+                font-size: 1.05rem;
+            }
+
+            span {
+                display: grid;
+                min-width: 0;
+            }
+
+            small {
+                color: var(--sc-muted);
+                font-size: .7rem;
+            }
+
+            strong {
+                overflow: hidden;
+                font-size: .83rem;
+                font-weight: 600;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // A new question
+    // ---------------------------------------------------------------------------
+    .supportNew {
+        display: flex;
+        flex-direction: column;
+        gap: .7rem;
+    }
+
+    .supportLead {
+        font-family: 'League Spartan', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .supportHint {
+        color: var(--sc-muted);
+        font-size: .8rem;
+        line-height: 1.5;
+    }
+
+    .supportTopics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem;
+    }
+
+    .supportTopic {
+        padding: .45rem .8rem;
+        border: 1px solid var(--sc-border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--sc-ink);
+        font-size: .8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background .2s ease, border-color .2s ease, color .2s ease;
+
+        &:hover {
+            border-color: hsl(0, 70%, 84%);
+        }
+
+        &.isOn {
+            border-color: var(--sc-red);
+            background: var(--sc-red);
+            color: #fff;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-red);
+            outline-offset: 2px;
+        }
+    }
+
+    .supportFieldError {
+        color: hsl(0, 70%, 40%);
+        font-size: .78rem;
+    }
+
+    // ---------------------------------------------------------------------------
+    // A conversation
+    // ---------------------------------------------------------------------------
+    .supportThreadBar {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        padding: .5rem 1rem;
+        border-bottom: 1px solid var(--sc-border);
+        font-size: .8rem;
+    }
+
+    .supportThreadTopic {
+        overflow: hidden;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .supportState {
+        flex-shrink: 0;
+        padding: .15rem .55rem;
+        border-radius: 999px;
+        font-size: .7rem;
+        font-weight: 600;
+        white-space: nowrap;
+
+        &.is-open {
+            background: hsl(145, 50%, 93%);
+            color: hsl(145, 55%, 26%);
+        }
+
+        &.is-closing {
+            background: hsl(40, 100%, 91%);
+            color: hsl(28, 70%, 32%);
+        }
+
+        &.is-closed {
+            background: var(--sc-soft);
+            color: var(--sc-muted);
+        }
+    }
+
+    .supportThread {
+        background: hsl(20, 20%, 98.5%);
+    }
+
+    .supportMessages {
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+    }
+
+    .supportDay {
+        align-self: center;
+        margin: .35rem 0 .15rem;
+
+        span {
+            padding: .12rem .6rem;
+            border: 1px solid var(--sc-border);
+            border-radius: 999px;
+            background: #fff;
+            color: var(--sc-muted);
+            font-size: .7rem;
+        }
+    }
+
+    .supportMsg {
+        display: flex;
+        flex-direction: column;
+        max-width: 85%;
+
+        time {
+            margin: .15rem .35rem 0;
+            color: var(--sc-muted);
+            font-size: .65rem;
+        }
+
+        p {
+            font-size: .875rem;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        &.is-customer {
+            align-self: flex-end;
+            align-items: flex-end;
+
+            .supportMsgBubble {
+                border-radius: 18px 18px 6px 18px;
+                background: var(--sc-red);
+                color: #fff;
+            }
+        }
+
+        &.is-staff {
+            align-self: flex-start;
+            align-items: flex-start;
+
+            .supportMsgBubble {
+                border: 1px solid var(--sc-border);
+                border-radius: 18px 18px 18px 6px;
+                background: #fff;
+            }
+        }
+
+        &.is-ai .supportMsgBubble {
+            border-color: hsl(260, 40%, 88%);
+            background: hsl(260, 60%, 97.5%);
+        }
+
+        &.is-system {
+            align-self: center;
+            align-items: center;
+            max-width: 92%;
+            text-align: center;
+
+            p {
+                padding: .4rem .75rem;
+                border-radius: 12px;
+                background: hsl(40, 70%, 95%);
+                color: hsl(28, 40%, 30%);
+                font-size: .76rem;
+            }
+        }
+    }
+
+    .supportMsgName {
+        margin: 0 .4rem .2rem;
+        color: var(--sc-muted);
+        font-size: .7rem;
+        font-weight: 600;
+    }
+
+    .supportMsgBubble {
+        display: grid;
+        gap: .4rem;
+        padding: .55rem .8rem;
+
+        &:has(.supportMsgPhoto) {
+            padding: .3rem;
+
+            p {
+                padding: 0 .5rem .3rem;
+            }
+        }
+    }
+
+    .supportMsgPhoto {
+        display: block;
+        width: 12rem;
+        max-width: 100%;
+        overflow: hidden;
+        border-radius: 14px;
+
+        img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 16rem;
+            object-fit: cover;
+        }
+
+        &.isLoading {
+            height: 8rem;
+            background: linear-gradient(110deg, hsla(0, 0%, 100%, .15) 30%, hsla(0, 0%, 100%, .4) 50%, hsla(0, 0%, 100%, .15) 70%) var(--sc-soft);
+            background-size: 200% 100%;
+            animation: supportShimmer 1.2s linear infinite;
+        }
+    }
+
+    .supportCloseCard {
+        padding: .75rem .85rem;
+        border: 1px solid hsl(40, 70%, 84%);
+        border-radius: 16px;
+        background: hsl(40, 100%, 96.5%);
+
+        p {
+            margin-bottom: .55rem;
+            font-size: .875rem;
+            font-weight: 600;
+        }
+
+        div {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .45rem;
+        }
+    }
+
+    .supportClosedNote {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .6rem;
+
+        p {
+            color: var(--sc-muted);
+            font-size: .82rem;
+        }
+    }
+
+    // ---------------------------------------------------------------------------
+    // The text box
+    // ---------------------------------------------------------------------------
+    .supportComposer {
+        display: grid;
+        gap: .45rem;
+
+        &.isDisabled {
+            padding: .35rem .2rem;
+        }
+    }
+
+    .supportComposerNote {
+        color: var(--sc-muted);
+        font-size: .8rem;
+        line-height: 1.45;
+        text-align: center;
+    }
+
+    .supportComposerRow {
+        display: flex;
+        align-items: flex-end;
+        gap: .35rem;
+        padding: .3rem;
+        border: 1px solid var(--sc-border);
+        border-radius: 18px;
+        background: var(--sc-soft);
+        transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+
+        &:focus-within {
+            border-color: hsl(0, 60%, 80%);
+            background: #fff;
+            box-shadow: 0 0 0 3px hsla(0, 66%, 43%, .1);
+        }
+
+        textarea {
+            flex: 1;
+            min-width: 0;
+            max-height: 140px;
+            padding: .5rem .2rem;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: var(--sc-ink);
+            font-size: .9rem;
+            line-height: 1.4;
+            resize: none;
+
+            &::placeholder {
+                color: hsl(240, 3%, 60%);
+            }
+        }
+    }
+
+    .supportSend {
+        display: grid;
+        flex-shrink: 0;
+        place-items: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        border-radius: 12px;
+        background: var(--sc-red);
+        color: #fff;
+        font-size: 1.05rem;
+        cursor: pointer;
+        transition: background .2s ease;
+
+        &:hover:not(:disabled) {
+            background: hsl(0, 66%, 37%);
+        }
+
+        &:disabled {
+            background: hsl(0, 0%, 82%);
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-red);
+            outline-offset: 2px;
+        }
+    }
+
+    .supportComposerPhoto {
+        position: relative;
+        width: 4.5rem;
+        height: 4.5rem;
+        overflow: hidden;
+        border: 1px solid var(--sc-border);
+        border-radius: 12px;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        button {
+            position: absolute;
+            top: .2rem;
+            right: .2rem;
+            display: grid;
+            place-items: center;
+            width: 1.4rem;
+            height: 1.4rem;
+            border-radius: 50%;
+            background: hsla(0, 0%, 0%, .6);
+            color: #fff;
+            font-size: .85rem;
+            cursor: pointer;
+        }
+    }
+
+    .supportComposerCount {
+        color: var(--sc-muted);
+        font-size: .7rem;
+        text-align: right;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Past chats
+    // ---------------------------------------------------------------------------
+    .supportHistoryList {
+        display: grid;
+        gap: .45rem;
+    }
+
+    .supportHistoryItem {
+        display: grid;
+        gap: .3rem;
+        width: 100%;
+        padding: .7rem .8rem;
+        border: 1px solid var(--sc-border);
+        border-radius: 14px;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .2s ease;
+
+        &:hover {
+            border-color: hsl(0, 70%, 86%);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--sc-red);
+            outline-offset: 2px;
+        }
+    }
+
+    .supportHistoryTop {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+
+        strong {
+            font-size: .85rem;
+            font-weight: 600;
+        }
+    }
+
+    .supportHistoryPreview {
+        display: -webkit-box;
+        overflow: hidden;
+        color: var(--sc-muted);
+        font-size: .8rem;
+        line-height: 1.4;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .supportHistoryWhen {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        color: var(--sc-muted);
+        font-size: .7rem;
+    }
+
+    .supportCount {
+        display: inline-grid;
+        place-items: center;
+        min-width: 1.2rem;
+        height: 1.2rem;
+        padding: 0 .3rem;
+        border-radius: 999px;
+        background: var(--sc-red);
+        color: #fff;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Phones: the panel takes the whole screen (and its own close button replaces the bubble).
+    // ---------------------------------------------------------------------------
+    @media (max-width: 640px) {
+        & {
+            --sc-gap: 1rem;
+            --sc-bubble: 3.25rem;
+        }
+
+        .supportPanel {
+            inset: 0;
+            z-index: 9998; // over the public navbar and the demo banner; toasts stay above
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            padding-top: env(safe-area-inset-top, 0px);
+            border: 0;
+            border-radius: 0;
+        }
+
+        .supportHead {
+            padding-top: 1rem;
+        }
+
+        &.isOpen .supportBubble {
+            display: none;
+        }
+
+        .supportMsg {
+            max-width: 88%;
+        }
+
+        // 16px: iOS doesn't zoom into the field.
+        .supportComposerRow textarea {
+            font-size: 1rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .supportBubble,
+        .supportTopic,
+        .supportPrimary,
+        .supportGhost {
+            transition: none;
+        }
+
+        .supportBubble:hover {
+            transform: none;
+        }
+
+        .supportMsgPhoto.isLoading {
+            animation: none;
+        }
+    }
+}
+
+@keyframes supportSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes supportShimmer {
+    to {
+        background-position: -200% 0;
+    }
+}
