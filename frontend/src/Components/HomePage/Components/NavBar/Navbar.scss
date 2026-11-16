@@ -58,7 +58,7 @@
 
 .pubNavLogo {
     justify-self: start;
-    border-radius: 14px;
+    border-radius: 8px;
 
     &:hover .pubBrandMark {
         transform: rotate(-8deg) scale(1.06);
@@ -79,7 +79,7 @@
     width: 2.65rem;
     height: 2.65rem;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 7px;
     background: hsl(355, 68%, 45%);
     box-shadow: 0 8px 18px -10px hsla(0, 66%, 30%, .8);
     transition: transform .4s var(--hp-ease);
