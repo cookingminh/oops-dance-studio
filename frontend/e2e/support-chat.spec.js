@@ -1,6 +1,8 @@
-// The chat bubble (supabase/migrations/20261117001900_support_chat.sql): a visitor is asked to log in; a student
-// picks a topic and asks; the staff reply arrives live; the unread badge; the studio asks whether it's sorted and
-// the student closes it; a new question is a new chat; from 21:45 no new question; at night the chat is offline.
+// The chat bubble (supabase/migrations/20261117001900_support_chat.sql, 20261117002000_support_chat_joined.sql):
+// a visitor is asked to log in; a student picks a topic, asks, and sees a countdown until someone joins; the staff
+// reply arrives live after "Nam has joined the chat" (first names only); the unread badge; the studio asks whether
+// it's sorted and the student closes it; a new question is a new chat; from 21:45 no new question; at night the
+// chat is offline.
 // Staff answer through the RPCs here (support-inbox.spec.js covers their page). The chat hours are set for the spec
 // ("open all day" unless a test says otherwise) and put back afterwards.
 import { test, expect } from '@playwright/test';
@@ -53,6 +55,10 @@ test('a student picks a topic and asks', async () => {
     await panel().getByRole('button', { name: 'Send' }).click();
 
     await expect(panel().locator('.supportMsg.is-customer')).toContainText(QUESTION);
+    // Nobody has joined yet: the countdown to the usual answer time.
+    await expect(panel().locator('.supportState')).toHaveText('Waiting for staff');
+    await expect(panel().locator('.supportWaiting')).toContainText('Usually within 5 minutes');
+    await expect(panel().locator('.supportCountdown')).toHaveText(/^[45]:\d\d$/);
     const row = await myOpenThread();
     expect(row.status).toBe('open');
     threadId = row.id;
@@ -63,7 +69,12 @@ test('the staff reply arrives while the chat is open', async () => {
     expect(sent.status, JSON.stringify(sent.data)).toBe(200);
     const reply = panel().locator('.supportMsg.is-staff').last();
     await expect(reply).toContainText('Saturday 18:30 works', { timeout: 35_000 });
-    await expect(reply.locator('.supportMsgName')).toContainText('Lê Hoàng Nam');
+    // Answering first, Nam took it: he joined, the countdown is gone, and he is shown by his first name only.
+    await expect(panel().locator('.supportMsg.event-joined')).toContainText('Nam has joined the chat.');
+    await expect(panel().locator('.supportWaiting')).toHaveCount(0);
+    await expect(panel().locator('.supportState')).toHaveText('Nam is helping you');
+    await expect(reply.locator('.supportMsgName')).toHaveText('Nam · Oops! Studio');
+    await expect(panel()).not.toContainText('Lê Hoàng Nam');
 });
 
 test('a reply while the chat is closed shows on the bubble', async () => {

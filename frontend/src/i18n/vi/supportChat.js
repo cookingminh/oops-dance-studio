@@ -68,4 +68,14 @@ export default {
     'No chats yet. Your questions and the studio’s answers will be kept here.':
         'Chưa có cuộc trò chuyện nào. Câu hỏi của bạn và câu trả lời của studio sẽ được lưu ở đây.',
     '{count} unread': '{count} tin chưa đọc',
+
+    // Who is helping, and the countdown while nobody has joined yet
+    '{name} has joined the chat.': '{name} đã vào cuộc trò chuyện.',
+    'Someone from the studio has joined the chat.': 'Một bạn ở studio đã vào cuộc trò chuyện.',
+    '{name} is helping you': '{name} đang hỗ trợ bạn',
+    'Waiting for staff': 'Đang chờ staff',
+    'Waiting for someone from the studio to join…': 'Đang chờ staff vào trả lời…',
+    'Usually within {count} minute': 'Thường có người trả lời trong khoảng {count} phút',
+    'Usually within {count} minutes': 'Thường có người trả lời trong khoảng {count} phút',
+    'Taking a little longer than usual. Someone will join soon.': 'Hơi lâu hơn mọi khi một chút, staff sẽ vào ngay thôi.',
 };

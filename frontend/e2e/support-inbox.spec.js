@@ -69,6 +69,7 @@ test('staff open it with the card of who is asking, and reply', async () => {
 
     await expect.poll(async () => (await threadNow()).waiting_since).toBeNull();
     await expect(thread().locator('.inboxOwner')).toContainText('You have it');
+    await expect(thread().locator('.inboxNote.is-joined')).toContainText('Nam joined the chat');
     await expect(page.getByRole('tab', { name: /Answered/ })).toBeVisible();
 });
 

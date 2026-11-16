@@ -109,4 +109,8 @@ export default {
     '{actor} handed over {count} chats': '{actor} chuyển {count} cuộc trò chuyện',
     '{actor} asked to close {count} chats': '{actor} hỏi đóng {count} cuộc trò chuyện',
     '{count} chats closed by themselves after 24 hours': '{count} cuộc trò chuyện tự đóng sau 24 giờ',
+
+    // Who joined (taking a chat, answering it first, or being handed it)
+    '{name} joined the chat': '{name} đã vào cuộc trò chuyện',
+    'Joined the chat': 'Đã vào cuộc trò chuyện',
 };

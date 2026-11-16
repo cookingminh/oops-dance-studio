@@ -35,6 +35,8 @@ export function durationText(minutes, { t, tn }) {
 // A system note, as staff read it in the conversation. `customer` is the person asking.
 export function eventText(message, customer, { t }) {
     switch (message.event) {
+        case 'joined':
+            return t('{name} joined the chat', { name: message.sender_name || t('The studio') });
         case 'close_asked':
             return t('{name} asked whether it’s sorted', { name: message.sender_name || t('The studio') });
         case 'kept_open':
@@ -52,6 +54,7 @@ export function eventText(message, customer, { t }) {
 
 // The same, short, for a row of the list.
 const EVENT_SHORT = {
+    joined: 'Joined the chat',
     close_asked: 'Asked whether it’s sorted',
     kept_open: 'Not sorted yet',
     closed: 'Closed the chat',

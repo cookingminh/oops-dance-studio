@@ -14,7 +14,8 @@ import {
     uploadSupportImage,
 } from '@/services/support';
 import SupportComposer from './SupportComposer';
-import { dayLabel, eventText, senderLabel, studioDay, topicLabel } from './supportText';
+import SupportWaiting from './SupportWaiting';
+import { dayLabel, eventText, senderLabel, studioDay, threadState, topicLabel } from './supportText';
 
 const REFETCH_MS = 30_000; // in case Realtime is down
 
@@ -144,14 +145,15 @@ const SupportThread = ({ threadId, status, userId, onChanged, onNewQuestion }) =
 
     const closed = thread.status === 'closed';
     const phase = status?.phase ?? 'open';
+    const state = threadState(t, thread);
+    // Nobody from the studio has taken it yet: count down to the usual answer time (not at night).
+    const waitingForSomeone = !closed && !thread.assigned_to && Boolean(thread.waiting_since) && phase !== 'closed';
 
     return (
         <>
             <div className="supportThreadBar">
                 <span className="supportThreadTopic">{topicLabel(t, thread.category)}</span>
-                <span className={`supportState is-${thread.status}`}>
-                    {closed ? t('Chat closed') : thread.status === 'closing' ? t('Is it sorted?') : t('Ongoing')}
-                </span>
+                <span className={`supportState is-${state.tone}`}>{state.text}</span>
             </div>
             <div className="supportBody supportThread" ref={listRef}>
                 <ol className="supportMessages" role="log" aria-live="polite" aria-label={t('Messages')}>
@@ -169,7 +171,7 @@ const SupportThread = ({ threadId, status, userId, onChanged, onNewQuestion }) =
                                 )}
                                 {kind === 'system' ? (
                                     <li className={`supportMsg is-system event-${message.event}`}>
-                                        <p>{eventText(t, message.event, status)}</p>
+                                        <p>{eventText(t, message.event, status, message.sender_name)}</p>
                                         <time dateTime={message.created_at}>{formatClock(message.created_at)}</time>
                                     </li>
                                 ) : (
@@ -195,6 +197,9 @@ const SupportThread = ({ threadId, status, userId, onChanged, onNewQuestion }) =
                 </ol>
             </div>
             <div className="supportFooter">
+                {waitingForSomeone && (
+                    <SupportWaiting since={thread.waiting_since} minutes={status?.reply_minutes ?? 5} serverNow={status?.now} />
+                )}
                 {thread.status === 'closing' && mine && (
                     <div className="supportCloseCard" role="group" aria-label={t('Is everything sorted?')}>
                         <p>{t('Is everything sorted?')}</p>

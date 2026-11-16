@@ -426,11 +426,16 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
   - Học viên / khách: Đặt phòng · Lớp học & lịch học · Học phí & thanh toán · Nghỉ học & học bù · Tài khoản · Việc khác.
   - Giáo viên: Check-in & giờ dạy · Lương · Dạy thay & xin nghỉ · Lớp & học viên của tôi · Tài khoản · Việc khác.
   - Mỗi người chỉ có **một cuộc đang mở**; muốn hỏi thêm thì nhắn tiếp trong cuộc đó.
+  - Khi chưa có staff nào nhận, khung chat hiện "Đang chờ staff vào trả lời… thường trong khoảng 5 phút" kèm đồng hồ
+    đếm ngược; quá 5 phút thì đổi thành "Hơi lâu hơn mọi khi một chút, staff sẽ vào ngay thôi". Có người nhận thì hiện
+    "Nam đã vào cuộc trò chuyện" và "Nam đang hỗ trợ bạn".
+  - Khách chỉ thấy **tên gọi** của staff (chữ cuối của họ tên: "Lê Hoàng Nam" → "Nam"), không thấy họ tên đầy đủ.
 - **Trả lời** (staff / admin, trang *Tin nhắn*):
   - Ba tab: đang chờ studio (ai chờ lâu nhất lên đầu, có thời gian đã chờ), studio đã trả lời, đã đóng; lọc theo chủ đề.
   - Bên cạnh cuộc chat là thẻ người hỏi: SĐT, lớp đang học, học phí chưa đóng, lượt đặt phòng sắp tới, trang họ đang
     xem lúc hỏi.
-  - Ai trả lời đầu tiên thì nhận cuộc đó (hiện tên); có nút nhận và chuyển cho người khác.
+  - Ai trả lời đầu tiên thì nhận cuộc đó (hiện tên); có nút nhận và chuyển cho người khác. Nhận, trả lời đầu tiên hay
+    được chuyển cho đều thêm dòng "… đã vào cuộc trò chuyện" bên khách.
 - **Đóng cuộc chat**:
   1. Staff bấm hỏi đóng → người hỏi thấy "Đã xong chưa?" với hai nút.
   2. *Xong rồi* → cuộc chat đóng hẳn; câu hỏi sau là một cuộc mới.
@@ -439,8 +444,8 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
 - **Thông báo**: số đỏ trên bubble khi có tin studio chưa đọc. Staff thấy số người đang chờ cạnh menu *Tin nhắn* và một
   dòng trong chuông (chờ quá 15 phút thì thành việc gấp). Tin mới hiện ngay trong khung chat đang mở. Chưa có email.
 - **Nhật ký**: trang *Activity* ghi ai nhận, chuyển, hỏi đóng, đóng cuộc chat; không ghi nội dung tin nhắn.
-- **Đổi giờ chat**: hiện sửa trong database (`site_settings`: `support_opens`, `support_last_start`, `support_closes`);
-  chưa có ô trong Setting.
+- **Đổi giờ chat / số phút đếm ngược**: hiện sửa trong database (`site_settings`: `support_opens`, `support_last_start`,
+  `support_closes`, `support_reply_minutes`); chưa có ô trong Setting.
 
 ---
 
@@ -539,5 +544,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Lịch học trên website, cấp độ lớp | `20261117001500_timetable_templates.sql` | `site_settings`, `site_set_timetable_template`, `classes.level`, `seed_demo_levels` |
 | Vị trí ảnh lớp, ảnh tròn trên lịch học | `20261117001600_timetable_photos.sql` | `classes.image_pos_x/_y`, `classes.timetable_photo_path/_x/_y/_zoom`, `list_public_classes` |
 | Chat với studio | `20261117001900_support_chat.sql` | `support_status`, `support_start`, `support_send`, `support_inbox`, `support_request_close`, `support_run` |
+| Chat: ai đang hỗ trợ, đếm ngược, tên gọi | `20261117002000_support_chat_joined.sql` | `private.first_name`, `private.support_assign`, `support_status` (`reply_minutes`) |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

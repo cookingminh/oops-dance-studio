@@ -32,9 +32,12 @@ export function statusLine(t, status) {
     return t('Offline · back at {opens}', vars);
 }
 
-// A system message, from the reader's side (the person who asked).
-export function eventText(t, event, status) {
+// A system message, from the reader's side (the person who asked). `name`: who it's about (a staff member's
+// first name for 'joined').
+export function eventText(t, event, status, name) {
     switch (event) {
+        case 'joined':
+            return name ? t('{name} has joined the chat.', { name }) : t('Someone from the studio has joined the chat.');
         case 'close_asked':
             return t('The studio asked whether everything is sorted.');
         case 'kept_open':
@@ -50,6 +53,20 @@ export function eventText(t, event, status) {
         default:
             return '';
     }
+}
+
+// The chip next to the topic: closed, asked to close, who is helping, or still waiting for someone.
+export function threadState(t, thread) {
+    if (thread.status === 'closed') return { tone: 'closed', text: t('Chat closed') };
+    if (thread.status === 'closing') return { tone: 'closing', text: t('Is it sorted?') };
+    if (thread.assigned_name) return { tone: 'open', text: t('{name} is helping you', { name: thread.assigned_name }) };
+    return { tone: 'waiting', text: t('Waiting for staff') };
+}
+
+// 272 000 ms → "4:32".
+export function countdown(ms) {
+    const seconds = Math.max(0, Math.ceil(ms / 1000));
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
 // Who wrote a message on the studio's side.

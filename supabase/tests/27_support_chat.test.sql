@@ -143,8 +143,8 @@ select is((public.support_customer_card('00000000-0000-4000-b000-000000000273') 
 -- Answering
 -- ---------------------------------------------------------------------------
 select tests.read_a_minute_ago(tests.open_thread('00000000-0000-4000-b000-000000000273'));
-select is((public.support_send(tests.open_thread('00000000-0000-4000-b000-000000000273'), 'Let me check')).sender_name, 'Chat Staff',
-  'staff answer, with their name');
+select is((public.support_send(tests.open_thread('00000000-0000-4000-b000-000000000273'), 'Let me check')).sender_name, 'Staff',
+  'staff answer, with their first name');
 select is((tests.thread(tests.open_thread('00000000-0000-4000-b000-000000000273'))).assigned_to,
   '00000000-0000-4000-b000-000000000271'::uuid, 'the first to answer takes the conversation');
 select ok((tests.thread(tests.open_thread('00000000-0000-4000-b000-000000000273'))).waiting_since is null, 'nobody is waiting now');
@@ -178,8 +178,8 @@ select tests.login_as('00000000-0000-4000-b000-000000000273');
 select lives_ok(format($$ select public.support_send(%s, 'One more thing') $$, tests.open_thread('00000000-0000-4000-b000-000000000273')),
   'the student writes again instead of answering');
 select is((tests.thread(tests.open_thread('00000000-0000-4000-b000-000000000273'))).status, 'open', 'which keeps it open');
-select is(tests.events(tests.open_thread('00000000-0000-4000-b000-000000000273')), array['close_asked', 'kept_open'],
-  'both steps show in the conversation');
+select is(tests.events(tests.open_thread('00000000-0000-4000-b000-000000000273')), array['joined', 'joined', 'close_asked', 'kept_open'],
+  'who joined (the first to answer, then the admin), the question and the answer show in the conversation');
 select ok((tests.thread(tests.open_thread('00000000-0000-4000-b000-000000000273'))).waiting_since is not null,
   'and the student waits for the studio again');
 

@@ -11,7 +11,10 @@ import { toAppError, unwrap } from './errors';
 //     'closed' (for good; a new question is a new conversation). waiting_since: the person waits for the studio.
 //   * Message: { id, thread_id, sender_kind: 'customer' | 'staff' | 'system' | 'ai', sender_id, sender_name,
 //     body, image_path, event, created_at }. System messages have an `event` instead of text:
-//     'close_asked' | 'kept_open' | 'closed' | 'auto_closed' | 'paused'.
+//     'joined' (someone took the conversation) | 'close_asked' | 'kept_open' | 'closed' | 'auto_closed' | 'paused'.
+//   * Staff appear to the person by first name only ("Lê Hoàng Nam" → "Nam"): sender_name of staff messages and
+//     notes, and the thread's assigned_name (who is helping). Staff pages keep full names (support_inbox).
+//   * While nobody has taken it, the bubble counts down reply_minutes from the thread's waiting_since.
 //   * Errors: SUPPORT_CLOSED (outside the hours: refresh the status), RATE_LIMITED (20 messages in 10 minutes).
 
 export const SUPPORT_BUCKET = 'support-images';
@@ -43,8 +46,9 @@ export const topicsFor = (role) => (role === 'instructor' ? INSTRUCTOR_TOPICS : 
 // Everyone
 // ---------------------------------------------------------------------------
 
-// → { phase: 'open' | 'last_call' | 'closed', opens, last_start, closes ('HH:mm'), now,
-//     thread: { id, status, category } | null (signed in: the open conversation), unread (signed in) | null }
+// → { phase: 'open' | 'last_call' | 'closed', opens, last_start, closes ('HH:mm'), reply_minutes, now,
+//     thread: { id, status, category, waiting_since, assigned_name } | null (signed in: the open conversation),
+//     unread (signed in) | null }
 export async function getSupportStatus() {
     return unwrap(await supabase.rpc('support_status'));
 }

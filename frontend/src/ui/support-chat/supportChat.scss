@@ -557,6 +557,11 @@
             color: hsl(28, 70%, 32%);
         }
 
+        &.is-waiting {
+            background: hsl(210, 70%, 94%);
+            color: hsl(212, 60%, 32%);
+        }
+
         &.is-closed {
             background: var(--sc-soft);
             color: var(--sc-muted);
@@ -708,6 +713,68 @@
             display: flex;
             flex-wrap: wrap;
             gap: .45rem;
+        }
+    }
+
+    // Nobody has joined yet: the countdown to the usual answer time.
+    .supportWaiting {
+        display: flex;
+        align-items: center;
+        gap: .65rem;
+        padding: .6rem .8rem;
+        border: 1px solid hsl(210, 60%, 88%);
+        border-radius: 16px;
+        background: hsl(210, 80%, 97%);
+
+        .supportWaitingIcon {
+            display: grid;
+            flex-shrink: 0;
+            place-items: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: hsl(210, 70%, 92%);
+            color: hsl(212, 60%, 38%);
+
+            svg {
+                animation: supportHourglass 2.4s var(--sc-ease) infinite;
+            }
+        }
+
+        .supportWaitingText {
+            flex: 1;
+            min-width: 0;
+
+            p {
+                font-size: .82rem;
+                font-weight: 600;
+                line-height: 1.35;
+            }
+
+            small {
+                display: block;
+                margin-top: .1rem;
+                color: var(--sc-muted);
+                font-size: .74rem;
+            }
+        }
+
+        .supportCountdown {
+            flex-shrink: 0;
+            color: hsl(212, 60%, 34%);
+            font-size: 1.05rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &.is-late {
+            border-color: hsl(40, 70%, 84%);
+            background: hsl(40, 100%, 96.5%);
+
+            .supportWaitingIcon {
+                background: hsl(40, 100%, 90%);
+                color: hsl(28, 70%, 36%);
+            }
         }
     }
 
@@ -954,6 +1021,10 @@
     }
 
     @media (prefers-reduced-motion: reduce) {
+        .supportWaiting .supportWaitingIcon svg {
+            animation: none;
+        }
+
         .supportBubble,
         .supportTopic,
         .supportPrimary,
@@ -980,5 +1051,15 @@
 @keyframes supportShimmer {
     to {
         background-position: -200% 0;
+    }
+}
+
+@keyframes supportHourglass {
+    0%, 70% {
+        transform: rotate(0deg);
+    }
+
+    85%, 100% {
+        transform: rotate(180deg);
     }
 }
