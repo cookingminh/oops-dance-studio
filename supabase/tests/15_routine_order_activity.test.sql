@@ -130,6 +130,7 @@ select is((tests.logged('approved', '900151')).label, 'Order Student', 'and whos
 -- A cancelled session frees its room (the class now meets in Order Room, every day 10:00–11:00).
 select tests.logout();
 update public.classes set room_id = 900151 where id = 900151;
+delete from public.instructor_attendance where class_id = 900151 and date = tests.today() + 5;  -- the catch-up's, when still this week
 insert into public.instructor_attendance (id, class_id, instructor_id, room_id, date, status)
 overriding system value values (900152, 900151, '00000000-0000-4000-b000-000000000153', 900151, tests.today() + 5, 'cancelled');
 select lives_ok(

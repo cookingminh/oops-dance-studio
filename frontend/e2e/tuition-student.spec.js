@@ -154,11 +154,18 @@ test('the student sees their courses, how renewal works and the finished courses
     await expect(row).toContainText(/Due by|Overdue/);
     await expect(row.getByRole('button', { name: `Pay now ${payInvoice.class_name}` })).toBeVisible();
 
-    // guest@'s next course waiting for an answer, or with none open the renewal rules instead.
+    // guest@'s next courses (not started yet — by the course's progress like the page, else its start date), the
+    // ones still waiting for an answer listed; with none the renewal rules instead. A course starting today whose
+    // first session hasn't been held is still "next" (on that weekday the demo has some).
     const today = (await rpc(null, 'studio_today')).data;
-    const asked = (await myInvoices()).filter((invoice) => invoice.status === 'unpaid' && invoice.renewal === null && invoice.course?.starts_on > today);
+    const invoices = await myInvoices();
+    const progress = (await rpc(me.jwt, 'lesson_progress', { p_class_ids: [...new Set(invoices.map((row) => row.class_id))] })).data ?? [];
+    const status = new Map(progress.map((row) => [row.lesson_id, row.status]));
+    const planned = (invoice) => (status.has(invoice.lesson_id) ? status.get(invoice.lesson_id) === 'planned' : invoice.course?.starts_on > today);
+    const upcoming = invoices.filter(planned);
+    const asked = upcoming.filter((invoice) => invoice.status === 'unpaid' && invoice.renewal === null);
     const renewCard = page.locator('.tuRenewCard');
-    if (asked.length) {
+    if (upcoming.length) {
         await expect(renewCard.getByRole('heading', { name: /^Your next course/ })).toBeVisible();
         for (const invoice of asked) await expect(renewCard.locator('.tuRenew', { hasText: invoice.class_name })).toContainText(`Continue with ${invoice.lesson_title}`);
     } else {

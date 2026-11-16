@@ -73,6 +73,10 @@ insert into public.class_students (class_id, student_id) values
 insert into public.bookings (id, room_id, guest_id, date, start_time, end_time, status) values
   (900001, 900001, 'a0000000-0000-4000-8000-000000000005', tests.next_week(2), '10:00', '12:00', 'pending'),
   (900002, 900001, 'a0000000-0000-4000-8000-000000000006', tests.next_week(2), '13:00', '15:00', 'approved');
+-- The catch-up gives a class meeting today (class 1 on Mondays, class 2 on Wednesdays) today's session and roll
+-- call; the counts below are about the rows made here.
+delete from public.student_attendance where class_id in (900001, 900002);
+delete from public.instructor_attendance where class_id in (900001, 900002);
 insert into public.instructor_attendance (id, class_id, instructor_id, room_id, date) values
   (900001, 900001, 'a0000000-0000-4000-8000-000000000003', 900001, tests.next_week(1)),
   (900002, 900002, 'a0000000-0000-4000-8000-000000000004', 900002, tests.next_week(3));
@@ -253,7 +257,7 @@ select lives_ok($$insert into public.rooms (id, name, price) values (900004, 'RL
 select is(tests.affected($$delete from public.rooms where id = 900004$$), 1, 'admin: can delete rooms');
 select is(tests.affected($$delete from public.classes where id = 900003$$), 1, 'admin: can delete classes');
 select is((select count(*) from public.bookings where id in (900001, 900002)), 2::bigint, 'admin: sees all bookings');
-select is(tests.affected($$delete from public.student_attendance where class_id = 900001 and student_id = 'a0000000-0000-4000-8000-000000000006'$$), 1,
+select is(tests.affected($$delete from public.student_attendance where class_id = 900001 and student_id = 'a0000000-0000-4000-8000-000000000006' and date = tests.next_week(1)$$), 1,
   'admin: can delete roll rows');
 select is(tests.affected($$delete from public.class_students where class_id = 900001 and student_id = 'a0000000-0000-4000-8000-000000000006'$$), 1,
   'admin: can delete enrolments');
