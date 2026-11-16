@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { LuQrCode } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useMyDues } from '../../../../dues/myDuesContext';
 import { amountDue, getInvoice, simulateTransfer, vietQrUrl } from '@/services/tuition';
 import { forgetMyTuition } from '@/services/tuitionStudent';
 import { EASE_OUT } from '../../../../../admin-staff/components/common/motion';
@@ -21,6 +22,8 @@ const PayDialog = ({ invoice: initial, settings, sandbox, onClose, onPaid }) => 
     const toast = useToast();
     const [invoice, setInvoice] = useState(initial);
     const [simulating, setSimulating] = useState(false);
+    const [checked, setChecked] = useState(false);
+    const { refresh: refreshDues } = useMyDues();
     const announced = useRef(initial.status === 'paid');
     // The latest onPaid without restarting the polling each time the parent renders.
     const onPaidRef = useRef(onPaid);
@@ -36,10 +39,32 @@ const PayDialog = ({ invoice: initial, settings, sandbox, onClose, onPaid }) => 
                 forgetMyTuition();
                 toast.success('Payment received. Thank you!');
                 onPaidRef.current?.(fresh);
+                refreshDues(true);
             }
         },
-        [toast],
+        [toast, refreshDues],
     );
+
+    // Opened from a list read earlier (the bell, a page): read the invoice again first, so a payment that came
+    // in meanwhile shows it paid instead of offering to pay again.
+    useEffect(() => {
+        let alive = true;
+        getInvoice(initial.id)
+            .then((fresh) => {
+                if (!alive || !fresh) return;
+                setInvoice(fresh);
+                if (fresh.status !== 'paid' || announced.current) return;
+                announced.current = true;
+                forgetMyTuition();
+                onPaidRef.current?.(fresh);
+                refreshDues(true);
+            })
+            .catch(() => {})
+            .finally(() => alive && setChecked(true));
+        return () => {
+            alive = false;
+        };
+    }, [initial.id, refreshDues]);
 
     // Ask again every few seconds while it waits (not while the tab is in the background).
     const waiting = invoice.status === 'unpaid';
@@ -118,7 +143,7 @@ const PayDialog = ({ invoice: initial, settings, sandbox, onClose, onPaid }) => 
                                         <SandboxBox
                                             text={t('No real money moves here. Pretend you sent the transfer and watch this page update by itself.')}
                                             label={t('Simulate the bank transfer')}
-                                            busy={simulating}
+                                            busy={simulating || !checked}
                                             onSimulate={simulate}
                                         />
                                     )}

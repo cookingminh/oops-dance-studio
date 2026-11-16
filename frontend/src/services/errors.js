@@ -31,6 +31,8 @@ const CLASS_HAS_HISTORY = 'This class has sessions, attendance or payments on re
 const BOOKED_AFTER_CANCEL = 'The room was booked after this session was cancelled, so it can’t be reopened. Add a make-up session instead.';
 // A rented studio classes were taught at stays on record (venue_delete).
 const VENUE_USED = 'Classes were taught at this studio, so it can’t be deleted. Set it inactive instead.';
+// The sandbox's pretend transfer on a booking already paid in full (booking_simulate_transfer).
+const NOTHING_LEFT = 'This booking is already paid in full.';
 
 // Specific INVALID_INPUT reasons (RPC text or constraint name) that deserve their own message.
 const INVALID_INPUT_REASONS = [
@@ -52,6 +54,8 @@ const INVALID_INPUT_REASONS = [
     [/room's rent must be 0 or more/i, 'A room’s rent must be 0 or more.'],
     [/a studio needs at least one room/i, 'A studio needs at least one room in use.'],
     [/^pick a room/i, 'Pick a room for this session.'],
+    // The sandbox's pretend transfer for a booking (booking_simulate_transfer).
+    [/more than is left to pay/i, 'That’s more than is left to pay on this booking.'],
     // Chat with the studio (support_start / support_send).
     [/^pick a topic/i, 'Pick a topic for your question.'],
     [/^write your question|^write a message/i, 'Write your message first.'],
@@ -117,7 +121,9 @@ export function toAppError(error) {
                     ? BOOKED_AFTER_CANCEL
                     : rpc[1] === 'INVALID_STATE' && /set it inactive instead/i.test(detail)
                       ? VENUE_USED
-                      : MESSAGES[rpc[1]];
+                      : rpc[1] === 'INVALID_STATE' && /nothing is left to pay/i.test(detail)
+                        ? NOTHING_LEFT
+                        : MESSAGES[rpc[1]];
         return new AppError(rpc[1], message, error, detail);
     }
 

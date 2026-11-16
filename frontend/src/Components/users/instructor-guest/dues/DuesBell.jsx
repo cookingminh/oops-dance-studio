@@ -49,10 +49,12 @@ const DuesBell = () => {
     const count = items.length + unseen.length;
     const late = items.filter((item) => item.tone === 'late').length;
 
-    // Opening the bell shows the changes: they stop counting (and are marked "New" this once).
+    // Opening the bell reads what is owed again and shows the changes: they stop counting (and are marked "New"
+    // this once).
     const toggle = (next) => {
         setOpen(next);
         if (!next || !user) return;
+        refresh(true); // what is owed may have changed since the last read (paid on a page a moment ago)
         setFresh(new Set(unseen.map(changeKey)));
         markSeen(user.id, changes);
         setSeen(new Set(changes.map(changeKey)));

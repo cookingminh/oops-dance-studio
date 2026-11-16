@@ -5,6 +5,7 @@ import { bookingDue, bookingQrUrl, bookingReceived, bookingTransferContent, find
 import { formatTimeRange, formatVnd } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
+import { useMyDues } from '@/Components/users/instructor-guest/dues/myDuesContext';
 import Segmented from '@/Components/users/admin-staff/components/common/Segmented';
 import CopyRow from './CopyRow';
 import { DeskPanel, QrPanel } from './QrPanel';
@@ -27,6 +28,8 @@ const BookingPayDialog = ({ booking: initial, initialChoice = null, settings, sa
     const [choiceKey, setChoiceKey] = useState(initialChoice);
     const [other, setOther] = useState('');
     const [simulating, setSimulating] = useState(false);
+    const [checked, setChecked] = useState(false);
+    const { refresh: refreshDues } = useMyDues();
     const received = useRef(bookingReceived(initial));
     const onChangedRef = useRef(onChanged);
     useEffect(() => {
@@ -42,9 +45,31 @@ const BookingPayDialog = ({ booking: initial, initialChoice = null, settings, sa
             if (now > received.current) toast.success('Transfer received. Thank you!');
             received.current = now;
             onChangedRef.current?.(fresh);
+            refreshDues(true);
         },
-        [toast],
+        [toast, refreshDues],
     );
+
+    // Opened from a list read earlier (the bell, a page): read the booking again first, so money that came in
+    // meanwhile shows it paid instead of offering to pay again.
+    useEffect(() => {
+        let alive = true;
+        findBooking(String(initial.id))
+            .then((fresh) => {
+                if (!alive || !fresh) return;
+                setBooking((previous) => ({ ...previous, ...fresh }));
+                const now = bookingReceived(fresh);
+                if (now === received.current) return;
+                received.current = now;
+                onChangedRef.current?.(fresh);
+                refreshDues(true);
+            })
+            .catch(() => {})
+            .finally(() => alive && setChecked(true));
+        return () => {
+            alive = false;
+        };
+    }, [initial.id, refreshDues]);
 
     const due = bookingDue(booking);
     const waiting = due.amount > 0;
@@ -81,6 +106,7 @@ const BookingPayDialog = ({ booking: initial, initialChoice = null, settings, sa
             accept(await findBooking(String(booking.id)));
         } catch (error) {
             toast.error(error);
+            findBooking(String(booking.id)).then(accept, () => {});
         } finally {
             setSimulating(false);
         }
@@ -170,7 +196,7 @@ const BookingPayDialog = ({ booking: initial, initialChoice = null, settings, sa
                                     <SandboxBox
                                         text={t('No real money moves here. Pretend the guest sent this transfer and watch the booking update by itself.')}
                                         label={t('Simulate the transfer')}
-                                        busy={simulating}
+                                        busy={simulating || !checked}
                                         onSimulate={simulate}
                                     />
                                 )}

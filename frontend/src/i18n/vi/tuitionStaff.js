@@ -86,6 +86,8 @@ export default {
     'No bank account is set up yet: take the payment at the desk and record it as cash.':
         'Chưa thiết lập tài khoản ngân hàng: thu tiền tại quầy và ghi là tiền mặt.',
     'Simulate the transfer': 'Giả lập chuyển khoản',
+    'This booking is already paid in full.': 'Lượt đặt phòng này đã được thanh toán đủ.',
+    'That’s more than is left to pay on this booking.': 'Số tiền này nhiều hơn số còn phải trả cho lượt đặt phòng này.',
 
     // Assign a transfer
     'Which invoice does {amount} pay?': '{amount} này đóng cho khoản nào?',

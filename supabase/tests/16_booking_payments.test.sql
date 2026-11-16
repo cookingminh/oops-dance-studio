@@ -3,13 +3,13 @@
 --   * every booking has its own payment code, which can't be changed
 --   * the bank webhook pays a booking by its code; the deposit becomes paid; the transfer is its history
 --   * a cancelled booking's transfer waits in the inbox; staff assign / take back transfers
---   * the sandbox simulates what is due; only the guest and staff see a booking's payments
+--   * the sandbox simulates what is due, never more than is left; only the guest and staff see a booking's payments
 --   * the price follows the room and times until staff change it (with a reason); money taken by hand
 --     (cash, refunds) is recorded as entries
 --   * staff write a note on an invoice on its own
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(39);
+select plan(43);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -112,6 +112,14 @@ insert into private.payment_sandbox default values on conflict do nothing;
 select tests.login_as('00000000-0000-4000-b000-000000000163');
 select public.booking_simulate_transfer(900163);
 select is((tests.booking(900163)).bank_transfer, 200000::numeric, 'a simulated transfer pays the deposit due');
+select throws_like($$select public.booking_simulate_transfer(900163, 300000)$$, 'INVALID_INPUT: more than is left to pay%',
+                   'it can''t pay more than is left');
+select public.booking_simulate_transfer(900163, 200000);
+select is((tests.booking(900163)).bank_transfer, 400000::numeric, 'it pays the rest');
+select throws_like($$select public.booking_simulate_transfer(900163, 200000)$$, 'INVALID_STATE: nothing is left to pay%',
+                   'paid in full: an amount from a dialog opened earlier is refused');
+select throws_like($$select public.booking_simulate_transfer(900163)$$, 'INVALID_STATE: nothing is left to pay%',
+                   'and so is what is due');
 
 -- ---------------------------------------------------------------------------
 -- The price, and money taken by hand
