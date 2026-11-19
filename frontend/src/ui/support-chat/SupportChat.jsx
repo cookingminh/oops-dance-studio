@@ -5,6 +5,7 @@ import { LuMessageCircle, LuX } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { PROFILE_ROLES } from '@/auth/roles';
 import { useI18n } from '@/i18n/i18nContext';
+import SupportTeaser from './SupportTeaser';
 import { useSupportStatus } from './useSupportStatus';
 import { isOnline } from './supportText';
 import './supportChat.scss';
@@ -16,6 +17,7 @@ const PANEL_ID = 'support-panel';
 const PUBLIC_PAGES = ['/home', '/classes', '/rooms', '/about'];
 const AUTH_PAGES = ['/login', '/register', '/reset-password'];
 const under = (pathname, pages) => pages.some((page) => pathname === page || pathname.startsWith(`${page}/`));
+const givenName = (user) => user?.full_name?.trim().split(/\s+/).pop() || user?.username || '';
 
 // Chat with the studio: the bubble in the bottom-right corner and its panel.
 //   * signed-in students, room guests and instructors: on every page (not the login pages);
@@ -42,6 +44,8 @@ const SupportChat = () => {
 
     const unread = member ? (status?.unread ?? 0) : 0;
     const online = isOnline(status);
+    // Invite them to chat only when a new question can be asked and they have nothing going on already.
+    const tease = !open && status?.phase === 'open' && !status?.thread && unread === 0;
     const label = open
         ? t('Close the chat')
         : unread > 0
@@ -66,6 +70,7 @@ const SupportChat = () => {
                     </Suspense>
                 )}
             </AnimatePresence>
+            <SupportTeaser enabled={tease} name={member ? givenName(user) : null} onOpen={() => setOpen(true)} />
             <button
                 ref={bubbleRef}
                 type="button"

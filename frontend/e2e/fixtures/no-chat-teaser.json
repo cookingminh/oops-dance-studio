@@ -1,0 +1,7 @@
+{
+  "cookies": [],
+  "origins": [
+    { "origin": "http://127.0.0.1:5173", "localStorage": [{ "name": "oops.chatTeaser.hiddenUntil", "value": "4102444800000" }] },
+    { "origin": "http://127.0.0.1:5174", "localStorage": [{ "name": "oops.chatTeaser.hiddenUntil", "value": "4102444800000" }] }
+  ]
+}

@@ -23,6 +23,9 @@ export default defineConfig({
         viewport: { width: 1440, height: 900 },
         screenshot: 'only-on-failure',
         trace: 'retain-on-failure',
+        // Every browser starts with the chat's "Got a question?" invitation dismissed, so it never covers what a
+        // spec clicks; support-chat-teaser.spec.js starts without it.
+        storageState: 'e2e/fixtures/no-chat-teaser.json',
     },
     projects: [
         { name: 'app', testIgnore: DEMO_SPEC, use: { baseURL: APP } },

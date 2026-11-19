@@ -78,4 +78,9 @@ export default {
     'Usually within {count} minute': 'Thường có người trả lời trong khoảng {count} phút',
     'Usually within {count} minutes': 'Thường có người trả lời trong khoảng {count} phút',
     'Taking a little longer than usual. Someone will join soon.': 'Hơi lâu hơn mọi khi một chút, staff sẽ vào ngay thôi.',
+
+    // The invitation next to the bubble
+    'Hi {name}! Got a question? Chat with us live.': 'Chào {name}! Có thắc mắc gì không? Chat trực tiếp với studio nhé!',
+    'Got a question? Chat with us live!': 'Có thắc mắc gì không? Chat trực tiếp với studio nhé!',
+    'Hide this message': 'Ẩn lời nhắn này',
 };

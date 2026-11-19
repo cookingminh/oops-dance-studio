@@ -417,6 +417,10 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
 - **Ai dùng**: học viên, khách đặt phòng và giáo viên đã đăng nhập. Bubble chat nằm ở góc phải dưới, trang nào cũng có.
   Người chưa đăng nhập bấm vào thì được mời đăng nhập, kèm hotline / fanpage / email. Staff và admin không có bubble: họ
   trả lời ở trang **Tin nhắn** (`/admin/inbox`).
+- **Lời mời chat**: mở trang khoảng 4 giây thì cạnh bubble hiện "Có thắc mắc gì không? Chat trực tiếp với studio nhé!"
+  (đã đăng nhập thì "Chào Anh! …"). Bấm vào là mở khung chat; bấm × thì 7 ngày không hiện lại trên trình duyệt đó; mỗi
+  lần mở web chỉ hiện một lần. Chỉ hiện khi studio đang nhận câu hỏi mới (08:00–21:45) và người đó chưa có cuộc chat
+  đang mở.
 - **Giờ chat** (giờ Việt Nam):
   - 08:00–21:45: mở cuộc chat mới và nhắn bình thường.
   - 21:45–22:00: không mở cuộc mới nữa; cuộc đang mở vẫn nhắn tiếp được đến 22:00.
