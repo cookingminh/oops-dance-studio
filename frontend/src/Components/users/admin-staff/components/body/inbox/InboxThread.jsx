@@ -1,12 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@nextui-org/react';
-import { LuArrowLeft, LuCheckCheck, LuClock, LuForward, LuHand, LuImagePlus, LuMoon, LuSend, LuX } from 'react-icons/lu';
+import { LuArrowLeft, LuCheck, LuCheckCheck, LuClock, LuForward, LuHand, LuImagePlus, LuMoon, LuSend, LuX } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { ErrorMessage, Loading } from '@/ui/feedback/AsyncState';
 import { formatClock } from '@/lib/format';
 import { prepareImage } from '@/lib/image';
-import { MESSAGE_MAX, claimThread, requestClose, sendMessage, uploadSupportImage } from '@/services/support';
+import { MESSAGE_MAX, TYPING_SHOWN_MS, claimThread, joinTyping, requestClose, sendMessage, uploadSupportImage } from '@/services/support';
 import { byDay, eventText, statusOf, topicLabel } from './inboxModel';
 
 // The middle column: one conversation, its actions (take it, hand it over, ask to close) and the reply box.
@@ -20,9 +20,43 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
     const [photo, setPhoto] = useState(null); // { file, url, path? }
     const [sending, setSending] = useState(false);
     const [busy, setBusy] = useState(null); // 'take' | 'hand' | 'close'
+    const [customerTyping, setCustomerTyping] = useState(false);
     const scrollRef = useRef(null);
     const fileRef = useRef(null);
     const textRef = useRef(null);
+    const typingRef = useRef(null);
+    const seenUpTo = useRef({ thread: null, id: 0 }); // messages up to this id were there when the chat opened
+
+    // "… is typing", both ways (Realtime broadcast): the person's dots show here; our keystrokes ping them.
+    const threadId = thread?.id;
+    useEffect(() => {
+        if (!threadId) return undefined;
+        let timer;
+        const typing = joinTyping(threadId, {
+            side: 'staff',
+            onTyping: () => {
+                setCustomerTyping(true);
+                clearTimeout(timer);
+                timer = setTimeout(() => setCustomerTyping(false), TYPING_SHOWN_MS);
+            },
+        });
+        typingRef.current = typing;
+        return () => {
+            clearTimeout(timer);
+            typing.leave();
+            typingRef.current = null;
+            setCustomerTyping(false);
+        };
+    }, [threadId]);
+
+    // Their message arrived: they stopped typing.
+    const lastCustomerId = messages.reduce((last, message) => (message.sender_kind === 'customer' ? message.id : last), 0);
+    useEffect(() => setCustomerTyping(false), [lastCustomerId]);
+
+    // Messages that arrive while the chat is open slide in; the ones already there don't.
+    if (threadId && seenUpTo.current.thread !== threadId && messages.length > 0) {
+        seenUpTo.current = { thread: threadId, id: messages[messages.length - 1].id };
+    }
 
     // A new conversation starts with an empty box (the draft stays while the same one is open).
     useEffect(() => {
@@ -41,7 +75,7 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
     useLayoutEffect(() => {
         const box = scrollRef.current;
         if (box) box.scrollTop = box.scrollHeight;
-    }, [messages.length, thread?.id]);
+    }, [messages.length, thread?.id, customerTyping]);
 
     // The box grows with the text, up to a few lines.
     useLayoutEffect(() => {
@@ -72,6 +106,10 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
     const owner = thread.assigned_to === meId ? t('You have it') : assigneeName ? t('With {name}', { name: assigneeName }) : t('Nobody has it yet');
     const handTo = staff.filter((person) => person.id !== meId && person.id !== thread.assigned_to);
     const status = statusOf(thread, now, i18n, customerName);
+    // Our latest reply: sent, or seen once the person opened the chat after it.
+    const lastStudio = [...messages].reverse().find((message) => message.sender_kind === 'staff' || message.sender_kind === 'ai');
+    const lastStudioSeen = Boolean(lastStudio && thread.customer_read_at && thread.customer_read_at >= lastStudio.created_at);
+    const isNew = (message) => message.id > seenUpTo.current.id;
 
     const fail = (err) => {
         toast.error(err);
@@ -195,13 +233,16 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
                         </p>
                         {list.map((message) =>
                             message.sender_kind === 'system' ? (
-                                <p key={message.id} className={`inboxNote is-${message.event}`}>
+                                <p key={message.id} className={`inboxNote is-${message.event}${isNew(message) ? ' isNew' : ''}`}>
                                     {message.event === 'paused' && <LuMoon aria-hidden="true" />}
                                     <span>{eventText(message, customerName, i18n)}</span>
                                     <time dateTime={message.created_at}>{formatClock(message.created_at)}</time>
                                 </p>
                             ) : (
-                                <div key={message.id} className={`inboxMsg is-${message.sender_kind === 'customer' ? 'customer' : 'studio'}`}>
+                                <div
+                                    key={message.id}
+                                    className={`inboxMsg is-${message.sender_kind === 'customer' ? 'customer' : 'studio'}${isNew(message) ? ' isNew' : ''}`}
+                                >
                                     {message.sender_kind !== 'customer' && (
                                         <span className="inboxMsgWho">
                                             {message.sender_kind === 'ai' ? t('Assistant') : message.sender_id === meId ? t('You') : message.sender_name || t('The studio')}
@@ -218,12 +259,30 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
                                             ))}
                                         {message.body && <p>{message.body}</p>}
                                     </div>
-                                    <time dateTime={message.created_at}>{formatClock(message.created_at)}</time>
+                                    <time dateTime={message.created_at}>
+                                        {formatClock(message.created_at)}
+                                        {message.id === lastStudio?.id && (
+                                            <span className={`inboxSeen${lastStudioSeen ? ' isSeen' : ''}`}>
+                                                {lastStudioSeen ? <LuCheckCheck aria-hidden="true" /> : <LuCheck aria-hidden="true" />}
+                                                {lastStudioSeen ? t('Seen') : t('Sent')}
+                                            </span>
+                                        )}
+                                    </time>
                                 </div>
                             )
                         )}
                     </div>
                 ))}
+                {customerTyping && !closed && (
+                    <div className="inboxMsg is-customer inboxTyping" role="status">
+                        <div className="inboxBubble" aria-hidden="true">
+                            <span />
+                            <span />
+                            <span />
+                        </div>
+                        <small>{t('{name} is typing…', { name: customerName })}</small>
+                    </div>
+                )}
             </div>
 
             {thread.status === 'closing' && (
@@ -268,7 +327,10 @@ const InboxThread = ({ data, customerName, phase, opens, meId, staff, now, onBac
                             rows={1}
                             value={draft}
                             maxLength={MESSAGE_MAX}
-                            onChange={(event) => setDraft(event.target.value)}
+                            onChange={(event) => {
+                                setDraft(event.target.value);
+                                typingRef.current?.ping();
+                            }}
                             onKeyDown={onKeyDown}
                             disabled={!canWrite}
                             placeholder={canWrite ? t('Write a reply…') : ''}

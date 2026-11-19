@@ -445,6 +445,8 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
   2. *Xong rồi* → cuộc chat đóng hẳn; câu hỏi sau là một cuộc mới.
   3. *Chưa* → cuộc chat mở lại và chờ staff. Họ nhắn tiếp thay vì bấm nút cũng tính là *Chưa*.
   4. Không trả lời trong 24 giờ → tự đóng.
+- **Trực tiếp như nhắn tin**: hai bên thấy "… đang nhập…" khi bên kia gõ; tin của mình hiện *Đã gửi* → *Đã xem* khi bên
+  kia đã mở cuộc chat. Khung chat đóng mà staff trả lời thì cạnh bubble hiện xem trước tin nhắn ("Nam: …").
 - **Thông báo**: số đỏ trên bubble khi có tin studio chưa đọc. Staff thấy số người đang chờ cạnh menu *Tin nhắn* và một
   dòng trong chuông (chờ quá 15 phút thì thành việc gấp). Tin mới hiện ngay trong khung chat đang mở. Chưa có email.
 - **Nhật ký**: trang *Activity* ghi ai nhận, chuyển, hỏi đóng, đóng cuộc chat; không ghi nội dung tin nhắn.

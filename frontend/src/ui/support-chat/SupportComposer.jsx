@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { LuImagePlus, LuLoader2, LuSendHorizonal, LuX } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
@@ -10,12 +11,25 @@ const MAX_HEIGHT = 140;
 // The text box under a conversation (and under a new question): text, one photo, Send.
 // `value` / `onChange` hold the text (the caller keeps the draft). `onSend({ body, file })` resolves to true
 // when the message went out (the box empties) or false (the draft stays, e.g. the studio just closed).
-const SupportComposer = ({ value, onChange, onSend, placeholder, requireText = false, disabled = false, disabledNote = null, autoFocus = false }) => {
+// `onTyping` is called on every keystroke ("… is typing" for the other side).
+// Sending: the paper plane flies off and a new one slides in.
+const SupportComposer = ({
+    value,
+    onChange,
+    onSend,
+    placeholder,
+    requireText = false,
+    disabled = false,
+    disabledNote = null,
+    autoFocus = false,
+    onTyping,
+}) => {
     const { t } = useI18n();
     const toast = useToast();
     const [photo, setPhoto] = useState(null); // { file, url }
     const [preparing, setPreparing] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [flights, setFlights] = useState(0);
     const textRef = useRef(null);
     const fileRef = useRef(null);
 
@@ -58,6 +72,7 @@ const SupportComposer = ({ value, onChange, onSend, placeholder, requireText = f
     const submit = async (event) => {
         event?.preventDefault();
         if (!canSend) return;
+        setFlights((count) => count + 1);
         setBusy(true);
         const sent = await onSend({ body: text.trim() || null, file: photo?.file ?? null });
         setBusy(false);
@@ -86,14 +101,23 @@ const SupportComposer = ({ value, onChange, onSend, placeholder, requireText = f
 
     return (
         <form className="supportComposer" onSubmit={submit}>
-            {photo && (
-                <div className="supportComposerPhoto">
-                    <img src={photo.url} alt={t('The photo you are sending')} />
-                    <button type="button" onClick={() => setPhoto(null)} aria-label={t('Remove the photo')}>
-                        <LuX />
-                    </button>
-                </div>
-            )}
+            <AnimatePresence>
+                {photo && (
+                    <motion.div
+                        key={photo.url}
+                        className="supportComposerPhoto"
+                        initial={{ opacity: 0, scale: 0.7, y: 8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.14 } }}
+                        transition={{ type: 'spring', stiffness: 460, damping: 24 }}
+                    >
+                        <img src={photo.url} alt={t('The photo you are sending')} />
+                        <button type="button" onClick={() => setPhoto(null)} aria-label={t('Remove the photo')}>
+                            <LuX />
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <div className="supportComposerRow">
                 <button
                     type="button"
@@ -110,16 +134,40 @@ const SupportComposer = ({ value, onChange, onSend, placeholder, requireText = f
                     ref={textRef}
                     rows={1}
                     value={text}
-                    onChange={(event) => onChange(event.target.value)}
+                    onChange={(event) => {
+                        onChange(event.target.value);
+                        if (event.target.value.trim()) onTyping?.();
+                    }}
                     onKeyDown={onKeyDown}
                     maxLength={MESSAGE_MAX}
                     placeholder={placeholder}
                     aria-label={placeholder}
                     disabled={disabled || busy}
                 />
-                <button type="submit" className="supportSend" disabled={!canSend} aria-label={t('Send')} title={t('Send')}>
-                    {busy ? <LuLoader2 className="supportSpin" /> : <LuSendHorizonal />}
-                </button>
+                <motion.button
+                    type="submit"
+                    className={`supportSend${busy ? ' isBusy' : ''}`}
+                    disabled={!canSend}
+                    aria-label={t('Send')}
+                    aria-busy={busy}
+                    title={t('Send')}
+                    animate={{ scale: canSend || busy ? 1 : 0.9 }}
+                    whileTap={canSend ? { scale: 0.86 } : undefined}
+                    transition={{ type: 'spring', stiffness: 520, damping: 22 }}
+                >
+                    <AnimatePresence initial={false} mode="popLayout">
+                        <motion.span
+                            key={flights}
+                            className="supportSendIcon"
+                            initial={{ x: -12, y: 12, opacity: 0 }}
+                            animate={{ x: 0, y: 0, opacity: 1 }}
+                            exit={{ x: 24, y: -24, rotate: -14, opacity: 0 }}
+                            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                            <LuSendHorizonal />
+                        </motion.span>
+                    </AnimatePresence>
+                </motion.button>
             </div>
             {remaining < 200 && <p className="supportComposerCount">{t('{count} characters left', { count: remaining })}</p>}
         </form>

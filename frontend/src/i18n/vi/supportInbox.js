@@ -113,4 +113,9 @@ export default {
     // Who joined (taking a chat, answering it first, or being handed it)
     '{name} joined the chat': '{name} đã vào cuộc trò chuyện',
     'Joined the chat': 'Đã vào cuộc trò chuyện',
+
+    // Live: typing, and whether the person has seen our reply
+    '{name} is typing…': '{name} đang nhập…',
+    Sent: 'Đã gửi',
+    Seen: 'Đã xem',
 };

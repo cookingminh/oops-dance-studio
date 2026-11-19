@@ -3,7 +3,8 @@
 // reply (they take it), hand it over, ask to close; the student closes it and it moves to Closed; at night the
 // reply box is off. The chat hours are set to "open all day" for the spec and put back afterwards.
 import { test, expect } from '@playwright/test';
-import { deleteAccount, login, rest, rpc, setChatHours, signUpStudent } from './support.js';
+import { createClient } from '@supabase/supabase-js';
+import { ANON, API, deleteAccount, login, rest, rpc, setChatHours, signUpStudent } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -71,6 +72,26 @@ test('staff open it with the card of who is asking, and reply', async () => {
     await expect(thread().locator('.inboxOwner')).toContainText('You have it');
     await expect(thread().locator('.inboxNote.is-joined')).toContainText('Nam joined the chat');
     await expect(page.getByRole('tab', { name: /Answered/ })).toBeVisible();
+});
+
+test('staff see when the student has read the reply, and when they are typing', async () => {
+    const latest = thread().locator('.inboxMsg.is-studio .inboxSeen');
+    await expect(latest).toHaveText('Sent');
+    const read = await rpc(student.jwt, 'support_mark_read', { p_thread: threadId });
+    expect(read.status, JSON.stringify(read.data)).toBeLessThan(300);
+    await expect(latest).toHaveText('Seen', { timeout: 35_000 });
+
+    // The student's keystrokes (Realtime broadcast on the conversation's channel, as the bubble sends them).
+    const client = createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+    const channel = client.channel(`support-typing-${threadId}`, { config: { broadcast: { self: false } } });
+    await new Promise((resolve) => channel.subscribe((state) => state === 'SUBSCRIBED' && resolve()));
+    try {
+        await channel.send({ type: 'broadcast', event: 'typing', payload: { side: 'customer' } });
+        await expect(thread().locator('.inboxTyping')).toContainText(`${student.name} is typing…`);
+        await expect(thread().locator('.inboxTyping')).toHaveCount(0, { timeout: 8_000 });
+    } finally {
+        await client.removeChannel(channel);
+    }
 });
 
 test('a new message from the student arrives while the chat is open', async () => {

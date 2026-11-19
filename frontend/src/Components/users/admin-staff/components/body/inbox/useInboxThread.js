@@ -44,6 +44,7 @@ export function useInboxThread(threadId) {
                 if (message.sender_kind === 'customer') markRead(threadId).catch(() => {});
             },
             onThread: (row) => setState((prev) => (prev.thread?.id === threadId ? { ...prev, thread: { ...prev.thread, ...row } } : prev)),
+            onReady: () => load({ quiet: true }),
         });
         const timer = setInterval(() => load({ quiet: true }), FALLBACK_MS);
         return () => {

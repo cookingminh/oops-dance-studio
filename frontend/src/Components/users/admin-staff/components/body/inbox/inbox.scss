@@ -443,6 +443,108 @@
             color: #fff;
         }
     }
+
+    // Sent / Seen under our latest reply.
+    .inboxSeen {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        margin-left: .4rem;
+        color: var(--ad-subtle);
+        font-weight: 600;
+        transition: color .3s ease;
+
+        svg {
+            font-size: .85rem;
+        }
+
+        &.isSeen {
+            color: hsl(145, 55%, 34%);
+        }
+    }
+
+    // A message that arrived while the chat was open.
+    &.isNew {
+        animation: inboxMsgIn .42s cubic-bezier(.22, 1.2, .36, 1) both;
+        transform-origin: bottom left;
+    }
+
+    &.is-studio.isNew {
+        transform-origin: bottom right;
+    }
+
+    // The person is typing: three dots.
+    &.inboxTyping {
+        animation: inboxMsgIn .3s ease both;
+
+        .inboxBubble {
+            display: flex;
+            gap: .3rem;
+            padding: .75rem .9rem;
+
+            span {
+                width: .45rem;
+                height: .45rem;
+                border-radius: 50%;
+                background: var(--ad-muted);
+                animation: inboxTypingDot 1.2s ease-in-out infinite;
+
+                &:nth-child(2) {
+                    animation-delay: .15s;
+                }
+
+                &:nth-child(3) {
+                    animation-delay: .3s;
+                }
+            }
+        }
+
+        small {
+            color: var(--ad-subtle);
+            font-size: .72rem;
+        }
+    }
+}
+
+.adminShell .inboxNote.isNew {
+    animation: inboxMsgIn .35s ease both;
+}
+
+@keyframes inboxMsgIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes inboxTypingDot {
+    0%, 60%, 100% {
+        opacity: .35;
+        transform: translateY(0);
+    }
+
+    30% {
+        opacity: 1;
+        transform: translateY(-4px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .inboxMsg.isNew,
+    .adminShell .inboxMsg.inboxTyping,
+    .adminShell .inboxNote.isNew {
+        animation: none;
+    }
+
+    .adminShell .inboxMsg.inboxTyping .inboxBubble span {
+        animation: none;
+        opacity: .6;
+    }
 }
 
 .adminShell .inboxPhoto {

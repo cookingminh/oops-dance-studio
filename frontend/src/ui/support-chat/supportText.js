@@ -69,6 +69,12 @@ export function countdown(ms) {
     return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
+// The letter on a staff member's avatar ("Nam" → "N").
+export const initialOf = (name) => (name ?? '').trim().charAt(0).toLocaleUpperCase('vi') || 'O';
+
+// "Nam is typing…" (the studio's side, while the person waits for the answer).
+export const typingText = (t, name) => (name ? t('{name} is typing…', { name }) : t('The studio is typing…'));
+
 // Who wrote a message on the studio's side.
 export function senderLabel(t, message) {
     if (message.sender_kind === 'ai') return t('Assistant');

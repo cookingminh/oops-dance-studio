@@ -114,9 +114,10 @@ export async function signSupportImages(paths) {
     return Object.fromEntries(data.filter((item) => item.signedUrl).map((item) => [item.path, item.signedUrl]));
 }
 
-// Live updates of one conversation: new messages and changes to the thread (status, read marks).
+// Live updates of one conversation: new messages and changes to the thread (status, read marks). onReady runs
+// once the channel has joined: refetch then, so nothing sent while it was joining is missed.
 // Returns a function that stops listening. RLS decides what arrives.
-export function subscribeToThread(threadId, { onMessage, onThread }) {
+export function subscribeToThread(threadId, { onMessage, onThread, onReady }) {
     const channel = supabase
         .channel(`support-thread-${threadId}-${crypto.randomUUID().slice(0, 8)}`)
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_messages', filter: `thread_id=eq.${threadId}` }, (payload) =>
@@ -125,9 +126,40 @@ export function subscribeToThread(threadId, { onMessage, onThread }) {
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'support_threads', filter: `id=eq.${threadId}` }, (payload) =>
             onThread?.(payload.new)
         )
-        .subscribe();
+        .subscribe((state) => {
+            if (state === 'SUBSCRIBED') onReady?.();
+        });
     return () => {
         supabase.removeChannel(channel);
+    };
+}
+
+// "… is typing" between the person and the studio, live (Realtime broadcast on the conversation's channel; nothing is
+// stored, and only the side travels — never a name: the reader already knows who is on the other side).
+//   const typing = joinTyping(threadId, { side: 'staff', onTyping: ({ side }) => … });
+//   typing.ping();   // call on every keystroke: sent at most every 2 s
+//   typing.leave();  // on unmount
+// The reader shows the indicator for TYPING_SHOWN_MS after the last ping, and drops it when a message from that
+// side arrives.
+export const TYPING_SHOWN_MS = 4000;
+const TYPING_EVERY_MS = 2000;
+export function joinTyping(threadId, { side, onTyping }) {
+    const channel = supabase.channel(`support-typing-${threadId}`, { config: { broadcast: { self: false } } });
+    channel.on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload?.side && payload.side !== side) onTyping?.(payload);
+    });
+    channel.subscribe();
+    let last = 0;
+    return {
+        ping() {
+            const now = Date.now();
+            if (now - last < TYPING_EVERY_MS) return;
+            last = now;
+            channel.send({ type: 'broadcast', event: 'typing', payload: { side } }).catch(() => {});
+        },
+        leave() {
+            supabase.removeChannel(channel);
+        },
     };
 }
 

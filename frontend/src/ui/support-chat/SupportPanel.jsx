@@ -13,8 +13,8 @@ export const PANEL_ID = 'support-panel';
 
 // The chat panel above the bubble (full screen on phones). Views: signed out, a new question (or "offline"
 // when the studio isn't taking new ones), a conversation, past chats.
-const SupportPanel = ({ status, refresh, onClose, signedIn, userId, role, draft, setDraft }) => {
-    const { t } = useI18n();
+const SupportPanel = ({ status, refresh, onClose, signedIn, userId, firstName, role, draft, setDraft }) => {
+    const { t, tn } = useI18n();
     const reduceMotion = useReducedMotion();
     const panelRef = useRef(null);
     // { name: 'loading' | 'signedOut' | 'home' | 'thread' | 'history', threadId? }
@@ -61,6 +61,7 @@ const SupportPanel = ({ status, refresh, onClose, signedIn, userId, role, draft,
         panelRef.current?.focus();
     }, []);
 
+    const online = isOnline(status);
     const home = () => setView(openThreadId ? { name: 'thread', threadId: openThreadId } : { name: 'home' });
     const history = () => setView({ name: 'history' });
 
@@ -101,6 +102,7 @@ const SupportPanel = ({ status, refresh, onClose, signedIn, userId, role, draft,
                 status={status}
                 role={role}
                 userId={userId}
+                firstName={firstName}
                 draft={draft}
                 setDraft={setDraft}
                 onChanged={refresh}
@@ -121,21 +123,31 @@ const SupportPanel = ({ status, refresh, onClose, signedIn, userId, role, draft,
             aria-labelledby="support-panel-title"
             tabIndex={-1}
             onKeyDown={onKeyDown}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.97 }}
+            // Springs out of the bubble (transform-origin: bottom right), tucks back in quickly.
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.97 }}
-            transition={{ duration: reduceMotion ? 0.12 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+            exit={reduceMotion ? { opacity: 0, transition: { duration: 0.12 } } : { opacity: 0, y: 14, scale: 0.94, transition: { duration: 0.18, ease: [0.4, 0, 1, 1] } }}
+            transition={reduceMotion ? { duration: 0.12 } : { type: 'spring', stiffness: 380, damping: 30, mass: 0.9 }}
         >
             <header className="supportHead">
-                <span className="supportMark" aria-hidden="true">
-                    <img src={logoMark} alt="" />
+                <span className="supportHeadGlow" aria-hidden="true" />
+                <span className="supportHeadGrain" aria-hidden="true" />
+                <span className={`supportMarkWrap${online ? ' isOnline' : ''}`} aria-hidden="true">
+                    <span className="supportMark">
+                        <img src={logoMark} alt="" />
+                    </span>
                 </span>
                 <div className="supportHeadText">
                     <h2 id="support-panel-title">Oops! Studio</h2>
                     <p className="supportStatusLine">
-                        <span className={`supportDotInline ${isOnline(status) ? 'is-online' : 'is-offline'}`} aria-hidden="true" />
+                        <span className={`supportDotInline ${online ? 'is-online' : 'is-offline'}`} aria-hidden="true" />
                         {statusLine(t, status)}
                     </p>
+                    {online && status?.reply_minutes && (
+                        <p className="supportReplyHint">
+                            {tn(status.reply_minutes, 'Usually replies in ~{count} minute', 'Usually replies in ~{count} minutes')}
+                        </p>
+                    )}
                 </div>
                 {signedIn && view.name !== 'history' && view.name !== 'loading' && (
                     <button type="button" className="supportIconBtn onDark" onClick={history} aria-label={t('Past chats')} title={t('Past chats')}>

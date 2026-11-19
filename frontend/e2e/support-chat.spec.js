@@ -6,7 +6,8 @@
 // Staff answer through the RPCs here (support-inbox.spec.js covers their page). The chat hours are set for the spec
 // ("open all day" unless a test says otherwise) and put back afterwards.
 import { test, expect } from '@playwright/test';
-import { deleteAccount, login, rest, rpc, setChatHours, signUpStudent, staffJwt } from './support.js';
+import { createClient } from '@supabase/supabase-js';
+import { ANON, API, deleteAccount, login, rest, rpc, setChatHours, signUpStudent, staffJwt } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -75,6 +76,23 @@ test('the staff reply arrives while the chat is open', async () => {
     await expect(panel().locator('.supportState')).toHaveText('Nam is helping you');
     await expect(reply.locator('.supportMsgName')).toHaveText('Nam · Oops! Studio');
     await expect(panel()).not.toContainText('Lê Hoàng Nam');
+});
+
+test('the student sees their message was seen, and Nam typing', async () => {
+    // Nam answered after reading it.
+    await expect(panel().locator('.supportMsg.is-customer .supportReceipt').last()).toHaveText(/Seen/);
+
+    // Nam's keystrokes (Realtime broadcast on the conversation's channel, as the Inbox sends them).
+    const client = createClient(API, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+    const channel = client.channel(`support-typing-${threadId}`, { config: { broadcast: { self: false } } });
+    await new Promise((resolve) => channel.subscribe((state) => state === 'SUBSCRIBED' && resolve()));
+    try {
+        await channel.send({ type: 'broadcast', event: 'typing', payload: { side: 'staff' } });
+        await expect(panel().locator('.supportTyping')).toContainText('Nam is typing…');
+        await expect(panel().locator('.supportTyping')).toHaveCount(0, { timeout: 8_000 });
+    } finally {
+        await client.removeChannel(channel);
+    }
 });
 
 test('a reply while the chat is closed shows on the bubble', async () => {

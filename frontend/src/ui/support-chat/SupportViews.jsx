@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LuChevronLeft, LuChevronRight, LuFacebook, LuLoader2, LuLogIn, LuMail, LuMoon, LuPhone } from 'react-icons/lu';
+import { motion } from 'framer-motion';
+import { LuCheck, LuChevronLeft, LuChevronRight, LuFacebook, LuLoader2, LuLogIn, LuMail, LuMoon, LuPhone } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { EMAIL, PHONE, SOCIALS } from '@/Components/HomePage/Components/NavBar/contactInfo';
 import { listMyThreads, startThread, topicsFor, uploadSupportImage } from '@/services/support';
 import SupportComposer from './SupportComposer';
+import { TOPIC_ICONS } from './topicIcons';
 import { dayLabel, previewText, topicLabel } from './supportText';
+
+// Lists that cascade in: the container staggers its children.
+const CASCADE = { hidden: {}, shown: { transition: { staggerChildren: 0.035, delayChildren: 0.06 } } };
+const RISE = {
+    hidden: { opacity: 0, y: 8 },
+    shown: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 420, damping: 30 } },
+};
 
 // The hotline, the fanpage and the email: for visitors, and when the studio isn't taking questions.
 export const ContactLinks = () => {
@@ -87,7 +96,7 @@ export const OfflineView = ({ status, onHistory }) => {
 };
 
 // A new question: pick a topic, write it (a photo too), Send. The draft survives closing the panel.
-export const NewQuestionView = ({ status, role, userId, draft, setDraft, onStarted, onChanged }) => {
+export const NewQuestionView = ({ status, role, userId, firstName, draft, setDraft, onStarted, onChanged }) => {
     const { t } = useI18n();
     const toast = useToast();
     const { pathname } = useLocation();
@@ -114,30 +123,52 @@ export const NewQuestionView = ({ status, role, userId, draft, setDraft, onStart
     return (
         <>
             <div className="supportBody supportNew">
-                <p className="supportLead">{t('Hi! What can we help you with?')}</p>
+                <motion.p className="supportLead" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+                    {firstName ? t('Hi {name}! What can we help you with?', { name: firstName }) : t('Hi! What can we help you with?')}{' '}
+                    <span className="supportWave" aria-hidden="true">
+                        👋
+                    </span>
+                </motion.p>
                 <p className="supportHint">
                     {t('Pick a topic and write your question. Staff reply {opens}–{closes}; the answer shows up right here.', {
                         opens: status?.opens ?? '08:00',
                         closes: status?.closes ?? '22:00',
                     })}
                 </p>
-                <div className="supportTopics" role="radiogroup" aria-label={t('Topic')}>
-                    {topicsFor(role).map((topic) => (
-                        <button
-                            key={topic.key}
-                            type="button"
-                            role="radio"
-                            aria-checked={draft.category === topic.key}
-                            className={`supportTopic${draft.category === topic.key ? ' isOn' : ''}`}
-                            onClick={() => {
-                                setNeedTopic(false);
-                                setDraft((current) => ({ ...current, category: topic.key }));
-                            }}
-                        >
-                            {t(topic.label)}
-                        </button>
-                    ))}
-                </div>
+                <motion.div className="supportTopics" role="radiogroup" aria-label={t('Topic')} variants={CASCADE} initial="hidden" animate="shown">
+                    {topicsFor(role).map((topic) => {
+                        const on = draft.category === topic.key;
+                        const Icon = on ? LuCheck : (TOPIC_ICONS[topic.key] ?? TOPIC_ICONS.other);
+                        return (
+                            <motion.button
+                                key={topic.key}
+                                type="button"
+                                role="radio"
+                                aria-checked={on}
+                                className={`supportTopic${on ? ' isOn' : ''}`}
+                                variants={RISE}
+                                whileHover={{ y: -2 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                    setNeedTopic(false);
+                                    setDraft((current) => ({ ...current, category: topic.key }));
+                                }}
+                            >
+                                <motion.span
+                                    key={on ? 'on' : 'off'}
+                                    className="supportTopicIcon"
+                                    aria-hidden="true"
+                                    initial={{ scale: 0.5, rotate: on ? -30 : 0 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ type: 'spring', stiffness: 520, damping: 20 }}
+                                >
+                                    <Icon />
+                                </motion.span>
+                                {t(topic.label)}
+                            </motion.button>
+                        );
+                    })}
+                </motion.div>
                 {needTopic && (
                     <p className="supportFieldError" role="alert">
                         {t('Pick a topic for your question.')}
@@ -189,9 +220,9 @@ export const HistoryView = ({ status, onOpen, onBack }) => {
             {!failed && !items && <LuLoader2 className="supportSpin" aria-label={t('Loading…')} />}
             {items && items.length === 0 && <p className="supportEmpty">{t('No chats yet. Your questions and the studio’s answers will be kept here.')}</p>}
             {items && items.length > 0 && (
-                <ul className="supportHistoryList">
+                <motion.ul className="supportHistoryList" variants={CASCADE} initial="hidden" animate="shown">
                     {items.map((item) => (
-                        <li key={item.id}>
+                        <motion.li key={item.id} variants={RISE}>
                             <button type="button" className="supportHistoryItem" onClick={() => onOpen(item.id)}>
                                 <span className="supportHistoryTop">
                                     <strong>{topicLabel(t, item.category)}</strong>
@@ -207,9 +238,9 @@ export const HistoryView = ({ status, onOpen, onBack }) => {
                                     )}
                                 </span>
                             </button>
-                        </li>
+                        </motion.li>
                     ))}
-                </ul>
+                </motion.ul>
             )}
         </div>
     );

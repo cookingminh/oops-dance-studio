@@ -83,4 +83,14 @@ export default {
     'Hi {name}! Got a question? Chat with us live.': 'Chào {name}! Có thắc mắc gì không? Chat trực tiếp với studio nhé!',
     'Got a question? Chat with us live!': 'Có thắc mắc gì không? Chat trực tiếp với studio nhé!',
     'Hide this message': 'Ẩn lời nhắn này',
+
+    // Livelier chat: who replies, typing, read receipts, the thank-you
+    'Usually replies in ~{count} minute': 'Thường trả lời trong khoảng {count} phút',
+    'Usually replies in ~{count} minutes': 'Thường trả lời trong khoảng {count} phút',
+    'Hi {name}! What can we help you with?': 'Chào {name}! Studio giúp gì được cho bạn?',
+    '{name} is typing…': '{name} đang nhập…',
+    'The studio is typing…': 'Studio đang nhập…',
+    Sent: 'Đã gửi',
+    Seen: 'Đã xem',
+    'Thanks for chatting with us.': 'Cảm ơn bạn đã trò chuyện cùng studio.',
 };
