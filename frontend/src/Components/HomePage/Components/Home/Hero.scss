@@ -162,6 +162,149 @@
     }
 }
 
+// Slideshow (banners posted from /admin/banners) ====================>
+// The studio slide stays in the flow (it sets the hero's height); each banner lies over it and cross-fades in;
+// the slide bar sits at the bottom, below the studio slide's buttons and the next-class card.
+
+.hpStudioSlide {
+    width: 100%;
+    transition: opacity .8s var(--hp-ease), visibility 0s;
+}
+
+.hpHero.hasSlides {
+    padding-bottom: 7.6rem;
+
+    .hpStudioSlide:not(.isActive) {
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .8s var(--hp-ease), visibility 0s .8s;
+    }
+}
+
+.hpBannerSlide {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(1.025);
+    transition: opacity .8s var(--hp-ease), transform 1.4s var(--hp-ease), visibility 0s .8s;
+
+    &.isActive {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+        transition: opacity .8s var(--hp-ease), transform 1.4s var(--hp-ease), visibility 0s;
+    }
+}
+
+.hpHeroControls {
+    position: absolute;
+    left: 50%;
+    bottom: 1.6rem;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    width: min(1240px, calc(100% - 2.5rem));
+    transform: translateX(-50%);
+}
+
+.hpSegs {
+    display: flex;
+    flex: 1;
+    gap: .55rem;
+    min-width: 0;
+}
+
+.hpSeg {
+    flex: 1;
+    min-width: 0;
+    padding: .45rem 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    text-align: left;
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 3px;
+        border-radius: 4px;
+    }
+
+    &:hover .hpSegLabel {
+        opacity: .9;
+    }
+}
+
+.hpSegBar {
+    display: block;
+    height: 3px;
+    overflow: hidden;
+    border-radius: 3px;
+    background: hsla(0, 0%, 100%, .28);
+}
+
+.hpSegFill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #fff;
+    transform: scaleX(0);
+    transform-origin: left;
+}
+
+.hpSegLabel {
+    display: block;
+    margin-top: .45rem;
+    overflow: hidden;
+    font-size: .76rem;
+    font-weight: 600;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 6px hsla(0, 40%, 5%, .6);
+    opacity: .6;
+    transition: opacity .3s ease;
+}
+
+.hpSeg[aria-current='true'] .hpSegLabel {
+    opacity: 1;
+}
+
+.hpRound {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 1px solid hsla(0, 0%, 100%, .32);
+    border-radius: 50%;
+    background: hsla(0, 0%, 100%, .1);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    cursor: pointer;
+    transition: background-color .2s ease, transform .2s var(--hp-ease), border-color .2s ease;
+
+    svg {
+        font-size: 1.05rem;
+    }
+
+    &:hover {
+        border-color: hsla(0, 0%, 100%, .6);
+        background: hsla(0, 0%, 100%, .2);
+    }
+
+    &:active {
+        transform: scale(.94);
+    }
+
+    &:focus-visible {
+        outline: 2px solid #fff;
+        outline-offset: 2px;
+    }
+}
+
 // Next class card ====================>
 
 .hpNextWrap {
@@ -294,6 +437,20 @@
         padding: 7rem 0 2.5rem;
     }
 
+    .hpHero.hasSlides {
+        padding-bottom: 5.4rem;
+    }
+
+    .hpHeroControls {
+        bottom: 1.25rem;
+        width: calc(100% - 2rem);
+    }
+
+    .hpSegLabel,
+    .hpRound.isArrow {
+        display: none;
+    }
+
     .hpHeroInner {
         width: calc(100% - 2rem);
         gap: 1.75rem;
@@ -312,5 +469,15 @@
         justify-content: center;
         height: 3.2rem;
         padding: 0 1.2rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hpStudioSlide,
+    .hpHero.hasSlides .hpStudioSlide:not(.isActive),
+    .hpBannerSlide,
+    .hpBannerSlide.isActive {
+        transform: none;
+        transition: none;
     }
 }

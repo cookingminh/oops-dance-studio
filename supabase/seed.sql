@@ -389,6 +389,9 @@ select public.seed_demo_venue_rooms();
 -- question, an instructor's answered one.
 select public.seed_demo_support();
 
+-- Two homepage banners (20/11 and the Newbie classes); scripts/demo-images.mjs uploads their posters.
+select public.seed_demo_home_banners();
+
 -- The admin's Activity page: the last week and a half, made from the data above (replaces what seeding logged).
 select public.seed_demo_activity();
 

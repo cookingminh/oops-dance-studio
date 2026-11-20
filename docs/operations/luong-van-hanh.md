@@ -455,6 +455,30 @@ studio mới xác nhận); tiền phòng còn thiếu sau ngày đã đặt. Gi�
 
 ---
 
+### Banner trang chủ (*Website → Homepage banners*, staff và admin)
+
+Phần đầu trang chủ là **banner trượt**: slide đầu luôn là video giới thiệu studio, sau đó tới các banner staff đăng (tối đa
+4 banner hiện cùng lúc). Mỗi slide hiện 6 giây rồi tự chuyển, hết thì quay lại slide đầu. Khách có thể bấm tạm dừng,
+bấm vào tên slide để nhảy tới, hoặc vuốt trên điện thoại.
+
+- **Poster**: thiết kế sẵn (Canva…) rồi tải lên, mỗi banner **hai bản, bắt buộc cả hai**:
+  - máy tính: ngang **1920 × 1080** (mẫu *Presentation 16:9* trên Canva);
+  - điện thoại: dọc **1080 × 1920** (mẫu *Instagram Story*).
+  - Tải lên là biết ngay ảnh vừa khít, hơi nhỏ (sẽ mờ trên màn lớn) hay sai khổ (vẫn hiện đủ nhưng có dải mờ hai bên
+    hoặc trên dưới). Poster luôn hiện **đủ khung, không bị cắt chữ**.
+  - Để trống mép trên và mép dưới poster: thanh menu và thanh chuyển slide nằm đè lên đó (khung xem trước tô sọc hồng).
+- **Nút bấm** (0–4 nút): chữ tiếng Việt (và tiếng Anh nếu muốn), bấm vào thì tới một trang có sẵn (lịch học, lớp học,
+  đăng ký học thử, đặt phòng, giới thiệu) hoặc **link riêng** (vd. bài Facebook của buổi audition, mở tab mới), màu
+  (đỏ, trắng, vàng, đen, viền trắng), có mũi tên hay không.
+  - **Kéo thả** nút ngay trên khung xem trước (có đường gióng khi thẳng hàng), kéo tay cầm ở góc để **đổi cỡ**, hoặc
+    dùng ô chọn nhanh 9 vị trí và thanh trượt cỡ. Vị trí và cỡ **lưu riêng cho máy tính và điện thoại**.
+  - Khung xem trước có Laptop / Màn lớn / Điện thoại, giống hệt trang chủ thật.
+- **Lịch hiện**: ngày hiện và ngày ẩn (bỏ trống = không hẹn), công tắc bật / tắt; kéo để đổi thứ tự trong danh sách.
+  Chỉ 4 banner đầu (đang bật, trong hạn) được hiện, nên xếp cái quan trọng lên đầu.
+- Mọi thay đổi (tạo, sửa, bật / tắt, đổi thứ tự, xoá) có trên trang *Activity*.
+
+---
+
 ## 12. Nhật ký hoạt động (admin — *Activity*)
 
 Ai làm gì, lúc nào. Mỗi thao tác của một người được ghi lại **tự động** (trigger trong database), nên không cần làm
@@ -551,5 +575,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Vị trí ảnh lớp, ảnh tròn trên lịch học | `20261117001600_timetable_photos.sql` | `classes.image_pos_x/_y`, `classes.timetable_photo_path/_x/_y/_zoom`, `list_public_classes` |
 | Chat với studio | `20261117001900_support_chat.sql` | `support_status`, `support_start`, `support_send`, `support_inbox`, `support_request_close`, `support_run` |
 | Chat: ai đang hỗ trợ, đếm ngược, tên gọi | `20261117002000_support_chat_joined.sql` | `private.first_name`, `private.support_assign`, `support_status` (`reply_minutes`) |
+| Banner trang chủ | `20261117002200_home_banners.sql` | `home_banners_live`, `home_banner_save`, `home_banner_set_enabled`, `home_banners_reorder`, `home_banner_delete` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

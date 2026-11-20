@@ -1,0 +1,1030 @@
+// Homepage banners (/admin/banners): the list and the editor. Tokens --ad-* come from admin.scss (.adminShell;
+// dialogs carry .adminPortal). The poster itself is styled by ui/banners/bannerPoster.scss.
+
+// ---- The list --------------------------------------------------------------------------------------------------
+
+.adminShell .bnList .cardBody {
+    display: grid;
+    gap: .5rem;
+}
+
+.adminShell .bnRows {
+    display: grid;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.adminShell .bnRow {
+    display: grid;
+    grid-template-columns: auto 6.6rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .9rem;
+    padding: .6rem .8rem .6rem .5rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface);
+    list-style: none;
+
+    &.is-off,
+    &.is-ended {
+        background: var(--ad-surface-2);
+
+        .bnThumb img {
+            opacity: .6;
+        }
+    }
+}
+
+.adminShell .bnRowStudio {
+    border-style: dashed;
+    background: var(--ad-surface-2);
+}
+
+.adminShell .bnHandle {
+    display: grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 2.4rem;
+    border-radius: 8px;
+    color: var(--ad-subtle);
+    cursor: grab;
+    touch-action: none;
+
+    &:hover {
+        background: var(--ad-surface-2);
+        color: var(--ad-text);
+    }
+
+    &:active {
+        cursor: grabbing;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+    }
+
+    &.isFixed {
+        cursor: default;
+    }
+}
+
+.adminShell .bnThumb {
+    display: grid;
+    place-items: center;
+    width: 6.6rem;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 9px;
+    background: hsl(0, 25%, 10%);
+    color: #fff;
+    font-size: 1.3rem;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    &.isStudio {
+        background: linear-gradient(135deg, hsl(0, 55%, 30%), hsl(0, 30%, 12%));
+    }
+}
+
+.adminShell .bnRowText {
+    display: grid;
+    gap: .15rem;
+    min-width: 0;
+
+    strong {
+        overflow: hidden;
+        font-size: .95rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    small {
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.adminShell .bnState {
+    padding: .22rem .6rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-live {
+        background: hsl(145, 50%, 92%);
+        color: hsl(145, 55%, 26%);
+    }
+
+    &.is-scheduled {
+        background: hsl(210, 80%, 94%);
+        color: hsl(212, 60%, 34%);
+    }
+
+    &.is-hidden {
+        background: hsl(40, 100%, 92%);
+        color: hsl(28, 70%, 32%);
+    }
+
+    &.is-ended,
+    &.is-off {
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .bnRowEnd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .6rem;
+}
+
+.adminShell .bnRowActions {
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+}
+
+.adminShell .bnHint {
+    margin: 0;
+    color: var(--ad-muted);
+    font-size: .82rem;
+}
+
+.adminShell .bnEmpty {
+    display: grid;
+    justify-items: center;
+    gap: .6rem;
+    padding: 2rem 1rem;
+    text-align: center;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+    }
+
+    p {
+        max-width: 34rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .bnEmptyIcon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 16px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.5rem;
+}
+
+.adminShell .bnSpecs {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .6rem;
+    margin: .2rem 0 .4rem;
+    padding: 0;
+    list-style: none;
+
+    li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: .1rem .45rem;
+        padding: .55rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 12px;
+        font-size: .88rem;
+        font-weight: 600;
+        text-align: left;
+    }
+
+    small {
+        grid-column: 2;
+        color: var(--ad-muted);
+        font-size: .76rem;
+        font-weight: 500;
+    }
+}
+
+@media (max-width: 760px) {
+    .adminShell .bnRow {
+        grid-template-columns: auto 5rem minmax(0, 1fr);
+        row-gap: .5rem;
+    }
+
+    .adminShell .bnRowEnd {
+        grid-column: 2 / -1;
+        justify-content: flex-start;
+    }
+
+    .adminShell .bnRowText strong {
+        white-space: normal;
+    }
+
+    .adminShell .bnThumb {
+        width: 5rem;
+    }
+}
+
+// ---- The editor ------------------------------------------------------------------------------------------------
+
+.adminShell .bnEditor {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.adminShell .bnEditorTop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+}
+
+.adminShell .bnEditorTitle {
+    display: flex;
+    flex: 1;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .3rem .8rem;
+    min-width: 0;
+
+    h2 {
+        overflow: hidden;
+        font-family: var(--ad-display);
+        font-size: 1.45rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.adminShell .bnUnsaved {
+    color: hsl(28, 70%, 36%);
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.adminShell .bnMissingList {
+    padding: .8rem 1rem;
+    border: 1px solid hsl(40, 80%, 80%);
+    border-radius: var(--ad-radius);
+    background: hsl(40, 100%, 96%);
+    color: hsl(28, 60%, 26%);
+    font-size: .88rem;
+
+    ul {
+        margin: .3rem 0 0;
+        padding-left: 1.1rem;
+    }
+}
+
+.adminShell .bnEditorGrid {
+    display: grid;
+    grid-template-columns: minmax(0, 27rem) minmax(0, 1fr);
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.adminShell .bnForm {
+    display: grid;
+    gap: 1.25rem;
+    min-width: 0;
+}
+
+.adminShell .bnPreviewCol {
+    position: sticky;
+    top: 1rem;
+    min-width: 0;
+}
+
+@media (max-width: 1180px) {
+    .adminShell .bnEditorGrid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .adminShell .bnPreviewCol {
+        position: static;
+        order: -1;
+    }
+}
+
+.adminShell .bnFormStack {
+    display: grid;
+    gap: .9rem;
+}
+
+.adminShell .bnTwo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .6rem;
+
+    @media (max-width: 520px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+// A poster: thumbnail (click or drop) + its size, the verdict, change it.
+.adminShell .bnPosterField {
+    display: grid;
+    grid-template-columns: 8rem minmax(0, 1fr);
+    align-items: center;
+    gap: .9rem;
+    padding: .7rem;
+    border: 1.5px dashed hsl(20, 10%, 82%);
+    border-radius: var(--ad-radius);
+    transition: border-color .2s, background .2s;
+
+    &:hover,
+    &.isOver {
+        border-color: var(--ad-primary);
+        background: var(--ad-primary-soft);
+    }
+}
+
+.adminShell .bnPosterPick {
+    display: grid;
+    place-items: center;
+    height: 8rem;
+    overflow: hidden;
+    border-radius: 10px;
+    background: var(--ad-surface-2);
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.adminShell .bnPosterThumb {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+
+    img {
+        max-width: 100%;
+        max-height: 7.4rem;
+        border-radius: 6px;
+        box-shadow: 0 3px 10px hsla(0, 0%, 0%, .2);
+    }
+}
+
+.adminShell .bnPosterField.is-desktop .bnPosterFrame {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+}
+
+.adminShell .bnPosterField.is-phone .bnPosterFrame {
+    height: 7.4rem;
+    aspect-ratio: 9 / 16;
+}
+
+.adminShell .bnPosterFrame {
+    display: grid;
+    place-items: center;
+    border: 1.5px dashed hsl(20, 8%, 72%);
+    border-radius: 6px;
+    color: var(--ad-subtle);
+    font-size: 1.2rem;
+}
+
+.adminShell .bnPosterMeta {
+    display: grid;
+    justify-items: start;
+    gap: .3rem;
+    min-width: 0;
+
+    strong {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        font-size: .95rem;
+    }
+}
+
+.adminShell .bnPosterSpec {
+    color: var(--ad-muted);
+    font-size: .8rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.adminShell .bnVerdict {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: .35rem;
+    padding: .25rem .55rem;
+    border-radius: 8px;
+    font-size: .78rem;
+    font-weight: 600;
+    line-height: 1.4;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: .15rem;
+    }
+
+    &.is-ok {
+        background: hsl(145, 50%, 92%);
+        color: hsl(145, 55%, 26%);
+    }
+
+    &.is-warn {
+        background: hsl(40, 100%, 92%);
+        color: hsl(28, 70%, 30%);
+    }
+
+    &.is-none,
+    &.is-busy {
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .bnSpin {
+    animation: bnSpin 1s linear infinite;
+}
+
+@keyframes bnSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.adminShell .bnLinkButton {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--ad-primary);
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    &.isDanger {
+        color: var(--ad-muted);
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+    }
+}
+
+// A button's settings.
+.adminShell .bnButtonCard {
+    display: grid;
+    gap: .75rem;
+    padding: .85rem .9rem .95rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    transition: border-color .2s, box-shadow .2s;
+
+    &.isSelected {
+        border-color: var(--ad-primary);
+        box-shadow: 0 0 0 3px hsla(0, 66%, 43%, .1);
+    }
+
+    > header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        strong {
+            font-size: .92rem;
+        }
+    }
+}
+
+.adminShell .bnField {
+    display: grid;
+    gap: .35rem;
+
+    > label,
+    .bnLabel {
+        display: flex;
+        justify-content: space-between;
+        color: var(--ad-muted);
+        font-size: .8rem;
+        font-weight: 600;
+    }
+
+    output {
+        color: var(--ad-text);
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+.adminShell .bnSelect {
+    width: 100%;
+    padding: .6rem .75rem;
+    border: 2px solid transparent;
+    border-radius: 12px;
+    background: var(--ad-surface-2);
+    font-size: .9rem;
+    cursor: pointer;
+
+    &:focus {
+        border-color: var(--ad-primary);
+        outline: none;
+    }
+}
+
+.adminShell .bnSwatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .45rem;
+}
+
+.adminShell .bnSwatch {
+    position: relative;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--ad-border);
+    cursor: pointer;
+
+    &[aria-checked='true'] {
+        box-shadow: 0 0 0 2px var(--ad-primary);
+
+        &::after {
+            content: '✓';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: .85rem;
+            font-weight: 800;
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 3px;
+    }
+
+    &.c-red {
+        background: hsl(0, 66%, 45%);
+        color: #fff;
+    }
+
+    &.c-white {
+        background: #fff;
+        color: hsl(0, 66%, 40%);
+    }
+
+    &.c-gold {
+        background: #ffcc6c;
+        color: hsl(20, 60%, 14%);
+    }
+
+    &.c-dark {
+        background: hsl(0, 0%, 9%);
+        color: #fff;
+    }
+
+    &.c-glass {
+        background: linear-gradient(135deg, hsl(0, 30%, 32%), hsl(0, 20%, 14%));
+        box-shadow: inset 0 0 0 2px hsla(0, 0%, 100%, .75), 0 0 0 1px var(--ad-border);
+        color: #fff;
+
+        &[aria-checked='true'] {
+            box-shadow: inset 0 0 0 2px hsla(0, 0%, 100%, .75), 0 0 0 2px var(--ad-primary);
+        }
+    }
+}
+
+.adminShell .bnDeviceBox {
+    display: grid;
+    gap: .6rem;
+    padding: .7rem .75rem;
+    border-radius: 12px;
+    background: var(--ad-surface-2);
+}
+
+.adminShell .bnDeviceTitle {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .82rem;
+    font-weight: 700;
+}
+
+.adminShell .bnRange {
+    width: 100%;
+    accent-color: var(--ad-primary);
+}
+
+.adminShell .bnQuickRow {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+
+    .bnHint {
+        flex: 1;
+        font-size: .78rem;
+    }
+}
+
+.adminShell .bnQuick {
+    display: grid;
+    grid-template-columns: repeat(3, 1.6rem);
+    gap: 3px;
+    padding: 3px;
+    border-radius: 8px;
+    background: var(--ad-surface);
+
+    button {
+        width: 1.6rem;
+        height: 1.1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 4px;
+        background: var(--ad-surface-2);
+        cursor: pointer;
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+            background: var(--ad-primary-soft);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+        }
+    }
+}
+
+.adminShell .bnAddButton {
+    justify-self: start;
+}
+
+// ---- The preview -----------------------------------------------------------------------------------------------
+
+.adminShell .bnPreviewBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem 1rem;
+    margin-bottom: .8rem;
+}
+
+.adminShell .bePreviewWrap {
+    display: grid;
+    justify-items: center;
+    gap: .6rem;
+    padding: 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: repeating-conic-gradient(hsl(20, 12%, 93%) 0 25%, hsl(20, 12%, 96%) 0 50%) 0 0 / 22px 22px;
+}
+
+.adminShell .bePreviewNote {
+    margin: 0;
+    color: var(--ad-muted);
+    font-size: .8rem;
+    text-align: center;
+}
+
+.adminShell .bePreviewFrame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #000;
+    box-shadow: 0 20px 40px -20px hsla(0, 30%, 10%, .6);
+
+    &.isPhone {
+        border: 6px solid hsl(0, 0%, 8%);
+        border-radius: 28px;
+    }
+}
+
+.adminShell .beViewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+}
+
+.adminShell .beHero {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: hsl(0, 25%, 8%);
+    color: #fff;
+    font-family: 'League Spartan', 'Spartan', sans-serif;
+    user-select: none;
+}
+
+.adminShell .beNoPoster {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: grid;
+    place-content: center;
+    gap: .4rem;
+    text-align: center;
+    color: hsla(0, 0%, 100%, .75);
+    pointer-events: none;
+
+    strong {
+        font-size: 3rem;
+        color: #fff;
+    }
+
+    span {
+        font-size: 1.2rem;
+    }
+}
+
+.adminShell .beHero.isPhone .beNoPoster strong {
+    font-size: 2rem;
+}
+
+// The navbar and the slide bar, as the homepage draws them over the hero.
+.adminShell .beNav {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.4rem 3rem;
+    pointer-events: none;
+}
+
+.adminShell .beHero.isPhone .beNav {
+    padding: 1rem 1rem;
+}
+
+.adminShell .beBrand {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+
+    img {
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 9px;
+        object-fit: cover;
+    }
+
+    b {
+        display: block;
+        font-size: 1.3rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    small {
+        display: block;
+        font-size: .62rem;
+        letter-spacing: .18em;
+        opacity: .85;
+    }
+}
+
+.adminShell .beLinks {
+    display: flex;
+    gap: .2rem;
+    margin-inline: auto;
+    padding: .3rem;
+    border-radius: 999px;
+    background: hsla(0, 0%, 100%, .1);
+
+    span {
+        padding: .5rem 1.1rem;
+        border-radius: 999px;
+        font-size: 1rem;
+        font-weight: 600;
+
+        &:first-child {
+            background: #fff;
+            color: hsl(0, 66%, 43%);
+        }
+    }
+}
+
+.adminShell .beNavEnd {
+    display: flex;
+    gap: .5rem;
+}
+
+.adminShell .bePill {
+    padding: .5rem 1rem;
+    border: 1px solid hsla(0, 0%, 100%, .3);
+    border-radius: 999px;
+    font-size: .95rem;
+    font-weight: 600;
+
+    &.isRed {
+        border-color: transparent;
+        background: hsl(0, 66%, 45%);
+    }
+}
+
+.adminShell .beBurger {
+    display: grid;
+    place-items: center;
+    width: 2.6rem;
+    height: 2.6rem;
+    margin-left: auto;
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .12);
+
+    &::before {
+        content: '';
+        width: 1.1rem;
+        height: 2px;
+        background: #fff;
+        box-shadow: 0 -6px 0 #fff, 0 6px 0 #fff;
+    }
+}
+
+.adminShell .beBar {
+    position: absolute;
+    inset: auto 0 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 4rem 2rem;
+    pointer-events: none;
+}
+
+.adminShell .beHero.isPhone .beBar {
+    padding: 0 1.2rem 1.4rem;
+}
+
+.adminShell .beSegs {
+    display: flex;
+    flex: 1;
+    gap: .6rem;
+}
+
+.adminShell .beSeg {
+    flex: 1;
+    height: 3px;
+    border-radius: 3px;
+    background: hsla(0, 0%, 100%, .3);
+
+    small {
+        display: block;
+        margin-top: .7rem;
+        font-family: 'Be Vietnam Pro', 'Spartan', sans-serif;
+        font-size: .8rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &.isDone {
+        background: #fff;
+
+        small {
+            opacity: .55;
+        }
+    }
+
+    &.isNow {
+        background: linear-gradient(90deg, #fff 45%, hsla(0, 0%, 100%, .3) 45%);
+    }
+}
+
+.adminShell .beRound {
+    display: grid;
+    place-items: center;
+    width: 2.8rem;
+    height: 2.8rem;
+    border: 1px solid hsla(0, 0%, 100%, .3);
+    border-radius: 50%;
+    background: hsla(0, 0%, 100%, .08);
+    font-size: .8rem;
+}
+
+// Editing the buttons on the preview (sizes divided by --pv-scale, so they look the same at any zoom).
+.adminShell .beBtn {
+    cursor: grab;
+    touch-action: none;
+
+    &:focus-visible {
+        outline: calc(3px / var(--pv-scale, 1)) solid #fff;
+        outline-offset: calc(4px / var(--pv-scale, 1));
+    }
+
+    &.isSelected {
+        outline: calc(2px / var(--pv-scale, 1)) dashed #fff;
+        outline-offset: calc(5px / var(--pv-scale, 1));
+    }
+
+    &.isDragging {
+        cursor: grabbing;
+        box-shadow: 0 1.2em 2.4em -.6em hsla(0, 0%, 0%, .7);
+    }
+}
+
+.adminShell .beResize {
+    position: absolute;
+    right: calc(-9px / var(--pv-scale, 1));
+    bottom: calc(-9px / var(--pv-scale, 1));
+    width: calc(16px / var(--pv-scale, 1));
+    height: calc(16px / var(--pv-scale, 1));
+    border: calc(2px / var(--pv-scale, 1)) solid hsl(320, 95%, 55%);
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px hsla(0, 0%, 0%, .4);
+    cursor: nwse-resize;
+}
+
+.adminShell .beZone {
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    display: grid;
+    place-items: center;
+    border: calc(1px / var(--pv-scale, 1)) dashed hsla(320, 95%, 70%, .9);
+    background: repeating-linear-gradient(-45deg, hsla(320, 90%, 60%, .28) 0 10px, hsla(320, 90%, 60%, .14) 10px 20px);
+    pointer-events: none;
+
+    &.is-top {
+        top: 0;
+    }
+
+    &.is-bottom {
+        bottom: 0;
+    }
+
+    span {
+        color: hsla(0, 0%, 100%, .9);
+        font-family: 'Be Vietnam Pro', 'Spartan', sans-serif;
+        font-size: calc(11px / var(--pv-scale, 1));
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+}
+
+.adminShell .beSafe {
+    position: absolute;
+    z-index: 2;
+    border: calc(1.5px / var(--pv-scale, 1)) dashed hsla(0, 0%, 100%, .7);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.adminShell .beGuide {
+    position: absolute;
+    z-index: 2;
+    background: hsl(320, 95%, 62%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .12s;
+
+    &.isOn {
+        opacity: 1;
+    }
+
+    &.is-v {
+        top: 0;
+        bottom: 0;
+        width: calc(1px / var(--pv-scale, 1));
+    }
+
+    &.is-h {
+        left: 0;
+        right: 0;
+        height: calc(1px / var(--pv-scale, 1));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .adminShell .bnSpin {
+        animation: none;
+    }
+}

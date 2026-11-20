@@ -16,6 +16,7 @@ import ClassHub from './class-hub/ClassHub';
 import Reports from './reports/Reports';
 import Activity from './activity/Activity';
 import Inbox from './inbox/Inbox';
+import Banners from './banners/Banners';
 
 // Admin and staff share these pages; user management is admin-only.
 // Each page fades in and its cards (SectionCard) follow one after another.
@@ -30,6 +31,7 @@ const Body = () => {
                     <Route path="classes/*" element={<ClassHub />} />
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="inbox" element={<Inbox />} />
+                    <Route path="banners/*" element={<Banners />} />
                     {/* Rooms and their prices live in the bookings page now ("Rooms & prices"). */}
                     <Route path="rooms" element={<Navigate to="/admin/bookings?view=rooms" replace />} />
                     <Route path="attendance" element={<Attendance />} />

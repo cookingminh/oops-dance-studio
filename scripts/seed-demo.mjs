@@ -135,7 +135,7 @@ const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", 
 // Children first, so no foreign key blocks a delete. PostgREST needs a filter on
 // every DELETE, hence "<column> is not null".
 const APP_TABLES = [
-  ["support_messages", "id"], ["support_threads", "id"],
+  ["support_messages", "id"], ["support_threads", "id"], ["home_banners", "id"],
   // payslips before adjustments: a finalized month's adjustments can't be deleted while it is finalized.
   ["expenses", "id"], ["recurring_expenses", "id"],
   ["bank_transfers", "id"], ["tuition_invoices", "id"],
@@ -464,6 +464,8 @@ async function seedTuition() {
   console.log("✓ venues: the six rented studios on the timetable, each class at its own, rent charged for sessions taught");
   const conversations = await must(db.rpc("seed_demo_support"), "seed_demo_support");
   console.log(`✓ chat: ${conversations} conversations with the studio`);
+  const banners = await must(db.rpc("seed_demo_home_banners"), "seed_demo_home_banners");
+  console.log(`✓ homepage: ${banners} banners (posters uploaded with the demo images)`);
 }
 
 // The admin's Activity page: a believable last week and a half from the data above (check-ins, roll calls,

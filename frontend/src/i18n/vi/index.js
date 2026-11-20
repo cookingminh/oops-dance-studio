@@ -29,6 +29,9 @@ import venues from './venues';
 import support from './support';
 import supportChat from './supportChat';
 import supportInbox from './supportInbox';
+import banners from './banners';
+import homeBanners from './homeBanners';
+import bannerEditor from './bannerEditor';
 
 // One flat English → Vietnamese map. Areas live in their own files; later files win on clashes.
-export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity, ...payments, ...promos, ...dues, ...refunds, ...sessionChanges, ...bookingRooms, ...checkins, ...guides, ...venues, ...support, ...supportChat, ...supportInbox };
+export default { ...common, ...home, ...auth, ...adminStudio, ...adminPeople, ...profile, ...payroll, ...about, ...account, ...tuition, ...tuitionStaff, ...finance, ...expenses, ...classSwitch, ...routines, ...classHub, ...calendar, ...attendanceHub, ...activity, ...payments, ...promos, ...dues, ...refunds, ...sessionChanges, ...bookingRooms, ...checkins, ...guides, ...venues, ...support, ...supportChat, ...supportInbox, ...banners, ...homeBanners, ...bannerEditor };

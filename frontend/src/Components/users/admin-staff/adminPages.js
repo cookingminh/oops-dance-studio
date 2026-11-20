@@ -2,6 +2,7 @@ import {
     LuBanknote,
     LuCalendarDays,
     LuClipboardCheck,
+    LuGalleryHorizontal,
     LuHistory,
     LuLayoutDashboard,
     LuLineChart,
@@ -30,6 +31,12 @@ export const ADMIN_NAV = [
         items: [
             { to: '/admin/bookings', label: 'Bookings', icon: LuTicket, description: 'Requests, payments, room prices and the cancellation policy.' },
             { to: '/admin/classes', label: 'Classes', icon: LuCalendarDays, description: 'Every class in one place: students, sessions, tuition, routines and money.' },
+        ],
+    },
+    {
+        group: 'Website',
+        items: [
+            { to: '/admin/banners', label: 'Homepage banners', icon: LuGalleryHorizontal, description: 'The posters the homepage slides through, their buttons and when they show.' },
         ],
     },
     {

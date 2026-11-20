@@ -70,8 +70,9 @@ select tests.create_user('00000000-0000-4000-b000-000000000274', 'chat-b@test.lo
 select tests.create_user('00000000-0000-4000-b000-000000000275', 'chat-teacher@test.local', 'instructor', 'Chat Teacher');
 
 -- ---------------------------------------------------------------------------
--- The hours (defaults 08:00 / 21:45 / 22:00, studio time)
+-- The hours (defaults 08:00 / 21:45 / 22:00, studio time; set here, a used database may have others)
 -- ---------------------------------------------------------------------------
+update public.site_settings set support_opens = '08:00', support_last_start = '21:45', support_closes = '22:00' where id = 1;
 select is(
   (select array_agg(private.support_phase((date '2026-01-05' + t) at time zone 'Asia/Ho_Chi_Minh') order by t)
      from unnest(array[time '07:59', '08:00', '21:44', '21:45', '21:59', '22:00', '23:30']) t),

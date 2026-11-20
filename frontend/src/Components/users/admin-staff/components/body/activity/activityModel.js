@@ -160,7 +160,16 @@ export const ACTIONS = {
         venue_removed: 'Rented studio deleted',
     },
     users: { account_created: 'Account created', account_deleted: 'Account deleted', role_changed: 'Role changed', profile_edited: 'Details edited' },
-    settings: { updated: 'Changed', timetable_template: 'Website timetable' },
+    settings: {
+        updated: 'Changed',
+        timetable_template: 'Website timetable',
+        banner_created: 'Banner added',
+        banner_updated: 'Banner changed',
+        banner_deleted: 'Banner deleted',
+        banner_shown: 'Banner shown',
+        banner_hidden: 'Banner hidden',
+        banners_reordered: 'Banners reordered',
+    },
     support: { claimed: 'Taken', handed_over: 'Handed over', close_asked: 'Asked to close', closed: 'Closed' },
 };
 export const actionLabel = (area, action) => ACTIONS[area]?.[action] ?? action;

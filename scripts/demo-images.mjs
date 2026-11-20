@@ -12,6 +12,7 @@
 //   scripts/demo-assets/timetable_*.webp           → class-images/{class_id}/{uuid}.webp    (classes.timetable_photo_path)
 //   frontend/src/assets/images/room{N}-*.webp      → site-assets/rooms/{room_id}/{file}     (rooms.image_paths, in order)
 //   scripts/demo-assets/promo_*.mp4 / .jpg         → class-promos/{class_id}/{lesson_id}/…  (class_lessons.promo_*)
+//   scripts/demo-assets/banner_*.webp              → site-assets/banners/demo-*.webp        (home_banners: seed_demo_home_banners())
 // Missing sources are skipped with a note. Idempotent: deterministic object
 // names, uploaded with upsert.
 
@@ -189,10 +190,32 @@ async function uploadPromos(db, log) {
   log(`✓ promos: ${promos} promo clip${promos === 1 ? "" : "s"}`);
 }
 
+// The homepage banners' posters, at the paths seed_demo_home_banners() gives them.
+const BANNER_POSTERS = [
+  ["banner_teachers_desktop.webp", "banners/demo-teachers-desktop.webp"],
+  ["banner_teachers_phone.webp", "banners/demo-teachers-phone.webp"],
+  ["banner_newbie_desktop.webp", "banners/demo-newbie-desktop.webp"],
+  ["banner_newbie_phone.webp", "banners/demo-newbie-phone.webp"],
+];
+async function uploadBannerPosters(db, log) {
+  let uploaded = 0;
+  for (const [file, path] of BANNER_POSTERS) {
+    const src = resolve(DEMO_ASSETS_DIR, file);
+    if (!existsSync(src)) {
+      log(`• banners: ${file} missing, skipped`);
+      continue;
+    }
+    await upload(db, "site-assets", path, src);
+    uploaded++;
+  }
+  log(`✓ banners: ${uploaded} poster${uploaded === 1 ? "" : "s"}`);
+}
+
 export async function uploadDemoImages(db, { log = console.log } = {}) {
   await uploadAvatarsAndClassPhotos(db, log);
   await uploadRoomPhotos(db, log);
   await uploadPromos(db, log);
+  await uploadBannerPosters(db, log);
 }
 
 // ---------------------------------------------------------------------------

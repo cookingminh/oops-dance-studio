@@ -61,6 +61,18 @@ const INVALID_INPUT_REASONS = [
     [/^write your question|^write a message/i, 'Write your message first.'],
     [/up to 2000 characters/i, 'A message is up to 2,000 characters.'],
     [/chat photo/i, 'The photo didn’t upload. Please choose it again.'],
+    // Homepage banners (home_banner_save).
+    [/give the banner a name/i, 'Give the banner a name (up to 60 characters).'],
+    [/write what the poster says/i, 'Write what the poster says (up to 400 characters).'],
+    [/both posters are needed/i, 'Add both posters: the desktop one and the phone one.'],
+    [/poster .*has not been uploaded|poster must be banners/i, 'A poster didn’t upload. Please choose it again.'],
+    [/banner ends before it starts/i, 'The banner ends before it starts.'],
+    [/up to 4 buttons/i, 'A banner has up to 4 buttons.'],
+    [/button's text is/i, 'Each button needs words (up to 30 characters).'],
+    [/pick where the button leads/i, 'Pick where each button leads.'],
+    [/link starts with https/i, 'A button’s own link starts with https://'],
+    [/must sit on the .*poster/i, 'Keep each button on the poster.'],
+    [/size is between 60/i, 'A button’s size is between 60% and 200%.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
 ];
 

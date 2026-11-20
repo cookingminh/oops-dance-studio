@@ -1,0 +1,153 @@
+// A homepage banner (BannerPoster.jsx): the poster contained (never cropped) over a blurred copy, its buttons placed
+// in % of the poster and sized from the poster's width (container query units), times their own scale (--s).
+
+.bnPoster {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    isolation: isolate;
+    container-type: size;
+    background: hsl(0, 25%, 8%);
+}
+
+.bnFill {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+
+    img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(28px) brightness(.5) saturate(1.2);
+        transform: scale(1.25);
+    }
+}
+
+.bnStage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    container-type: size;
+
+    &.is-desktop {
+        width: min(100cqw, 100cqh * 16 / 9);
+        height: min(100cqh, 100cqw * 9 / 16);
+    }
+
+    &.is-phone {
+        width: min(100cqw, 100cqh * 9 / 16);
+        height: min(100cqh, 100cqw * 16 / 9);
+    }
+}
+
+.bnImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.bnMissing {
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(45deg, hsl(0, 10%, 16%) 0 14px, hsl(0, 10%, 13%) 14px 28px);
+}
+
+// The poster that fits the screen (no device forced): the portrait one on phones.
+.bnPoster:not(.is-only-desktop, .is-only-phone) {
+    .bnStage.is-phone,
+    .bnFill.is-phone {
+        display: none;
+    }
+
+    @media (max-width: 640px) {
+        .bnStage.is-desktop,
+        .bnFill.is-desktop {
+            display: none;
+        }
+
+        .bnStage.is-phone,
+        .bnFill.is-phone {
+            display: block;
+        }
+    }
+}
+
+// A button on the poster: 1.1 % of a landscape poster's width (3.9 % of a portrait one's) × its scale.
+.bnBtn {
+    position: absolute;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: .45em;
+    padding: .78em 1.3em;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-family: 'League Spartan', 'Spartan', sans-serif;
+    font-size: clamp(9px, calc(1.1cqw * var(--s, 1)), 48px);
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    text-decoration: none;
+    box-shadow: 0 .7em 1.6em -.6em hsla(0, 0%, 0%, .55);
+    transition: filter .2s ease, box-shadow .2s ease;
+
+    // main.scss gives every element Spartan (`* {}`); the words take the button's font instead.
+    > span {
+        font-family: inherit;
+    }
+
+    svg {
+        width: 1em;
+        height: 1em;
+        flex-shrink: 0;
+    }
+
+    &:hover {
+        filter: brightness(1.08);
+        box-shadow: 0 .9em 1.8em -.6em hsla(0, 0%, 0%, .65);
+    }
+
+    &:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+    }
+
+    &.c-red {
+        background: hsl(0, 66%, 45%);
+        color: #fff;
+    }
+
+    &.c-white {
+        background: #fff;
+        color: hsl(0, 66%, 40%);
+    }
+
+    &.c-gold {
+        background: #ffcc6c;
+        color: hsl(20, 60%, 14%);
+    }
+
+    &.c-dark {
+        background: hsl(0, 0%, 9%);
+        border-color: hsla(0, 0%, 100%, .14);
+        color: #fff;
+    }
+
+    &.c-glass {
+        background: hsla(0, 0%, 100%, .1);
+        border-color: hsla(0, 0%, 100%, .55);
+        color: #fff;
+        backdrop-filter: blur(8px);
+    }
+}
+
+.bnStage.is-phone .bnBtn {
+    font-size: clamp(9px, calc(3.9cqw * var(--s, 1)), 44px);
+}

@@ -392,8 +392,34 @@ const USERS = (row, fmt) => {
     return out && { key: out[0], facts: out[1] };
 };
 
+// Homepage banners (entity home_banners; label = the banner's name): meta starts_on / ends_on, posters_changed,
+// and for a reorder the names in their new order.
+const BANNER_KEYS = {
+    banner_created: '{actor} added the homepage banner “{name}”',
+    banner_updated: '{actor} changed the homepage banner “{name}”',
+    banner_deleted: '{actor} deleted the homepage banner “{name}”',
+    banner_shown: '{actor} showed the homepage banner “{name}”',
+    banner_hidden: '{actor} hid the homepage banner “{name}”',
+    banners_reordered: '{actor} changed the order of the homepage banners',
+};
+function bannerSentence(row, fmt) {
+    const m = row.meta ?? {};
+    if (row.action === 'banners_reordered') {
+        return { key: BANNER_KEYS.banners_reordered, facts: [Array.isArray(m.order) && m.order.join(' → ')] };
+    }
+    const dates =
+        m.starts_on || m.ends_on
+            ? fmt.t('Shows {from} → {to}', { from: m.starts_on ? day(fmt, m.starts_on) : fmt.t('now'), to: m.ends_on ? day(fmt, m.ends_on) : fmt.t('no end') })
+            : '';
+    return BANNER_KEYS[row.action] && {
+        key: BANNER_KEYS[row.action],
+        facts: [Number(m.posters_changed) > 0 && fmt.t('New posters'), ['banner_created', 'banner_updated', 'banner_shown'].includes(row.action) && dates],
+    };
+}
+
 const SETTINGS = (row, fmt) => {
     const m = row.meta ?? {};
+    if (row.entity === 'home_banners') return bannerSentence(row, fmt);
     // The website timetable's look (site_set_timetable_template): 'poster' | 'brush', and the one before.
     if (row.action === 'timetable_template') {
         const look = (value) => fmt.t(timetableLookLabel(value));
@@ -487,6 +513,12 @@ const PLURALS = {
     'support.handed_over': () => ({ key: '{actor} handed over {count} chats' }),
     'support.close_asked': () => ({ key: '{actor} asked to close {count} chats' }),
     'support.closed': (rows, fmt, system) => (system ? { key: '{count} chats closed by themselves after 24 hours' } : null),
+    'settings.banner_updated': (rows) =>
+        rows.every((row) => row.label === rows[0].label)
+            ? { key: '{actor} changed the homepage banner “{name}” {count} times' }
+            : { key: '{actor} changed {count} homepage banners' },
+    'settings.banner_created': () => ({ key: '{actor} added {count} homepage banners' }),
+    'settings.banners_reordered': () => ({ key: '{actor} changed the order of the homepage banners' }),
     // Switched back and forth: where it ended up (the newest row), how often, and what it was before the first switch.
     'settings.timetable_template': (rows, fmt) => ({
         key: '{actor} switched the website timetable to {template}',
