@@ -316,6 +316,11 @@
         gap: .7rem;
         padding: .95rem .8rem .95rem 1rem;
         overflow: hidden;
+        // Clip to the panel's rounded corners here (24px minus its 1px border): the drifting light animates on its own
+        // layer, and some browsers (Safari, GPU compositing) let such a layer escape the panel's overflow clip.
+        border-radius: 23px 23px 0 0;
+        clip-path: inset(0 round 23px 23px 0 0);
+        isolation: isolate;
         background: linear-gradient(135deg, hsl(0, 66%, 40%), var(--sc-red-dark));
         color: #fff;
 
@@ -1508,6 +1513,8 @@
         }
 
         .supportHead {
+            border-radius: 0;
+            clip-path: none;
             padding-top: 1rem;
         }
 
