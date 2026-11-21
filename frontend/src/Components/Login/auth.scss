@@ -251,8 +251,8 @@
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
-    gap: 11px;
-    border-radius: 14px;
+    gap: 16px;
+    border-radius: 20px;
     color: #fff;
 
     &:hover .authBrandMark {
@@ -265,10 +265,10 @@
     position: relative;
     display: block;
     flex-shrink: 0;
-    width: 42px;
-    height: 42px;
+    width: 76px;
+    height: 76px;
     overflow: hidden;
-    border-radius: 12px;
+    border-radius: 20px;
     background: hsl(355, 68%, 45%);
     box-shadow: 0 0 0 1px hsla(0, 0%, 100%, .22), 0 10px 22px -10px hsla(345, 70%, 10%, .9);
     transition: transform .4s var(--au-ease);
@@ -289,15 +289,15 @@
 
     strong {
         font-family: var(--au-display);
-        font-size: 22px;
+        font-size: 38px;
         font-weight: 800;
-        letter-spacing: -.01em;
+        letter-spacing: -.015em;
     }
 
     small {
-        margin-top: 2px;
+        margin-top: 6px;
         font-family: var(--au-display);
-        font-size: 10px;
+        font-size: 13px;
         font-weight: 600;
         letter-spacing: .24em;
         text-transform: uppercase;
@@ -388,82 +388,6 @@
     letter-spacing: -.025em;
     color: #fff;
     text-wrap: balance;
-}
-
-// "Let's dance [K-pop]": the slot is as wide as the longest style, so nothing jumps.
-.authTicker {
-    font-family: var(--au-display);
-    font-size: clamp(20px, 1.75vw, 26px);
-    font-weight: 500;
-    line-height: 1.2;
-    color: hsla(0, 0%, 100%, .9);
-}
-
-.authTickerLine {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 10px;
-}
-
-.authTickerSlot {
-    display: inline-grid;
-    overflow: hidden;
-    padding: 5px 12px 2px;
-    border: 1px solid hsla(0, 0%, 100%, .22);
-    border-radius: 12px;
-    background: hsla(0, 0%, 100%, .12);
-    font-weight: 800;
-    color: var(--au-gold);
-}
-
-.authTickerSizer,
-.authTickerWord {
-    grid-area: 1 / 1;
-    justify-self: center;
-    white-space: nowrap;
-}
-
-.authTickerSizer {
-    visibility: hidden;
-}
-
-.authTickerWord {
-    display: block;
-}
-
-.authPerks {
-    display: grid;
-    width: 100%;
-    max-width: 440px;
-    margin-top: 6px;
-    border-top: 1px solid hsla(0, 0%, 100%, .14);
-
-    li {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        padding: 12px 0;
-        border-bottom: 1px solid hsla(0, 0%, 100%, .14);
-        font-family: var(--au-display);
-        font-size: 16px;
-        font-weight: 500;
-        line-height: 1.3;
-        color: hsla(0, 0%, 100%, .94);
-    }
-}
-
-.authPerkIcon {
-    display: grid;
-    flex-shrink: 0;
-    place-items: center;
-    width: 34px;
-    height: 34px;
-    border: 1px solid hsla(0, 0%, 100%, .18);
-    border-radius: 10px;
-    background: hsla(0, 0%, 100%, .1);
-    color: var(--au-gold);
-    font-size: 17px;
 }
 
 // Form pane ====================>
@@ -1327,13 +1251,26 @@ a.authSubmit {
         gap: 12px;
     }
 
+    .authBrandMark {
+        width: 58px;
+        height: 58px;
+        border-radius: 16px;
+    }
+
+    .authBrandName {
+        strong {
+            font-size: 30px;
+        }
+
+        small {
+            margin-top: 4px;
+            font-size: 11px;
+        }
+    }
+
     .authStageTitle {
         max-width: 14em;
         font-size: clamp(30px, 5vw, 42px);
-    }
-
-    .authPerks {
-        display: none;
     }
 
     .authRings {
@@ -1384,8 +1321,7 @@ a.authSubmit {
         gap: 0;
     }
 
-    .authEyebrow,
-    .authTicker {
+    .authEyebrow {
         display: none;
     }
 
@@ -1396,14 +1332,25 @@ a.authSubmit {
         letter-spacing: -.015em;
     }
 
-    .authBrandMark {
-        width: 38px;
-        height: 38px;
-        border-radius: 11px;
+    .authBrand {
+        gap: 12px;
     }
 
-    .authBrandName strong {
-        font-size: 20px;
+    .authBrandMark {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+    }
+
+    .authBrandName {
+        strong {
+            font-size: 24px;
+        }
+
+        small {
+            margin-top: 3px;
+            font-size: 10px;
+        }
     }
 
     .authRings {

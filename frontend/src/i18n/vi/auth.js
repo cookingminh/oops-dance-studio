@@ -3,7 +3,6 @@
 export default {
     // Shared layout and fields (the studio side reuses homepage lines: home.js)
     'Back to home': 'Về trang chủ',
-    'Let’s dance': 'Cùng nhảy',
     'Log in or sign up': 'Đăng nhập hoặc đăng ký',
     'Caps Lock is on': 'Đang bật Caps Lock',
     'Strength:': 'Độ mạnh:',

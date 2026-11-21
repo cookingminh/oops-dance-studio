@@ -95,7 +95,6 @@ export default {
     'Taught step by step': 'Dạy kỹ từng bước',
     'Each move is broken down and corrected one by one, so first-timers keep up and regulars keep levelling up.':
         'Giáo viên chia nhỏ từng động tác và sửa cho từng bạn, nên người mới vẫn theo kịp còn người học lâu thì ngày càng lên tay.',
-    'A new song every course': 'Mỗi khoá một bài mới',
     'Sessions a week': 'Buổi mỗi tuần',
     'Oops! Crew coaches': 'Giáo viên Oops! Crew',
     'For first-timers': 'Dành cho người mới',
