@@ -5,6 +5,7 @@ import { imagePositionOf } from '@/lib/classImage';
 import { publicPlaceOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
 import { PlaceDetails } from '@/ui/place/PlaceParts';
+import JoinButton from './join/JoinButton';
 import './classCard.scss';
 
 const initials = (name) =>
@@ -19,6 +20,7 @@ const initials = (name) =>
 // studio's address and map link) and price.
 // `anchor` gives it an id (#class-<id>) the timetable can jump to; a new `flash` value pulses its outline.
 // `imageSrc` shows another picture than the saved one (the staff's preview of a file not uploaded yet).
+// Inside a JoinProvider (/classes, /home) its foot also carries the way in (JoinButton: join / ask / waiting / in).
 const ClassCard = ({ item, anchor = false, flash = 0, imageSrc }) => {
     const { t, dayName } = useI18n();
     const place = publicPlaceOf(item);
@@ -67,6 +69,7 @@ const ClassCard = ({ item, anchor = false, flash = 0, imageSrc }) => {
                 )}
                 <div className="hpClassFoot">
                     <span className="hpClassPrice">{formatVnd(item.price)}</span>
+                    <JoinButton item={item} />
                 </div>
             </div>
         </article>

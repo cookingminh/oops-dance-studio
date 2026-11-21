@@ -19,6 +19,7 @@ import {
     LuRefreshCw,
     LuRepeat,
     LuTicket,
+    LuUserPlus,
 } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { useStaffTasks } from '../../tasks/staffTasks';
@@ -35,6 +36,7 @@ const ICONS = {
     transfers: LuLandmark,
     renewals: LuRepeat,
     support: LuMessagesSquare,
+    join: LuUserPlus,
 };
 
 const GROUPS = [

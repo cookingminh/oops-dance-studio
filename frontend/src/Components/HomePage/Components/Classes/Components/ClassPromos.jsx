@@ -8,6 +8,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import { avatarUrl } from '@/services/storage';
 import { clipLength, promoOf } from '@/services/promos';
 import PromoDialog from '@/ui/promo/PromoDialog';
+import { useJoin } from './join/joinContext';
 import './ClassPromos.scss';
 
 const EASE = [0.22, 1, 0.36, 1];
@@ -16,11 +17,13 @@ const card = { hidden: { opacity: 0, y: 24 }, show: { opacity: 1, y: 0, transiti
 const hueOf = (id) => (Number(id) * 47) % 360;
 
 // /classes: each class's next routine as its coach filmed it (routine promos, services/promos.js) —
-// upright cards in a row that scrolls sideways; a card plays its clip in a dialog with the way in.
+// upright cards in a row that scrolls sideways; a card plays its clip in a dialog with the way in: visitors claim
+// their free class, students who can ask to join that class do so from here (JoinProvider's dialog).
 // `promos` is listUpcomingPromos() data, `classes` the public class list. Nothing at all without promos.
 const ClassPromos = ({ promos, classes }) => {
     const { t, formatDate } = useI18n();
     const { isAuthenticated } = useAuth();
+    const join = useJoin();
     const [playing, setPlaying] = useState(null);
 
     const list = useMemo(() => {
@@ -34,6 +37,11 @@ const ClassPromos = ({ promos, classes }) => {
 
     const when = (item) =>
         item.started ? t('Started {date}', { date: formatDate(item.starts_on, 'short') }) : t('Starts {date}', { date: formatDate(item.starts_on, 'short') });
+
+    const askToJoin = (item) => {
+        setPlaying(null);
+        join.open(item.cls);
+    };
 
     const seeClass = (item) => {
         setPlaying(null);
@@ -114,6 +122,11 @@ const ClassPromos = ({ promos, classes }) => {
                                 <Link to="/register" className="hpPromoBtn isPrimary">
                                     {t('Claim my free class')} <LuArrowRight aria-hidden="true" />
                                 </Link>
+                            )}
+                            {join?.stateOf(playing.class_id) === 'ask' && (
+                                <button type="button" className="hpPromoBtn isPrimary" onClick={() => askToJoin(playing)}>
+                                    {t('Ask to join')} <LuArrowRight aria-hidden="true" />
+                                </button>
                             )}
                         </>
                     }

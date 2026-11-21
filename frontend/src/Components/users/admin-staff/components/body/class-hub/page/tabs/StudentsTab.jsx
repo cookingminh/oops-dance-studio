@@ -21,6 +21,7 @@ import { MiniBar } from '../../HubParts';
 import { attendanceRate, percent, personName, routineNow, shiftDay } from '../../hubModel';
 import { useClassInvoices } from '../useClassActivity';
 import PastStudents from './PastStudents';
+import ClassJoinBlock from '../../../join-requests/ClassJoinBlock';
 import '../../../tuition/tuition.scss';
 
 // Students: who is in the class, how often they come (90 days), where their tuition stands for the
@@ -75,6 +76,8 @@ const StudentsTab = ({ ctx }) => {
 
     return (
         <>
+            {/* Students who asked to join this class (hidden when nobody is waiting). */}
+            <ClassJoinBlock ctx={ctx} />
             <SectionCard
                 icon={LuGraduationCap}
                 title={t('Students')}

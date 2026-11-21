@@ -218,6 +218,10 @@ export function recordLink(row, lookups) {
             return inClass('routines');
         case 'class_students':
             return inClass('students');
+        case 'class_join_requests':
+            // Approved: the student is in the class; otherwise the request on the Join requests page.
+            if (row.action === 'join_approved') return inClass('students') ?? { to: '/admin/join-requests?tab=answered', page: 'Join requests' };
+            return { to: row.action === 'join_requested' ? '/admin/join-requests' : '/admin/join-requests?tab=answered', page: 'Join requests' };
         case 'instructor_attendance':
         case 'student_attendance':
             return inClass('sessions', row.meta?.date ? { day: row.meta.date } : undefined);

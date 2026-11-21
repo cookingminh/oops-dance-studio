@@ -11,6 +11,7 @@ import {
     LuReceipt,
     LuTicket,
     LuUserCog,
+    LuUserPlus,
     LuUsers,
     LuWallet,
 } from 'react-icons/lu';
@@ -31,6 +32,7 @@ export const ADMIN_NAV = [
         items: [
             { to: '/admin/bookings', label: 'Bookings', icon: LuTicket, description: 'Requests, payments, room prices and the cancellation policy.' },
             { to: '/admin/classes', label: 'Classes', icon: LuCalendarDays, description: 'Every class in one place: students, sessions, tuition, routines and money.' },
+            { to: '/admin/join-requests', label: 'Join requests', icon: LuUserPlus, description: 'Students asking to join a class: approve or decline.' },
         ],
     },
     {

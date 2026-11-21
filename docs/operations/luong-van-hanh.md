@@ -13,9 +13,10 @@ lương, chi phí và báo cáo. Viết cho chủ studio và staff; phần cuố
 | Vai trò | Vào đâu | Làm gì |
 |---|---|---|
 | Khách (chưa đăng nhập) | `/home`, `/classes`, `/rooms`, `/about` | Xem lớp, lịch tuần, video cuối khoá, tìm phòng trống, đăng ký tài khoản; bubble chat mời đăng nhập để nhắn studio |
+| Người đã đăng nhập (`guest`) | `/classes` | **Xin vào lớp** trên thẻ lớp; theo dõi yêu cầu ở *Lớp của tôi* (xem §2a) |
 | Học viên (`guest` có lớp) | `/profile` | Lớp của tôi (kèm *Các lớp bạn đã học*: mọi khoá đã học theo tháng — lớp, giáo viên, bài, thời gian, hoá đơn), học phí (đóng bằng QR), gia hạn/dừng khoá, điểm danh, đặt phòng (danh sách hoặc lịch), chat với studio |
 | Giáo viên | `/profile` | Check-in/out có ảnh, lớp đang dạy, bài đang dạy, danh sách học viên, chat với studio |
-| Staff | `/admin` | **Lớp học** (trung tâm theo lớp), đặt phòng, học viên, chấm công giáo viên, học phí, chi phí của mình, trả lời tin nhắn |
+| Staff | `/admin` | **Lớp học** (trung tâm theo lớp), **duyệt học viên xin vào lớp**, đặt phòng, học viên, chấm công giáo viên, học phí, chi phí của mình, trả lời tin nhắn |
 | Admin | `/admin` | Mọi thứ của staff + người dùng, lương, báo cáo tài chính, cài đặt thanh toán, toàn bộ chi phí |
 
 Ngôn ngữ: nút **EN / VI** ở thanh trên cùng, áp dụng cho toàn bộ app.
@@ -123,6 +124,37 @@ stateDiagram-v2
   - Hôm sau buổi cuối (tự động 00:02): lớp không chiếm phòng nữa, rời thời khoá biểu, học viên ra khỏi lớp. **Lịch sử giữ nguyên.**
 - **Xoá lớp** chỉ được khi lớp **chưa có lịch sử** (chưa dạy buổi nào, chưa điểm danh, chưa thu tiền) — tức là tạo nhầm.
   Lớp đã có lịch sử thì **kết thúc** thay vì xoá.
+
+---
+
+## 2a. Học viên xin vào lớp — staff duyệt (`/admin/join-requests`)
+
+Học viên **không tự vào lớp**. Họ gửi yêu cầu, staff hoặc admin duyệt thì mới vào lớp và có hoá đơn.
+
+1. **Học viên** (đã đăng nhập, tài khoản học viên) bấm **Xin vào lớp** trên thẻ lớp ở `/classes`, hoặc trong promo
+   bài tiếp theo.
+   - Chưa đăng nhập: nút *Tham gia lớp này* đưa đến đăng nhập. Đăng nhập xong thì quay lại với hộp thoại đã mở.
+   - Hộp thoại hiện lớp, giáo viên, lịch, khoá đang học (còn mấy buổi) và khoá sau.
+   - Học viên chọn **Vào học ngay** hoặc **Từ khoá sau** (chỉ khi lớp có cả hai). Hộp thoại ghi rõ học phí:
+     - vào giữa khoá thì đóng phần buổi còn lại;
+     - nếu khoá sau đã mở gia hạn (khoá đang chạy còn ≤ 2 buổi) thì nhận thêm hoá đơn khoá sau.
+   - Có thể kèm lời nhắn cho studio (tối đa 500 ký tự).
+   - Mỗi người tối đa **3 yêu cầu đang chờ**. Không xin được lớp mình đang học, lớp đã có yêu cầu chờ, hay lớp
+     đang kết thúc.
+2. **Staff** thấy yêu cầu ở chuông, số đỏ cạnh menu **Đăng ký vào lớp**, và mục *Đang chờ vào lớp* trong tab
+   *Học viên* của lớp.
+   - Yêu cầu chờ quá 24 giờ được tô vàng và thành việc gấp.
+   - **Duyệt**: chọn *Từ khoá đang học* hoặc *Từ khoá sau* (mặc định theo lựa chọn của học viên). Học viên vào lớp,
+     hoá đơn và điểm danh tạo như khi staff tự *Thêm học viên*.
+   - **Từ chối**: lý do không bắt buộc (có sẵn vài lý do nhanh). Học viên sẽ thấy lý do.
+3. **Học viên** theo dõi ở *Lớp của tôi → Yêu cầu vào lớp*:
+   - đang chờ (huỷ được);
+   - đã được nhận (7 ngày gần nhất, kèm link xem lớp / học phí);
+   - chưa được duyệt hoặc đã huỷ (30 ngày gần nhất, kèm lý do).
+4. **Tự động:**
+   - staff *Thêm học viên* trực tiếp → yêu cầu đang chờ của người đó thành *đã duyệt*;
+   - lớp kết thúc → các yêu cầu đang chờ bị từ chối với lý do "Lớp đã kết thúc."
+5. **Nhật ký:** mọi yêu cầu, huỷ, duyệt, từ chối đều có trong *Activity*.
 
 ---
 
@@ -394,7 +426,7 @@ Lãi của lớp = học phí lớp thu được − lương giáo viên dạy l
 ## 11. Việc cần làm & thông báo (chuông, staff/admin)
 
 Hệ thống tự nhắc: yêu cầu đặt phòng chờ duyệt, check-in cần duyệt, lớp chưa điểm danh, lớp cần chọn bài tiếp theo,
-bài sắp bắt đầu mà chưa có promo, học viên trễ học phí, chuyển khoản chưa gán, học viên chưa trả lời gia hạn khoá. Số đỏ cạnh mục menu là số việc.
+bài sắp bắt đầu mà chưa có promo, học viên trễ học phí, chuyển khoản chưa gán, học viên chưa trả lời gia hạn khoá, học viên xin vào lớp đang chờ duyệt. Số đỏ cạnh mục menu là số việc.
 
 ---
 
@@ -579,5 +611,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Chat với studio | `20261117001900_support_chat.sql` | `support_status`, `support_start`, `support_send`, `support_inbox`, `support_request_close`, `support_run` |
 | Chat: ai đang hỗ trợ, đếm ngược, tên gọi | `20261117002000_support_chat_joined.sql` | `private.first_name`, `private.support_assign`, `support_status` (`reply_minutes`) |
 | Banner trang chủ | `20261117002200_home_banners.sql` | `home_banners_live`, `home_banner_save`, `home_banner_set_enabled`, `home_banners_reorder`, `home_banner_delete` |
+| Xin vào lớp, staff duyệt | `20261117002500_class_join_requests.sql` | `class_join_request`, `class_join_cancel`, `class_join_approve`, `class_join_decline`, `seed_demo_class_join_requests` |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

@@ -73,6 +73,8 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `payroll.spec.js` | payroll is admin only; a deduction, finalize and reopen; the payslip's month calendar and legend |
 | `tuition-student.spec.js` | a student's tuition: VietQR dialog, sandbox transfer marks it paid, renewal stop / continue |
 | `past-classes.spec.js` | My classes → "Classes you've taken" (students only): every started course with its class, teacher, song, month and invoice status; the course receipt (payment code, amount); Pay opens the QR; a class chip narrows the list |
+| `class-join.spec.js` | asking to join a class (students): "Ask to join" on a /classes card → the dialog (start choice, note) → the pending pill; asking twice is refused; My classes lists the request and cancels it; a visitor goes through log in and comes back to the open dialog; instructors get no button |
+| `class-join-staff.spec.js` | join requests (staff): the sidebar badge, the Join requests page with the note, approve (the student is in the class with an invoice) and decline with a reason the student reads; the class page's "Waiting to join" block adds them to the list |
 | `tuition-staff.spec.js` | the lean Tuition page (to do, by class, search by name / code), cash and undo, transfers, notes, payment settings are admin only |
 | `finance.spec.js` | the admin finance report matches `finance_monthly` / `finance_by_class`; staff are refused; CSV exports |
 | `expenses.spec.js` | expenses with class + receipt, staff see only their own, recurring costs |

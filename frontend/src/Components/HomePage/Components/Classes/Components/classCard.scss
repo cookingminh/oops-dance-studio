@@ -177,9 +177,103 @@
 }
 
 .hpClassFoot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem .75rem;
     margin-top: auto;
     padding-top: .9rem;
     border-top: 1px dashed var(--hp-border);
+}
+
+// The way in (join/JoinButton.jsx): a red pill to ask (or, for visitors, to log in first), a soft one while the
+// request waits (it opens the request) or once they're in. On a narrow card it drops under the price.
+.hpJoinCta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .45rem;
+    height: 2.5rem;
+    padding: 0 1.1rem;
+    border-radius: 999px;
+    background: var(--hp-red);
+    color: #fff;
+    font-size: .92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: transform .3s var(--hp-ease), background-color .2s ease, box-shadow .3s ease;
+
+    svg {
+        flex-shrink: 0;
+        transition: transform .25s var(--hp-ease);
+    }
+
+    &:hover {
+        background: hsl(0, 66%, 37%);
+        box-shadow: 0 10px 22px -12px hsla(0, 66%, 35%, .8);
+        transform: translateY(-2px);
+
+        svg:last-child {
+            transform: translateX(2px);
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--hp-red);
+        outline-offset: 3px;
+    }
+}
+
+.hpJoinPill {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    max-width: 100%;
+    min-height: 2.25rem;
+    padding: .4rem .85rem;
+    // A full pill on one line; a soft box when the text wraps on a narrow card.
+    border-radius: 1.125rem;
+    font-size: .84rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .2s ease, box-shadow .2s ease;
+
+    svg {
+        flex-shrink: 0;
+    }
+
+    &.isPending {
+        background: hsl(40, 95%, 92%);
+        color: hsl(30, 85%, 30%);
+
+        &:hover {
+            box-shadow: inset 0 0 0 1px hsl(36, 80%, 70%);
+        }
+    }
+
+    &.isIn {
+        background: hsl(150, 60%, 92%);
+        color: hsl(156, 64%, 26%);
+
+        &:hover {
+            box-shadow: inset 0 0 0 1px hsl(152, 45%, 65%);
+        }
+    }
+
+    &:focus-visible {
+        outline: 2px solid currentColor;
+        outline-offset: 3px;
+    }
+}
+
+.hpJoinNote {
+    color: var(--hp-muted);
+    font-size: .84rem;
+    font-weight: 500;
 }
 
 .hpClassPrice {

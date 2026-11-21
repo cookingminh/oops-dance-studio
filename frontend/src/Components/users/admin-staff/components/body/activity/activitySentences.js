@@ -166,7 +166,31 @@ const ROUTINES = (row, fmt) => {
     return keys[row.action] && { key: keys[row.action], facts };
 };
 
+// Asking to join a class (entity class_join_requests; the label is the student, meta { class, start, note, joined_at,
+// reason }). Staff adding the student straight from the class page approves their request too (they are the actor);
+// only a scheduled job leaves no actor, e.g. the class ending declines what still waits ("The class has ended.").
+const JOIN_START = { now: 'Wants to start now', next: 'Wants to start from the next course' };
+const joinClass = (row, fmt) => row.meta?.class ?? fmt.classes?.get(row.class_id) ?? fmt.t('a class');
+
+function joinRequest(row, fmt) {
+    const m = row.meta ?? {};
+    const keys = {
+        join_requested: '{actor} asked to join {class}',
+        join_cancelled: isSelf(row) || !row.actor_id ? '{name} cancelled their request to join {class}' : '{actor} cancelled {name}’s request to join {class}',
+        join_approved: row.actor_id ? '{actor} approved {name} for {class}' : '{name}’s request to join {class} was approved',
+        join_declined: row.actor_id ? '{actor} declined {name} for {class}' : '{name}’s request to join {class} was declined',
+    };
+    const facts = {
+        join_requested: [JOIN_START[m.start] && fmt.t(JOIN_START[m.start]), quote(m.note)],
+        join_approved: [m.joined_at && fmt.t('From {date}', { date: day(fmt, m.joined_at) })],
+        // The reason the student reads ("The class has ended." when the class ended: an English key).
+        join_declined: [quote(m.reason && fmt.t(m.reason))],
+    }[row.action];
+    return keys[row.action] && { key: keys[row.action], vars: { class: joinClass(row, fmt) }, facts };
+}
+
 const STUDENTS = (row, fmt) => {
+    if (row.entity === 'class_join_requests' || row.action.startsWith('join_')) return joinRequest(row, fmt);
     const m = row.meta ?? {};
     const keys = {
         enrolled: isSelf(row) ? '{actor} joined {class}' : '{actor} added {name} to {class}',
@@ -499,6 +523,8 @@ const PLURALS = {
     'routines.planned': () => ({ key: '{actor} planned {count} routines for {class}' }),
     'students.enrolled': () => ({ key: '{actor} added {count} students to {class}' }),
     'students.removed': (rows, fmt, system) => ({ key: system ? '{count} students left {class} after their course' : '{actor} removed {count} students from {class}' }),
+    'students.join_approved': (rows, fmt, system) => (system ? null : { key: '{actor} approved {count} students for {class}' }),
+    'students.join_declined': (rows, fmt, system) => ({ key: system ? '{count} requests to join {class} were declined' : '{actor} declined {count} students for {class}' }),
     'tuition.paid': (rows, fmt, system) => ({
         key: system ? '{count} bank transfers received' : '{actor} recorded {count} payments',
         facts: [fmt.t('{amount} in total', { amount: money(rows.reduce((total, row) => total + Number(row.meta?.received ?? row.meta?.paid ?? 0), 0)) })],

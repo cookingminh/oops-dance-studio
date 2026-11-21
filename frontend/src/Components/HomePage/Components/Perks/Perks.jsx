@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { LuArrowRight, LuClapperboard, LuGift, LuHeartHandshake, LuMessageCircle, LuMusic, LuPhone, LuStar } from 'react-icons/lu';
 import crewShoot from '@/assets/images/crew-shoot.webp';
 import { useAuth } from '@/auth/useAuth';
+import { ROLES } from '@/auth/roles';
 import { useI18n } from '@/i18n/i18nContext';
 import { PHONE } from '../NavBar/contactInfo';
 import { usePublicChrome } from '../NavBar/publicChrome';
@@ -82,12 +83,19 @@ const Perks = () => {
     );
 };
 
-// Closing call to action. Visitors get the free first class; members are asked to get in touch,
-// since the studio adds students to a class.
+// Closing call to action. Visitors get the free first class; students are sent to pick a class and ask to join it
+// from its card (the studio approves), with a message or a call as the other ways in; other members (instructors,
+// staff) are asked to get in touch.
 export const JoinBanner = () => {
     const { t } = useI18n();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, role } = useAuth();
     const { openContact } = usePublicChrome();
+    const isStudent = isAuthenticated && role === ROLES.guest;
+
+    let pitch = t('Create a free account and try any class free. Dance with Oops! Crew, no experience needed.');
+    if (isStudent) pitch = t('Ask to join it right from its card on the classes page. The studio gets back to you, usually within a day.');
+    else if (isAuthenticated) pitch = t('Call or message us and we’ll save you a spot in its next session.');
+
     return (
         <section className="hpJoin" data-aos="fade-up">
             <div className="hpJoinCard">
@@ -98,18 +106,20 @@ export const JoinBanner = () => {
                         {isAuthenticated ? t('Join a class') : t('Your first class is free')}
                     </span>
                     <h2>{isAuthenticated ? t('Found a class you like?') : t('Ready for your first routine on camera?')}</h2>
-                    <p>
-                        {isAuthenticated
-                            ? t('Call or message us and we’ll save you a spot in its next session.')
-                            : t('Create a free account and try any class free. Dance with Oops! Crew, no experience needed.')}
-                    </p>
+                    <p>{pitch}</p>
                 </div>
                 <div className="hpJoinActions">
-                    {isAuthenticated ? (
-                        <button type="button" className="hpJoinBtn isPrimary" onClick={openContact}>
+                    {isStudent && (
+                        <Link to="/classes#all-classes" className="hpJoinBtn isPrimary">
+                            {t('Pick a class')} <LuArrowRight aria-hidden="true" />
+                        </Link>
+                    )}
+                    {isAuthenticated && (
+                        <button type="button" className={`hpJoinBtn${isStudent ? '' : ' isPrimary'}`} onClick={openContact}>
                             <LuMessageCircle aria-hidden="true" /> {t('Message us')}
                         </button>
-                    ) : (
+                    )}
+                    {!isAuthenticated && (
                         <Link to="/register" className="hpJoinBtn isPrimary">
                             {t('Claim my free class')} <LuArrowRight aria-hidden="true" />
                         </Link>

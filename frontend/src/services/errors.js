@@ -29,10 +29,24 @@ const RPC_CODE = /^(FORBIDDEN|NOT_FOUND|INVALID_STATE|INVALID_INPUT|SLOT_TAKEN|P
 const CLASS_HAS_HISTORY = 'This class has sessions, attendance or payments on record. End the class instead of deleting it.';
 // A cancelled session frees its room; once someone books it, the session can't come back (guard_session_reopen).
 const BOOKED_AFTER_CANCEL = 'The room was booked after this session was cancelled, so it can’t be reopened. Add a make-up session instead.';
-// A rented studio classes were taught at stays on record (venue_delete).
-const VENUE_USED = 'Classes were taught at this studio, so it can’t be deleted. Set it inactive instead.';
-// The sandbox's pretend transfer on a booking already paid in full (booking_simulate_transfer).
-const NOTHING_LEFT = 'This booking is already paid in full.';
+// Specific INVALID_STATE reasons from the database.
+const INVALID_STATE_REASONS = [
+    // A rented studio classes were taught at stays on record (venue_delete).
+    [/set it inactive instead/i, 'Classes were taught at this studio, so it can’t be deleted. Set it inactive instead.'],
+    // The sandbox's pretend transfer on a booking already paid in full (booking_simulate_transfer).
+    [/nothing is left to pay/i, 'This booking is already paid in full.'],
+    // Asking to join a class (class_join_request / _cancel / _approve / _decline).
+    [/already in this class/i, 'You’re already in this class.'],
+    [/already asked to join this class/i, 'You’ve already asked to join this class. The studio will get back to you soon.'],
+    [/too many open requests/i, 'You have 3 requests waiting already. Wait for an answer, or cancel one, before asking again.'],
+    [/not taking new students/i, 'This class isn’t taking new students.'],
+    [/request is no longer waiting/i, 'This request has already been answered or cancelled. Refresh to see it.'],
+];
+
+// Specific FORBIDDEN reasons from the database.
+const FORBIDDEN_REASONS = [
+    [/only students can ask to join/i, 'Only student accounts can ask to join a class.'],
+];
 
 // Specific INVALID_INPUT reasons (RPC text or constraint name) that deserve their own message.
 const INVALID_INPUT_REASONS = [
@@ -74,10 +88,23 @@ const INVALID_INPUT_REASONS = [
     [/must sit on the .*poster/i, 'Keep each button on the poster.'],
     [/size is between 60/i, 'A button’s size is between 60% and 200%.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
+    // Asking to join a class (class_join_request / class_join_approve / class_join_decline).
+    [/no next course planned/i, 'This class has no next course planned yet. Start them now, or plan the next routine first.'],
+    [/note is up to 500 characters/i, 'The note is up to 500 characters.'],
+    [/reason is up to 300 characters/i, 'The reason is up to 300 characters.'],
 ];
 
 function invalidInputMessage(text) {
     return INVALID_INPUT_REASONS.find(([pattern]) => pattern.test(text))?.[1] ?? MESSAGES.INVALID_INPUT;
+}
+
+// The message for an RPC's `CODE: reason`: a specific one when the reason has its own, else the code's.
+const REASONS = { INVALID_STATE: INVALID_STATE_REASONS, FORBIDDEN: FORBIDDEN_REASONS };
+function rpcMessage(code, detail) {
+    if (code === 'INVALID_INPUT') return invalidInputMessage(detail);
+    if (code === 'IN_USE' && /class has history/i.test(detail)) return CLASS_HAS_HISTORY;
+    if (code === 'SLOT_TAKEN' && /after the session was cancelled/i.test(detail)) return BOOKED_AFTER_CANCEL;
+    return REASONS[code]?.find(([pattern]) => pattern.test(detail))?.[1] ?? MESSAGES[code];
 }
 
 export class AppError extends Error {
@@ -124,19 +151,7 @@ export function toAppError(error) {
     const rpc = raw.match(RPC_CODE);
     if (rpc) {
         const detail = raw.slice(rpc[0].length).trim();
-        const message =
-            rpc[1] === 'INVALID_INPUT'
-                ? invalidInputMessage(detail)
-                : rpc[1] === 'IN_USE' && /class has history/i.test(detail)
-                  ? CLASS_HAS_HISTORY
-                  : rpc[1] === 'SLOT_TAKEN' && /after the session was cancelled/i.test(detail)
-                    ? BOOKED_AFTER_CANCEL
-                    : rpc[1] === 'INVALID_STATE' && /set it inactive instead/i.test(detail)
-                      ? VENUE_USED
-                      : rpc[1] === 'INVALID_STATE' && /nothing is left to pay/i.test(detail)
-                        ? NOTHING_LEFT
-                        : MESSAGES[rpc[1]];
-        return new AppError(rpc[1], message, error, detail);
+        return new AppError(rpc[1], rpcMessage(rpc[1], detail), error, detail);
     }
 
     const pgCode = POSTGRES_CODES[error?.code];

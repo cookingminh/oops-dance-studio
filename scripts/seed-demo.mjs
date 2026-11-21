@@ -135,7 +135,7 @@ const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", 
 // Children first, so no foreign key blocks a delete. PostgREST needs a filter on
 // every DELETE, hence "<column> is not null".
 const APP_TABLES = [
-  ["support_messages", "id"], ["support_threads", "id"], ["home_banners", "id"],
+  ["support_messages", "id"], ["support_threads", "id"], ["home_banners", "id"], ["class_join_requests", "id"],
   // payslips before adjustments: a finalized month's adjustments can't be deleted while it is finalized.
   ["expenses", "id"], ["recurring_expenses", "id"],
   ["bank_transfers", "id"], ["tuition_invoices", "id"],
@@ -470,11 +470,14 @@ async function seedTuition() {
 
 // The admin's Activity page: a believable last week and a half from the data above (check-ins, roll calls,
 // bookings answered, tuition received…). Replaces whatever seeding itself logged. Runs last.
+// Then the join requests (four waiting, one declined), which log their own lines on top.
 async function seedActivity() {
   const { data: sandbox } = await db.rpc("tuition_sandbox");
   if (!sandbox) return;
   const rows = await must(db.rpc("seed_demo_activity"), "seed_demo_activity");
   console.log(`✓ activity: ${rows} log entries`);
+  const requests = await must(db.rpc("seed_demo_class_join_requests"), "seed_demo_class_join_requests");
+  console.log(`✓ join requests: ${requests} (waiting for staff, and one declined)`);
 }
 
 async function seedPayroll(userIds, classes, today) {

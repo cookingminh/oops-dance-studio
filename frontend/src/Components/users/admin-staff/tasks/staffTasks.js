@@ -10,6 +10,7 @@ import { hasPromo } from '@/services/promos';
 import { loadTuitionTodo } from '@/services/tuitionStaff';
 import { withOwnTimes } from '@/services/sessions';
 import { getSupportCounts } from '@/services/support';
+import { listWaitingJoinRequests } from '@/services/classJoinStaff';
 import { formatTime, formatVnd, isoWeekdayOf, studioTimeNow } from '@/lib/format';
 import { routineState, routinesByClass, sessionTimesOf, sessionWithoutRoutine } from '@/lib/lessons';
 
@@ -27,6 +28,9 @@ const personName = (person) => person?.full_name || person?.username || null; //
 const INBOX_PAGE = '/admin/inbox';
 // Someone waiting longer than this for a chat answer is urgent.
 const SUPPORT_URGENT_MINUTES = 15;
+const JOIN_PAGE = '/admin/join-requests';
+// A request to join a class waiting longer than this is urgent (the page tags it too: join-requests/joinModel.js).
+const JOIN_URGENT_HOURS = 24;
 
 // Start / end ('HH:mm') of a class on a given date, from its weekly schedule. For a session row
 // (which may be a make-up with its own times) use sessionTimesOf(row) from lib/lessons.
@@ -119,6 +123,34 @@ function buildSupportTasks(support) {
     }];
 }
 
+// Students asking to join a class (one task): who and which class for one request, how many otherwise; urgent once
+// the oldest has waited a day.
+function buildJoinTasks(requests) {
+    if (!requests?.length) return [];
+    const oldest = requests[0];
+    const hours = Math.max(0, (Date.now() - Date.parse(oldest.created_at)) / 3_600_000);
+    const days = Math.floor(hours / 24);
+    const students = new Set(requests.map((row) => row.student_id ?? row.id)).size;
+    const classes = [...new Set(requests.map((row) => row.class?.name).filter(Boolean))];
+    const one = requests.length === 1 ? oldest : null;
+    let title;
+    if (one) title = msg('{name} asked to join {cls}', { name: personName(one.student) ?? '', cls: one.class?.name ?? '' });
+    else if (students === 1) title = msg('{name} asked to join {count} classes', { name: personName(oldest.student) ?? '', count: requests.length });
+    else title = count(students, '{count} student asked to join a class', '{count} students asked to join a class');
+    let detail;
+    if (days >= 1) detail = count(days, 'The oldest has waited {count} day', 'The oldest has waited {count} days');
+    else if (one) detail = hours < 1 ? msg('Just asked') : count(Math.floor(hours), 'Asked {count} hour ago', 'Asked {count} hours ago');
+    else detail = classes.length > 3 ? msg('{classes} and {count} other classes', { classes: classes.slice(0, 2).join(', '), count: classes.length - 2 }) : { text: classes.join(', ') };
+    return [{
+        id: 'join-requests',
+        kind: 'join',
+        tone: hours > JOIN_URGENT_HOURS ? 'urgent' : 'normal',
+        title,
+        detail,
+        to: JOIN_PAGE,
+    }];
+}
+
 // A next routine starting within this many days should have its promo by now (services/promos.js).
 const PROMO_TASK_DAYS = 14;
 
@@ -184,7 +216,7 @@ export async function loadStaffTasks() {
     const today = await getStudioToday();
     const now = studioTimeNow();
     const weekday = isoWeekdayOf(today);
-    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition, support] = await Promise.all([
+    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition, support, joins] = await Promise.all([
         // Make-up sessions carry their own times (withOwnTimes), regular ones the weekly slot.
         listOpenInstructorAttendance({ until: today }).then(withOwnTimes),
         listInstructorAttendance({ date: today }).then(withOwnTimes),
@@ -203,6 +235,8 @@ export async function loadStaffTasks() {
         loadTuitionTodo(today).catch(() => null),
         // The chat is newer still: if it can't load, the other tasks still show.
         getSupportCounts().catch(() => null),
+        // Requests to join a class are the newest: same.
+        listWaitingJoinRequests().catch(() => null),
     ]);
 
     const attendance = [];
@@ -356,11 +390,12 @@ export async function loadStaffTasks() {
 
     const tuitionTasks = tuition ? buildTuitionTasks(tuition) : [];
     const supportTasks = buildSupportTasks(support);
+    const joinTasks = buildJoinTasks(joins);
 
     return {
         today,
         checkedAt: now,
-        tasks: [...supportTasks, ...attendance, ...studentTasks, ...lessonTasks, ...bookingTasks, ...tuitionTasks],
+        tasks: [...supportTasks, ...joinTasks, ...attendance, ...studentTasks, ...lessonTasks, ...bookingTasks, ...tuitionTasks],
         // Sidebar badges.
         counts: {
             [ATTENDANCE_PAGE]: attendance.length + studentTasks.length,
@@ -370,6 +405,8 @@ export async function loadStaffTasks() {
             [TUITION_PAGE]: tuition ? new Set(tuition.overdue.map((row) => row.student_id)).size + tuition.unmatched.length : 0,
             // People waiting for a chat answer.
             [INBOX_PAGE]: support?.waiting ?? 0,
+            // Requests to join a class waiting for an answer.
+            [JOIN_PAGE]: joins?.length ?? 0,
         },
     };
 }

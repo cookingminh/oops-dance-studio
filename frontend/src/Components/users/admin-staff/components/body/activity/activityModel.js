@@ -92,7 +92,18 @@ export const ACTIONS = {
         promo_caption: 'Promo line edited',
         promo_removed: 'Promo removed',
     },
-    students: { enrolled: 'Enrolled', removed: 'Left the class', leaving: 'Set to leave', staying: 'Staying on', updated: 'Edited' },
+    students: {
+        enrolled: 'Enrolled',
+        removed: 'Left the class',
+        leaving: 'Set to leave',
+        staying: 'Staying on',
+        updated: 'Edited',
+        // Asking to join a class (class_join_requests).
+        join_requested: 'Asked to join',
+        join_cancelled: 'Request cancelled',
+        join_approved: 'Request approved',
+        join_declined: 'Request declined',
+    },
     sessions: {
         checked_in: 'Checked in',
         checked_out: 'Checked out',

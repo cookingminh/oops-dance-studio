@@ -17,6 +17,7 @@ import Reports from './reports/Reports';
 import Activity from './activity/Activity';
 import Inbox from './inbox/Inbox';
 import Banners from './banners/Banners';
+import JoinRequests from './join-requests/JoinRequests';
 
 // Admin and staff share these pages; user management is admin-only.
 // Each page fades in and its cards (SectionCard) follow one after another.
@@ -29,6 +30,7 @@ const Body = () => {
                 <Routes location={location}>
                     <Route index element={<MainBody />} />
                     <Route path="classes/*" element={<ClassHub />} />
+                    <Route path="join-requests" element={<JoinRequests />} />
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="inbox" element={<Inbox />} />
                     <Route path="banners/*" element={<Banners />} />

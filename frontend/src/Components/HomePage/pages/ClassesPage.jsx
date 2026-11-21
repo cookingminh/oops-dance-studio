@@ -9,11 +9,13 @@ import TimeTable from '../Components/Classes/Components/TimeTable';
 import ClassGrid from '../Components/Classes/Components/ClassGrid';
 import ClassVideos from '../Components/Classes/Components/ClassVideos';
 import ClassPromos from '../Components/Classes/Components/ClassPromos';
+import JoinProvider from '../Components/Classes/Components/join/JoinProvider';
 import Participants from '../Components/Participants/Participants';
 import { JoinBanner } from '../Components/Perks/Perks';
 
 // /classes: when classes meet (the weekly timetable), what each class is, what each learns next (the
-// coaches' promos), what they filmed last month, and who teaches it.
+// coaches' promos), what they filmed last month, and who teaches it. Each class card (and promo) carries the way in:
+// students ask to join (JoinProvider); /classes?join=<id> opens that class's dialog (back from logging in).
 const ClassesPage = () => {
     const { t } = useI18n();
     const classes = useAsync(listPublicClasses, []);
@@ -35,7 +37,7 @@ const ClassesPage = () => {
     const hasPromos = (promos.data?.promos ?? []).some((row) => promoClasses.has(row.class_id));
 
     return (
-        <>
+        <JoinProvider classes={classes.data}>
             <PageHeader
                 overlap
                 icon={LuMusic}
@@ -62,7 +64,7 @@ const ClassesPage = () => {
             <ClassVideos classes={classes} />
             <Participants classes={classes} />
             <JoinBanner />
-        </>
+        </JoinProvider>
     );
 };
 
