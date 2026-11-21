@@ -13,7 +13,7 @@ lương, chi phí và báo cáo. Viết cho chủ studio và staff; phần cuố
 | Vai trò | Vào đâu | Làm gì |
 |---|---|---|
 | Khách (chưa đăng nhập) | `/home`, `/classes`, `/rooms`, `/about` | Xem lớp, lịch tuần, video cuối khoá, tìm phòng trống, đăng ký tài khoản; bubble chat mời đăng nhập để nhắn studio |
-| Học viên (`guest` có lớp) | `/profile` | Lớp của tôi, học phí (đóng bằng QR), gia hạn/dừng khoá, điểm danh, đặt phòng, chat với studio |
+| Học viên (`guest` có lớp) | `/profile` | Lớp của tôi (kèm *Các lớp bạn đã học*: mọi khoá đã học theo tháng — lớp, giáo viên, bài, thời gian, hoá đơn), học phí (đóng bằng QR), gia hạn/dừng khoá, điểm danh, đặt phòng (danh sách hoặc lịch), chat với studio |
 | Giáo viên | `/profile` | Check-in/out có ảnh, lớp đang dạy, bài đang dạy, danh sách học viên, chat với studio |
 | Staff | `/admin` | **Lớp học** (trung tâm theo lớp), đặt phòng, học viên, chấm công giáo viên, học phí, chi phí của mình, trả lời tin nhắn |
 | Admin | `/admin` | Mọi thứ của staff + người dùng, lương, báo cáo tài chính, cài đặt thanh toán, toàn bộ chi phí |
@@ -307,6 +307,9 @@ Ví dụ (dữ liệu demo): *Lê Khánh Linh* học nốt "Super Shy" ở K-pop
   - Mã QR VietQR cho tiền cọc / phần còn lại / toàn bộ, kèm số tài khoản và **nội dung chuyển khoản** có mã.
   - Lịch sử từng khoản chuyển khoản (giờ, số tiền, nội dung) và **hoá đơn** in được.
   - Khách cũng thấy nút *Đóng cọc* / *Đóng phần còn lại* ở trang *Phòng đã đặt*.
+  - Trang *Phòng đã đặt* xem được dạng **Danh sách** hoặc **Lịch** (nhớ lựa chọn): lịch tháng, mỗi lượt đặt một ô
+    giờ + phòng, màu theo trạng thái, chấm đỏ = còn tiền phải trả; bấm một ngày → các lượt đặt hôm đó với nút
+    *Đặt cọc* / *Hoá đơn* / *Huỷ* như ở danh sách.
   - Tiền về đúng mã → tự cộng vào lượt đặt, cọc tự chuyển *đã trả*.
   - **Trả nốt phần còn lại**:
     - chuyển khoản → QR *Phần còn lại*, tiền tự cộng;

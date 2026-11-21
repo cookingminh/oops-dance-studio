@@ -20,4 +20,14 @@ export default {
 
     // A booking paid in full whose day is still ahead
     'Paid up': 'Đã trả đủ',
+
+    // My bookings (guest): List | Calendar, the month and a day's bookings
+    'Show the bookings as': 'Xem lượt đặt dạng',
+    'Bookings in {month}': 'Lượt đặt phòng trong {month}',
+    'Nothing booked this month.': 'Tháng này bạn chưa đặt phòng nào.',
+    'No bookings with this status this month.': 'Tháng này không có lượt đặt nào ở trạng thái này.',
+    'Nothing booked on this day.': 'Ngày này bạn không đặt phòng.',
+    'No bookings with this status on this day.': 'Ngày này không có lượt đặt nào ở trạng thái này.',
+    'Cancelled or rejected': 'Đã huỷ / bị từ chối',
+    'Money still to pay': 'Còn tiền phải trả',
 };

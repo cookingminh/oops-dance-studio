@@ -1,0 +1,650 @@
+// My bookings → Calendar: the List | Calendar switch, ‹ month › Today, the month grid (chips on desktop, dots on
+// phones), its legend, the phone's picked day, and the day dialog (a portal).
+
+// A booking's colour by state (the status filter's dots); cancelled or rejected in grey, struck through.
+$pending: #eda100;
+$approved: #2a78d6;
+$completed: #1baf7a;
+$off: hsl(240, 4%, 62%);
+$owed: hsl(0, 72%, 48%);
+
+@mixin tones {
+    &.tone-pending {
+        --tone: #{$pending};
+    }
+
+    &.tone-approved {
+        --tone: #{$approved};
+    }
+
+    &.tone-completed {
+        --tone: #{$completed};
+    }
+
+    &.tone-off {
+        --tone: #{$off};
+    }
+}
+
+// Money still to pay: a red dot with a white ring, the same on a chip, a phone day and in the legend.
+@mixin owed-dot($size: .5rem) {
+    width: $size;
+    height: $size;
+    border-radius: 50%;
+    background: $owed;
+    box-shadow: 0 0 0 2px var(--ad-surface, #fff);
+}
+
+// Toolbar ==========================================================================================
+
+// The status filter a little wider than elsewhere: "Tất cả trạng thái" and its count didn't fit 13rem.
+.adminShell .bookingsCard .statusSelect {
+    width: 14.5rem;
+}
+
+.adminShell .mbToolbarEnd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: .6rem;
+    min-width: 0;
+}
+
+.adminShell .segmented.mbViews button {
+    gap: .4rem;
+
+    svg {
+        flex-shrink: 0;
+        font-size: 1rem;
+    }
+}
+
+.adminShell .mbMonthBar {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+.adminShell .mbMonthNav {
+    height: 2.75rem;
+}
+
+.adminShell .mbMonthLabel {
+    min-width: 9.5rem;
+    padding: 0 .4rem;
+    font-size: .92rem;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+
+    &::first-letter {
+        text-transform: uppercase;
+    }
+}
+
+.adminShell .mbTodayBtn {
+    height: 2.75rem;
+    font-weight: 600;
+}
+
+// The month ========================================================================================
+
+.adminShell .mbCal {
+    display: grid;
+    gap: .75rem;
+    min-width: 0;
+}
+
+.adminShell .mbGrid {
+    display: grid;
+    gap: 6px;
+    transition: opacity .2s ease;
+}
+
+.adminShell .mbCal.isBusy .mbGrid {
+    opacity: .55;
+}
+
+.adminShell .mbWeekdays,
+.adminShell .mbWeek {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.adminShell .mbWeekdays {
+    padding: 0 .55rem .1rem;
+    color: var(--ad-subtle);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.adminShell .mbBlank {
+    min-height: 1px;
+}
+
+.adminShell .mbDay {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    min-width: 0;
+    min-height: 6.4rem;
+    padding: .4rem .45rem .45rem;
+    border: 1px solid hsl(20, 10%, 94%);
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .5);
+    color: var(--ad-text);
+    text-align: left;
+    transition: border-color .2s ease, box-shadow .2s ease;
+
+    &.hasBookings {
+        border-color: var(--ad-border);
+        background: var(--ad-surface);
+
+        &:hover {
+            border-color: var(--ad-primary-tint);
+            box-shadow: var(--ad-shadow);
+        }
+    }
+
+    // Days gone by stay in the background.
+    &.isPast {
+        background: hsla(20, 14%, 95.5%, .55);
+
+        .mbDayNum {
+            color: var(--ad-subtle);
+        }
+
+        .mbChip {
+            opacity: .7;
+        }
+    }
+
+    &.isToday {
+        border-color: var(--ad-primary-tint);
+        box-shadow: inset 0 0 0 1px var(--ad-primary-tint);
+
+        .mbDayNum {
+            background: var(--ad-primary);
+            color: #fff;
+        }
+    }
+}
+
+// The whole day is a button under its chips: a click beside them opens the day too.
+.adminShell .mbDayHit {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    cursor: pointer;
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+}
+
+.adminShell .mbDayNum {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: -.1rem 0 0 -.15rem;
+    border-radius: 999px;
+    font-size: .84rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
+
+.adminShell .mbChips {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.adminShell .mbChip {
+    --tone: #{$off};
+    @include tones;
+    position: relative;
+    display: grid;
+    min-width: 0;
+    padding: .2rem .45rem .22rem .5rem;
+    border: 1px solid color-mix(in srgb, var(--tone) 30%, white);
+    border-left: 3px solid var(--tone);
+    border-radius: 7px;
+    background: color-mix(in srgb, var(--tone) 11%, white);
+    color: var(--ad-text);
+    line-height: 1.22;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color .15s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--tone) 20%, white);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 1px;
+    }
+
+    .mbChipTime {
+        overflow: hidden;
+        font-size: .76rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: color-mix(in srgb, var(--tone) 55%, black);
+    }
+
+    .mbChipRoom {
+        overflow: hidden;
+        font-size: .74rem;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ad-muted);
+    }
+
+    .mbOwed {
+        position: absolute;
+        top: .3rem;
+        right: .3rem;
+    }
+
+    &.tone-off {
+        border-color: var(--ad-border);
+        border-left-color: $off;
+        background: var(--ad-surface-2);
+
+        .mbChipTime {
+            color: var(--ad-muted);
+            text-decoration: line-through;
+        }
+    }
+}
+
+.adminShell .mbOwed {
+    @include owed-dot;
+    display: block;
+    flex-shrink: 0;
+}
+
+.adminShell .mbMore {
+    justify-self: start;
+    padding: .1rem .4rem;
+    border-radius: 6px;
+    color: var(--ad-primary);
+    font-size: .72rem;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--ad-primary-soft);
+    }
+}
+
+.adminShell .mbMonthEmpty {
+    color: var(--ad-muted);
+    font-size: .88rem;
+    text-align: center;
+}
+
+.adminShell .mbLegend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem 1.1rem;
+    color: var(--ad-muted);
+    font-size: .8rem;
+
+    li {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+    }
+
+    .mbKey {
+        @include tones;
+        width: .7rem;
+        height: .7rem;
+        border-radius: 3px;
+        background: color-mix(in srgb, var(--tone) 22%, white);
+        box-shadow: inset 3px 0 0 var(--tone);
+    }
+}
+
+// Phones: a compact grid, numbers and a dot per booking; the picked day's cards under it ================
+
+.adminShell .mbCal.isCompact {
+    .mbGrid,
+    .mbWeekdays,
+    .mbWeek {
+        gap: 3px;
+    }
+
+    .mbWeekdays {
+        padding: 0;
+        letter-spacing: 0;
+        text-align: center;
+    }
+
+    .mbDay {
+        align-items: center;
+        gap: .2rem;
+        min-height: 3.2rem;
+        padding: .3rem .1rem;
+        border-radius: 10px;
+        font: inherit;
+        cursor: pointer;
+
+        &.isPast {
+            background: hsla(20, 14%, 95.5%, .55);
+        }
+
+        &.isPicked {
+            border-color: var(--ad-primary);
+            background: var(--ad-primary-soft);
+            box-shadow: inset 0 0 0 1px var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+
+        > .mbOwed {
+            position: absolute;
+            top: .3rem;
+            right: .3rem;
+            width: .42rem;
+            height: .42rem;
+        }
+    }
+
+    .mbDayNum {
+        margin: 0;
+        font-size: .8rem;
+    }
+
+    .mbLegend {
+        gap: .3rem .9rem;
+        font-size: .76rem;
+    }
+}
+
+.adminShell .mbDots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px;
+    min-height: .42rem;
+}
+
+.adminShell .mbDot {
+    @include tones;
+    width: .42rem;
+    height: .42rem;
+    border-radius: 50%;
+    background: var(--tone);
+}
+
+.adminShell .mbPicked {
+    display: grid;
+    gap: .6rem;
+    padding-top: .8rem;
+    border-top: 1px solid var(--ad-border);
+}
+
+.adminShell .mbPickedTitle {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin: 0;
+    font-size: .95rem;
+    font-weight: 700;
+
+    &::first-letter {
+        text-transform: uppercase;
+    }
+}
+
+.adminShell .mbTodayTag {
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: var(--ad-primary);
+    color: #fff;
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.adminShell .mbDayEmpty {
+    padding: .9rem 0;
+    color: var(--ad-muted);
+    font-size: .88rem;
+    text-align: center;
+}
+
+// Phone toolbar: the status filter and the view switch (its icons; the words stay for screen readers) share
+// the first row; ‹ month › Today, or Upcoming / Past / All, go under them.
+@media (max-width: 720px) {
+    .adminShell .bookingsCard .bookingToolbar {
+        gap: .6rem;
+    }
+
+    .adminShell .mbToolbarEnd {
+        display: contents;
+
+        > * {
+            order: 2;
+        }
+    }
+
+    .adminShell .bookingsCard .statusSelect {
+        flex: 1 1 12rem;
+        min-width: 0;
+    }
+
+    .adminShell .mbMonthBar {
+        flex: 1 1 100%;
+
+        .mbMonthNav {
+            flex: 1;
+            justify-content: space-between;
+        }
+    }
+
+    .adminShell .segmented.mbViews {
+        order: 1;
+        flex-wrap: nowrap;
+
+        button {
+            padding: 0 .75rem;
+        }
+
+        .mbViewText {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+        }
+    }
+
+    .adminShell .mbMonthLabel {
+        min-width: 0;
+    }
+}
+
+// The day dialog (portal) ==========================================================================
+
+.mbDayDialog {
+    .mbDayTitle::first-letter {
+        text-transform: uppercase;
+    }
+
+    .mbDayBody {
+        gap: .75rem;
+    }
+
+    .mbDayList {
+        display: grid;
+        gap: .7rem;
+    }
+
+    .mbDayItem {
+        --tone: #{$off};
+        @include tones;
+        display: grid;
+        justify-items: start;
+        gap: .5rem;
+        padding: .85rem .95rem .8rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-left: 4px solid var(--tone);
+        border-radius: 16px;
+        background: var(--ad-surface);
+
+        &.isPicked {
+            border-color: color-mix(in srgb, var(--tone) 45%, white);
+            border-left-color: var(--tone);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--tone) 16%, white);
+        }
+    }
+
+    .mbDayItemHead {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .35rem .8rem;
+        width: 100%;
+
+        > :last-child {
+            margin-left: auto;
+        }
+    }
+
+    .mbDayRoom {
+        font-family: var(--ad-display);
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .mbDayTimes {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        color: var(--ad-muted);
+        font-size: .9rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+
+        svg {
+            font-size: .95rem;
+        }
+    }
+
+    .mbDayMoney {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .5rem;
+        width: 100%;
+        margin: 0;
+        padding: .55rem .7rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+
+        div {
+            display: grid;
+            align-content: start;
+            gap: .1rem;
+            min-width: 0;
+        }
+
+        dt {
+            color: var(--ad-subtle);
+            font-size: .7rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+
+        dd {
+            margin: 0;
+            font-size: .92rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+
+            &.isDue {
+                color: var(--ad-primary);
+            }
+        }
+    }
+
+    .mbDeposit {
+        display: block;
+        font-size: .8rem;
+        font-weight: 600;
+
+        &.is-completed {
+            color: hsl(152, 60%, 32%);
+        }
+
+        &.is-waiting {
+            color: hsl(30, 88%, 38%);
+        }
+
+        &.is-cancelled {
+            color: var(--ad-muted);
+        }
+    }
+
+    .mbDayItemFoot {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: .5rem;
+        width: 100%;
+        padding-top: .15rem;
+    }
+
+    .mbDayId {
+        font-family: var(--ad-display);
+        font-size: .95rem;
+        font-weight: 700;
+        color: var(--ad-muted);
+    }
+
+    .mbDayEmpty {
+        padding: 1rem 0;
+        color: var(--ad-muted);
+        font-size: .9rem;
+        text-align: center;
+    }
+
+    .tuPayFoot {
+        border-top: 1px solid var(--ad-border);
+    }
+}
+
+// A narrow dialog: the three amounts one under the other.
+@media (max-width: 480px) {
+    .mbDayDialog .mbDayMoney {
+        grid-template-columns: minmax(0, 1fr);
+
+        div {
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: baseline;
+        }
+    }
+}

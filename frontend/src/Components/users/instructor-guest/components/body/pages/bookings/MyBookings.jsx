@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button, Chip, Pagination, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
-import { LuInfo, LuPlus, LuQrCode, LuReceipt, LuTicket } from 'react-icons/lu';
+import { Chip, Pagination, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from '@nextui-org/react';
+import { LuCalendarDays, LuInfo, LuList, LuPlus, LuTicket } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useAsync } from '@/hooks/useAsync';
@@ -13,7 +13,7 @@ import AsyncState from '@/ui/feedback/AsyncState';
 import LinkButton from '@/ui/LinkButton';
 import BookingPayDialog from '@/ui/payment/BookingPayDialog';
 import BookingReceipt from '@/ui/payment/BookingReceipt';
-import { payLabel, paymentState } from '@/ui/payment/bookingMoney';
+import { paymentState } from '@/ui/payment/bookingMoney';
 import { bookingBalance } from '@/services/bookingPayments';
 import PolicyPopover from '@/ui/refunds/PolicyPopover';
 import RefundLine from '@/ui/refunds/RefundLine';
@@ -24,7 +24,11 @@ import Segmented from '../../../../../admin-staff/components/common/Segmented';
 import StatusSelect from '../../../../../admin-staff/components/common/StatusSelect';
 import { STATUS_COLORS } from '../../../../../admin-staff/components/common/chartTheme';
 import { useIsPhone } from '../../profileHelpers';
+import BookingActions from './BookingActions';
 import BookingCards from './BookingCards';
+import BookingsCalendar, { MonthNav } from './BookingsCalendar';
+import BookingsDayDialog from './BookingsDayDialog';
+import { DEPOSIT_LABELS, defaultMonth, inMonth, monthOf, readView, rememberView } from './bookingsCalendarModel';
 import CancelBookingDialog from './CancelBookingDialog';
 import './myBookings.scss';
 
@@ -36,7 +40,6 @@ const SCOPES = [
     { key: 'all', label: 'All' },
 ];
 const STATUSES = ['all', 'pending', 'approved', 'completed', 'rejected', 'cancelled'];
-const DEPOSIT_LABELS = { waiting: 'waiting', completed: 'paid', cancelled: 'cancelled' };
 
 // The bank account for the QR code, the sandbox flag and the cancellation policy are extras: the list
 // still shows without them.
@@ -51,10 +54,19 @@ async function load(userId) {
     return { today, bookings, settings, sandbox, policy };
 }
 
+// A view switch button: its icon, and its word (only for screen readers on phones).
+const ViewLabel = ({ icon: Icon, text }) => (
+    <>
+        <Icon aria-hidden="true" />
+        <span className="mbViewText">{text}</span>
+    </>
+);
+
 // The signed-in user's room bookings. A pending, approved or paid-up (completed) one can be cancelled from
 // its row (a card on phones) until it starts: the dialog says what comes back under the cancellation policy,
 // and the row then shows the refund. A booking with money due offers "Pay deposit" / "Pay the rest" (the QR pay dialog); each
-// has a receipt.
+// has a receipt. List | Calendar (remembered in this browser): the calendar shows a month (‹ › instead of
+// Upcoming / Past / All, the status filter still applies); a day opens its bookings with the same buttons.
 const MyBookings = () => {
     const { user } = useAuth();
     const { t, tn, formatDate } = useI18n();
@@ -65,13 +77,23 @@ const MyBookings = () => {
     const [cancelling, setCancelling] = useState(null); // booking id in the cancel dialog
     const [paying, setPaying] = useState(null); // booking id in the pay dialog
     const [receipt, setReceipt] = useState(null); // booking id in the receipt
+    const [view, setView] = useState(readView); // 'list' | 'calendar'
+    const [month, setMonth] = useState(null); // 'yyyy-MM-01' the calendar shows; null = where the next booking is
+    const [picked, setPicked] = useState(null); // the day picked in the phone's calendar
+    const [openDay, setOpenDay] = useState(null); // { date, id? } in the day dialog
     const isPhone = useIsPhone();
 
     const today = data.data?.today;
     const all = data.data?.bookings ?? [];
-    const inScope = all.filter((b) => !today || scope === 'all' || (scope === 'upcoming' ? b.date >= today : b.date < today));
+    const calendar = view === 'calendar';
+    const shownMonth = month ?? (data.data ? defaultMonth(all, today) : null);
+    // The list counts its period (Upcoming / Past / All), the calendar its month.
+    const inScope = calendar
+        ? all.filter((b) => shownMonth && inMonth(b.date, shownMonth))
+        : all.filter((b) => !today || scope === 'all' || (scope === 'upcoming' ? b.date >= today : b.date < today));
     const counts = new Map();
     for (const b of inScope) counts.set(b.status, (counts.get(b.status) ?? 0) + 1);
+    const matching = all.filter((b) => status === 'all' || b.status === status);
     const visible = inScope
         .filter((b) => status === 'all' || b.status === status)
         .sort((a, b) => (scope === 'upcoming' ? 1 : -1) * (a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)));
@@ -96,6 +118,20 @@ const MyBookings = () => {
         setter(value);
         setPage(1);
     };
+    const changeView = (next) => {
+        setView(next);
+        rememberView(next);
+    };
+    const goToMonth = (next) => {
+        setMonth(next);
+        setPicked(null);
+    };
+    const goToToday = () => {
+        setMonth(monthOf(today));
+        setPicked(today);
+    };
+    const handlers = { cancellable, onPay: setPaying, onReceipt: setReceipt, onCancel: setCancelling };
+    const dayBookings = openDay ? matching.filter((b) => b.date === openDay.date).sort((a, b) => a.start_time.localeCompare(b.start_time)) : [];
 
     const emptyContent = (
         <div className="tableEmpty">
@@ -136,12 +172,43 @@ const MyBookings = () => {
             )}
             <div className="bookingToolbar">
                 <StatusSelect label={t('Status')} options={statusOptions} value={status} onChange={reset(setStatus)} />
-                <Segmented label={t('Dates')} options={SCOPES.map((option) => ({ ...option, label: t(option.label) }))} value={scope} onChange={reset(setScope)} />
+                <div className="mbToolbarEnd">
+                    {calendar ? (
+                        shownMonth && <MonthNav month={shownMonth} thisMonth={monthOf(today)} onChange={goToMonth} onToday={goToToday} />
+                    ) : (
+                        <Segmented label={t('Dates')} options={SCOPES.map((option) => ({ ...option, label: t(option.label) }))} value={scope} onChange={reset(setScope)} />
+                    )}
+                    <Segmented
+                        label={t('Show the bookings as')}
+                        className="mbViews"
+                        options={[
+                            { key: 'list', label: <ViewLabel icon={LuList} text={t('List')} /> },
+                            { key: 'calendar', label: <ViewLabel icon={LuCalendarDays} text={t('Calendar')} /> },
+                        ]}
+                        value={view}
+                        onChange={changeView}
+                    />
+                </div>
             </div>
 
             <AsyncState state={data} isEmpty={false}>
-                {isPhone ? (
-                    <BookingCards bookings={pageRows} today={today} cancellable={cancellable} onCancel={setCancelling} onPay={setPaying} onReceipt={setReceipt} empty={emptyContent} />
+                {calendar ? (
+                    <BookingsCalendar
+                        month={shownMonth}
+                        bookings={matching}
+                        today={today}
+                        isPhone={isPhone}
+                        busy={data.loading}
+                        filtered={status !== 'all'}
+                        picked={picked}
+                        onPick={setPicked}
+                        onOpenDay={(date, id) => setOpenDay({ date, id })}
+                        renderDay={(bookings) => (
+                            <BookingCards bookings={bookings} today={today} {...handlers} empty={<p className="mbDayEmpty">{t('Nothing booked on this day.')}</p>} />
+                        )}
+                    />
+                ) : isPhone ? (
+                    <BookingCards bookings={pageRows} today={today} {...handlers} empty={emptyContent} />
                 ) : (
                     <div className="tableScroll">
                         <Table aria-label={t('My bookings')} removeWrapper className="bookingTable">
@@ -195,21 +262,7 @@ const MyBookings = () => {
                                             </Chip>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="myBookingActions">
-                                                {payLabel(b) && (
-                                                    <Button size="sm" color="danger" startContent={<LuQrCode aria-hidden="true" />} onPress={() => setPaying(b.id)} aria-label={`${t(payLabel(b))} · #${b.id}`}>
-                                                        {t(payLabel(b))}
-                                                    </Button>
-                                                )}
-                                                <Button size="sm" variant="light" startContent={<LuReceipt aria-hidden="true" />} onPress={() => setReceipt(b.id)} aria-label={t('Receipt for booking #{id}', { id: b.id })}>
-                                                    {t('Receipt')}
-                                                </Button>
-                                                {cancellable(b) && (
-                                                    <Button size="sm" color="danger" variant="flat" onPress={() => setCancelling(b.id)}>
-                                                        {t('Cancel')}
-                                                    </Button>
-                                                )}
-                                            </div>
+                                            <BookingActions booking={b} {...handlers} />
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -217,7 +270,7 @@ const MyBookings = () => {
                         </Table>
                     </div>
                 )}
-                {pages > 1 && (
+                {!calendar && pages > 1 && (
                     <div className="tableFooter">
                         <span>{t('Page {page} of {pages}', { page: currentPage, pages })}</span>
                         <Pagination isCompact showControls color="danger" page={currentPage} total={pages} onChange={setPage} />
@@ -225,6 +278,17 @@ const MyBookings = () => {
                 )}
             </AsyncState>
 
+            {calendar && openDay && (
+                <BookingsDayDialog
+                    date={openDay.date}
+                    bookings={dayBookings}
+                    today={today}
+                    highlight={openDay.id}
+                    isOpen={!payingBooking && !receiptBooking && !cancellingBooking}
+                    {...handlers}
+                    onClose={() => setOpenDay(null)}
+                />
+            )}
             {payingBooking && (
                 <BookingPayDialog
                     booking={payingBooking}

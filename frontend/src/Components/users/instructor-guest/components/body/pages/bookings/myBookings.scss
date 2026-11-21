@@ -1,6 +1,7 @@
-// My bookings: where each booking's money stands, and its pay / receipt / cancel buttons.
+// My bookings: where each booking's money stands, and its pay / receipt / cancel buttons (also in the
+// calendar's day dialog, which renders outside the shell).
 
-.adminShell .payState {
+:is(.adminShell, .mbDayDialog) .payState {
     justify-self: start;
     margin-top: .2rem;
     padding: .1rem .5rem;
@@ -26,7 +27,7 @@
     }
 }
 
-.adminShell .myBookingActions {
+:is(.adminShell, .mbDayDialog) .myBookingActions {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;

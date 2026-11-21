@@ -1,14 +1,14 @@
-import { Button, Chip } from '@nextui-org/react';
-import { LuClock, LuQrCode, LuReceipt, LuTicket } from 'react-icons/lu';
+import { Chip } from '@nextui-org/react';
+import { LuClock, LuTicket } from 'react-icons/lu';
 import { format, parseISO } from 'date-fns';
 import { useI18n } from '@/i18n/i18nContext';
 import { formatTimeRange, formatVnd } from '@/lib/format';
-import { payLabel, paymentState } from '@/ui/payment/bookingMoney';
+import { paymentState } from '@/ui/payment/bookingMoney';
 import { bookingBalance } from '@/services/bookingPayments';
 import RefundLine from '@/ui/refunds/RefundLine';
 import { statusColorMap } from '../../../../../../Table/utils';
-
-const DEPOSIT_LABELS = { waiting: 'waiting', completed: 'paid', cancelled: 'cancelled' }; // English, translated where shown
+import BookingActions from './BookingActions';
+import { DEPOSIT_LABELS } from './bookingsCalendarModel';
 
 // Phone layout of My Bookings: one card per booking instead of a wide table. `cancellable(booking)`: the
 // guest may still cancel it (onCancel opens the cancel dialog).
@@ -51,21 +51,7 @@ const BookingCards = ({ bookings, today, cancellable, onCancel, onPay, onReceipt
                         <RefundLine booking={b} />
                         <div className="pfBookingFoot">
                             <span className="bookingId">#{b.id}</span>
-                            <span className="myBookingActions">
-                                {payLabel(b) && (
-                                    <Button size="sm" color="danger" startContent={<LuQrCode aria-hidden="true" />} onPress={() => onPay(b.id)}>
-                                        {t(payLabel(b))}
-                                    </Button>
-                                )}
-                                <Button size="sm" variant="light" isIconOnly aria-label={t('Receipt for booking #{id}', { id: b.id })} onPress={() => onReceipt(b.id)}>
-                                    <LuReceipt aria-hidden="true" />
-                                </Button>
-                                {cancellable(b) && (
-                                    <Button size="sm" color="danger" variant="flat" onPress={() => onCancel(b.id)}>
-                                        {t('Cancel')}
-                                    </Button>
-                                )}
-                            </span>
+                            <BookingActions booking={b} cancellable={cancellable} onPay={onPay} onReceipt={onReceipt} onCancel={onCancel} compact />
                         </div>
                     </div>
                 </li>
