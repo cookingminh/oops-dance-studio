@@ -3,6 +3,10 @@
 export default {
     // Shared layout and fields (the studio side reuses homepage lines: home.js)
     'Back to home': 'Về trang chủ',
+    'Let’s dance': 'Cùng nhảy',
+    'Log in or sign up': 'Đăng nhập hoặc đăng ký',
+    'Caps Lock is on': 'Đang bật Caps Lock',
+    'Strength:': 'Độ mạnh:',
     Email: 'Email',
     Password: 'Mật khẩu',
     'Log in': 'Đăng nhập',
@@ -13,7 +17,6 @@ export default {
     // Login
     'Welcome back!': 'Chào mừng bạn trở lại!',
     'Log in to book rooms and manage your classes.': 'Đăng nhập để đặt phòng và theo dõi lớp học của bạn.',
-    'Don’t have an account?': 'Chưa có tài khoản?',
     'Sign up': 'Đăng ký',
     'One-click demo login': 'Đăng nhập demo nhanh',
     'or sign in with email': 'hoặc đăng nhập bằng email',
@@ -21,13 +24,12 @@ export default {
     'Logging in…': 'Đang đăng nhập…',
     Login: 'Đăng nhập',
     'Forgot your password?': 'Quên mật khẩu?',
-    'Click Here': 'Bấm vào đây',
     'Signing you in…': 'Đang đăng nhập…',
     'Just a moment while we open your account.': 'Chờ chút nhé, đang vào tài khoản của bạn.',
 
     // Sign in with Google / Facebook ({provider} is the brand name)
     'Continue with {provider}': 'Tiếp tục với {provider}',
-    'or sign up with email': 'hoặc đăng ký bằng email',
+    'or continue with': 'hoặc tiếp tục với',
     'Sign-in with {provider} isn’t switched on yet. Please use your email for now.':
         'Studio chưa bật đăng nhập bằng {provider}. Tạm thời bạn dùng email nhé.',
     'Sign-in with {provider} was cancelled. You can try again, or use your email.':
@@ -45,7 +47,6 @@ export default {
     // Register
     'Create your account': 'Tạo tài khoản',
     'Join the Oops! family. Your first class is free.': 'Gia nhập gia đình Oops! — buổi học đầu tiên miễn phí nhé.',
-    'Already have an account?': 'Đã có tài khoản?',
     Username: 'Tên đăng nhập',
     'e.g. thaovy': 'VD: thaovy',
     'Full name': 'Họ và tên',

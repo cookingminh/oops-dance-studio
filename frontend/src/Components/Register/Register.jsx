@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LuAtSign, LuMail, LuMailCheck, LuUser } from 'react-icons/lu';
-import { OAUTH_PROVIDERS, signUp } from '@/services/auth';
+import { LuAtSign, LuMail, LuUser } from 'react-icons/lu';
+import { signUp } from '@/services/auth';
 import { isUsernameAvailable } from '@/services/users';
 import { useI18n } from '@/i18n/i18nContext';
 import AuthInput from '../Login/AuthInput';
@@ -26,19 +26,25 @@ const Register = () => {
     const oauth = useProviderSignIn((error) => setAlert(toAlert(error)));
     const busy = submitting || Boolean(oauth.pending);
 
-    const update = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
+    const update = (field) => (event) => {
+        setForm((prev) => ({ ...prev, [field]: event.target.value }));
+        // A message about this field goes once it is being fixed.
+        setAlert((current) => (current?.field === field ? null : current));
+    };
+    // The message for one field (shown under it), translated.
+    const errorFor = (field) => (alert?.field === field ? t(alert.text, alert.vars) : null);
 
     const onSubmit = async (event) => {
         event.preventDefault();
         setAlert(null);
         if (form.password.length < MIN_PASSWORD_LENGTH) {
-            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH } });
+            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH }, field: 'password' });
             return;
         }
         setSubmitting(true);
         try {
             if (!(await isUsernameAvailable(form.username.trim()))) {
-                setAlert({ text: 'This username is already taken. Please choose another one.' });
+                setAlert({ text: 'This username is already taken. Please choose another one.', field: 'username' });
                 document.getElementById('username')?.focus();
                 return;
             }
@@ -56,9 +62,8 @@ const Register = () => {
         return (
             <AuthLayout step="confirm" title={t('Check your inbox')}>
                 <AuthNotice
-                    icon={LuMailCheck}
                     action={
-                        <Link to="/login" className="authSubmit">
+                        <Link to="/login" state={location.state} className="authSubmit">
                             {t('Go to login')}
                         </Link>
                     }
@@ -73,22 +78,9 @@ const Register = () => {
     }
 
     return (
-        <AuthLayout
-            title={t('Create your account')}
-            subtitle={t('Join the Oops! family. Your first class is free.')}
-            footer={
-                <>
-                    {t('Already have an account?')}{' '}
-                    <Link to="/login" state={location.state}>
-                        {t('Log in')}
-                    </Link>
-                </>
-            }
-        >
+        // "Log in" is the Log in | Sign up switch above (AuthShell); Google / Facebook come after the form.
+        <AuthLayout title={t('Create your account')} subtitle={t('Join the Oops! family. Your first class is free.')}>
             <FormAlert alert={alert} />
-            <OAuthButtons pending={oauth.pending} disabled={busy} onPick={(provider) => { setAlert(null); oauth.start(provider); }} />
-            {OAUTH_PROVIDERS.length > 0 && <p className="authDivider">{t('or sign up with email')}</p>}
-
             <form className="authForm" onSubmit={onSubmit}>
                 <div className="authFieldRow">
                     <AuthInput
@@ -112,6 +104,7 @@ const Register = () => {
                         required
                         value={form.username}
                         onChange={update('username')}
+                        error={errorFor('username')}
                     />
                 </div>
                 <AuthInput
@@ -133,6 +126,8 @@ const Register = () => {
                     minLength={MIN_PASSWORD_LENGTH}
                     value={form.password}
                     onChange={update('password')}
+                    error={errorFor('password')}
+                    strength
                     rule={{
                         text: t('At least {count} characters', { count: MIN_PASSWORD_LENGTH }),
                         met: form.password.length >= MIN_PASSWORD_LENGTH,
@@ -142,6 +137,7 @@ const Register = () => {
                     {t('Register')}
                 </SubmitButton>
             </form>
+            <OAuthButtons pending={oauth.pending} disabled={busy} onPick={(provider) => { setAlert(null); oauth.start(provider); }} />
         </AuthLayout>
     );
 };

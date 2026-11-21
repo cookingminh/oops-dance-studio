@@ -21,7 +21,7 @@ test('no Google / Facebook buttons without VITE_AUTH_PROVIDERS', async () => {
         await page.goto(path);
         await expect(page.getByRole('button', { name: submit })).toBeVisible();
         await expect(page.getByRole('button', { name: /continue with/i })).toHaveCount(0);
-        await expect(page.getByText(/or (sign in|sign up) with email/i)).toHaveCount(0);
+        await expect(page.getByText(/or continue with/i)).toHaveCount(0);
     }
 });
 
@@ -81,7 +81,7 @@ test.describe('password reset', () => {
     test('sends a reset email (resetPasswordForEmail)', async () => {
         await fetch(`${MAILPIT}/api/v1/messages`, { method: 'DELETE' });
         await page.goto('/login');
-        await page.getByRole('link', { name: 'Click Here' }).click();
+        await page.getByRole('link', { name: 'Forgot your password?' }).click();
         await page.waitForURL('**/reset-password');
         await page.getByLabel('Email').fill(RESET_USER);
         await page.getByRole('button', { name: 'Send reset link' }).click();

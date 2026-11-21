@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LuKeyRound, LuMail, LuMailCheck } from 'react-icons/lu';
+import { LuKeyRound, LuMail } from 'react-icons/lu';
 import { authRedirectErrorFor, clearAuthRedirect, requestPasswordReset, updatePassword } from '@/services/auth';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
@@ -34,6 +34,12 @@ const ResetPassword = () => {
     const [submitting, setSubmitting] = useState(false);
 
     const settingNewPassword = recovering && isAuthenticated;
+    // The message for one field (shown under it), translated; it goes once that field is edited.
+    const errorFor = (field) => (alert?.field === field ? t(alert.text, alert.vars) : null);
+    const edit = (field, set) => (event) => {
+        set(event.target.value);
+        setAlert((current) => (current?.field === field ? null : current));
+    };
 
     useEffect(() => {
         if (authRedirectErrorFor('/reset-password')) clearAuthRedirect();
@@ -57,11 +63,11 @@ const ResetPassword = () => {
         event.preventDefault();
         setAlert(null);
         if (password.length < MIN_PASSWORD_LENGTH) {
-            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH } });
+            setAlert({ text: 'Password must be at least {count} characters.', vars: { count: MIN_PASSWORD_LENGTH }, field: 'new-password' });
             return;
         }
         if (password !== confirm) {
-            setAlert({ text: 'The two passwords don’t match.' });
+            setAlert({ text: 'The two passwords don’t match.', field: 'confirm-password' });
             return;
         }
         setSubmitting(true);
@@ -98,7 +104,9 @@ const ResetPassword = () => {
                         required
                         minLength={MIN_PASSWORD_LENGTH}
                         value={password}
-                        onChange={(event) => setPassword(event.target.value)}
+                        onChange={edit('new-password', setPassword)}
+                        error={errorFor('new-password')}
+                        strength
                         rule={{
                             text: t('At least {count} characters', { count: MIN_PASSWORD_LENGTH }),
                             met: password.length >= MIN_PASSWORD_LENGTH,
@@ -111,7 +119,8 @@ const ResetPassword = () => {
                         autoComplete="new-password"
                         required
                         value={confirm}
-                        onChange={(event) => setConfirm(event.target.value)}
+                        onChange={edit('confirm-password', setConfirm)}
+                        error={errorFor('confirm-password')}
                         rule={matches ? { text: t('The passwords match.'), met: true } : undefined}
                     />
                     <SubmitButton busy={submitting} busyLabel={t('Saving…')}>
@@ -126,7 +135,6 @@ const ResetPassword = () => {
         return (
             <AuthLayout step="sent" title={t('Check your inbox')}>
                 <AuthNotice
-                    icon={LuMailCheck}
                     action={
                         <Link to="/login" className="authSubmit">
                             {t('Back to login')}

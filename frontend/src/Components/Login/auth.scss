@@ -1,5 +1,7 @@
-// Login, sign-up and reset-password pages (AuthLayout). Wide screens: the studio video on the left,
-// the form column on the right. Phones: a short video banner with the form as a sheet below it.
+// Login, sign-up and reset-password pages (AuthShell). Wide screens: the studio side on the left
+// (drifting brand colours, no photo or video) and the form on a calm light pane. Tablets and
+// phones: a short animated band, with the form on a sheet over its lower edge.
+// Sizes are mostly px: html is 90% (1rem = 14.4px) and the fields want exact 48px / 16px.
 
 // <body> centres #root as a shrink-to-fit flex item; let the auth pages span the viewport.
 #root:has(.authScreen) {
@@ -10,35 +12,49 @@
 .authScreen {
     --au-red: hsl(0, 66%, 43%);
     --au-red-strong: hsl(0, 66%, 36%);
-    --au-red-soft: hsl(0, 85%, 96%);
+    --au-red-soft: hsl(0, 85%, 96.5%);
     --au-red-tint: hsl(0, 70%, 88%);
+    --au-ring: hsla(0, 66%, 43%, .16);
     --au-ink: hsl(0, 0%, 12%);
-    --au-muted: hsl(240, 4%, 38%);
-    --au-subtle: hsl(240, 4%, 54%);
-    --au-border: hsl(20, 10%, 86%);
-    --au-border-strong: hsl(20, 8%, 74%);
-    --au-bg: hsl(20, 16%, 97%);
-    --au-surface: hsl(0, 0%, 100%);
-    --au-green: hsl(152, 58%, 30%);
+    --au-muted: hsl(240, 4%, 36%);
+    --au-subtle: hsl(240, 4%, 45%);
+    --au-border: hsl(20, 12%, 86%);
+    --au-border-strong: hsl(20, 8%, 70%);
+    --au-bg: hsl(30, 25%, 98%);
+    --au-track: hsl(24, 16%, 93%);
+    --au-surface: #fff;
+    --au-green: hsl(152, 58%, 28%);
+    --au-gold: #ffcc6c;
     --au-ease: cubic-bezier(.22, 1, .36, 1);
     --au-display: 'League Spartan', 'Spartan', sans-serif;
-    --au-inset: .75rem;
-    --au-control: 3.15rem;
+    --au-text: 'Spartan', sans-serif;
+    --au-control: 48px;
+    --au-radius: 12px;
 
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
     width: 100%;
     min-height: 100vh;
     min-height: 100dvh;
     background: var(--au-bg);
     color: var(--au-ink);
+    font-family: var(--au-text);
     text-align: left;
 
-    // Global h1–h4 / p / li rules in main.scss add padding, small grey text and pointer cursors.
+    // main.scss gives every element 'Spartan' (*); here text follows its container instead,
+    // so a heading's spans and links stay in the heading's font.
+    :where(*) {
+        font-family: inherit;
+    }
+
+    // main.scss styles bare h1–h4 / p / li / input (padding, 13px grey text, pointer cursors).
     :where(h1, h2, h3, p) {
         margin: 0;
         padding: 0;
+        font-size: inherit;
+        line-height: inherit;
+        color: inherit;
     }
 
     :where(ul) {
@@ -57,57 +73,185 @@
     }
 }
 
-// Stage: the studio video, brand and tagline ====================>
+// Studio side: colour, type and a little motion ====================>
 
 .authStage {
     position: sticky;
-    top: var(--au-inset);
-    z-index: 0;
+    top: 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 2rem;
     align-self: start;
-    height: calc(100dvh - 2 * var(--au-inset));
-    min-height: 34rem;
-    margin: var(--au-inset) 0 var(--au-inset) var(--au-inset);
-    padding: 1.6rem 2.25rem 2.4rem;
+    height: calc(100dvh - 24px);
+    min-height: 560px;
+    margin: 12px 0 12px 12px;
+    padding: 30px clamp(28px, 3.2vw, 48px) clamp(30px, 3.4vw, 48px);
     overflow: hidden;
     border-radius: 28px;
-    background: hsl(350, 30%, 8%);
+    background: linear-gradient(160deg, hsl(356, 70%, 38%) 0%, hsl(350, 64%, 27%) 48%, hsl(342, 58%, 15%) 100%);
     color: #fff;
     isolation: isolate;
-}
 
-.authStageMedia {
-    position: absolute;
-    inset: 0;
-    z-index: -2;
-
-    // The clip has thin black bars at the sides; the slight zoom crops them away.
-    video {
+    // Keeps the copy at the bottom readable whatever colour drifts behind it.
+    &::after {
+        content: '';
         position: absolute;
         inset: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transform: scale(1.1);
+        z-index: 0;
+        background: linear-gradient(0deg, hsla(345, 60%, 9%, .62) 0%, hsla(345, 60%, 9%, 0) 58%);
+        pointer-events: none;
+    }
+
+    > :not(.authAurora, .authRings, .authGrain) {
+        position: relative;
+        z-index: 1;
     }
 }
 
-.authStageShade {
+// Soft blobs of brand colour drifting slowly (transform / opacity only). --au-clock (a negative
+// delay from AuthStage) keeps them where they were when the page is drawn again.
+.authAurora {
+    position: absolute;
+    inset: -18%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.authBlob {
+    position: absolute;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    will-change: transform;
+    animation: auDriftA 21s ease-in-out infinite alternate;
+    animation-delay: var(--au-clock, 0s);
+
+    &.is-coral {
+        top: -4%;
+        right: -6%;
+        width: 66%;
+        background: radial-gradient(closest-side, hsla(8, 96%, 60%, .62), hsla(8, 96%, 60%, 0));
+    }
+
+    &.is-berry {
+        right: -14%;
+        bottom: 2%;
+        width: 74%;
+        background: radial-gradient(closest-side, hsla(332, 86%, 46%, .55), hsla(332, 86%, 46%, 0));
+        animation-name: auDriftB;
+        animation-duration: 27s;
+    }
+
+    &.is-amber {
+        top: 26%;
+        left: 30%;
+        width: 44%;
+        background: radial-gradient(closest-side, hsla(36, 100%, 64%, .34), hsla(36, 100%, 64%, 0));
+        animation-name: auDriftC;
+        animation-duration: 17s;
+    }
+
+    &.is-ember {
+        top: 8%;
+        left: -18%;
+        width: 78%;
+        background: radial-gradient(closest-side, hsla(358, 82%, 50%, .5), hsla(358, 82%, 50%, 0));
+        animation-name: auDriftD;
+        animation-duration: 31s;
+    }
+}
+
+@keyframes auDriftA {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(-16%, 14%, 0) scale(1.16);
+    }
+}
+
+@keyframes auDriftB {
+    from {
+        transform: translate3d(0, 0, 0) scale(1.08);
+    }
+
+    to {
+        transform: translate3d(14%, -20%, 0) scale(.9);
+    }
+}
+
+@keyframes auDriftC {
+    from {
+        opacity: .55;
+        transform: translate3d(0, 0, 0) scale(.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate3d(-26%, 22%, 0) scale(1.22);
+    }
+}
+
+@keyframes auDriftD {
+    from {
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+
+    to {
+        transform: translate3d(18%, 12%, 0) scale(1.12);
+    }
+}
+
+// A record's grooves in the top corner, turning very slowly.
+.authRings {
+    position: absolute;
+    top: -150px;
+    right: -170px;
+    z-index: 0;
+    width: 520px;
+    height: 520px;
+    fill: none;
+    stroke: hsla(0, 0%, 100%, .1);
+    stroke-width: 1;
+    pointer-events: none;
+    animation: auSpin 90s linear infinite;
+
+    .authRingDash {
+        stroke: hsla(0, 0%, 100%, .2);
+        stroke-dasharray: 2 9;
+    }
+
+    .authRingDot {
+        fill: var(--au-gold);
+        stroke: none;
+        opacity: .85;
+    }
+}
+
+@keyframes auSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+// Fine film grain over the colour (static noise from an inline SVG).
+.authGrain {
     position: absolute;
     inset: 0;
-    z-index: -1;
-    background:
-        radial-gradient(110% 55% at 0% 100%, hsla(0, 72%, 34%, .62), transparent 70%),
-        linear-gradient(180deg, hsla(350, 30%, 6%, .6) 0%, hsla(350, 30%, 6%, 0) 24%, hsla(350, 30%, 6%, .08) 48%, hsla(350, 40%, 6%, .9) 100%);
+    z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    background-size: 180px;
+    opacity: .2;
+    mix-blend-mode: soft-light;
+    pointer-events: none;
 }
 
 .authBrand {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
-    gap: .65rem;
+    gap: 11px;
     border-radius: 14px;
     color: #fff;
 
@@ -121,12 +265,12 @@
     position: relative;
     display: block;
     flex-shrink: 0;
-    width: 2.65rem;
-    height: 2.65rem;
+    width: 42px;
+    height: 42px;
     overflow: hidden;
     border-radius: 12px;
     background: hsl(355, 68%, 45%);
-    box-shadow: 0 8px 18px -10px hsla(0, 66%, 20%, .9);
+    box-shadow: 0 0 0 1px hsla(0, 0%, 100%, .22), 0 10px 22px -10px hsla(345, 70%, 10%, .9);
     transition: transform .4s var(--au-ease);
 
     img {
@@ -145,97 +289,184 @@
 
     strong {
         font-family: var(--au-display);
-        font-size: 1.4rem;
+        font-size: 22px;
         font-weight: 800;
         letter-spacing: -.01em;
     }
 
     small {
-        margin-top: .1rem;
-        font-size: .6rem;
-        font-weight: 700;
-        letter-spacing: .2em;
+        margin-top: 2px;
+        font-family: var(--au-display);
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .24em;
         text-transform: uppercase;
-        color: hsla(0, 0%, 100%, .75);
+        color: hsla(0, 0%, 100%, .88);
     }
 }
 
 .authStageCopy {
     display: grid;
     justify-items: start;
-    gap: .9rem;
-    max-width: 34rem;
+    gap: 18px;
+    max-width: 560px;
 }
 
 .authEyebrow {
     display: inline-flex;
     align-items: center;
-    gap: .5rem;
-    padding: .35rem .85rem .3rem .7rem;
-    border: 1px solid hsla(0, 0%, 100%, .28);
+    gap: 10px;
+    padding: 7px 14px 6px 12px;
+    border: 1px solid hsla(0, 0%, 100%, .24);
     border-radius: 999px;
     background: hsla(0, 0%, 100%, .1);
-    backdrop-filter: blur(8px);
-    font-size: .82rem;
-    font-weight: 600;
-}
-
-.authLiveDot {
-    width: .5rem;
-    height: .5rem;
-    border-radius: 50%;
-    background: hsl(0, 85%, 58%);
-    box-shadow: 0 0 0 0 hsla(0, 85%, 58%, .6);
-    animation: authPulse 2s ease-out infinite;
-}
-
-@keyframes authPulse {
-    70% {
-        box-shadow: 0 0 0 .45rem hsla(0, 85%, 58%, 0);
-    }
-
-    100% {
-        box-shadow: 0 0 0 0 hsla(0, 85%, 58%, 0);
-    }
-}
-
-.authStageTitle {
     font-family: var(--au-display);
-    font-size: clamp(2.3rem, 3.6vw, 3.6rem);
-    font-weight: 800;
-    line-height: 1.02;
-    letter-spacing: -.015em;
-    color: #fff;
-    text-wrap: balance;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: hsla(0, 0%, 100%, .92);
 }
 
-.authPerks {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .5rem;
-    margin-top: .35rem;
+// Equalizer: four bars bouncing out of step (still, at different heights, for reduced motion).
+.authEq {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 14px;
+    margin-top: -3px;
 
-    li {
-        display: inline-flex;
-        align-items: center;
-        gap: .45rem;
-        padding: .45rem .85rem;
-        border: 1px solid hsla(0, 0%, 100%, .2);
-        border-radius: 999px;
-        background: hsla(0, 0%, 100%, .1);
-        backdrop-filter: blur(8px);
-        font-size: .88rem;
-        font-weight: 500;
-        color: hsla(0, 0%, 100%, .92);
+    i {
+        width: 3px;
+        height: 100%;
+        border-radius: 2px;
+        background: var(--au-gold);
+        transform-origin: 50% 100%;
+        animation: auEq .9s ease-in-out infinite alternate;
 
-        svg {
-            flex-shrink: 0;
-            color: hsl(40, 100%, 72%);
+        &:nth-child(1) {
+            transform: scaleY(.55);
+            animation-duration: .82s;
+        }
+
+        &:nth-child(2) {
+            transform: scaleY(.95);
+            animation-duration: 1.06s;
+            animation-delay: -.4s;
+        }
+
+        &:nth-child(3) {
+            transform: scaleY(.7);
+            animation-duration: .74s;
+            animation-delay: -.2s;
+        }
+
+        &:nth-child(4) {
+            transform: scaleY(.85);
+            animation-duration: .96s;
+            animation-delay: -.6s;
         }
     }
 }
 
-// Form column ====================>
+@keyframes auEq {
+    from {
+        transform: scaleY(.25);
+    }
+
+    to {
+        transform: scaleY(1);
+    }
+}
+
+.authStageTitle {
+    max-width: 11.5em;
+    font-family: var(--au-display);
+    font-size: clamp(42px, 4.3vw, 70px);
+    font-weight: 800;
+    line-height: .98;
+    letter-spacing: -.025em;
+    color: #fff;
+    text-wrap: balance;
+}
+
+// "Let's dance [K-pop]": the slot is as wide as the longest style, so nothing jumps.
+.authTicker {
+    font-family: var(--au-display);
+    font-size: clamp(20px, 1.75vw, 26px);
+    font-weight: 500;
+    line-height: 1.2;
+    color: hsla(0, 0%, 100%, .9);
+}
+
+.authTickerLine {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.authTickerSlot {
+    display: inline-grid;
+    overflow: hidden;
+    padding: 5px 12px 2px;
+    border: 1px solid hsla(0, 0%, 100%, .22);
+    border-radius: 12px;
+    background: hsla(0, 0%, 100%, .12);
+    font-weight: 800;
+    color: var(--au-gold);
+}
+
+.authTickerSizer,
+.authTickerWord {
+    grid-area: 1 / 1;
+    justify-self: center;
+    white-space: nowrap;
+}
+
+.authTickerSizer {
+    visibility: hidden;
+}
+
+.authTickerWord {
+    display: block;
+}
+
+.authPerks {
+    display: grid;
+    width: 100%;
+    max-width: 440px;
+    margin-top: 6px;
+    border-top: 1px solid hsla(0, 0%, 100%, .14);
+
+    li {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 0;
+        border-bottom: 1px solid hsla(0, 0%, 100%, .14);
+        font-family: var(--au-display);
+        font-size: 16px;
+        font-weight: 500;
+        line-height: 1.3;
+        color: hsla(0, 0%, 100%, .94);
+    }
+}
+
+.authPerkIcon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid hsla(0, 0%, 100%, .18);
+    border-radius: 10px;
+    background: hsla(0, 0%, 100%, .1);
+    color: var(--au-gold);
+    font-size: 17px;
+}
+
+// Form pane ====================>
 
 .authPane {
     display: flex;
@@ -243,29 +474,32 @@
     min-width: 0;
     min-height: 100vh;
     min-height: 100dvh;
-    padding: 1.35rem clamp(1.25rem, 4vw, 3.5rem) 2rem;
+    padding: 20px clamp(20px, 4vw, 56px) 32px;
+    // A faint blush of brand colour in the far corner, so the light side isn't flat.
+    background: radial-gradient(48% 38% at 100% 0%, hsla(0, 90%, 90%, .45), hsla(0, 90%, 90%, 0));
 }
 
 .authTopBar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
+    gap: 16px;
 }
 
 .authBack {
     display: inline-flex;
     align-items: center;
-    gap: .4rem;
-    height: 2.4rem;
-    padding: 0 .95rem 0 .75rem;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px 0 11px;
     border: 1px solid var(--au-border);
     border-radius: 999px;
     background: var(--au-surface);
     color: var(--au-ink);
-    font-size: .92rem;
+    font-family: var(--au-display);
+    font-size: 14px;
     font-weight: 600;
-    transition: border-color .2s ease, color .2s ease, transform .3s var(--au-ease);
+    transition: border-color .2s ease, color .2s ease;
 
     svg {
         transition: transform .3s var(--au-ease);
@@ -281,31 +515,86 @@
     }
 }
 
+// The form, at most 420px wide. With the Log in | Sign up switch, the column keeps one height
+// for both pages (the longer one's), so the switch stays put when the form under it changes.
+.authColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: min(420px, 100%);
+    margin: auto;
+    padding-block: 36px 12px;
+
+    &.has-tabs {
+        min-height: 640px;
+    }
+}
+
+.authView {
+    min-width: 0;
+}
+
+// Log in | Sign up
+.authTabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 4px;
+    border-radius: 14px;
+    background: var(--au-track);
+    box-shadow: inset 0 1px 2px hsla(20, 30%, 25%, .07);
+}
+
+.authTab {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 40px;
+    border-radius: 10px;
+    font-family: var(--au-display);
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--au-muted);
+    transition: color .2s ease;
+
+    &:hover,
+    &.is-current {
+        color: var(--au-ink);
+    }
+}
+
+.authTabPill {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    background: var(--au-surface);
+    box-shadow: 0 1px 2px hsla(0, 0%, 0%, .06), 0 6px 16px -8px hsla(0, 40%, 25%, .28);
+}
+
+.authTabLabel {
+    position: relative;
+}
+
 .authBody {
     display: flex;
-    flex: 1;
     flex-direction: column;
-    justify-content: center;
-    gap: 1.6rem;
-    width: min(26rem, 100%);
-    margin-inline: auto;
-    padding-block: 2.25rem 1rem;
+    gap: 26px;
 }
 
 .authHeader {
     h1 {
         font-family: var(--au-display);
-        font-size: clamp(2rem, 2.6vw, 2.55rem);
+        font-size: clamp(30px, 2.5vw, 36px);
         font-weight: 800;
         line-height: 1.05;
-        letter-spacing: -.01em;
+        letter-spacing: -.02em;
         color: var(--au-ink);
         text-wrap: balance;
     }
 
     p {
-        margin-top: .55rem;
-        font-size: 1.02rem;
+        margin-top: 10px;
+        font-family: var(--au-text);
+        font-size: 15px;
         line-height: 1.55;
         color: var(--au-muted);
         text-wrap: pretty;
@@ -314,28 +603,32 @@
 
 .authContent {
     display: grid;
-    gap: 1.15rem;
+    gap: 20px;
 }
 
 .authForm {
     display: grid;
-    gap: 1rem;
+    gap: 18px;
 }
 
 .authFieldRow {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 18px 14px;
 }
+
+// Fields ====================>
 
 .authField {
     min-width: 0;
 
     label {
         display: block;
-        margin-bottom: .42rem;
-        font-size: .92rem;
+        margin-bottom: 7px;
+        font-family: var(--au-display);
+        font-size: 15px;
         font-weight: 600;
+        line-height: 1.2;
         color: var(--au-ink);
     }
 }
@@ -343,13 +636,13 @@
 .authInput {
     display: flex;
     align-items: center;
-    gap: .6rem;
+    gap: 10px;
     height: var(--au-control);
-    padding: 0 .35rem 0 1rem;
+    padding: 0 5px 0 14px;
     border: 1.5px solid var(--au-border);
-    border-radius: 14px;
+    border-radius: var(--au-radius);
     background: var(--au-surface);
-    transition: border-color .2s ease, box-shadow .2s ease;
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
 
     &:hover {
         border-color: var(--au-border-strong);
@@ -357,7 +650,7 @@
 
     &:focus-within {
         border-color: var(--au-red);
-        box-shadow: 0 0 0 4px hsla(0, 66%, 43%, .12);
+        box-shadow: 0 0 0 4px var(--au-ring);
 
         .authInputIcon {
             color: var(--au-red);
@@ -368,27 +661,44 @@
         flex: 1;
         min-width: 0;
         height: 100%;
-        padding-right: .65rem;
+        padding: 0 8px 0 0;
         border: none;
         outline: none;
         background: none;
+        font-family: var(--au-text);
         // 16px stops iOS from zooming into the field on focus.
         font-size: 16px;
         line-height: 1.2;
         color: var(--au-ink);
+        caret-color: var(--au-red);
 
         &::placeholder {
             color: var(--au-subtle);
             opacity: 1;
+        }
+
+        // Browser autofill paints its own fill: keep the field white.
+        &:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 40px var(--au-surface) inset;
+            -webkit-text-fill-color: var(--au-ink);
         }
     }
 }
 
 .authInputIcon {
     flex-shrink: 0;
-    font-size: 1.15rem;
+    font-size: 18px;
     color: var(--au-subtle);
     transition: color .2s ease;
+}
+
+.authField.is-invalid .authInput {
+    border-color: var(--au-red);
+    background: hsl(0, 85%, 99%);
+
+    .authInputIcon {
+        color: var(--au-red);
+    }
 }
 
 // Show / hide password
@@ -396,13 +706,13 @@
     display: grid;
     flex-shrink: 0;
     place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
     color: var(--au-subtle);
-    font-size: 1.15rem;
+    font-size: 18px;
     cursor: pointer;
-    transition: background .2s ease, color .2s ease;
+    transition: background-color .2s ease, color .2s ease;
 
     &:hover,
     &[aria-pressed='true'] {
@@ -410,76 +720,202 @@
     }
 
     &:hover {
-        background: hsl(20, 14%, 95%);
+        background: var(--au-track);
+    }
+}
+
+// Under a field: its error, the strength bars, then notes on the left and a link or the
+// strength word on the right. Each piece brings its own top margin, so empty ones take no room.
+.authFieldErrorSlot:empty {
+    display: none;
+}
+
+.authScreen .showMessage.authFieldError {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: var(--au-red-strong);
+    font-family: var(--au-text);
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.4;
+    text-align: left;
+
+    svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+        font-size: 15px;
+    }
+}
+
+.authFieldFoot {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.authFieldNotes {
+    display: grid;
+    min-width: 0;
+}
+
+.authHint,
+.authCaps:not(:empty) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-family: var(--au-text);
+    font-size: 13.5px;
+    line-height: 1.35;
+
+    svg {
+        flex-shrink: 0;
+        font-size: 15px;
     }
 }
 
 .authHint {
-    display: flex;
-    align-items: center;
-    gap: .35rem;
-    margin-top: .45rem;
-    font-size: .86rem;
-    line-height: 1.35;
     color: var(--au-subtle);
     transition: color .2s ease;
-
-    svg {
-        flex-shrink: 0;
-    }
 
     &.is-met {
         color: var(--au-green);
     }
 }
 
+.authCaps {
+    font-weight: 500;
+    color: hsl(30, 90%, 30%);
+}
+
 .authForgot {
-    justify-self: end;
-    margin-top: -.3rem;
-    font-size: .9rem;
-    line-height: 1.4;
-    color: var(--au-muted);
-    text-align: right;
+    flex-shrink: 0;
+    margin-top: 9px;
+    margin-left: auto;
+    border-radius: 4px;
+    font-family: var(--au-display);
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--au-red);
 
-    a {
+    &:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+}
+
+// Password strength (a hint): four bars and a word, red → amber → green.
+.authStrengthBars {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin-top: 10px;
+
+    i {
+        height: 4px;
+        border-radius: 2px;
+        background: hsl(20, 12%, 88%);
+        transition: background-color .3s ease;
+    }
+
+    &[data-level='1'] i:nth-child(-n + 1) {
+        background: hsl(0, 72%, 52%);
+    }
+
+    &[data-level='2'] i:nth-child(-n + 2) {
+        background: hsl(34, 94%, 50%);
+    }
+
+    &[data-level='3'] i:nth-child(-n + 3) {
+        background: hsl(96, 48%, 44%);
+    }
+
+    &[data-level='4'] i {
+        background: hsl(152, 58%, 36%);
+    }
+}
+
+.authStrengthText {
+    flex-shrink: 0;
+    margin-top: 8px;
+    font-family: var(--au-display);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+
+    &[data-level='1'] {
         color: var(--au-red);
-        font-weight: 600;
+    }
 
-        &:hover {
-            text-decoration: underline;
-        }
+    &[data-level='2'] {
+        color: hsl(30, 90%, 31%);
+    }
+
+    &[data-level='3'] {
+        color: hsl(100, 50%, 27%);
+    }
+
+    &[data-level='4'] {
+        color: var(--au-green);
     }
 }
 
 // Buttons ====================>
 
 .authSubmit {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .55rem;
+    gap: 8px;
     width: 100%;
-    height: var(--au-control);
-    margin-top: .2rem;
+    height: 50px;
+    margin-top: 4px;
+    overflow: hidden;
     border: none;
-    border-radius: 14px;
-    background: var(--au-red);
-    box-shadow: 0 12px 24px -14px hsla(0, 66%, 30%, .9);
+    border-radius: var(--au-radius);
+    background: linear-gradient(180deg, hsl(0, 68%, 47%), hsl(0, 66%, 41%));
+    box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, .2), 0 10px 22px -12px hsla(0, 70%, 32%, .85);
     color: #fff;
-    font-size: 1.05rem;
+    font-family: var(--au-display);
+    font-size: 17px;
     font-weight: 700;
+    letter-spacing: .01em;
     cursor: pointer;
-    transition: background .2s ease, transform .2s var(--au-ease), box-shadow .2s ease;
+    isolation: isolate;
+    transition: transform .18s var(--au-ease), box-shadow .2s ease, filter .2s ease;
+
+    // The light that sweeps across on hover.
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: linear-gradient(105deg, transparent 32%, hsla(0, 0%, 100%, .3) 50%, transparent 68%);
+        transform: translateX(-110%);
+        transition: transform .8s var(--au-ease);
+    }
 
     svg {
-        font-size: 1.2rem;
+        font-size: 19px;
         transition: transform .3s var(--au-ease);
     }
 
     &:hover:not(:disabled) {
-        background: var(--au-red-strong);
-        box-shadow: 0 16px 28px -14px hsla(0, 66%, 30%, .95);
-        transform: translateY(-1px);
+        box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, .2), 0 16px 28px -14px hsla(0, 70%, 30%, .95);
+        filter: brightness(1.04);
+
+        &::before {
+            transform: translateX(110%);
+        }
 
         .authArrow {
             transform: translateX(4px);
@@ -487,11 +923,12 @@
     }
 
     &:active:not(:disabled) {
-        transform: translateY(0);
+        transform: translateY(1px) scale(.985);
+        box-shadow: inset 0 1px 0 hsla(0, 0%, 100%, .2), 0 6px 14px -10px hsla(0, 70%, 30%, .9);
     }
 
     &:disabled {
-        opacity: .75;
+        opacity: .82;
         cursor: wait;
     }
 }
@@ -502,44 +939,64 @@ a.authSubmit {
 }
 
 .authSpin {
-    animation: authSpin .8s linear infinite;
+    animation: auSpin .8s linear infinite;
 }
 
-@keyframes authSpin {
-    to {
-        transform: rotate(360deg);
+.authDivider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--au-text);
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--au-subtle);
+    text-align: center;
+
+    &::before,
+    &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--au-border);
     }
 }
 
-// Google / Facebook, in each brand's own button colours.
+// Google / Facebook, side by side, in each brand's own button colours.
+.authProviderBlock {
+    display: grid;
+    gap: 18px;
+}
+
 .authProviders {
     display: grid;
-    gap: .6rem;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
 }
 
 .authProvider {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .7rem;
-    width: 100%;
+    gap: 10px;
     height: var(--au-control);
-    padding: 0 1rem;
+    padding: 0 14px;
     border: 1px solid transparent;
-    border-radius: 14px;
-    font-size: 1rem;
+    border-radius: var(--au-radius);
+    font-family: var(--au-display);
+    font-size: 15.5px;
     font-weight: 600;
     cursor: pointer;
-    transition: background .2s ease, box-shadow .2s ease, transform .2s var(--au-ease);
+    transition: background-color .2s ease, box-shadow .2s ease, transform .18s var(--au-ease);
 
     svg {
         flex-shrink: 0;
-        width: 1.25rem;
-        height: 1.25rem;
+        width: 20px;
+        height: 20px;
     }
 
-    &:hover:not(:disabled) {
-        transform: translateY(-1px);
+    &:active:not(:disabled) {
+        transform: scale(.98);
     }
 
     &:disabled {
@@ -570,88 +1027,101 @@ a.authSubmit {
     }
 }
 
-.authDivider {
-    display: flex;
-    align-items: center;
-    gap: .85rem;
-    font-size: .88rem;
-    line-height: 1.3;
-    font-weight: 500;
-    color: var(--au-subtle);
-    text-align: center;
-
-    &::before,
-    &::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--au-border);
-    }
-}
-
 // Public demo only (VITE_DEMO_MODE): one button per role.
 .authDemo {
     display: grid;
-    gap: .75rem;
-    padding: 1rem;
-    border: 1px solid var(--au-red-tint);
-    border-radius: 18px;
-    background: linear-gradient(135deg, hsl(0, 85%, 97.5%), hsl(25, 90%, 97%));
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid hsl(0, 60%, 90%);
+    border-radius: 16px;
+    background: radial-gradient(120% 160% at 0% 0%, hsl(0, 90%, 97%), hsl(28, 90%, 97%));
 }
 
 .authDemoTitle {
     display: flex;
     align-items: center;
-    gap: .45rem;
-    font-size: .92rem;
+    gap: 7px;
+    font-family: var(--au-display);
+    font-size: 15px;
     font-weight: 700;
+    line-height: 1.2;
     color: var(--au-red-strong);
 }
 
 .authDemoGrid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: .5rem;
+    gap: 8px;
 }
 
 .authDemoBtn {
     display: flex;
     align-items: center;
-    gap: .55rem;
+    gap: 10px;
     min-width: 0;
-    height: 2.85rem;
-    padding: 0 .85rem;
-    border: 1px solid hsl(0, 40%, 88%);
-    border-radius: 12px;
+    height: var(--au-control);
+    padding: 0 12px 0 6px;
+    border: 1px solid hsl(0, 40%, 89%);
+    border-radius: var(--au-radius);
     background: var(--au-surface);
     color: var(--au-ink);
-    font-size: .95rem;
+    font-family: var(--au-display);
+    font-size: 15.5px;
     font-weight: 600;
     text-align: left;
     cursor: pointer;
-    transition: border-color .2s ease, transform .2s var(--au-ease), box-shadow .2s ease;
-
-    svg {
-        flex-shrink: 0;
-        font-size: 1.05rem;
-        color: var(--au-red);
-    }
-
-    span {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+    transition: border-color .2s ease, transform .18s var(--au-ease), box-shadow .2s ease;
 
     &:hover:not(:disabled) {
         border-color: var(--au-red);
         box-shadow: 0 10px 20px -16px hsla(0, 66%, 30%, .9);
-        transform: translateY(-1px);
+
+        .authDemoGo {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    &:active:not(:disabled) {
+        transform: scale(.98);
     }
 
     &:disabled {
         cursor: wait;
         opacity: .65;
+    }
+}
+
+.authDemoIcon {
+    display: grid;
+    flex-shrink: 0;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--au-red-soft);
+    color: var(--au-red);
+    font-size: 17px;
+}
+
+.authDemoRole {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.authDemoGo {
+    flex-shrink: 0;
+    color: var(--au-red);
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity .2s ease, transform .25s var(--au-ease);
+
+    // Only a hover hint: touch screens keep the room for the role's name ("Quản trị viên").
+    @media (hover: none) {
+        display: none;
     }
 }
 
@@ -665,21 +1135,22 @@ a.authSubmit {
 .authScreen .showMessage.authAlert {
     display: flex;
     align-items: flex-start;
-    gap: .6rem;
-    padding: .8rem 1rem;
+    gap: 10px;
+    padding: 12px 14px;
     border: 1px solid var(--au-red-tint);
-    border-radius: 14px;
+    border-radius: var(--au-radius);
     background: var(--au-red-soft);
     color: var(--au-red-strong);
-    font-size: .95rem;
+    font-family: var(--au-text);
+    font-size: 14.5px;
     font-weight: 500;
     line-height: 1.45;
     text-align: left;
 
     svg {
         flex-shrink: 0;
-        margin-top: .1rem;
-        font-size: 1.1rem;
+        margin-top: 1px;
+        font-size: 17px;
     }
 }
 
@@ -687,33 +1158,90 @@ a.authSubmit {
 .authNotice {
     display: grid;
     justify-items: center;
-    gap: 1rem;
-    padding: 1.75rem 1.5rem 1.5rem;
+    gap: 16px;
+    padding: 30px 24px 24px;
     border: 1px solid var(--au-border);
-    border-radius: 22px;
+    border-radius: 20px;
     background: var(--au-surface);
-    box-shadow: 0 18px 40px -28px hsla(20, 30%, 20%, .35);
+    box-shadow: 0 24px 48px -32px hsla(20, 30%, 20%, .35);
     text-align: center;
 
     .authSubmit {
-        margin-top: .25rem;
+        margin-top: 4px;
     }
 }
 
-.authNoticeIcon {
+// The envelope that draws itself, with a ripple once it lands.
+.authSent {
+    position: relative;
     display: grid;
     place-items: center;
-    width: 4rem;
-    height: 4rem;
+    width: 88px;
+    height: 88px;
     border-radius: 50%;
     background: var(--au-red-soft);
-    box-shadow: 0 0 0 8px hsla(0, 85%, 96%, .55);
-    color: var(--au-red);
-    font-size: 1.75rem;
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border: 2px solid hsla(0, 66%, 43%, .28);
+        border-radius: 50%;
+        opacity: 0;
+        animation: auRipple 1.5s var(--au-ease) .9s 2;
+    }
+
+    svg {
+        width: 66px;
+        height: 66px;
+        overflow: visible;
+    }
+}
+
+@keyframes auRipple {
+    from {
+        opacity: 1;
+        transform: scale(.92);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(1.4);
+    }
+}
+
+.authSentPaper {
+    fill: var(--au-surface);
+    stroke: var(--au-red);
+    stroke-width: 2.6;
+    stroke-linejoin: round;
+}
+
+.authSentFlap {
+    fill: none;
+    stroke: var(--au-red);
+    stroke-width: 2.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.authSentBadge {
+    fill: hsl(152, 58%, 34%);
+    stroke: var(--au-surface);
+    stroke-width: 3;
+}
+
+.authSentTick {
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .authNoticeText {
-    font-size: 1.02rem;
+    font-family: var(--au-text);
+    font-size: 15px;
     line-height: 1.6;
     color: var(--au-muted);
     text-wrap: pretty;
@@ -724,17 +1252,18 @@ a.authSubmit {
     display: block;
     width: fit-content;
     max-width: 100%;
-    margin: .5rem auto;
-    padding: .3rem .85rem;
-    border-radius: 12px; // long addresses wrap to two lines
-    background: var(--au-bg);
+    margin: 8px auto;
+    padding: 5px 12px 3px;
+    border-radius: 10px; // long addresses wrap to two lines
+    background: var(--au-track);
     color: var(--au-ink);
     font-weight: 600;
     overflow-wrap: anywhere;
 }
 
 .authNoticeHint {
-    font-size: .88rem;
+    font-family: var(--au-text);
+    font-size: 13.5px;
     line-height: 1.45;
     color: var(--au-subtle);
 }
@@ -742,40 +1271,42 @@ a.authSubmit {
 .authFinishing {
     display: grid;
     justify-items: center;
-    padding: 1.5rem 0;
-    font-size: 2rem;
+    padding: 24px 0;
+    font-size: 30px;
     color: var(--au-red);
 }
 
-// "Don't have an account? Sign up"
+// "Remembered it? Back to login"
 .authSwitch {
-    padding-top: 1.35rem;
+    padding-top: 20px;
     border-top: 1px solid var(--au-border);
-    font-size: 1rem;
+    font-family: var(--au-text);
+    font-size: 15px;
     line-height: 1.5;
     color: var(--au-muted);
     text-align: center;
 
     a {
+        border-radius: 4px;
         color: var(--au-red);
-        font-weight: 700;
+        font-weight: 600;
 
         &:hover {
             text-decoration: underline;
+            text-underline-offset: 3px;
         }
     }
 }
 
-// Tablet and phone: the stage becomes a banner, the form a sheet over its bottom edge ====================>
+// Tablet and phone: the studio side becomes a band, the form a sheet over its lower edge ====================>
 
-@media screen and (max-width: 959px) {
+@media screen and (max-width: 1023px) {
     .authScreen {
-        --au-banner: clamp(13.5rem, 34vh, 17.5rem);
-        --au-overlap: 1.6rem;
+        --au-overlap: 24px;
 
         grid-template-columns: minmax(0, 1fr);
         align-content: start;
-        // Lets the banner sit under the sheet (z-index -1) without dropping behind the page.
+        // Lets the band sit under the sheet (z-index -1) without dropping behind the page.
         isolation: isolate;
     }
 
@@ -783,65 +1314,165 @@ a.authSubmit {
         position: relative;
         top: 0;
         z-index: -1;
-        height: var(--au-banner);
+        justify-content: flex-start;
+        gap: 22px;
+        height: auto;
         min-height: 0;
         margin: 0;
-        padding: 1rem 1.25rem calc(var(--au-overlap) + 1.4rem);
+        padding: 18px 32px calc(var(--au-overlap) + 30px);
         border-radius: 0;
     }
 
     .authStageCopy {
-        gap: .5rem;
+        gap: 12px;
     }
 
     .authStageTitle {
-        font-size: clamp(1.75rem, 6.4vw, 2.4rem);
-    }
-
-    .authEyebrow {
-        font-size: .76rem;
+        max-width: 14em;
+        font-size: clamp(30px, 5vw, 42px);
     }
 
     .authPerks {
         display: none;
     }
 
+    .authRings {
+        top: -190px;
+        right: -150px;
+    }
+
     .authPane {
         min-height: 0;
         margin-top: calc(-1 * var(--au-overlap));
-        padding: 1.75rem 1.25rem 5rem; // bottom room for the demo banner
-        border-radius: 26px 26px 0 0;
+        padding: 30px 32px 72px; // bottom room for the demo banner
+        border-radius: 24px 24px 0 0;
         background: var(--au-bg);
+        box-shadow: 0 -12px 30px -22px hsla(345, 50%, 12%, .5);
     }
 
-    // The language switch floats over the banner, level with the brand (the way home on phones).
+    // The language switch floats over the band, level with the brand (the way home here).
     .authTopBar {
         position: absolute;
-        top: 1.1rem;
-        right: 1.25rem;
+        top: 20px;
+        right: 24px;
     }
 
     .authBack {
         display: none;
     }
 
-    .authBody {
-        flex: none;
-        gap: 1.4rem;
+    .authColumn {
+        gap: 26px;
+        margin: 0 auto;
         padding-block: 0;
-    }
 
-    .authHeader h1 {
-        font-size: 1.95rem;
+        &.has-tabs {
+            min-height: 0;
+        }
     }
 }
 
-@media screen and (min-width: 600px) and (max-width: 959px) {
+@media screen and (max-width: 640px) {
+    .authStage {
+        justify-content: space-between;
+        gap: 12px;
+        height: 172px;
+        padding: 14px 16px calc(var(--au-overlap) + 20px);
+    }
+
+    .authStageCopy {
+        gap: 0;
+    }
+
+    .authEyebrow,
+    .authTicker {
+        display: none;
+    }
+
+    .authStageTitle {
+        max-width: none;
+        font-size: 23px;
+        line-height: 1.08;
+        letter-spacing: -.015em;
+    }
+
+    .authBrandMark {
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+    }
+
+    .authBrandName strong {
+        font-size: 20px;
+    }
+
+    .authRings {
+        top: -230px;
+        right: -250px;
+    }
+
+    .authTopBar {
+        top: 16px;
+        right: 16px;
+    }
+
     .authPane {
-        padding-inline: 2rem;
+        padding: 22px 16px calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .authColumn {
+        gap: 22px;
     }
 
     .authBody {
-        padding-top: .75rem;
+        gap: 22px;
+    }
+
+    .authHeader h1 {
+        font-size: 28px;
+    }
+
+    .authHeader p {
+        margin-top: 6px;
+        font-size: 14.5px;
+    }
+
+    .authNotice {
+        padding: 26px 18px 20px;
+    }
+
+    // Full name and username one under the other: room for long names and their messages.
+    .authFieldRow {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .authDemo {
+        padding: 12px;
+    }
+
+    .authDemoBtn {
+        gap: 8px;
+        padding-right: 8px;
+        font-size: 15px;
+    }
+
+    .authDemoIcon {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+}
+
+// Every CSS animation here stops for people who ask for less motion (framer-motion's are handled
+// by AuthShell's MotionConfig).
+@media (prefers-reduced-motion: reduce) {
+    .authScreen *,
+    .authScreen *::before,
+    .authScreen *::after {
+        animation: none !important;
+    }
+
+    .authSubmit::before {
+        display: none;
     }
 }

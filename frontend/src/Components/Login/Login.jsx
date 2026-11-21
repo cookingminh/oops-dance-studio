@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LuLoader2, LuMail } from 'react-icons/lu';
-import { OAUTH_PROVIDERS, authRedirectErrorFor, clearAuthRedirect, oauthError, openedWithSession, signIn } from '@/services/auth';
+import { authRedirectErrorFor, clearAuthRedirect, oauthError, openedWithSession, signIn } from '@/services/auth';
 import { useAuth } from '@/auth/useAuth';
 import { DEMO_MODE, DEMO_PASSWORD } from '@/lib/demo';
 import { useI18n } from '@/i18n/i18nContext';
@@ -77,25 +77,16 @@ const Login = () => {
         );
     }
 
-    const hasShortcuts = DEMO_MODE || OAUTH_PROVIDERS.length > 0;
-
+    // "Sign up" is the Log in | Sign up switch above (AuthShell); Google / Facebook come after the form.
     return (
-        <AuthLayout
-            title={t('Welcome back!')}
-            subtitle={t('Log in to book rooms and manage your classes.')}
-            footer={
-                <>
-                    {t('Don’t have an account?')}{' '}
-                    <Link to="/register" state={location.state}>
-                        {t('Sign up')}
-                    </Link>
-                </>
-            }
-        >
+        <AuthLayout title={t('Welcome back!')} subtitle={t('Log in to book rooms and manage your classes.')}>
             <FormAlert alert={alert} />
-            {DEMO_MODE && <DemoLogins pending={pending} disabled={busy} onPick={(demoEmail) => logIn(demoEmail, DEMO_PASSWORD, demoEmail)} />}
-            <OAuthButtons pending={oauth.pending} disabled={busy} onPick={(provider) => { setAlert(null); oauth.start(provider); }} />
-            {hasShortcuts && <p className="authDivider">{t('or sign in with email')}</p>}
+            {DEMO_MODE && (
+                <>
+                    <DemoLogins pending={pending} disabled={busy} onPick={(demoEmail) => logIn(demoEmail, DEMO_PASSWORD, demoEmail)} />
+                    <p className="authDivider">{t('or sign in with email')}</p>
+                </>
+            )}
 
             <form className="authForm" onSubmit={onSubmit}>
                 <AuthInput
@@ -117,14 +108,17 @@ const Login = () => {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    aside={
+                        <Link to="/reset-password" className="authForgot">
+                            {t('Forgot your password?')}
+                        </Link>
+                    }
                 />
-                <p className="authForgot">
-                    {t('Forgot your password?')} <Link to="/reset-password">{t('Click Here')}</Link>
-                </p>
                 <SubmitButton busy={pending === 'form'} disabled={busy} busyLabel={t('Logging in…')}>
                     {t('Login')}
                 </SubmitButton>
             </form>
+            <OAuthButtons pending={oauth.pending} disabled={busy} onPick={(provider) => { setAlert(null); oauth.start(provider); }} />
         </AuthLayout>
     );
 };

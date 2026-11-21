@@ -1,4 +1,4 @@
-import { LuClipboardList, LuCrown, LuLoader2, LuMic2, LuSmile, LuSparkles } from 'react-icons/lu';
+import { LuArrowRight, LuClipboardList, LuCrown, LuLoader2, LuMic2, LuSmile, LuSparkles } from 'react-icons/lu';
 import { DEMO_ACCOUNTS } from '@/lib/demo';
 import { useI18n } from '@/i18n/i18nContext';
 
@@ -15,7 +15,8 @@ const DemoLogins = ({ pending, disabled, onPick }) => {
             </p>
             <div className="authDemoGrid">
                 {DEMO_ACCOUNTS.map((account) => {
-                    const Icon = pending === account.email ? LuLoader2 : (ROLE_ICONS[account.label] ?? LuSmile);
+                    const busy = pending === account.email;
+                    const Icon = busy ? LuLoader2 : (ROLE_ICONS[account.label] ?? LuSmile);
                     return (
                         <button
                             type="button"
@@ -23,10 +24,14 @@ const DemoLogins = ({ pending, disabled, onPick }) => {
                             className="authDemoBtn"
                             title={account.email}
                             disabled={disabled}
+                            aria-busy={busy}
                             onClick={() => onPick(account.email)}
                         >
-                            <Icon className={pending === account.email ? 'authSpin' : undefined} aria-hidden="true" />
-                            <span>{t(account.label)}</span>
+                            <span className="authDemoIcon" aria-hidden="true">
+                                <Icon className={busy ? 'authSpin' : undefined} />
+                            </span>
+                            <span className="authDemoRole">{t(account.label)}</span>
+                            <LuArrowRight className="authDemoGo" aria-hidden="true" />
                         </button>
                     );
                 })}

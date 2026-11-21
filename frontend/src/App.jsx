@@ -19,9 +19,9 @@ import HomeLanding from './Components/HomePage/pages/HomeLanding';
 const ClassesPage = lazy(() => import('./Components/HomePage/pages/ClassesPage'));
 const RoomsPage = lazy(() => import('./Components/HomePage/pages/RoomsPage'));
 const AboutPage = lazy(() => import('./Components/HomePage/pages/AboutPage'));
-const Login = lazy(() => import('./Components/Login/Login'));
-const Register = lazy(() => import('./Components/Register/Register'));
-const ResetPassword = lazy(() => import('./Components/ResetPassword/ResetPassword'));
+// Login, sign-up and reset password: one chunk and one shell (the same element on /login and
+// /register, so moving between them keeps it mounted and only the form changes).
+const AuthShell = lazy(() => import('./Components/Login/AuthShell'));
 const Admin = lazy(() => import('./Components/users/admin-staff/Admin'));
 const Instructor = lazy(() => import('./Components/users/instructor-guest/Instructor'));
 
@@ -42,10 +42,10 @@ const AppRoutes = () => (
                 <Route path="/about" element={<AboutPage />} />
             </Route>
             <Route element={<PublicOnly />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<AuthShell page="login" />} />
+                <Route path="/register" element={<AuthShell page="register" />} />
             </Route>
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<AuthShell page="reset" />} />
 
             <Route
                 path="/admin/*"
