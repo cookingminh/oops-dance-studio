@@ -93,8 +93,9 @@ export async function listJoinClasses() {
     return unwrap(await supabase.from('classes').select('id, name, level').or(`ended_on.is.null,ended_on.gte.${today}`).order('name'));
 }
 
-// Approve: `from` 'now' (the running course: they pay for the sessions left) or 'next' (from the next course's first
-// day, paid in full); null = what the student asked for. → the request row (joined_at = their start).
+// Approve: `from` 'now' (the running course, billed like addStudent: in full unless late joins are pro-rated) or
+// 'next' (from the next course's first day, paid in full); null = what the student asked for. → the request row
+// (joined_at = their start).
 export async function approveJoinRequest(id, from = null) {
     return unwrap(await supabase.rpc('class_join_approve', { p_request: id, p_from: from }));
 }

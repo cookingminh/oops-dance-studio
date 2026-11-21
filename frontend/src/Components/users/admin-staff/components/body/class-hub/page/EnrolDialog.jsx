@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
 import { LuUserPlus } from 'react-icons/lu';
+import { useAsync } from '@/hooks/useAsync';
 import { addStudent } from '@/services/classes';
+import { getTuitionSettings } from '@/services/tuition';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
 import { routineNow } from '../hubModel';
 
 // Add a student. With a course running and the next one planned, staff choose where they start:
-// now (they pay for the sessions left of the running course) or from the next course (paid in
-// full, no roll calls before it). Guests already in the class aren't offered.
+// now (the running course: in full by default, only the sessions left when Tuition → Settings
+// pro-rates late joins) or from the next course (paid in full, no roll calls before it). Guests
+// already in the class aren't offered.
 const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
     const { t, formatDate } = useI18n();
     const toast = useToast();
@@ -21,6 +24,12 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
     const enrolled = new Set((cls.students ?? []).map((row) => row.student?.id));
     const candidates = guests.filter((guest) => !enrolled.has(guest.id));
     const left = current ? current.session_count - current.sessions_held : 0;
+    // Joining after sessions were held: the fee depends on tuition_settings.prorate_late_join (off by default),
+    // so that wording waits for the setting (a failed load counts as the default).
+    const settings = useAsync(() => getTuitionSettings().catch(() => null), []);
+    const late = Boolean(current) && current.sessions_held > 0 && left < current.session_count;
+    const feeKnown = !late || !settings.loading;
+    const fullFee = late && !settings.data?.prorate_late_join;
 
     const submit = async () => {
         setSaving(true);
@@ -41,7 +50,11 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
             {
                 key: 'now',
                 title: t('From the running course'),
-                detail: t('“{title}”: pays for the {count} sessions left.', { title: current.title, count: left }),
+                detail: !feeKnown
+                    ? null
+                    : fullFee
+                      ? t('“{title}”: pays the full course ({left} of {count} sessions left).', { title: current.title, left, count: current.session_count })
+                      : t('“{title}”: pays for the {count} sessions left.', { title: current.title, count: left }),
             },
             {
                 key: 'next',
@@ -52,7 +65,9 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
         : [];
 
     let hint = null;
-    if (!choices && current) hint = t('They join “{title}” now and pay for the {count} sessions left.', { title: current.title, count: left });
+    if (!choices && current && !feeKnown) hint = null;
+    else if (!choices && current && fullFee) hint = t('They join “{title}” now and pay the full course ({left} of {count} sessions left).', { title: current.title, left, count: current.session_count });
+    else if (!choices && current) hint = t('They join “{title}” now and pay for the {count} sessions left.', { title: current.title, count: left });
     else if (!choices && planned) hint = t('They are billed for “{title}”, starting {date}.', { title: planned.title, date: formatDate(planned.starts_on, 'dayMonth') });
     else if (!choices) hint = t('This class has no course yet: they are billed when its first routine is planned.');
 
@@ -77,13 +92,13 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
                                     <span className="hubChoiceDot" aria-hidden="true" />
                                     <span>
                                         <strong>{option.title}</strong>
-                                        <small>{option.detail}</small>
+                                        {option.detail && <small>{option.detail}</small>}
                                     </span>
                                 </button>
                             ))}
                         </div>
                     ) : (
-                        <p className="hubHint">{hint}</p>
+                        hint && <p className="hubHint">{hint}</p>
                     )}
                 </ModalBody>
                 <ModalFooter>

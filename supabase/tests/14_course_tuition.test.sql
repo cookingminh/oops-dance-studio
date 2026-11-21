@@ -1,10 +1,11 @@
 -- Tuition per course (api-contract §3 Tuition, §5 tuition_*):
---   * joining a course late pays for the sessions left; the next course opens with 2 sessions left
+--   * someone new joining a course late pays the full course by default (prorate_late_join off), or only the
+--     sessions left when the studio turns pro-rata on; the next course opens with 2 sessions left
 --   * stopping the next course leaves the class when it starts
 --   * leaving clears unmarked roll calls; a deleted recurring cost isn't re-added
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(12);
+select plan(14);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -44,21 +45,35 @@ select tests.create_user('00000000-0000-4000-b000-000000000142', 'course-teacher
 select tests.create_user('00000000-0000-4000-b000-000000000143', 'course-a@test.local', 'guest', 'Course A');
 select tests.create_user('00000000-0000-4000-b000-000000000144', 'course-b@test.local', 'guest', 'Course B');
 
--- A class that meets every day (no room); course "Daily A" started 5 days ago (8 sessions: 5 held,
--- 3 left), "Daily B" starts in 3 days (4 sessions).
+-- Two classes that meet every day (no room); course "Daily A" started 5 days ago (8 sessions: 5 held,
+-- 3 left), "Daily B" starts in 3 days (4 sessions); "Other A" started 5 days ago too.
 insert into public.classes (id, name, instructor_id, price, starts_on)
 values (900141, 'Daily Class', '00000000-0000-4000-b000-000000000142', 800000, tests.today() - 30),
        (900142, 'Other Class', '00000000-0000-4000-b000-000000000142', 600000, tests.today() - 30);
 insert into public.class_schedules (class_id, day_of_week, start_time, end_time)
-select 900141, d, '10:00', '11:00' from generate_series(1, 7) d;
+select c, d, '10:00', '11:00' from unnest(array[900141, 900142]) c, generate_series(1, 7) d;
 insert into public.class_lessons (class_id, starts_on, title, session_count) values
   (900141, tests.today() - 5, 'Daily A', 8),
   (900141, tests.today() + 3, 'Daily B', 4),
   (900142, tests.today() - 5, 'Other A', 8);
 
 -- ---------------------------------------------------------------------------
--- Joining late
+-- Joining late, by default: the full course
 -- ---------------------------------------------------------------------------
+select col_default_is('public', 'tuition_settings', 'prorate_late_join', 'false'::text,
+                      'pro-rata for late joiners is off by default');
+update public.tuition_settings set prorate_late_join = default where id = 1;
+select tests.login_as('00000000-0000-4000-b000-000000000141');
+insert into public.class_students (class_id, student_id) values (900142, '00000000-0000-4000-b000-000000000144');
+select tests.logout();
+select results_eq($$ select amount, sessions, note from tests.inv('00000000-0000-4000-b000-000000000144', 'Other A') $$,
+                  $$ values (600000::numeric, 8::smallint, null::text) $$,
+                  'staff adding someone after 5 of 8 sessions: they pay the full course, all 8 sessions');
+
+-- ---------------------------------------------------------------------------
+-- Joining late with pro-rata on (Tuition → Settings)
+-- ---------------------------------------------------------------------------
+update public.tuition_settings set prorate_late_join = true where id = 1;
 insert into public.class_students (class_id, student_id) values (900141, '00000000-0000-4000-b000-000000000143');
 select is((tests.inv('00000000-0000-4000-b000-000000000143', 'Daily A')).amount, 300000::numeric,
           'joining after 5 of 8 sessions pays for the 3 left');

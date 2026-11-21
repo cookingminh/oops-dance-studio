@@ -40,6 +40,7 @@ const RoutinePanel = ({ cls, today, onChanged }) => {
     const routines = data.data?.routines ?? [];
     const makeUps = data.data?.makeUps ?? [];
     const options = dateOptions(data.data);
+    const prorates = Boolean(data.data?.prorateLateJoin);
     const state = routineState(routines);
     const hero = state.current ?? state.next;
     const issues = data.data ? routineIssues(cls, routines, today, options) : [];
@@ -91,6 +92,7 @@ const RoutinePanel = ({ cls, today, onChanged }) => {
             cls={cls}
             routines={routines}
             options={options}
+            prorates={prorates}
             idPrefix={`routine-${routine.lesson_id}`}
             initial={{ id: routine.lesson_id, title: routine.title, startsOn: routine.starts_on, sessionCount: routine.session_count, price: routine.price }}
             onCancel={() => setEditingId(null)}
@@ -134,6 +136,7 @@ const RoutinePanel = ({ cls, today, onChanged }) => {
                                     cls={cls}
                                     routines={routines}
                                     options={options}
+                                    prorates={prorates}
                                     idPrefix="routine-new"
                                     initial={{
                                         title: '',

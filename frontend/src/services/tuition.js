@@ -15,9 +15,10 @@ import { unwrap } from './errors';
 //
 // Renewal (tuition_settings): when the running course has `renewal_open_sessions` (2) or fewer sessions left
 // and the next course is planned, every member is billed for it; pay or answer by its `due_session`-th (2nd)
-// session. Joining late pays for the sessions left (`prorate_late_join`). A daily job cancels unpaid,
-// unanswered invoices after their due date and takes those students out of the class when that course runs;
-// answering "continue" keeps them in (then just overdue). Course progress: listLessonProgress (classes.js).
+// session. Someone new joining late pays the whole course, or only the sessions left when `prorate_late_join` is
+// on (off by default, 20261117002600_full_fee_joins.sql). A daily job cancels unpaid, unanswered invoices after
+// their due date and takes those students out of the class when that course runs; answering "continue" keeps
+// them in (then just overdue). Course progress: listLessonProgress (classes.js).
 
 export const INVOICE = `id, student_id, class_id, lesson_id, lesson_title, sessions, student_name, class_name, month, amount,
     paid_amount, status, renewal, method, payment_code, due_date, paid_at, void_reason, switched_from, note, created_at, updated_at`;

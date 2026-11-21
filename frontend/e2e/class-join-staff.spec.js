@@ -1,8 +1,9 @@
 // Join requests, the staff side (supabase/migrations/20261117002500_class_join_requests.sql): guest02 asks to join
 // three running classes they aren't in (through REST, one with a note); staff see the sidebar badge, the request with
 // its note on /admin/join-requests, approve one "now" there (toast, Answered tab, a class_students row and a tuition
-// invoice), decline another with a quick reason (guest02 reads it back) and approve the third from the class page's
-// Students tab (the student shows up in the list). Everything the spec made is removed with the local service role:
+// invoice for the running course: the whole course unless the studio pro-rates late joins), decline another with a
+// quick reason (guest02 reads it back) and approve the third from the class page's Students tab (the student shows up
+// in the list). Everything the spec made is removed with the local service role:
 // the places (their trigger voids the unpaid invoices and drops today's roll call), the invoices made since the
 // start, the requests. Nothing else of guest02 is touched; other requests may be waiting meanwhile.
 import { test, expect } from '@playwright/test';
@@ -25,7 +26,9 @@ const exact = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&
 let staff;
 let student; // { id, jwt, name }
 let since; // ISO time just before the run: invoices and requests made after it are the spec's
-let classes; // [A (approve on the page), B (decline), C (approve on the class page)]: { id, name }
+let classes; // [A (approve on the page), B (decline), C (approve on the class page)]: { id, name, price }
+let running; // class id → its running course (a lesson_progress row)
+let prorates; // tuition_settings.prorate_late_join (off by default: someone new pays the whole course)
 const requests = {}; // class id → request id
 
 // The spec's places, invoices and requests of `snapshot` go (the student's other rows stay).
@@ -60,13 +63,14 @@ test.beforeAll(async () => {
 
     // Running classes (a course going on, so starting now bills it) that guest02 isn't in and hasn't asked to join.
     const today = await studioToday();
-    const running = (await rest(staff, `classes?select=id,name&starts_on=lte.${today}&ended_on=is.null&order=id`)).data;
+    const open = (await rest(staff, `classes?select=id,name,price&starts_on=lte.${today}&ended_on=is.null&order=id`)).data;
     const mine = new Set((await rest(staff, `class_students?select=class_id&student_id=eq.${student.id}`)).data.map((row) => row.class_id));
     const asked = new Set((await rest(staff, `class_join_requests?select=class_id&student_id=eq.${student.id}&status=eq.pending`)).data.map((row) => row.class_id));
-    const progress = (await rpc(staff, 'lesson_progress', { p_class_ids: running.map((cls) => cls.id) })).data;
-    const withCourse = new Set(progress.filter((row) => row.status === 'current').map((row) => row.class_id));
-    classes = running.filter((cls) => !mine.has(cls.id) && !asked.has(cls.id) && withCourse.has(cls.id)).slice(0, 3);
+    const progress = (await rpc(staff, 'lesson_progress', { p_class_ids: open.map((cls) => cls.id) })).data;
+    running = new Map(progress.filter((row) => row.status === 'current').map((row) => [row.class_id, row]));
+    classes = open.filter((cls) => !mine.has(cls.id) && !asked.has(cls.id) && running.has(cls.id)).slice(0, 3);
     expect(classes, 'three running classes guest02 is not in').toHaveLength(3);
+    prorates = (await rest(staff, 'tuition_settings?select=prorate_late_join&id=eq.1')).data[0].prorate_late_join;
 
     since = new Date(Date.now() - 5_000).toISOString();
     fs.writeFileSync(SNAPSHOT, JSON.stringify({ studentId: student.id, classIds: classes.map((cls) => cls.id), since }));
@@ -108,6 +112,12 @@ test('staff approve and decline requests on the Join requests page', async ({ pa
         const dialog = page.getByRole('dialog');
         await expect(dialog).toContainText(`Add ${student.name} to ${approved.name}`);
         await expect(dialog.getByRole('radio', { name: /From the running course/ }).or(dialog.locator('.hubHint')).first()).toBeVisible();
+        // Joining after sessions were held: the dialog says what they pay (the whole course unless pro-rated).
+        const course = running.get(approved.id);
+        const left = course.session_count - course.sessions_held;
+        if (course.sessions_held > 0 && left > 0) {
+            await expect(dialog).toContainText(prorates ? `for the ${left} sessions left` : `the full course (${left} of ${course.session_count} sessions left)`);
+        }
         await dialog.getByRole('button', { name: 'Approve', exact: true }).click();
         await expectToast(page, `${student.name} is in ${approved.name}.`);
         await expect(cardOf(page, approved)).toHaveCount(0);
@@ -121,9 +131,16 @@ test('staff approve and decline requests on the Join requests page', async ({ pa
     await test.step('REST: guest02 is in the class and billed for it', async () => {
         const place = (await rest(staff, `class_students?select=class_id,joined_at&student_id=eq.${student.id}&class_id=eq.${approved.id}`)).data;
         expect(place).toHaveLength(1);
-        const invoices = (await rest(staff, `tuition_invoices?select=id,status,lesson_id&student_id=eq.${student.id}&class_id=eq.${approved.id}&created_at=gte.${encodeURIComponent(since)}`)).data;
+        const invoices = (await rest(staff, `tuition_invoices?select=id,status,lesson_id,amount,sessions,note&student_id=eq.${student.id}&class_id=eq.${approved.id}&created_at=gte.${encodeURIComponent(since)}`)).data;
         expect(invoices.length).toBeGreaterThanOrEqual(1);
         expect(invoices.every((invoice) => invoice.status === 'unpaid')).toBe(true);
+        // The running course: in full (all its sessions, no "Joined after" note) unless the studio pro-rates.
+        const course = running.get(approved.id);
+        const lesson = (await rest(staff, `class_lessons?select=price&id=eq.${course.lesson_id}`)).data[0];
+        const full = Number(lesson.price ?? approved.price);
+        const invoice = invoices.find((row) => row.lesson_id === course.lesson_id);
+        if (!prorates || course.sessions_held === 0) expect(invoice).toMatchObject({ amount: full, sessions: course.session_count, note: null });
+        else expect(invoice.sessions).toBe(course.session_count - course.sessions_held);
         const request = (await rest(student.jwt, `class_join_requests?select=status,joined_at&id=eq.${requests[approved.id]}`)).data[0];
         expect(request.status).toBe('approved');
         expect(request.joined_at).toBe(place[0].joined_at);

@@ -227,8 +227,9 @@ export async function countMyEnrolments(studentId) {
     return count ?? 0;
 }
 
-// Enrols a student now (billed for the running course: someone new pays for the sessions left), or from a
-// later date (`joinedAt` 'yyyy-MM-dd' = a course's start: that course is billed in full, nothing earlier).
+// Enrols a student now (billed for the running course: in full, or only the sessions left when the studio
+// pro-rates late joins, tuition_settings.prorate_late_join), or from a later date (`joinedAt` 'yyyy-MM-dd' =
+// a course's start: that course is billed in full, nothing earlier).
 export async function addStudent(classId, studentId, { joinedAt } = {}) {
     const row = { class_id: classId, student_id: studentId };
     if (joinedAt) row.joined_at = joinedAt;

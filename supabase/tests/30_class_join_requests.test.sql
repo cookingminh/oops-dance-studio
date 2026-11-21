@@ -1,12 +1,13 @@
 -- Asking to join a class (api-contract §3 class_join_requests, §5 Join requests):
 --   * a student asks (now / next, a note), one waiting request per class, up to 3 waiting; they can take it back
---   * staff approve (now: billed for the sessions left; next: from the next course, billed in full) or decline
+--   * staff approve (now: billed for the running course — in full by default, for the sessions left with pro-rata on;
+--     next: from the next course, billed in full) or decline
 --   * staff adding the student directly approves the request; the class ending declines it
 --   * students read their own requests, staff all of them, nobody writes the table directly; every step is logged
 -- The classes meet every day and dates are relative to studio_today(): nothing depends on the weekday.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(66);
+select plan(67);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -65,6 +66,7 @@ select tests.create_user('00000000-0000-4000-b000-000000000304', 'join-a@test.lo
 select tests.create_user('00000000-0000-4000-b000-000000000305', 'join-b@test.local', 'guest', 'Join B');
 select tests.create_user('00000000-0000-4000-b000-000000000306', 'join-c@test.local', 'guest', 'Join C');
 select tests.create_user('00000000-0000-4000-b000-000000000307', 'join-d@test.local', 'guest', 'Join D');
+select tests.create_user('00000000-0000-4000-b000-000000000308', 'join-e@test.local', 'guest', 'Join E');
 
 -- "Join Daily" meets every day: its course "Join Now" started 5 days ago (8 sessions: 5 held, 3 left), "Join Next"
 -- starts in 3 days (4 sessions). "Join Running" has a course running and none planned. "Join Ended" ended yesterday.
@@ -87,6 +89,9 @@ insert into public.instructor_attendance (class_id, instructor_id, date, status)
 values (900301, '00000000-0000-4000-b000-000000000303', tests.today(), 'pending');
 -- Join A is already in Join Running.
 insert into public.class_students (class_id, student_id) values (900302, '00000000-0000-4000-b000-000000000304');
+-- New students pay the full course by default; pro-rata is turned on here to check the sessions-left amount, then
+-- back to the default for "Approving from now: the full course".
+update public.tuition_settings set prorate_late_join = true where id = 1;
 
 -- ---------------------------------------------------------------------------
 -- Asking
@@ -186,7 +191,7 @@ select results_eq(
   'staff approve: from now, as the student asked');
 select is((tests.member(900301, '00000000-0000-4000-b000-000000000304')).joined_at, tests.today(), 'the student is in the class from today');
 select is((tests.inv('00000000-0000-4000-b000-000000000304', 'Join Now')).amount, 300000::numeric,
-  'billed for the 3 sessions left of the running course');
+  'with pro-rata on, billed for the 3 sessions left of the running course');
 select is((tests.inv('00000000-0000-4000-b000-000000000304', 'Join Next')).id, null, 'not yet for the next one');
 select ok(tests.on_roll(900301, '00000000-0000-4000-b000-000000000304'), 'and on today''s roll call');
 select throws_ok(format($$ select public.class_join_approve(%s) $$, (tests.req(900301, '00000000-0000-4000-b000-000000000304')).id),
@@ -202,6 +207,19 @@ select is((select count(*)::int from public.activity_log
             where entity = 'class_students' and action = 'enrolled' and entity_id = '900301:00000000-0000-4000-b000-000000000304'
               and actor_id = '00000000-0000-4000-b000-000000000301'), 1, 'and so is the enrolment, as usual');
 select tests.login_as('00000000-0000-4000-b000-000000000301');
+
+-- ---------------------------------------------------------------------------
+-- Approving from now, by default: the full course
+-- ---------------------------------------------------------------------------
+select tests.logout();
+update public.tuition_settings set prorate_late_join = default where id = 1;
+select tests.login_as('00000000-0000-4000-b000-000000000308');
+select public.class_join_request(900301, 'now');
+select tests.login_as('00000000-0000-4000-b000-000000000301');
+select public.class_join_approve((tests.req(900301, '00000000-0000-4000-b000-000000000308')).id);
+select results_eq($$ select amount, sessions, note from tests.inv('00000000-0000-4000-b000-000000000308', 'Join Now') $$,
+  $$ values (800000::numeric, 8::smallint, null::text) $$,
+  'with pro-rata off a student approved from now pays the full running course, though 5 of its 8 sessions are held');
 
 -- ---------------------------------------------------------------------------
 -- Approving: from the next course

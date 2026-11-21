@@ -25,6 +25,8 @@ export async function loadRoutines(classId) {
         // lesson id → its invoices (null when they couldn't be read)
         renewals: new Map(planned.map((row, index) => [row.lesson_id, invoices[index]])),
         renewalOpensAt: settings?.renewal_open_sessions ?? RENEWAL_OPENS_AT,
+        // Someone new joining a running course pays only for the sessions left (off by default, and when unread).
+        prorateLateJoin: Boolean(settings?.prorate_late_join),
     };
 }
 

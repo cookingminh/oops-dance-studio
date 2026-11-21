@@ -136,7 +136,9 @@ Học viên **không tự vào lớp**. Họ gửi yêu cầu, staff hoặc admi
    - Chưa đăng nhập: nút *Tham gia lớp này* đưa đến đăng nhập. Đăng nhập xong thì quay lại với hộp thoại đã mở.
    - Hộp thoại hiện lớp, giáo viên, lịch, khoá đang học (còn mấy buổi) và khoá sau.
    - Học viên chọn **Vào học ngay** hoặc **Từ khoá sau** (chỉ khi lớp có cả hai). Hộp thoại ghi rõ học phí:
-     - vào giữa khoá thì đóng phần buổi còn lại;
+     - vào giữa khoá vẫn đóng **đủ học phí khoá**; hộp thoại ghi khoá còn mấy buổi để học viên cân nhắc *Từ khoá
+       sau*. ⏳ **Tạm thời, chờ studio chốt** quy định cho học viên mới (xem §4). Nếu admin bật *tính theo buổi còn
+       lại* thì hộp thoại ghi phần buổi còn lại;
      - nếu khoá sau đã mở gia hạn (khoá đang chạy còn ≤ 2 buổi) thì nhận thêm hoá đơn khoá sau.
    - Có thể kèm lời nhắn cho studio (tối đa 500 ký tự).
    - Mỗi người tối đa **3 yêu cầu đang chờ**. Không xin được lớp mình đang học, lớp đã có yêu cầu chờ, hay lớp
@@ -228,7 +230,7 @@ sequenceDiagram
 | Tình huống | Hệ thống làm gì |
 |---|---|
 | Học viên **mới** vào lớp khi khoá **chưa bắt đầu** | Hoá đơn **đủ** học phí khoá đó |
-| Học viên **mới** vào **giữa khoá** | Chỉ đóng **phần buổi còn lại** (ví dụ còn 5/8 buổi → 5/8 học phí, làm tròn 1.000 ₫). Staff sửa được số tiền |
+| Học viên **mới** vào **giữa khoá** | ⏳ Đóng **đủ học phí khoá** (mặc định, tạm thời). Admin có thể bật *tính theo buổi còn lại* trong **Học phí → Cài đặt thanh toán**: khi đó chỉ đóng phần buổi còn lại (ví dụ còn 5/8 buổi → 5/8 học phí, làm tròn 1.000 ₫). Staff sửa được số tiền |
 | Học viên **cũ học tiếp** | Đóng **đủ** khoá mới |
 | Khoá đang chạy **còn ≤ 2 buổi** và đã có khoá sau | **Mở gia hạn**: cả lớp nhận hoá đơn khoá sau (staff mở sớm được) |
 | Hạn đóng / trả lời | Trước **buổi thứ 2** của khoá mới (ít nhất 3 ngày sau khi mở) |
@@ -238,7 +240,11 @@ sequenceDiagram
 | **Bỏ ngang giữa khoá** | **Không hoàn tiền**. Staff xoá khỏi lớp; điểm danh chưa chấm từ hôm nay bị xoá |
 | Đóng muộn một khoá đã bị huỷ (nếu khoá chưa xong) | Tự **khôi phục** hoá đơn và cho học viên vào lại lớp |
 
-Các con số "2 buổi", "buổi thứ 2", "tính theo buổi còn lại" chỉnh ở **Học phí → Cài đặt thanh toán** (admin).
+> ⏳ **Tạm thời, chờ studio chốt:** học viên mới đóng đủ học phí khoá. Studio sẽ gửi quy định cho học viên mới: có tính
+> theo buổi còn lại không, buổi đầu có miễn phí không (trang chủ đang ghi *Buổi học đầu tiên miễn phí*)…
+
+Các con số "2 buổi", "buổi thứ 2", "tính theo buổi còn lại" (mặc định tắt) chỉnh ở **Học phí → Cài đặt thanh toán**
+(admin).
 
 **Cách đóng tiền**
 
@@ -612,5 +618,6 @@ người / khu vực / thời gian, bấm vào một dòng để xem đã đổi
 | Chat: ai đang hỗ trợ, đếm ngược, tên gọi | `20261117002000_support_chat_joined.sql` | `private.first_name`, `private.support_assign`, `support_status` (`reply_minutes`) |
 | Banner trang chủ | `20261117002200_home_banners.sql` | `home_banners_live`, `home_banner_save`, `home_banner_set_enabled`, `home_banners_reorder`, `home_banner_delete` |
 | Xin vào lớp, staff duyệt | `20261117002500_class_join_requests.sql` | `class_join_request`, `class_join_cancel`, `class_join_approve`, `class_join_decline`, `seed_demo_class_join_requests` |
+| Học viên mới đóng đủ khoá (tạm thời, chờ quy định của studio) | `20261117002600_full_fee_joins.sql` | `tuition_settings.prorate_late_join` mặc định `false` (`bill_course`) |
 
 Kiểm thử: `supabase test db` (pgTAP), `cd frontend && npx playwright test` (e2e).

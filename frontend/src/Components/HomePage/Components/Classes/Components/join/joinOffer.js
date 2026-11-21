@@ -1,8 +1,9 @@
 // What joining a class means for a student, worked out the way the database bills it
 // (private.on_enrolment_added → private.bill_class / private.bill_course, 20261116000100_course_tuition.sql):
 //   - a course costs its own price, else the class price;
-//   - someone new who joins after sessions were held pays for the sessions left (when the studio prorates late
-//     joins: tuition_settings.prorate_late_join), rounded to 1,000 ₫, counted on the day they're added;
+//   - someone new who joins after sessions were held pays the whole course by default; only when the studio
+//     prorates late joins (tuition_settings.prorate_late_join, off by default) they pay for the sessions left,
+//     rounded to 1,000 ₫, counted on the day they're added;
 //   - joining from the next course pays that course in full;
 //   - near the end of the running course (renewal_open_sessions left or fewer) the next course's sign-up is open,
 //     so joining now bills it too, with the usual "carry on?" question.
@@ -19,7 +20,7 @@ export function coursesOf(progress = []) {
 }
 
 // loadJoinOffer() data and the class price →
-//   { now: { course, left, sessions (billed), amount, prorated } | null,
+//   { now: { course, left, late (sessions were held already), sessions (billed), amount, prorated } | null,
 //     next: { course, amount } | null,
 //     choice (both exist: the student picks), feeKnown, prorates (sessions left are counted on the day they're added),
 //     nextBilledToo (joining now also bills the next course) }
@@ -32,11 +33,13 @@ export function joinOffer(offer, classPrice) {
     let now = null;
     if (current) {
         const left = Math.max(current.session_count - current.sessions_held, 0);
-        const prorated = prorates && current.sessions_held > 0 && left < current.session_count;
+        const late = current.sessions_held > 0 && left < current.session_count;
+        const prorated = prorates && late;
         const price = priceOf(current);
         now = {
             course: current,
             left,
+            late,
             sessions: prorated ? left : current.session_count,
             amount: prorated ? Math.round((price * left) / current.session_count / 1000) * 1000 : price,
             prorated,

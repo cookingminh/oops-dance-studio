@@ -162,7 +162,13 @@ const TuitionTab = ({ ctx }) => {
             <SectionCard
                 icon={LuReceipt}
                 title={t('Tuition by course')}
-                subtitle={t('One invoice per student and course. Joining late pays only for the sessions left.')}
+                subtitle={
+                    settings.data
+                        ? settings.data.prorate_late_join
+                            ? t('One invoice per student and course. Joining late pays only for the sessions left.')
+                            : t('One invoice per student and course. Joining late pays the full course.')
+                        : t('One invoice per student and course.')
+                }
                 className="hubTuition"
             >
                 <AsyncState state={invoices} isEmpty={groups.length === 0} emptyText="No courses yet. Plan a routine in Routines: it is the course students pay for.">

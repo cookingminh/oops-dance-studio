@@ -20,11 +20,16 @@ export default {
     'Join “{title}”, the course running now.': 'Vào học “{title}”, khoá đang diễn ra.',
     'Join “{title}” and pay for the {count} sessions left.': 'Vào học “{title}”, đóng học phí {count} buổi còn lại.',
     'Join “{title}” and pay for the whole course.': 'Vào học “{title}”, đóng học phí cả khoá.',
+    // No pro-rata (the studio's default): starting late still costs the whole course.
+    'Join “{title}” now: you pay the full course fee, with {left} of its {count} sessions left.':
+        'Vào học “{title}” ngay: đóng học phí cả khoá, dù khoá chỉ còn {left}/{count} buổi.',
     '“{title}”, starting {date}: the whole course.': '“{title}”, bắt đầu {date}: đóng học phí cả khoá.',
     '“{title}”, starting {date}.': '“{title}”, bắt đầu {date}.',
     'You join “{title}”, the course running now.': 'Bạn vào học “{title}”, khoá đang diễn ra.',
     'You join “{title}” now and pay for the {count} sessions left.': 'Bạn vào học “{title}” ngay, đóng học phí {count} buổi còn lại.',
     'You join “{title}” now and pay for the whole course.': 'Bạn vào học “{title}” ngay, đóng học phí cả khoá.',
+    'You join “{title}” now and pay the full course fee, with {left} of its {count} sessions left.':
+        'Bạn vào học “{title}” ngay và đóng học phí cả khoá, dù khoá chỉ còn {left}/{count} buổi.',
     'You start with “{title}” on {date} and pay for the whole course.': 'Bạn bắt đầu với “{title}” từ {date}, đóng học phí cả khoá.',
     'You start with “{title}” on {date}.': 'Bạn bắt đầu với “{title}” từ {date}.',
     'No course is planned for this class yet: you’re billed once the studio sets its next routine.':

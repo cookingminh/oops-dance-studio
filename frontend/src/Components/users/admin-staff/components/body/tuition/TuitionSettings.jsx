@@ -41,20 +41,20 @@ const TuitionSettings = ({ settings, sandbox, onSaved }) => {
     const { t, tn } = useI18n();
     const toast = useToast();
     const [form, setForm] = useState(() => toForm(settings));
-    const [prorate, setProrate] = useState(Boolean(settings?.prorate_late_join ?? true));
+    const [prorate, setProrate] = useState(Boolean(settings?.prorate_late_join));
     const [saving, setSaving] = useState(false);
     const preview = useDebounced(form);
 
     // A fresh copy from the server (after saving) replaces the form.
     useEffect(() => {
         setForm(toForm(settings));
-        setProrate(Boolean(settings?.prorate_late_join ?? true));
+        setProrate(Boolean(settings?.prorate_late_join));
     }, [settings]);
 
     const set = (key) => (value) => setForm((prev) => ({ ...prev, [key]: key === 'account_name' ? value.toUpperCase() : value }));
     const trimmed = Object.fromEntries(FIELDS.map((key) => [key, form[key].trim()]));
     const invalid = FIELDS.filter((key) => !RULES[key](trimmed[key]));
-    const prorateChanged = prorate !== Boolean(settings?.prorate_late_join ?? true);
+    const prorateChanged = prorate !== Boolean(settings?.prorate_late_join);
     const changed = [...FIELDS.filter((key) => trimmed[key] !== String(settings?.[key] ?? '')), ...(prorateChanged ? ['prorate_late_join'] : [])];
     const fields = { ...trimmed, prorate_late_join: prorate };
     const openAt = RULES.renewal_open_sessions(trimmed.renewal_open_sessions) ? Number(trimmed.renewal_open_sessions) : null;

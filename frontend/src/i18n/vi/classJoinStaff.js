@@ -55,6 +55,18 @@ export default {
     '“{title}”: pays for the {count} sessions left, and for the next course “{next}”, whose invoices are already out.':
         '“{title}”: đóng học phí {count} buổi còn lại, kèm khoá sau “{next}” vì hoá đơn khoá sau đã gửi rồi.',
 
+    // Joining a running course without pro-rata (the default; Tuition → Settings turns it on): the whole course.
+    // Also "Add a student" (class hub), the class's Tuition tab and the routine form.
+    '“{title}”: pays the full course ({left} of {count} sessions left).': '“{title}”: đóng trọn khoá (còn {left}/{count} buổi).',
+    '“{title}”: pays the full course ({left} of {count} sessions left), and the next course “{next}”, whose invoices are already out.':
+        '“{title}”: đóng trọn khoá (còn {left}/{count} buổi), kèm khoá sau “{next}” vì hoá đơn khoá sau đã gửi rồi.',
+    'They join “{title}” now and pay the full course ({left} of {count} sessions left).':
+        'Học viên vào học “{title}” ngay, đóng trọn khoá (còn {left}/{count} buổi).',
+    'One invoice per student and course.': 'Mỗi học viên một khoản học phí cho mỗi khoá.',
+    'One invoice per student and course. Joining late pays the full course.':
+        'Mỗi học viên một khoản học phí cho mỗi khoá. Vào giữa khoá vẫn đóng trọn khoá.',
+    'Students pay this per course, in full even when they join late.': 'Học viên đóng mức này cho mỗi khoá, vào giữa khoá cũng đóng đủ.',
+
     // Decline
     'Decline the request': 'Từ chối yêu cầu',
     '{name} for {class}': '{name} · lớp {class}',

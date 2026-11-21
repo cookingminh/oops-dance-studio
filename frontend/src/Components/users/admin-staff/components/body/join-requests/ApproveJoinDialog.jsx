@@ -13,7 +13,8 @@ import { routineNow } from '../class-hub/hubModel';
 import { START_ASKED, START_LABELS, personName } from './joinModel';
 
 // Approve a request: where the student starts, as "Add a student" (class-hub/page/EnrolDialog.jsx) offers it — the
-// running course (they pay for the sessions left) or the next one (paid in full) — preselected on what they asked for.
+// running course (in full by default, only the sessions left when Tuition → Settings pro-rates late joins) or the next
+// one (paid in full) — preselected on what they asked for.
 // With one way only, a line says what happens. class_join_approve adds them; the class's triggers bill the course and
 // put them on the roll call. onDone() after it worked.
 const ApproveJoinDialog = ({ request, onClose, onDone }) => {
@@ -34,6 +35,10 @@ const ApproveJoinDialog = ({ request, onClose, onDone }) => {
     const from = choices ? picked ?? request.start_pref : 'now';
     const left = current ? current.session_count - current.sessions_held : 0;
     const renewalOpen = Number(progress.data?.settings?.renewal_open_sessions);
+    // Joining after sessions were held pays the whole course unless the studio pro-rates late joins (off by default;
+    // settings that failed to load count as the default).
+    const fullFee = Boolean(current) && current.sessions_held > 0 && left < current.session_count && !progress.data?.settings?.prorate_late_join;
+    const fullFeeVars = current ? { title: current.title, left, count: current.session_count } : null;
     // Starting now near the end of a course: the next one's invoices are already out, so they get both.
     const bothCourses = choices && Number.isFinite(renewalOpen) && left <= renewalOpen;
 
@@ -63,16 +68,21 @@ const ApproveJoinDialog = ({ request, onClose, onDone }) => {
             {
                 key: 'now',
                 title: t(START_LABELS.now),
-                detail: bothCourses
-                    ? t('“{title}”: pays for the {count} sessions left, and for the next course “{next}”, whose invoices are already out.', { title: current.title, count: left, next: planned.title })
-                    : t('“{title}”: pays for the {count} sessions left.', { title: current.title, count: left }),
+                detail: fullFee
+                    ? bothCourses
+                        ? t('“{title}”: pays the full course ({left} of {count} sessions left), and the next course “{next}”, whose invoices are already out.', { ...fullFeeVars, next: planned.title })
+                        : t('“{title}”: pays the full course ({left} of {count} sessions left).', fullFeeVars)
+                    : bothCourses
+                      ? t('“{title}”: pays for the {count} sessions left, and for the next course “{next}”, whose invoices are already out.', { title: current.title, count: left, next: planned.title })
+                      : t('“{title}”: pays for the {count} sessions left.', { title: current.title, count: left }),
             },
             { key: 'next', title: t(START_LABELS.next), detail: t('“{title}”, starting {date}: pays the full course.', { title: planned.title, date: formatDate(planned.starts_on, 'dayMonth') }) },
         ]
         : [];
 
     let hint = null;
-    if (!choices && current) hint = t('They join “{title}” now and pay for the {count} sessions left.', { title: current.title, count: left });
+    if (!choices && current && fullFee) hint = t('They join “{title}” now and pay the full course ({left} of {count} sessions left).', fullFeeVars);
+    else if (!choices && current) hint = t('They join “{title}” now and pay for the {count} sessions left.', { title: current.title, count: left });
     else if (!choices && planned) hint = t('They are billed for “{title}”, starting {date}.', { title: planned.title, date: formatDate(planned.starts_on, 'dayMonth') });
     else if (!choices) hint = t('This class has no course yet: they are billed when its first routine is planned.');
     // They asked for the next course and none is planned: approving starts them now.

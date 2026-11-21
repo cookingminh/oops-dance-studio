@@ -16,7 +16,8 @@ const grouped = (value) => (value === '' ? '' : Number(value).toLocaleString('vi
 // preview matches the server. A fee equal to the class price is saved as "the class price" (null).
 // One routine at a time: a new routine starts after the last session of the latest one (students of that
 // one are asked whether they continue with it); an edited one stays between its neighbours.
-const RoutineForm = ({ cls, routines, options, initial, onCancel, onSaved, idPrefix = 'routine' }) => {
+// `prorates`: someone new joining late pays only for the sessions left (tuition_settings.prorate_late_join).
+const RoutineForm = ({ cls, routines, options, initial, onCancel, onSaved, prorates = false, idPrefix = 'routine' }) => {
     const toast = useToast();
     const { t, formatDate } = useI18n();
     const isNew = !initial.id;
@@ -125,7 +126,11 @@ const RoutineForm = ({ cls, routines, options, initial, onCancel, onSaved, idPre
                 value={grouped(price)}
                 onValueChange={(value) => setPrice(digits(value))}
                 placeholder={grouped(digits(cls.price))}
-                description={t('Students pay this per course; someone joining late pays for the sessions left.')}
+                description={
+                    prorates
+                        ? t('Students pay this per course; someone joining late pays for the sessions left.')
+                        : t('Students pay this per course, in full even when they join late.')
+                }
                 startContent={<LuBanknote className="text-default-400" aria-hidden="true" />}
                 endContent={<span className="text-small text-default-400">₫</span>}
             />

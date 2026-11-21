@@ -54,10 +54,17 @@ const StartChoice = ({ offer, plan, start, onStart }) => {
     } else if (plan.choice) {
         const { now, next } = plan;
         let nowDetail = t('Join “{title}”, the course running now.', { title: now.course.title });
-        if (known) {
-            nowDetail = now.prorated
-                ? t('Join “{title}” and pay for the {count} sessions left.', { title: now.course.title, count: now.sessions })
-                : t('Join “{title}” and pay for the whole course.', { title: now.course.title });
+        if (known && now.prorated) {
+            nowDetail = t('Join “{title}” and pay for the {count} sessions left.', { title: now.course.title, count: now.sessions });
+        } else if (known && now.late) {
+            // No pro-rata (the default): joining late still costs the whole course, so say how much of it is left.
+            nowDetail = t('Join “{title}” now: you pay the full course fee, with {left} of its {count} sessions left.', {
+                title: now.course.title,
+                left: now.left,
+                count: now.course.session_count,
+            });
+        } else if (known) {
+            nowDetail = t('Join “{title}” and pay for the whole course.', { title: now.course.title });
         }
         const nextDetail = known
             ? t('“{title}”, starting {date}: the whole course.', { title: next.course.title, date: date(next.course.starts_on) })
@@ -87,9 +94,17 @@ const StartChoice = ({ offer, plan, start, onStart }) => {
             const { course } = plan.now;
             line = t('You join “{title}”, the course running now.', { title: course.title });
             if (known) {
-                line = plan.now.prorated
-                    ? t('You join “{title}” now and pay for the {count} sessions left.', { title: course.title, count: plan.now.sessions })
-                    : t('You join “{title}” now and pay for the whole course.', { title: course.title });
+                if (plan.now.prorated) {
+                    line = t('You join “{title}” now and pay for the {count} sessions left.', { title: course.title, count: plan.now.sessions });
+                } else if (plan.now.late) {
+                    line = t('You join “{title}” now and pay the full course fee, with {left} of its {count} sessions left.', {
+                        title: course.title,
+                        left: plan.now.left,
+                        count: course.session_count,
+                    });
+                } else {
+                    line = t('You join “{title}” now and pay for the whole course.', { title: course.title });
+                }
                 amount = plan.now.amount;
             }
         } else if (plan.next) {
