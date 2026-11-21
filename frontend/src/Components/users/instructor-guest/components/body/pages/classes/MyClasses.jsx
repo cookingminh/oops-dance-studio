@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { LuArrowRight, LuGraduationCap } from 'react-icons/lu';
+import { LuArrowRight, LuGraduationCap, LuHistory } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
 import { useI18n } from '@/i18n/i18nContext';
@@ -13,9 +13,11 @@ import { loadInstructorClasses, loadStudentClasses } from './classData';
 import { ClassPanel, ClassTabs } from './ClassSwitcher';
 import { ClassView, NoClasses } from './ClassView';
 import { NextLine } from './ClassParts';
+import PastClasses from './PastClasses';
 
 // /profile/my-classes for both roles: pick a class from the tabs and everything about it opens
 // below. The choice lives in the URL (?class=), so the overview can link straight to a class.
+// Students also get "Classes you've taken": every course so far with its tuition (PastClasses).
 const MyClasses = () => {
     const { user, role } = useAuth();
     const { t, tn } = useI18n();
@@ -24,6 +26,9 @@ const MyClasses = () => {
     const [params, setParams] = useSearchParams();
     const { now } = useStudioNow();
     const [checking, setChecking] = useState(null); // { kind, attendance }
+    const [showPast, setShowPast] = useState(false);
+    // Bumped after a course is paid from "Classes you've taken": the class view reads its tuition line again.
+    const [paidCount, setPaidCount] = useState(0);
 
     const classes = data.data?.classes ?? [];
     const today = data.data?.today;
@@ -51,9 +56,15 @@ const MyClasses = () => {
                 subtitle={subtitle}
                 actions={
                     !isInstructor && (
-                        <Link to="/classes" className="cardLink">
-                            {t('Explore other classes')} <LuArrowRight aria-hidden="true" />
-                        </Link>
+                        <>
+                            <button type="button" className="cardLink pcOpen" onClick={() => setShowPast(true)} aria-haspopup="dialog" aria-label={t('Classes you’ve taken')}>
+                                <LuHistory aria-hidden="true" />
+                                <span className="pcOpenLabel">{t('Classes you’ve taken')}</span>
+                            </button>
+                            <Link to="/classes" className="cardLink">
+                                {t('Explore other classes')} <LuArrowRight aria-hidden="true" />
+                            </Link>
+                        </>
                     )
                 }
             >
@@ -71,12 +82,14 @@ const MyClasses = () => {
                                 renderMeta={(cls) => <NextLine cls={cls} today={today} now={now} />}
                             />
                             <ClassPanel classes={classes} selectedId={selectedId} idPrefix="my-classes">
-                                {(cls) => <ClassView cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={setChecking} />}
+                                {(cls) => <ClassView key={paidCount} cls={cls} today={today} now={now} isInstructor={isInstructor} onCheck={setChecking} />}
                             </ClassPanel>
                         </>
                     )}
                 </AsyncState>
             </SectionCard>
+
+            {showPast && <PastClasses onClose={() => setShowPast(false)} onPaid={() => setPaidCount((count) => count + 1)} />}
 
             {checking && (
                 <CheckForm

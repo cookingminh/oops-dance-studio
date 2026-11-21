@@ -190,6 +190,18 @@ export default {
     'Back to the class': 'Quay lại lớp',
     'Roll calls in {month}': 'Điểm danh {month}',
 
+    // My classes: "Classes you've taken" (every course so far, with its tuition and receipt)
+    'Classes you’ve taken': 'Các lớp bạn đã học',
+    'Every course, its song, teacher and receipt': 'Từng khoá kèm bài nhảy, giáo viên và hoá đơn',
+    '{count} course · {amount} paid': '{count} khoá · đã đóng {amount}',
+    '{count} courses · {amount} paid': '{count} khoá · đã đóng {amount}',
+    'You came to {count} session': 'Bạn có mặt {count} buổi',
+    'You came to {count} sessions': 'Bạn có mặt {count} buổi',
+    'Your dance story starts here': 'Hành trình nhảy của bạn bắt đầu từ đây',
+    'Every course you take shows up here with its song, teacher and receipt.': 'Mỗi khoá bạn học sẽ hiện ở đây, kèm bài nhảy, giáo viên và hoá đơn.',
+    'Receipt for {code}': 'Hoá đơn {code}',
+    'Course details': 'Thông tin khoá học',
+
     // Menu descriptions
     'Current routines, schedules and students of every class you teach.': 'Bài đang dạy, lịch học và học viên của từng lớp bạn dạy.',
     'Each class’s song, schedule and your attendance.': 'Bài nhảy, lịch học và điểm danh của bạn ở từng lớp.',

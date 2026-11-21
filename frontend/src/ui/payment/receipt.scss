@@ -67,7 +67,9 @@
         color: hsl(0, 66%, 43%);
     }
 
+    // Flush right, also when it wraps under the studio on a narrow dialog (on a wide one it already is).
     .bkReceiptTitle {
+        margin-left: auto;
         justify-items: end;
         text-align: right;
 
@@ -210,6 +212,14 @@
 
     .bkReceiptParties {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    // On a phone the header is one left-aligned stack: the studio, then the title, its number and the date.
+    .bkReceiptHead .bkReceiptTitle {
+        flex-basis: 100%;
+        margin-left: 0;
+        justify-items: start;
+        text-align: left;
     }
 }
 
