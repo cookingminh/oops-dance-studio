@@ -11,7 +11,7 @@ const HomeLanding = () => {
     return (
         <>
             <Home classes={classes} />
-            <Perks classes={classes} />
+            <Perks />
             <Slider classes={classes} />
             <JoinBanner />
         </>

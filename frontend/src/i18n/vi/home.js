@@ -85,6 +85,8 @@ export default {
     'More than a dance class': 'Hơn cả một lớp học nhảy',
     'Learn a full routine every course, dance it with your class, and walk away with a video you’ll want to post.': 'Mỗi khoá học trọn một bài, nhảy cùng cả lớp, rồi mang về một video chỉ muốn đăng ngay.',
     'End-of-course shoot': 'Quay video cuối khoá',
+    'Oops! Crew in silver outfits striking a pose in the studio, with the studio dog in an Oops! T-shirt':
+        'Oops! Crew diện đồ bạc tạo dáng trong phòng tập, bên cạnh chú cún của studio mặc áo Oops!',
     'Your class, on camera, every course': 'Khoá nào cũng có video cả lớp',
     'At the end of each course the whole class films the routine together: real camera work, studio lights and a clip that looks as good as it feels.': 'Cuối mỗi khoá, cả lớp cùng quay bài nhảy với máy quay xịn và đèn studio. Clip lên đẹp chẳng kém gì cảm giác lúc nhảy.',
     'Coached by Oops! Crew': 'Học cùng Oops! Crew',
@@ -94,11 +96,6 @@ export default {
     'Each move is broken down and corrected one by one, so first-timers keep up and regulars keep levelling up.':
         'Giáo viên chia nhỏ từng động tác và sửa cho từng bạn, nên người mới vẫn theo kịp còn người học lâu thì ngày càng lên tay.',
     'A new song every course': 'Mỗi khoá một bài mới',
-    'Fresh choreography to the tracks everyone is dancing to.': 'Biên đạo mới toanh cho những bản nhạc đang hot.',
-    'Songs right now': 'Các bài đang học',
-    'Practise between classes': 'Luyện thêm ngoài giờ học',
-    'Book a mirrored studio room online whenever you want to drill the routine, every day from 08:00 to 22:00.':
-        'Đặt phòng tập có gương online bất cứ khi nào bạn muốn ôn bài, mỗi ngày từ 08:00 đến 22:00.',
     'Sessions a week': 'Buổi mỗi tuần',
     'Oops! Crew coaches': 'Giáo viên Oops! Crew',
     'For first-timers': 'Dành cho người mới',
