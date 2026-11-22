@@ -153,7 +153,7 @@ export default {
 
     // Footer
     '“Let Every Step Set You Free - Dance to Express, Not to Impress”':
-        '“Mỗi bước nhảy là một lần tự do - Nhảy để thể hiện, không phải để phô diễn”',
+        '“Mỗi bước nhảy là một lần tự do - Dance to Express, Not to Impress”',
     Explore: 'Khám phá',
     'Web Developed by': 'Website được phát triển bởi',
     'About us': 'Về chúng mình',
