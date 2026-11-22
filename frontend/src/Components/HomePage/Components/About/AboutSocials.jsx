@@ -54,19 +54,15 @@ const AboutSocials = () => {
 
             <section className="abSection abCtaSection" aria-labelledby="cta-title">
                 <div className="abWrap">
-                    <motion.div className={`abCta${cta.image ? ' hasPhoto' : ''}`} {...reveal(reduce, { y: 36, duration: 0.7 })}>
-                        <div className="abCtaText">
+                    <motion.div className="abCta" {...reveal(reduce, { y: 36, duration: 0.7 })}>
+                        {cta.image && <img className="abCtaPhoto" src={cta.image} alt="" width="1600" height="1067" loading="lazy" decoding="async" />}
+                        <div>
                             <h2 id="cta-title">{L(cta.title)}</h2>
                             <p>{L(cta.text)}</p>
-                            <Link to={cta.link} className="abBtn isLight">
-                                {L(cta.button)} <LuArrowRight aria-hidden="true" />
-                            </Link>
                         </div>
-                        {cta.image && (
-                            <div className="abCtaPhoto" aria-hidden="true">
-                                <img src={cta.image} alt="" width="1600" height="1067" loading="lazy" decoding="async" />
-                            </div>
-                        )}
+                        <Link to={cta.link} className="abBtn isLight">
+                            {L(cta.button)} <LuArrowRight aria-hidden="true" />
+                        </Link>
                     </motion.div>
                 </div>
             </section>
