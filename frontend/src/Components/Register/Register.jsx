@@ -88,7 +88,6 @@ const Register = () => {
                         label={t('Full name')}
                         icon={LuUser}
                         autoComplete="name"
-                        placeholder={t('Your name')}
                         required
                         value={form.fullName}
                         onChange={update('fullName')}
@@ -100,7 +99,6 @@ const Register = () => {
                         autoComplete="username"
                         autoCapitalize="none"
                         spellCheck={false}
-                        placeholder={t('e.g. thaovy')}
                         required
                         value={form.username}
                         onChange={update('username')}
@@ -113,7 +111,6 @@ const Register = () => {
                     icon={LuMail}
                     type="email"
                     autoComplete="email"
-                    placeholder="you@example.com"
                     required
                     value={form.email}
                     onChange={update('email')}

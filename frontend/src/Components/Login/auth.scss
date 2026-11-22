@@ -73,39 +73,40 @@
     }
 }
 
-// Studio side: colour, type and a little motion ====================>
+// Studio side: colour, the logo and one headline, a little motion ====================>
 
 .authStage {
+    --au-stage-radius: 28px;
+    // The logo's size; its rings, glow and name follow it.
+    --au-mark: clamp(112px, 19vh, 176px);
+
     position: sticky;
     top: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 2rem;
+    display: grid;
+    place-items: center;
     align-self: start;
     height: calc(100dvh - 24px);
     min-height: 560px;
     margin: 12px 0 12px 12px;
-    padding: 30px clamp(28px, 3.2vw, 48px) clamp(30px, 3.4vw, 48px);
+    padding: clamp(32px, 6vh, 64px) clamp(28px, 3.2vw, 48px);
     overflow: hidden;
-    border-radius: 28px;
+    border-radius: var(--au-stage-radius);
+    // overflow + border-radius alone left the blobs and the rings square in the corners where the
+    // browser draws them on layers of their own (Safari, some GPUs): clip to the rounded shape too.
+    clip-path: inset(0 round var(--au-stage-radius));
     background: linear-gradient(160deg, hsl(356, 70%, 38%) 0%, hsl(350, 64%, 27%) 48%, hsl(342, 58%, 15%) 100%);
     color: #fff;
+    text-align: center;
     isolation: isolate;
 
-    // Keeps the copy at the bottom readable whatever colour drifts behind it.
+    // A soft vignette: the edges settle darker, the logo and the headline stay in the light.
     &::after {
         content: '';
         position: absolute;
         inset: 0;
         z-index: 0;
-        background: linear-gradient(0deg, hsla(345, 60%, 9%, .62) 0%, hsla(345, 60%, 9%, 0) 58%);
+        background: radial-gradient(130% 95% at 50% 45%, hsla(345, 60%, 9%, 0) 40%, hsla(345, 60%, 9%, .5) 100%);
         pointer-events: none;
-    }
-
-    > :not(.authAurora, .authRings, .authGrain) {
-        position: relative;
-        z-index: 1;
     }
 }
 
@@ -203,38 +204,6 @@
     }
 }
 
-// A record's grooves in the top corner, turning very slowly.
-.authRings {
-    position: absolute;
-    top: -150px;
-    right: -170px;
-    z-index: 0;
-    width: 520px;
-    height: 520px;
-    fill: none;
-    stroke: hsla(0, 0%, 100%, .1);
-    stroke-width: 1;
-    pointer-events: none;
-    animation: auSpin 90s linear infinite;
-
-    .authRingDash {
-        stroke: hsla(0, 0%, 100%, .2);
-        stroke-dasharray: 2 9;
-    }
-
-    .authRingDot {
-        fill: var(--au-gold);
-        stroke: none;
-        opacity: .85;
-    }
-}
-
-@keyframes auSpin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 // Fine film grain over the colour (static noise from an inline SVG).
 .authGrain {
     position: absolute;
@@ -247,16 +216,92 @@
     pointer-events: none;
 }
 
-.authBrand {
-    display: inline-flex;
+.authStageCopy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    align-self: flex-start;
-    gap: 16px;
+    width: 100%;
+}
+
+// The logo and the studio's name: the way home.
+.authBrand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--au-mark) * .2);
     border-radius: 20px;
     color: #fff;
 
     &:hover .authBrandMark {
-        transform: rotate(-8deg) scale(1.06);
+        transform: rotate(-6deg) scale(1.05);
+    }
+}
+
+// The logo in the middle of a slowly turning record, a warm light breathing behind it.
+.authEmblem {
+    position: relative;
+    display: block;
+    width: var(--au-mark);
+    height: var(--au-mark);
+
+    &::before {
+        content: '';
+        position: absolute;
+        inset: calc(var(--au-mark) * -.75);
+        border-radius: 50%;
+        background: radial-gradient(closest-side, hsla(30, 100%, 66%, .3), hsla(8, 96%, 60%, .12) 60%, hsla(8, 96%, 60%, 0));
+        animation: auGlow 6s ease-in-out infinite alternate;
+        pointer-events: none;
+    }
+}
+
+@keyframes auGlow {
+    from {
+        opacity: .55;
+        transform: scale(.94);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1.04);
+    }
+}
+
+// A record's grooves around the logo, turning very slowly.
+.authRings {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: calc(var(--au-mark) * 2.6);
+    height: calc(var(--au-mark) * 2.6);
+    margin: calc(var(--au-mark) * -1.3) 0 0 calc(var(--au-mark) * -1.3);
+    fill: none;
+    stroke: hsla(0, 0%, 100%, .13);
+    pointer-events: none;
+    animation: auSpin 90s linear infinite;
+
+    circle {
+        stroke-width: 1px;
+        vector-effect: non-scaling-stroke;
+    }
+
+    .authRingDash {
+        stroke: hsla(0, 0%, 100%, .24);
+        stroke-dasharray: 2 8;
+    }
+
+    .authRingDot {
+        fill: var(--au-gold);
+        stroke: none;
+        opacity: .9;
+    }
+}
+
+@keyframes auSpin {
+    to {
+        transform: rotate(360deg);
     }
 }
 
@@ -264,14 +309,16 @@
 .authBrandMark {
     position: relative;
     display: block;
-    flex-shrink: 0;
-    width: 76px;
-    height: 76px;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    border-radius: 20px;
+    border-radius: 24%;
     background: hsl(355, 68%, 45%);
-    box-shadow: 0 0 0 1px hsla(0, 0%, 100%, .22), 0 10px 22px -10px hsla(345, 70%, 10%, .9);
-    transition: transform .4s var(--au-ease);
+    box-shadow:
+        0 0 0 1px hsla(0, 0%, 100%, .26),
+        0 0 0 calc(var(--au-mark) * .06) hsla(0, 0%, 100%, .07),
+        0 28px 50px -20px hsla(345, 70%, 6%, .9);
+    transition: transform .5s var(--au-ease);
 
     img {
         position: absolute;
@@ -285,56 +332,55 @@
 
 .authBrandName {
     display: grid;
+    justify-items: center;
     line-height: 1;
 
     strong {
         font-family: var(--au-display);
-        font-size: 38px;
+        font-size: calc(var(--au-mark) * .26);
         font-weight: 800;
         letter-spacing: -.015em;
     }
 
     small {
-        margin-top: 6px;
+        margin-top: calc(var(--au-mark) * .05);
+        // The tracking leaves a space after the last letter; the same before it keeps the line centred.
+        padding-left: .3em;
         font-family: var(--au-display);
-        font-size: 13px;
+        font-size: max(11px, calc(var(--au-mark) * .078));
         font-weight: 600;
-        letter-spacing: .24em;
+        letter-spacing: .3em;
         text-transform: uppercase;
         color: hsla(0, 0%, 100%, .88);
     }
 }
 
-.authStageCopy {
-    display: grid;
-    justify-items: start;
-    gap: 18px;
-    max-width: 560px;
-}
-
-.authEyebrow {
-    display: inline-flex;
+// The beat between the name and the headline: an equalizer between two short lines.
+.authStageBeat {
+    display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 14px 6px 12px;
-    border: 1px solid hsla(0, 0%, 100%, .24);
-    border-radius: 999px;
-    background: hsla(0, 0%, 100%, .1);
-    font-family: var(--au-display);
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    color: hsla(0, 0%, 100%, .92);
+    gap: 12px;
+    margin: clamp(22px, 4.2vh, 40px) 0 clamp(16px, 3vh, 28px);
+
+    &::before,
+    &::after {
+        content: '';
+        width: 40px;
+        height: 1px;
+        background: linear-gradient(90deg, hsla(0, 0%, 100%, 0), hsla(0, 0%, 100%, .55));
+    }
+
+    &::after {
+        background: linear-gradient(270deg, hsla(0, 0%, 100%, 0), hsla(0, 0%, 100%, .55));
+    }
 }
 
-// Equalizer: four bars bouncing out of step (still, at different heights, for reduced motion).
+// Equalizer: five bars bouncing out of step (still, at different heights, for reduced motion).
 .authEq {
     display: inline-flex;
     align-items: flex-end;
     gap: 2px;
-    height: 14px;
-    margin-top: -3px;
+    height: 16px;
 
     i {
         width: 3px;
@@ -366,6 +412,12 @@
             animation-duration: .96s;
             animation-delay: -.6s;
         }
+
+        &:nth-child(5) {
+            transform: scaleY(.6);
+            animation-duration: .88s;
+            animation-delay: -.3s;
+        }
     }
 }
 
@@ -380,13 +432,14 @@
 }
 
 .authStageTitle {
-    max-width: 11.5em;
+    max-width: 11em;
     font-family: var(--au-display);
-    font-size: clamp(42px, 4.3vw, 70px);
+    font-size: clamp(36px, min(3.7vw, 6.6vh), 60px);
     font-weight: 800;
-    line-height: .98;
+    line-height: 1;
     letter-spacing: -.025em;
     color: #fff;
+    text-shadow: 0 2px 24px hsla(345, 70%, 10%, .35);
     text-wrap: balance;
 }
 
@@ -595,11 +648,6 @@
         line-height: 1.2;
         color: var(--au-ink);
         caret-color: var(--au-red);
-
-        &::placeholder {
-            color: var(--au-subtle);
-            opacity: 1;
-        }
 
         // Browser autofill paints its own fill: keep the field white.
         &:-webkit-autofill {
@@ -1235,31 +1283,25 @@ a.authSubmit {
     }
 
     .authStage {
+        --au-stage-radius: 0px;
+        --au-mark: 72px;
+
         position: relative;
         top: 0;
         z-index: -1;
-        justify-content: flex-start;
-        gap: 22px;
         height: auto;
         min-height: 0;
         margin: 0;
-        padding: 18px 32px calc(var(--au-overlap) + 30px);
-        border-radius: 0;
+        padding: 30px 32px calc(var(--au-overlap) + 28px);
     }
 
-    .authStageCopy {
+    .authBrand {
         gap: 12px;
-    }
-
-    .authBrandMark {
-        width: 58px;
-        height: 58px;
-        border-radius: 16px;
     }
 
     .authBrandName {
         strong {
-            font-size: 30px;
+            font-size: 28px;
         }
 
         small {
@@ -1268,14 +1310,13 @@ a.authSubmit {
         }
     }
 
-    .authStageTitle {
-        max-width: 14em;
-        font-size: clamp(30px, 5vw, 42px);
+    .authStageBeat {
+        margin: 14px 0 10px;
     }
 
-    .authRings {
-        top: -190px;
-        right: -150px;
+    .authStageTitle {
+        max-width: none;
+        font-size: clamp(26px, 4.4vw, 36px);
     }
 
     .authPane {
@@ -1311,51 +1352,40 @@ a.authSubmit {
 
 @media screen and (max-width: 640px) {
     .authStage {
-        justify-content: space-between;
-        gap: 12px;
-        height: 172px;
-        padding: 14px 16px calc(var(--au-overlap) + 20px);
-    }
+        --au-mark: 50px;
 
-    .authStageCopy {
-        gap: 0;
-    }
-
-    .authEyebrow {
-        display: none;
-    }
-
-    .authStageTitle {
-        max-width: none;
-        font-size: 23px;
-        line-height: 1.08;
-        letter-spacing: -.015em;
+        padding: 16px 16px calc(var(--au-overlap) + 18px);
     }
 
     .authBrand {
-        gap: 12px;
+        gap: 8px;
     }
 
-    .authBrandMark {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-    }
-
+    // Name on one line under the logo, then the headline: the band stays short.
     .authBrandName {
+        display: flex;
+        align-items: baseline;
+        gap: 7px;
+
         strong {
-            font-size: 24px;
+            font-size: 21px;
         }
 
         small {
-            margin-top: 3px;
+            margin-top: 0;
             font-size: 10px;
         }
     }
 
-    .authRings {
-        top: -230px;
-        right: -250px;
+    .authStageBeat {
+        display: none;
+    }
+
+    .authStageTitle {
+        margin-top: 10px;
+        font-size: 20px;
+        line-height: 1.1;
+        letter-spacing: -.015em;
     }
 
     .authTopBar {

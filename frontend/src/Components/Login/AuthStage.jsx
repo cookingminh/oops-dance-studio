@@ -5,17 +5,22 @@ import { useI18n } from '@/i18n/i18nContext';
 import logoMark from '@/assets/images/logo-mark.webp';
 import { EASE_OUT, authClock } from './authShared';
 
-// The copy rises in once per visit, not again on every switch between the auth pages.
+// The studio side plays its entrance once per visit, not again on every switch between the auth pages.
 let introPlayed = false;
 
-const copyStagger = { hidden: {}, show: { transition: { delayChildren: 0.15, staggerChildren: 0.08 } } };
+const copyStagger = { hidden: {}, show: { transition: { delayChildren: 0.1, staggerChildren: 0.1 } } };
+const emblemIn = {
+    hidden: { opacity: 0, scale: 0.9 },
+    show: { opacity: 1, scale: 1, transition: { duration: 0.8, ease: EASE_OUT } },
+};
 const copyRise = {
     hidden: { opacity: 0, y: 16 },
     show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
 };
 
-// The studio side of the auth pages: drifting brand colours, a big logo (the way home) and one
-// headline. A short animated band above the form on tablets and phones.
+// The studio side of the auth pages: drifting brand colours and, in the middle, the logo on a
+// slowly turning record (the way home), the studio's name, a little equalizer and one headline.
+// A short animated band above the form on tablets and phones.
 const AuthStage = () => {
     const { t } = useI18n();
     // Negative delays put the CSS drift where the clock says, so a redraw doesn't restart it.
@@ -33,34 +38,37 @@ const AuthStage = () => {
                 <span className="authBlob is-amber" />
                 <span className="authBlob is-ember" />
             </div>
-            <svg className="authRings" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
-                <circle cx="200" cy="200" r="198" />
-                <circle cx="200" cy="200" r="160" />
-                <circle className="authRingDash" cx="200" cy="200" r="122" />
-                <circle cx="200" cy="200" r="84" />
-                <circle className="authRingDot" cx="200" cy="38" r="5" />
-            </svg>
             <div className="authGrain" aria-hidden="true" />
 
-            <Link to="/home" className="authBrand" title={t('Back to home')}>
-                <span className="authBrandMark" aria-hidden="true">
-                    <img src={logoMark} alt="" />
-                </span>
-                <span className="authBrandName">
-                    <strong>Oops!</strong> <small>Dance Studio</small>
-                </span>
-            </Link>
-
             <motion.div className="authStageCopy" variants={copyStagger} initial={intro ? 'hidden' : false} animate="show">
-                <motion.p className="authEyebrow" variants={copyRise}>
-                    <span className="authEq" aria-hidden="true">
+                <motion.div variants={emblemIn}>
+                    <Link to="/home" className="authBrand" title={t('Back to home')}>
+                        <span className="authEmblem" aria-hidden="true">
+                            <svg className="authRings" viewBox="0 0 400 400" focusable="false">
+                                <circle cx="200" cy="200" r="198" />
+                                <circle cx="200" cy="200" r="172" />
+                                <circle className="authRingDash" cx="200" cy="200" r="146" />
+                                <circle cx="200" cy="200" r="120" />
+                                <circle className="authRingDot" cx="200" cy="28" r="5" />
+                            </svg>
+                            <span className="authBrandMark">
+                                <img src={logoMark} alt="" />
+                            </span>
+                        </span>
+                        <span className="authBrandName">
+                            <strong>Oops!</strong> <small>Dance Studio</small>
+                        </span>
+                    </Link>
+                </motion.div>
+                <motion.span className="authStageBeat" variants={copyRise} aria-hidden="true">
+                    <span className="authEq">
+                        <i />
                         <i />
                         <i />
                         <i />
                         <i />
                     </span>
-                    {t('Dance studio in Hanoi')}
-                </motion.p>
+                </motion.span>
                 <motion.p className="authStageTitle" variants={copyRise}>
                     {t('Create Slay Memories With Us!')}
                 </motion.p>

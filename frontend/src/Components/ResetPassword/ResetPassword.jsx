@@ -168,7 +168,6 @@ const ResetPassword = () => {
                     icon={LuMail}
                     type="email"
                     autoComplete="email"
-                    placeholder="you@example.com"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}

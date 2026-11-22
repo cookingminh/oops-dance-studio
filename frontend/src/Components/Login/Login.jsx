@@ -95,7 +95,6 @@ const Login = () => {
                     icon={LuMail}
                     type="email"
                     autoComplete="email"
-                    placeholder="you@example.com"
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
@@ -104,7 +103,6 @@ const Login = () => {
                     id="password"
                     label={t('Password')}
                     autoComplete="current-password"
-                    placeholder={t('Your password')}
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
