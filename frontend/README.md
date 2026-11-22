@@ -62,7 +62,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | Spec | Covers |
 |---|---|
 | `anon.spec.js` | public pages and navbar, classes, rooms, photos, timetable, About page, visitor booking prompt, route guards |
-| `about.spec.js` | the About page as a visitor: navbar and footer links, every section (counts read from `src/content/about.js`): the story in paragraphs, every crew member with a portrait, the timeline's eras; no YouTube iframe until a video is played (then one privacy-enhanced player), the channel's newest videos from its feed (a stand-in feed: picks and Shorts skipped; the row stays away when the feed can't be read), the social links, EN / VI, reduced motion (numbers shown without counting) |
+| `about.spec.js` | the About page as a visitor: navbar and footer links, every section (counts read from `src/content/about.js`): the story in paragraphs, every crew member with a portrait, the timeline's eras; no YouTube iframe until a video is played (then one privacy-enhanced player), the videos from the channel's feed (a stand-in feed: the newest one big, the next ones under it, no Shorts; the stand-in videos when the feed can't be read), the social links, EN / VI, reduced motion (numbers shown without counting) |
 | `guest.spec.js` | book from /rooms and cancel (the cancel dialog), profile settings, RLS on bookings / profiles / attendance |
 | `instructor.spec.js` | check-in / check-out with a proof photo, signed proof URLs, no access to others' sessions |
 | `staff.spec.js` | dashboard, rooms (`/admin/rooms` → Bookings → Rooms & prices), bookings (overlap → `SLOT_TAKEN`; a booking ahead offers Cancel, not Mark completed), classes with images, schedules, enrolments, the Attendance page, charts |
@@ -122,7 +122,7 @@ src/
                           schedules, bookings, attendance, stats, storage, studio, errors, site (the
                           website's choices: which look the public timetable uses, `site_settings`);
                           youtubeFeed.js reads a YouTube channel's newest videos from its public feed
-                          (the About page's "New on the channel" row) through `/youtube-feed/…`
+                          (the About page's videos) through `/youtube-feed/…`
   auth/                   AuthProvider (session + profile), RequireRole, PublicOnly, roles
   hooks/useAsync.js       loading / error / reload state for service calls
   content/about.js        everything on the About page (/about): hero, numbers, story, crew, timeline, highlights,
@@ -171,9 +171,9 @@ Conventions:
 
 Any static host works; `vercel.json` already rewrites every route to `index.html`. It also passes
 `/youtube-feed/<playlist>` on to YouTube's public video feed, because YouTube sends no CORS headers: the
-About page's "New on the channel" row reads the crew's newest videos through it (`vite.config.js` does
-the same in `npm run dev` and `npm run preview`). On another host, add the same rewrite; without it the
-row simply doesn't show and the hand-picked videos remain.
+About page's videos are the crew's newest uploads, read through it (`vite.config.js` does the same in
+`npm run dev` and `npm run preview`). On another host, add the same rewrite; without it the page shows
+the few stand-in videos listed in `src/content/about.js` (`fallbackVideos`) instead.
 
 1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the hosted project in the host's environment settings (plus `VITE_DEMO_MODE=true` and `VITE_DEMO_PASSWORD` for the public demo).
 2. In Supabase → Authentication → URL configuration, set the site URL to the deployed origin and add `<origin>/reset-password` (and `<origin>/login` if Google / Facebook sign-in is on) to the redirect URLs.

@@ -7,7 +7,9 @@ const CONTENT = readFileSync(new URL('../src/content/about.js', import.meta.url)
 const count = (pattern) => (CONTENT.match(pattern) ?? []).length;
 const TIMELINE_ENTRIES = count(/^\s+era: '/gm);
 const HIGHLIGHTS = count(/timelineId: '/g);
-const VIDEOS = count(/youtubeId: '/g);
+// The stand-in videos, shown only when the channel can't be read; the first one's title.
+const FALLBACK_VIDEOS = count(/youtubeId: '/g);
+const FALLBACK_FIRST = /youtubeId: '[\w-]{11}',\s*title: '([^']+)'/.exec(CONTENT)?.[1];
 const CREW = count(/photo: crewPhoto\('/g);
 const ERAS = count(/^\s+\{ id: '[\w-]+', from: \d{4}/gm);
 // The numbers as the page prints them: "2014", "20+", "800K+" (a year without a thousands separator).
@@ -15,10 +17,11 @@ const STATS = [...CONTENT.matchAll(/value: (\d+), suffix: '([^']*)'(, kind: 'yea
     ([, value, suffix, year]) => `${year ? value : new Intl.NumberFormat('en-GB').format(Number(value))}${suffix}`,
 );
 
-const LATEST_COUNT = Number(/latest: \{[\s\S]*?count: (\d+)/.exec(CONTENT)?.[1] ?? 0);
+// How many videos go under the big player.
+const NEXT_COUNT = Number(/videos: \{[\s\S]*?count: (\d+)/.exec(CONTENT)?.[1] ?? 0);
 
 // A stand-in for the crew's YouTube feed (/youtube-feed/…, passed on to YouTube by the dev server), so
-// the tests don't depend on the real channel. One entry is already a pick and one is a Short: both skipped.
+// the tests don't depend on the real channel. One entry is a Short: skipped.
 const feedEntry = (id, title, day, short = false) =>
     `<entry><id>yt:video:${id}</id><yt:videoId>${id}</yt:videoId><title>${title}</title>` +
     `<link rel="alternate" href="https://www.youtube.com/${short ? `shorts/${id}` : `watch?v=${id}`}"/>` +
@@ -26,7 +29,6 @@ const feedEntry = (id, title, day, short = false) =>
 const FEED = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns="http://www.w3.org/2005/Atom"><title>Oops! Crew</title>${[
     feedEntry('newVideo001', 'Newest routine', 20),
-    feedEntry('queW26EWDLM', 'Already one of the picks', 19),
     feedEntry('shortVid001', 'A Short', 18, true),
     feedEntry('newVideo002', 'Second newest', 17),
     feedEntry('newVideo003', 'Third newest', 16),
@@ -106,10 +108,23 @@ test('every section renders', async ({ page }) => {
     await expect(page.locator('.abHl')).toHaveCount(HIGHLIGHTS);
     await expect(page.locator('.abHl').first()).toContainText('K-pop World Festival');
 
-    // Videos: the big player plus the picks; the CTA goes to the timetable.
-    await expect(page.locator('.abVideoRow.isPicks .abVideoCard')).toHaveCount(VIDEOS - 1);
+    // Videos: the channel's newest in the big player, the next ones under it; the CTA goes to the timetable.
+    await expect(page.locator('.abStageMeta h3')).toHaveText('Newest routine');
+    await expect(page.locator('.abVideoRow .abVideoCard')).toHaveCount(NEXT_COUNT);
     await expect(page.getByRole('link', { name: 'More on YouTube' })).toHaveAttribute('href', SOCIALS.YouTube);
     await expect(page.getByRole('link', { name: /See classes/ })).toHaveAttribute('href', '/classes#timetable');
+});
+
+test('the channel’s newest video plays big, the next ones under it, no Shorts', async ({ page }) => {
+    expect(NEXT_COUNT).toBeGreaterThan(0);
+    await page.goto('/about');
+    const videos = page.locator('.abVideos');
+    await videos.scrollIntoViewIfNeeded();
+    await expect(videos.getByRole('button', { name: 'Play video: Newest routine' })).toBeVisible();
+    await expect(videos.locator('.abStageMeta')).toContainText('Newest');
+    await expect(videos.locator('.abVideoText strong')).toHaveText(NEWEST.slice(1, NEXT_COUNT + 1));
+    await expect(videos.locator('.abVideoText small').first()).toContainText('2026');
+    await expect(videos).not.toContainText('A Short');
 });
 
 test('nothing loads from YouTube until a video is played', async ({ page }) => {
@@ -117,53 +132,36 @@ test('nothing loads from YouTube until a video is played', async ({ page }) => {
     const videos = page.locator('.abVideos');
     await videos.scrollIntoViewIfNeeded();
     await expect(page.locator('iframe')).toHaveCount(0);
-    await expect(videos.locator('.abStage img[src*="i.ytimg.com/vi/"], .isPicks img[src*="i.ytimg.com/vi/"]')).toHaveCount(VIDEOS);
+    await expect(videos.locator('img[src*="i.ytimg.com/vi/"]')).toHaveCount(NEXT_COUNT + 1);
 
-    // A pick moves into the big player and plays there: one iframe, the privacy-enhanced player.
-    const card = videos.locator('.isPicks .abVideoCard').first();
-    const label = await card.getAttribute('aria-label');
-    const title = label.replace(/^Play video: /, '');
-    await card.click();
+    // The big one plays in place: one iframe, the privacy-enhanced player.
+    await videos.getByRole('button', { name: 'Play video: Newest routine' }).click();
     const iframe = videos.locator('iframe');
     await expect(iframe).toHaveCount(1);
-    await expect(iframe).toHaveAttribute('src', /^https:\/\/www\.youtube-nocookie\.com\/embed\/[\w-]{11}\?autoplay=1/);
-    await expect(iframe).toHaveAttribute('title', title);
-    await expect(videos.locator('.abStageMeta h3')).toHaveText(title);
+    await expect(iframe).toHaveAttribute('src', /^https:\/\/www\.youtube-nocookie\.com\/embed\/newVideo001\?autoplay=1/);
+    await expect(iframe).toHaveAttribute('title', 'Newest routine');
 
-    // Another one replaces it: still one player on the page.
-    await videos.locator('.isPicks .abVideoCard').nth(1).click();
+    // One from under it moves into the big player (the newest goes back to the top of the list):
+    // still one player on the page.
+    await videos.getByRole('button', { name: 'Play video: Third newest' }).click();
     await expect(page.locator('iframe')).toHaveCount(1);
+    await expect(iframe).toHaveAttribute('src', /embed\/newVideo003\?/);
+    await expect(videos.locator('.abStageMeta h3')).toHaveText('Third newest');
+    await expect(videos.locator('.abVideoText strong')).toHaveText(['Newest routine', 'Second newest', ...NEWEST.slice(3, NEXT_COUNT + 1)]);
 });
 
-test('the channel’s newest videos come from its feed, without picks or Shorts', async ({ page }) => {
-    expect(LATEST_COUNT).toBeGreaterThan(0);
-    await page.goto('/about');
-    const latest = page.locator('.abVideoRow.isLatest');
-    await latest.scrollIntoViewIfNeeded();
-    await expect(latest.getByRole('heading', { name: 'New on the channel' })).toBeVisible();
-    await expect(latest.locator('.abVideoText strong')).toHaveText(NEWEST.slice(0, LATEST_COUNT));
-    await expect(latest.locator('.abVideoText small').first()).toContainText('2026');
-
-    // It plays in the big player, and the row fills up with the next one.
-    await latest.getByRole('button', { name: 'Play video: Newest routine' }).click();
-    await expect(page.locator('.abStage iframe')).toHaveAttribute('src', /youtube-nocookie\.com\/embed\/newVideo001\?/);
-    await expect(page.locator('.abStageMeta h3')).toHaveText('Newest routine');
-    await expect(latest.locator('.abVideoText strong')).toHaveText(NEWEST.slice(1, LATEST_COUNT + 1));
-    await expect(page.locator('.abVideoRow.isPicks .abVideoCard')).toHaveCount(VIDEOS - 1);
-});
-
-test('when the feed can’t be read, the newest row stays away and the picks remain', async ({ page }) => {
+test('when the channel can’t be read, the stand-in videos show instead', async ({ page }) => {
+    expect(FALLBACK_VIDEOS).toBeGreaterThan(0);
     // YouTube failing, and a host without the pass-through (it answers with the app's own page).
     for (const reply of [{ status: 500, body: 'error' }, { status: 200, contentType: 'text/html', body: '<!doctype html><html><body></body></html>' }]) {
         await page.unroute('**/youtube-feed/**');
         await page.route('**/youtube-feed/**', (route) => route.fulfill(reply));
         await page.goto('/about');
-        await page.locator('.abVideos').scrollIntoViewIfNeeded();
-        await expect(page.locator('.abVideoRow.isLoading')).toHaveCount(0);
-        await expect(page.locator('.abVideoRow.isLatest')).toHaveCount(0);
-        await expect(page.locator('.abVideoRow.isPicks .abVideoCard')).toHaveCount(VIDEOS - 1);
-        // One row only: it needs no heading.
-        await expect(page.locator('.abVideoRow.isPicks .abVideoRowTitle')).toHaveCount(0);
+        const videos = page.locator('.abVideos');
+        await videos.scrollIntoViewIfNeeded();
+        await expect(videos.locator('.abStageMeta h3')).toHaveText(FALLBACK_FIRST);
+        await expect(videos.locator('.abStageMeta')).not.toContainText('Newest');
+        await expect(videos.locator('.abVideoRow .abVideoCard')).toHaveCount(Math.min(FALLBACK_VIDEOS - 1, NEXT_COUNT));
     }
 });
 

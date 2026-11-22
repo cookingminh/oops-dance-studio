@@ -12,8 +12,8 @@
 //   • Photos: put the new picture in src/assets/images/about/ (WebP, about 1600 px wide), then change
 //     the import line just below. Crew portraits go in src/assets/images/about/crew/, named after the
 //     member's id (do-linh.webp), about 300 × 320 px.
-//   • Videos: only the 11-character YouTube id is needed (youtube.com/watch?v=<id>). Check that the
-//     video is public and allows embedding.
+//   • Videos come by themselves from the crew's YouTube channel (sections.videos below). The short
+//     fallbackVideos list only shows when YouTube can't be reached.
 //   • Save the file: the page reloads by itself in `npm run dev`. Nothing else needs changing.
 //
 // Each list is shaped like a future database table (one block = one row), so this file can move to
@@ -70,8 +70,8 @@ export const story = [
     {
         id: 'since',
         text: {
-            en: 'Since then came “Hồng Hồng Tuyết Tuyết”, bringing ca trù into modern dance, a Top 4 on Street Woman Fighter Vietnam, and the Low Budget Project, where Oops! choreographers present routines of their own.',
-            vi: 'Từ đó có “Hồng Hồng Tuyết Tuyết” đưa ca trù vào nhảy hiện đại, Top 4 Nữ Hoàng Vũ Đạo Đường Phố, và Low Budget Project, nơi các biên đạo của Oops! trình làng vũ đạo riêng.',
+            en: 'Since then, Oops! has put out one catchy, carefully made routine after another, each with a style all its own, unmistakably **“Oops!”**. The crew reached the Top 4 of Street Woman Fighter Vietnam, and in the Low Budget Project its choreographers present routines of their own.',
+            vi: 'Từ đó, Oops! liên tục cho ra mắt những vũ đạo catchy được đầu tư kỹ lưỡng, mang chất rất riêng, rất **“Oops!”**. Nhóm vào Top 4 Nữ Hoàng Vũ Đạo Đường Phố, và với Low Budget Project, các biên đạo của Oops! trình làng vũ đạo của riêng mình.',
         },
     },
     {
@@ -281,16 +281,16 @@ export const highlights = [
     { id: 'hl-hotsteps', timelineId: 'hotsteps-2024' },
 ];
 
-// ── Videos ──────────────────────────────────────────────────────────────────
-// title: the video's title on YouTube. featured: true = the big player (only one).
-// note: optional line under the title.
-export const videos = [
+// ── Videos (only when YouTube can't be reached) ─────────────────────────────
+// The videos section shows the channel's newest videos by itself (sections.videos below). These are
+// shown in their place only if YouTube's feed can't be read, so the section is never empty.
+// title: the video's title on YouTube. note: optional line under the title.
+export const fallbackVideos = [
     {
         id: 'v-hong-hong-tuyet-tuyet',
         youtubeId: 'queW26EWDLM',
         title: 'Hồng Hồng Tuyết Tuyết (ENTERA Remix) | Choreography by Oops! Crew',
         year: 2024,
-        featured: true,
     },
     {
         id: 'v-my-universe',
@@ -354,18 +354,15 @@ export const sections = {
     highlights: {
         title: { en: 'Biggest wins', vi: 'Những giải thưởng lớn nhất' },
     },
+    // The channel's newest videos, read from YouTube every time the page opens (no Shorts): the newest
+    // one in the big player, the next `count` under it.
     videos: {
         title: { en: 'Watch us dance', vi: 'Xem Oops! nhảy' },
-        picks: { en: 'Our picks', vi: 'Video nổi bật' },
+        newest: { en: 'Newest', vi: 'Mới nhất' },
+        channelId: 'UCLEC2Yl4aGyo_-u7GrHiptQ', // Oops! Crew, youtube.com/@OopsCrew2014
+        count: 4,
         more: { en: 'More on YouTube', vi: 'Xem thêm trên YouTube' },
         moreUrl: 'https://www.youtube.com/c/OopsCrew2014',
-        // A second row with the channel's newest videos, read from YouTube every time the page opens
-        // (no Shorts; videos already in the list above are skipped). count: 0 hides the row.
-        latest: {
-            title: { en: 'New on the channel', vi: 'Mới trên kênh' },
-            channelId: 'UCLEC2Yl4aGyo_-u7GrHiptQ', // Oops! Crew, youtube.com/@OopsCrew2014
-            count: 4,
-        },
     },
     socials: {
         title: { en: 'Follow Oops! Crew', vi: 'Theo dõi Oops! Crew' },
