@@ -1,64 +1,38 @@
-import { motion } from 'framer-motion';
-import AsyncState from '@/ui/feedback/AsyncState';
-import { avatarUrl } from '@/services/storage';
-import { useI18n } from '@/i18n/i18nContext';
-import defaultAvatar from '@/assets/images/avatar-placeholder.webp';
-import { crewFromClasses, revealGroup, revealItem } from './aboutHelpers';
-import ChapterHead from './ChapterHead';
+import { motion, useReducedMotion } from 'framer-motion';
+import { crew, sections } from '@/content/about';
+import { reveal, stagger, staggerItem, useLocalize } from './aboutHelpers';
 
-const TONES = ['rose', 'amber', 'violet', 'teal', 'sky', 'coral'];
-
-// 04 · The instructors, all Oops! Crew members, as crew posters: the name in outline behind a
-// cut-out photo, and the styles they teach. Real people from the public class list.
-const AboutCrew = ({ classes }) => {
-    const { t, tn } = useI18n();
-    const crew = crewFromClasses(classes.data ?? []);
+// Meet our crew: every member's portrait with their name on a red bar, like the crew's own poster.
+const AboutCrew = () => {
+    const L = useLocalize();
+    const reduce = useReducedMotion();
+    if (!crew.length) return null;
+    const { crew: copy } = sections;
 
     return (
         <section className="abSection abCrew" aria-labelledby="crew-title">
             <div className="abWrap">
-                <ChapterHead
-                    id="crew-title"
-                    number="04"
-                    eyebrow={t('The crew')}
-                    title={t('Taught by the people who perform it')}
-                    intro={
-                        crew.length > 0
-                            ? tn(
-                                  crew.length,
-                                  'Every instructor at the studio is a member of Oops! Crew. Meet the {count} dancer you’ll be learning from.',
-                                  'Every instructor at the studio is a member of Oops! Crew. Meet the {count} dancers you’ll be learning from.'
-                              )
-                            : t('Every instructor at the studio is a member of Oops! Crew.')
-                    }
-                />
+                <div className="abCrewHead">
+                    <motion.h2 id="crew-title" className="abTitle" {...reveal(reduce)}>
+                        {L(copy.title)}
+                    </motion.h2>
+                    <motion.p className="abCrewEdition" {...reveal(reduce, { delay: 0.1 })}>
+                        <strong>{copy.edition}</strong> · {crew.length} {L(copy.members)}
+                    </motion.p>
+                </div>
 
-                <AsyncState state={classes} emptyText="Our instructors will be introduced soon.">
-                    {() => (
-                        <motion.ul className="abCrewList" {...revealGroup}>
-                            {crew.map((member, index) => (
-                                <motion.li key={member.name} className={`abCrewCard tone-${TONES[index % TONES.length]}`} {...revealItem}>
-                                    <div className="abCrewPhoto">
-                                        <span className="abCrewBackName" aria-hidden="true">
-                                            {member.name}
-                                        </span>
-                                        <span className="abCrewDisc" aria-hidden="true" />
-                                        {/* The name is right below, so the photo needs no alt text of its own. */}
-                                        <img src={avatarUrl(member.avatarPath) ?? defaultAvatar} alt="" loading="lazy" />
-                                    </div>
-                                    <div className="abCrewInfo">
-                                        <h3>{member.name}</h3>
-                                        <ul aria-label={t('Teaches')}>
-                                            {member.styles.map((style) => (
-                                                <li key={style.label}>{style.isKey ? t(style.label) : style.label}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                </motion.li>
-                            ))}
-                        </motion.ul>
-                    )}
-                </AsyncState>
+                <motion.ul className="abCrewGrid" {...stagger(reduce, 0.045)}>
+                    {crew.map((member) => (
+                        <motion.li key={member.id} className="abMember" {...(reduce ? {} : staggerItem)}>
+                            <figure>
+                                <span className="abMemberPhoto">
+                                    {member.photo && <img src={member.photo} alt="" width="281" height="300" loading="lazy" decoding="async" />}
+                                </span>
+                                <figcaption>{member.name}</figcaption>
+                            </figure>
+                        </motion.li>
+                    ))}
+                </motion.ul>
             </div>
         </section>
     );

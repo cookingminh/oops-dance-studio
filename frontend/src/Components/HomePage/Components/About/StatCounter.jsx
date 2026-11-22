@@ -1,39 +1,42 @@
-import { useEffect, useRef, useState } from 'react';
-import { animate, useInView, useReducedMotion } from 'framer-motion';
+import { useEffect, useRef } from 'react';
+import { animate, motion, useInView, useMotionValue, useReducedMotion, useTransform } from 'framer-motion';
 import { useI18n } from '@/i18n/i18nContext';
 import { EASE_OUT } from './aboutHelpers';
 
-// Counts up to `value` the first time it scrolls into view. Screen readers get the final number
-// straight away instead of every step.
-const StatCounter = ({ value, suffix = '' }) => {
+// Counts up to `value` the first time it scrolls into view (a year counts from its century: 2000 → 2014).
+// The number is a motion value, so counting doesn't re-render React. Screen readers get the final
+// number straight away; with reduced motion everyone does.
+const StatCounter = ({ value, suffix = '', kind, delay = 0 }) => {
     const { intl } = useI18n();
     const ref = useRef(null);
-    // Starts as soon as any of it shows: the strip can sit right at the bottom of the first screen.
+    // Any visible part starts it: the stats sit at the bottom of the first screen.
     const inView = useInView(ref, { once: true });
-    const reduceMotion = useReducedMotion();
-    const [shown, setShown] = useState(0);
+    const reduce = useReducedMotion();
+    const from = kind === 'year' ? Math.floor(value / 100) * 100 : 0;
+    const count = useMotionValue(reduce ? value : from);
+
+    const format = (number) => `${kind === 'year' ? number : new Intl.NumberFormat(intl).format(number)}${suffix}`;
+    const shown = useTransform(count, (latest) => format(Math.round(latest)));
 
     useEffect(() => {
         if (!inView) return undefined;
-        if (reduceMotion) {
-            setShown(value);
+        if (reduce) {
+            count.set(value);
             return undefined;
         }
-        const controls = animate(0, value, { duration: 1.3, ease: EASE_OUT, onUpdate: (latest) => setShown(Math.round(latest)) });
+        const controls = animate(count, value, { duration: 1.6, delay, ease: EASE_OUT });
         return () => controls.stop();
-    }, [inView, value, reduceMotion]);
+    }, [inView, reduce, value, count, delay]);
 
-    const format = (number) => `${new Intl.NumberFormat(intl).format(number)}${suffix}`;
-
-    // The hidden final value holds the width, so the line doesn't jump while counting.
+    // The hidden final value holds the width, so the row doesn't jump while counting.
     return (
         <span ref={ref} className="abCounter">
             <span className="abCounterGhost" aria-hidden="true">
                 {format(value)}
             </span>
-            <span className="abCounterLive" aria-hidden="true">
-                {format(shown)}
-            </span>
+            <motion.span className="abCounterLive" aria-hidden="true">
+                {shown}
+            </motion.span>
             <span className="sr-only">{format(value)}</span>
         </span>
     );

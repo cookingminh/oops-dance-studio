@@ -1,34 +1,25 @@
-import { MotionConfig } from 'framer-motion';
-import { useAsync } from '@/hooks/useAsync';
-import { listPublicClasses } from '@/services/classes';
 import AboutHero from '../Components/About/AboutHero';
 import AboutStory from '../Components/About/AboutStory';
-import AboutTimeline from '../Components/About/AboutTimeline';
-import AboutAchievements from '../Components/About/AboutAchievements';
 import AboutCrew from '../Components/About/AboutCrew';
-import AboutBeliefs from '../Components/About/AboutBeliefs';
-import AboutGallery from '../Components/About/AboutGallery';
-import AboutJoin from '../Components/About/AboutJoin';
+import AboutTimeline from '../Components/About/AboutTimeline';
+import AboutHighlights from '../Components/About/AboutHighlights';
+import AboutVideos from '../Components/About/AboutVideos';
+import AboutSocials from '../Components/About/AboutSocials';
 import '../Components/About/about.scss';
 
-// /about: Oops! Crew since 2017, read like a magazine feature in six short chapters, then an
-// invitation to a free first class. Copy lives in Components/About/aboutContent.js.
-const AboutPage = () => {
-    const classes = useAsync(listPublicClasses, []);
-    return (
-        <MotionConfig reducedMotion="user">
-            <article className="aboutPage">
-                <AboutHero />
-                <AboutStory />
-                <AboutTimeline />
-                <AboutAchievements />
-                <AboutCrew classes={classes} />
-                <AboutBeliefs />
-                <AboutGallery />
-                <AboutJoin />
-            </article>
-        </MotionConfig>
-    );
-};
+// /about: Oops! Crew since 2014 (the hero and its numbers, the story, meet the crew, the timeline,
+// the biggest wins, videos, then socials and the way into a class). No data from the backend: every
+// word, number, photo and link comes from src/content/about.js.
+const AboutPage = () => (
+    <article className="aboutPage">
+        <AboutHero />
+        <AboutStory />
+        <AboutCrew />
+        <AboutTimeline />
+        <AboutHighlights />
+        <AboutVideos />
+        <AboutSocials />
+    </article>
+);
 
 export default AboutPage;

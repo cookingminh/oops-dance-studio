@@ -1,54 +1,46 @@
-import { motion } from 'framer-motion';
-import { LuQuote } from 'react-icons/lu';
-import { useI18n } from '@/i18n/i18nContext';
-import { STORY } from './aboutContent';
-import { reveal } from './aboutHelpers';
-import ChapterHead from './ChapterHead';
+import { useRef } from 'react';
+import { motion, useReducedMotion, useScroll, useTransform } from 'framer-motion';
+import { sections, story, storyPhotos } from '@/content/about';
+import { reveal, useLocalize } from './aboutHelpers';
+import RichText from './RichText';
 
-// 01 · The story as a short long-read: the heading and a fact file stay in view (desktop) while
-// the paragraphs, a photo and a pull quote scroll past.
+// The story as a few short paragraphs (the first one bigger), with two crew photos beside it that
+// drift at different speeds as the page scrolls.
 const AboutStory = () => {
-    const { t } = useI18n();
-    const [first, second, third, fourth] = STORY.paragraphs;
+    const L = useLocalize();
+    const reduce = useReducedMotion();
+    const photosRef = useRef(null);
+    const { scrollYProgress } = useScroll({ target: photosRef, offset: ['start end', 'end start'] });
+    const drift = [useTransform(scrollYProgress, [0, 1], [24, -24]), useTransform(scrollYProgress, [0, 1], [70, -50])];
 
     return (
-        <section id="story" tabIndex={-1} className="abSection abStory" aria-labelledby="story-title">
+        <section className="abSection abStory" aria-labelledby="story-title">
             <div className="abWrap abStoryGrid">
-                <div className="abStoryAside">
-                    <ChapterHead id="story-title" number="01" eyebrow={t('Our story')} title={t(STORY.title)} />
-                    <motion.aside className="abFacts" aria-labelledby="facts-title" {...reveal}>
-                        <h3 id="facts-title">{t('At a glance')}</h3>
-                        <dl>
-                            {STORY.facts.map((fact) => (
-                                <div key={fact.label}>
-                                    <dt>{t(fact.label)}</dt>
-                                    <dd>{t(fact.value)}</dd>
-                                </div>
-                            ))}
-                        </dl>
-                    </motion.aside>
+                <div className="abStoryText">
+                    <motion.h2 id="story-title" className="abTitle" {...reveal(reduce)}>
+                        {L(sections.story.title)}
+                    </motion.h2>
+                    {story.map((paragraph, index) => (
+                        <motion.p key={paragraph.id} className={index === 0 ? 'isLead' : undefined} {...reveal(reduce, { y: 18, delay: 0.05 })}>
+                            <RichText text={L(paragraph.text)} />
+                        </motion.p>
+                    ))}
                 </div>
 
-                <div className="abStoryBody">
-                    <motion.p className="abStoryLead" {...reveal}>
-                        {t(first)}
-                    </motion.p>
-                    <motion.p {...reveal}>{t(second)}</motion.p>
-
-                    <motion.figure className="abStoryPhoto" {...reveal}>
-                        <img src={STORY.photo.src} alt={t(STORY.photo.alt)} width="1070" height="716" loading="lazy" />
-                        <figcaption>{t(STORY.photo.caption)}</figcaption>
-                    </motion.figure>
-
-                    <motion.p {...reveal}>{t(third)}</motion.p>
-
-                    <motion.blockquote className="abQuote" {...reveal}>
-                        <LuQuote className="abQuoteMark" aria-hidden="true" />
-                        <p>{t(STORY.quote)}</p>
-                        <footer>{t(STORY.quoteBy)}</footer>
-                    </motion.blockquote>
-
-                    <motion.p {...reveal}>{t(fourth)}</motion.p>
+                <div className="abStoryPhotos" ref={photosRef}>
+                    {storyPhotos.slice(0, 2).map((photo, index) => (
+                        <motion.figure key={photo.id} className={`abStoryPhoto is-${index}`} style={reduce ? undefined : { y: drift[index] }}>
+                            <motion.img
+                                src={photo.image}
+                                alt={L(photo.alt)}
+                                width="1400"
+                                height="934"
+                                loading="lazy"
+                                decoding="async"
+                                {...reveal(reduce, { y: 0, delay: index * 0.15, duration: 0.8 })}
+                            />
+                        </motion.figure>
+                    ))}
                 </div>
             </div>
         </section>
