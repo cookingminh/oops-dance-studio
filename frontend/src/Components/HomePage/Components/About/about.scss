@@ -243,9 +243,10 @@
         visibility: hidden;
     }
 
+    // The whole banner at its own shape (nobody cut off); on phones a square from its middle.
     .abHeroPhoto {
         position: relative;
-        height: clamp(17rem, calc(100svh - 24rem), 37rem);
+        aspect-ratio: 2880 / 1096;
         margin-top: clamp(1.75rem, 3.5vh, 2.75rem);
         overflow: hidden;
         background: hsl(0, 0%, 88%);
@@ -254,18 +255,18 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: 50% 2%;
+            object-position: 50% 0;
             // Zooms out towards the top edge, so no head is cut while it settles.
             transform-origin: 50% 0;
             animation: abHeroZoom 16s var(--hp-ease) both;
         }
 
-        // The band melts into the white page below.
+        // Only the floor melts into the white page below.
         &::after {
             content: '';
             position: absolute;
             inset: auto 0 0;
-            height: 24%;
+            height: 7%;
             background: linear-gradient(to top, #fff, hsla(0, 0%, 100%, 0));
             pointer-events: none;
         }
@@ -353,6 +354,7 @@
     // Crew ====================>
 
     .abCrew {
+        padding-block: clamp(3.5rem, 6vw, 5rem);
         background: var(--hp-surface-2);
     }
 
@@ -375,15 +377,25 @@
         }
     }
 
+    // Small portraits, eight to a row (fewer on smaller screens); a shorter last row is centred.
     .abCrewGrid {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 1.1rem;
+        --cols: 8;
+        --gap: .8rem;
+
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: var(--gap);
+    }
+
+    .abMember {
+        flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
+        min-width: 0;
     }
 
     .abMember figure {
         overflow: hidden;
-        border-radius: var(--ab-radius);
+        border-radius: 14px;
         background: #fff;
         box-shadow: var(--ab-shadow);
         transition: translate .35s var(--hp-ease), box-shadow .35s ease;
@@ -404,11 +416,11 @@
     }
 
     .abMember figcaption {
-        padding: .7rem .6rem;
+        padding: .5rem .4rem;
         background: var(--hp-red);
         color: #fff;
         font-family: var(--hp-display);
-        font-size: 1.12rem;
+        font-size: .98rem;
         font-weight: 700;
         line-height: 1.2;
         text-align: center;
@@ -1278,7 +1290,7 @@
         }
 
         .abCrewGrid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            --cols: 5;
         }
     }
 }
@@ -1310,13 +1322,11 @@
 
         .abHeroPhoto {
             order: 1;
-            height: auto;
-            aspect-ratio: 1 / 1;
-            max-height: 30rem;
+            aspect-ratio: 4 / 3;
             margin-top: 1.5rem;
 
             &::after {
-                height: 18%;
+                height: 10%;
             }
         }
 
@@ -1383,12 +1393,17 @@
         }
 
         .abCrewGrid {
-            gap: .6rem;
+            --cols: 4;
+            --gap: .5rem;
+        }
+
+        .abMember figure {
+            border-radius: 12px;
         }
 
         .abMember figcaption {
-            padding: .5rem .35rem;
-            font-size: .9rem;
+            padding: .4rem .25rem;
+            font-size: .8rem;
         }
 
         .abVideoGrid {

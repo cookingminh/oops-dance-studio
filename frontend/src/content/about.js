@@ -35,8 +35,8 @@ export const hero = {
     tagline: 'REBORN — beyond dance cover',
     image: heroImage,
     imageAlt: {
-        en: 'Oops! Crew 2026: fifteen dancers dressed in black on a light grey stage',
-        vi: 'Oops! Crew 2026: mười lăm thành viên mặc đồ đen trên sân khấu xám sáng',
+        en: 'Oops! Crew 2026 Edition: fifteen dancers dressed in black on a light grey stage',
+        vi: 'Oops! Crew 2026 Edition: mười lăm thành viên mặc đồ đen trên sân khấu xám sáng',
     },
 };
 

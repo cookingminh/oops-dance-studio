@@ -84,7 +84,7 @@ const AboutHero = () => {
                           transition: { duration: 1.1, delay: 0.25, ease: EASE_OUT },
                       })}
             >
-                <img src={hero.image} alt={L(hero.imageAlt)} width="2180" height="1262" decoding="async" />
+                <img src={hero.image} alt={L(hero.imageAlt)} width="2880" height="1096" decoding="async" />
             </motion.div>
         </section>
     );
