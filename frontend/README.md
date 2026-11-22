@@ -62,6 +62,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | Spec | Covers |
 |---|---|
 | `anon.spec.js` | public pages and navbar, classes, rooms, photos, timetable, About page, visitor booking prompt, route guards |
+| `about.spec.js` | the About page as a visitor: navbar and footer links, every section (counts read from `src/content/about.js`): the story in paragraphs, every crew member with a portrait, the timeline's eras; no YouTube iframe until a video is played (then one privacy-enhanced player), the social links, EN / VI, reduced motion (numbers shown without counting) |
 | `guest.spec.js` | book from /rooms and cancel (the cancel dialog), profile settings, RLS on bookings / profiles / attendance |
 | `instructor.spec.js` | check-in / check-out with a proof photo, signed proof URLs, no access to others' sessions |
 | `staff.spec.js` | dashboard, rooms (`/admin/rooms` → Bookings → Rooms & prices), bookings (overlap → `SLOT_TAKEN`; a booking ahead offers Cancel, not Mark completed), classes with images, schedules, enrolments, the Attendance page, charts |
@@ -122,6 +123,9 @@ src/
                           website's choices: which look the public timetable uses, `site_settings`)
   auth/                   AuthProvider (session + profile), RequireRole, PublicOnly, roles
   hooks/useAsync.js       loading / error / reload state for service calls
+  content/about.js        everything on the About page (/about): hero, numbers, story, crew, timeline, highlights,
+                          videos, socials, headings; text in both languages ({ en, vi }), one block per future
+                          database row. Its photos are in assets/images/about/ (crew/ = one portrait per member)
   i18n/                   English / Vietnamese: provider, t()/tn(), date formatting, vi/*.js dictionaries
   ui/                     shared UI: toasts, loading/empty/error states, pickers, avatars, demo banner;
                           ui/guide/ the (?) page guide (one dialog with worked examples), ui/place/ where a
@@ -133,7 +137,7 @@ src/
                           bundled — ../scripts/demo-images.mjs uploads them to site-assets for the seed
   Components/
     HomePage/             public site: PublicLayout (navbar, footer, page transitions), pages/ (one per
-                          route), Components/ (sections; About/aboutContent.js holds the About copy;
+                          route), Components/ (sections; About/ = the About page's sections, its copy is src/content/about.js;
                           Classes/Components/timetable/ = the two looks of the weekly timetable — the
                           printed-poster grid and the red card — picked from site_settings; ClassCard.jsx
                           brings its own classCard.scss, so the staff can preview the real card)
