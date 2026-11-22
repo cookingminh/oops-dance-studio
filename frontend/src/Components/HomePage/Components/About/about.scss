@@ -1255,43 +1255,31 @@
         padding-bottom: clamp(3.5rem, 7vw, 5rem);
     }
 
-    // A red and black duotone of a crew photo (red multiplied over it turns the white studio red and
-    // keeps the black outfits), solid red under the text on the left.
+    // Red panel: the text and the button on the left, and on the right the whole crew in a red and black
+    // duotone (red multiplied over the photo turns the white studio red and keeps the black outfits).
+    // The photo never sits under the text, so nobody is hidden.
     .abCta {
+        --cta-red: hsl(0, 68%, 40%);
+
         position: relative;
         isolation: isolate;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1.75rem 2.5rem;
-        padding: clamp(2.25rem, 5.5vw, 4.25rem) clamp(2rem, 5vw, 3.75rem);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
         overflow: hidden;
         border-radius: var(--ab-panel-radius);
-        background: hsl(0, 66%, 38%);
+        background:
+            radial-gradient(circle at 0% 0%, hsla(10, 95%, 60%, .35), transparent 50%),
+            var(--cta-red);
         color: #fff;
 
-        &::before,
-        &::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        &::before {
-            background: hsl(0, 70%, 44%);
-            mix-blend-mode: multiply;
-        }
-
-        &::after {
-            background: linear-gradient(100deg, hsl(0, 70%, 36%) 0%, hsla(0, 70%, 38%, .92) 38%, hsla(0, 70%, 40%, 0) 70%);
+        &.hasPhoto {
+            grid-template-columns: minmax(0, 46fr) minmax(0, 54fr);
+            min-height: clamp(18rem, 30vw, 24rem);
         }
 
         h2 {
             font-family: var(--hp-display);
-            font-size: clamp(2.1rem, 5vw, 3.6rem);
+            font-size: clamp(2rem, 3.4vw, 2.9rem);
             font-weight: 800;
             line-height: 1;
             letter-spacing: -.025em;
@@ -1299,23 +1287,60 @@
         }
 
         p {
-            max-width: 40ch;
+            max-width: 36ch;
             margin-top: .7rem;
             font-size: 1.12rem;
             line-height: 1.55;
             color: hsla(0, 0%, 100%, .9);
         }
+
+        .abBtn {
+            margin-top: 1.6rem;
+        }
+    }
+
+    .abCtaText {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        padding: clamp(2rem, 4.5vw, 3.5rem);
     }
 
     .abCtaPhoto {
-        position: absolute;
-        inset: 0;
-        z-index: -2;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: 50% 30%;
-        filter: grayscale(1) contrast(1.15);
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+
+        img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: 50% 70%;
+            filter: grayscale(1) contrast(1.15);
+        }
+
+        // Over the photo: the duotone, then a soft left edge into the panel.
+        &::before,
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        &::before {
+            z-index: 1;
+            background: var(--cta-red);
+            mix-blend-mode: multiply;
+        }
+
+        &::after {
+            z-index: 2;
+            background: linear-gradient(90deg, var(--cta-red) 0%, hsla(0, 68%, 40%, 0) 9%);
+        }
     }
 }
 
@@ -1399,6 +1424,33 @@
 
         .abStoryGrid {
             grid-template-columns: minmax(0, 1fr);
+        }
+    }
+}
+
+// Narrow screens: the call to action's photo on top (the whole picture), the text under it.
+@media (max-width: 760px) {
+    .aboutPage {
+        .abCta.hasPhoto {
+            grid-template-columns: minmax(0, 1fr);
+            min-height: 0;
+        }
+
+        .abCtaPhoto {
+            order: -1;
+            aspect-ratio: 1600 / 1067;
+
+            img {
+                object-position: 50% 50%;
+            }
+
+            &::after {
+                background: linear-gradient(0deg, var(--cta-red) 0%, hsla(0, 68%, 40%, 0) 12%);
+            }
+        }
+
+        .abCtaText {
+            padding-top: 1.25rem;
         }
     }
 }
