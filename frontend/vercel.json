@@ -1,8 +1,23 @@
 {
     "rewrites": [
         {
+            "source": "/youtube-feed/:playlist",
+            "destination": "https://www.youtube.com/feeds/videos.xml?playlist_id=:playlist"
+        },
+        {
             "source": "/(.*)",
             "destination": "/"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/youtube-feed/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=900, s-maxage=1800, stale-while-revalidate=86400"
+                }
+            ]
         }
     ]
 }

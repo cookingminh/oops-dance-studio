@@ -356,8 +356,16 @@ export const sections = {
     },
     videos: {
         title: { en: 'Watch us dance', vi: 'Xem Oops! nhảy' },
+        picks: { en: 'Our picks', vi: 'Video nổi bật' },
         more: { en: 'More on YouTube', vi: 'Xem thêm trên YouTube' },
         moreUrl: 'https://www.youtube.com/c/OopsCrew2014',
+        // A second row with the channel's newest videos, read from YouTube every time the page opens
+        // (no Shorts; videos already in the list above are skipped). count: 0 hides the row.
+        latest: {
+            title: { en: 'New on the channel', vi: 'Mới trên kênh' },
+            channelId: 'UCLEC2Yl4aGyo_-u7GrHiptQ', // Oops! Crew, youtube.com/@OopsCrew2014
+            count: 4,
+        },
     },
     socials: {
         title: { en: 'Follow Oops! Crew', vi: 'Theo dõi Oops! Crew' },

@@ -971,13 +971,53 @@
         }
     }
 
+    // The rows under the player: the picks, then the channel's newest videos.
+    .abVideoRow {
+        margin-top: 2.25rem;
+        padding-top: 2rem;
+        border-top: 1px solid hsla(0, 0%, 100%, .12);
+    }
+
+    .abVideoRowTitle {
+        margin-bottom: 1.1rem;
+        font-family: var(--hp-display);
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #fff;
+    }
+
     .abVideoGrid {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 1.5rem 1.25rem;
-        margin-top: 2.25rem;
-        padding-top: 2.25rem;
-        border-top: 1px solid hsla(0, 0%, 100%, .12);
+    }
+
+    .abVideoSkeleton {
+        display: grid;
+        gap: .55rem;
+
+        span,
+        i {
+            display: block;
+            background: linear-gradient(90deg, hsla(0, 0%, 100%, .06) 25%, hsla(0, 0%, 100%, .13) 50%, hsla(0, 0%, 100%, .06) 75%);
+            background-size: 200% 100%;
+            animation: abShimmer 1.4s ease-in-out infinite;
+        }
+
+        span {
+            aspect-ratio: 16 / 9;
+            border-radius: 14px;
+        }
+
+        i {
+            width: 90%;
+            height: .8rem;
+            border-radius: 4px;
+
+            &:last-child {
+                width: 45%;
+            }
+        }
     }
 
     .abVideoCard {
@@ -1273,8 +1313,19 @@
     }
 }
 
+@keyframes abShimmer {
+    from {
+        background-position: 100% 0;
+    }
+
+    to {
+        background-position: -100% 0;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .aboutPage .abHeroPhoto img {
+    .aboutPage .abHeroPhoto img,
+    .aboutPage .abVideoSkeleton :is(span, i) {
         animation: none;
     }
 }
