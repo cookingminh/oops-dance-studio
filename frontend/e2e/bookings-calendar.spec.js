@@ -231,6 +231,8 @@ test('letting go over a booking keeps the range in red and says what holds it, i
     await notice.getByRole('button', { name: 'Close' }).click();
     await expect(notice).toHaveCount(0);
     await expect(ghost).toHaveCount(0);
+});
+
 test('staff book a walk-in with no account: their name and phone, on the calendar and in the dialog', async () => {
     await lane(roomB.id).locator('.calSlot[data-time="12:00"]').click();
     await dialog.getByRole('button', { name: 'A walk-in (no account)' }).click();
