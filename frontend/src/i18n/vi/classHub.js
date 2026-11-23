@@ -389,4 +389,26 @@ export default {
     Where: 'Nơi học',
     Fee: 'Học phí',
     'First day': 'Khai giảng',
+
+    // Moving a class into a room booked on some of its days; one session's own room.
+    '{room} is booked on {count} of {name}’s sessions': '{room} đã có lịch đặt vào {count} buổi của lớp {name}',
+    'The class still moves to {room}. Pick where each of these sessions goes that day, or leave it without a room for now: it stays on the to-do list until someone places it.':
+        'Lớp vẫn chuyển sang {room}. Với mỗi buổi bị trùng, chọn phòng khác cho hôm đó, hoặc tạm để chưa có phòng: buổi đó sẽ nằm trong danh sách việc cần làm cho tới khi có người xếp phòng.',
+    'This session takes place in': 'Buổi này học ở',
+    'No room yet (to-do for staff)': 'Chưa xếp phòng (thêm vào việc cần làm)',
+    '{count} session will have no room yet: it goes on the to-do list.': '{count} buổi sẽ chưa có phòng và được thêm vào việc cần làm.',
+    '{count} sessions will have no room yet: they go on the to-do list.': '{count} buổi sẽ chưa có phòng và được thêm vào việc cần làm.',
+    'Move the class to {room}': 'Chuyển lớp sang {room}',
+    'Class moved. {count} session(s) have no room yet: see the to-do list.': 'Đã chuyển lớp. {count} buổi chưa có phòng, xem trong việc cần làm.',
+    'Room for this session': 'Phòng cho buổi này',
+    'Free at the class’s time that day': 'Phòng trống vào giờ học hôm đó',
+    'It stays on the to-do list until someone places it.': 'Buổi này nằm trong việc cần làm cho tới khi có người xếp phòng.',
+    'No room yet': 'Chưa có phòng',
+    'No studio room is free then.': 'Không còn phòng nào của studio trống vào giờ đó.',
+    'The session has no room for now: it is on the to-do list.': 'Buổi này tạm chưa có phòng và đã được thêm vào việc cần làm.',
+    'Room set for this session.': 'Đã xếp phòng cho buổi này.',
+    'Place it': 'Xếp phòng',
+    'This session’s room': 'Đổi phòng buổi này',
+    '{class}’s session has no room yet': 'Buổi học lớp {class} chưa có phòng',
+    'On {date} · pick a room for it': 'Ngày {date} · chọn phòng cho buổi này',
 };

@@ -97,6 +97,37 @@ $amber-soft: hsl(40, 95%, 92%);
         }
     }
 
+    // A session without a room yet, and the button that places it (or gives it its own room that day).
+    .smNoRoom {
+        color: hsl(25, 90%, 38%);
+        font-weight: 700;
+    }
+
+    .smPlaceBtn {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        padding: .1rem .55rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 999px;
+        background: var(--ad-surface, #fff);
+        color: var(--ad-text, inherit);
+        font: inherit;
+        font-size: .8rem;
+        font-weight: 600;
+        cursor: pointer;
+
+        &:hover {
+            border-color: var(--ad-primary);
+            color: var(--ad-primary);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+
     .smWhen {
         display: flex;
         flex-wrap: wrap;

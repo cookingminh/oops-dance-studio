@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import { differenceInCalendarDays, parseISO } from 'date-fns';
-import { listClasses, listLessonProgress } from '@/services/classes';
+import { listClasses, listLessonProgress, listUnplacedSessions } from '@/services/classes';
 import { listInstructorAttendance, listOpenInstructorAttendance, listStudentAttendance } from '@/services/attendance';
 import { listPendingBookings } from '@/services/bookings';
 import { listOwingBookings } from '@/services/bookingPayments';
@@ -212,11 +212,24 @@ function buildRoutineTasks(classes, progress, today) {
     return tasks;
 }
 
+// Sessions with no room yet (their class moved into a room booked that day): one task each, urgent within two days.
+// The link opens the session, which has "Place it".
+function placeTasks(unplaced, today) {
+    return unplaced.map((row) => ({
+        id: `unplaced-${row.class_id}-${row.date}`,
+        kind: 'place',
+        tone: differenceInCalendarDays(parseISO(row.date), parseISO(today)) <= 2 ? 'urgent' : 'normal',
+        title: msg('{class}’s session has no room yet', { class: row.class?.name ?? '' }),
+        detail: msg('On {date} · pick a room for it', { date: row.date }),
+        to: sessionLink(row.class_id, row.date),
+    }));
+}
+
 export async function loadStaffTasks() {
     const today = await getStudioToday();
     const now = studioTimeNow();
     const weekday = isoWeekdayOf(today);
-    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition, support, joins] = await Promise.all([
+    const [open, todayRecords, { classes, progress }, students, pending, owing, refunds, tuition, support, joins, unplaced] = await Promise.all([
         // Make-up sessions carry their own times (withOwnTimes), regular ones the weekly slot.
         listOpenInstructorAttendance({ until: today }).then(withOwnTimes),
         listInstructorAttendance({ date: today }).then(withOwnTimes),
@@ -237,6 +250,8 @@ export async function loadStaffTasks() {
         getSupportCounts().catch(() => null),
         // Requests to join a class are the newest: same.
         listWaitingJoinRequests().catch(() => null),
+        // Sessions left without a room when their class moved into a booked room: same.
+        listUnplacedSessions(today).catch(() => []),
     ]);
 
     const attendance = [];
@@ -395,12 +410,12 @@ export async function loadStaffTasks() {
     return {
         today,
         checkedAt: now,
-        tasks: [...supportTasks, ...joinTasks, ...attendance, ...studentTasks, ...lessonTasks, ...bookingTasks, ...tuitionTasks],
+        tasks: [...supportTasks, ...joinTasks, ...attendance, ...studentTasks, ...placeTasks(unplaced, today), ...lessonTasks, ...bookingTasks, ...tuitionTasks],
         // Sidebar badges.
         counts: {
             [ATTENDANCE_PAGE]: attendance.length + studentTasks.length,
             '/admin/bookings': pending.total + owing.length + refunds.length,
-            '/admin/classes': lessonTasks.length,
+            '/admin/classes': lessonTasks.length + unplaced.length,
             // Invoices to chase and transfers to sort (renewal answers are a reminder, not a count).
             [TUITION_PAGE]: tuition ? new Set(tuition.overdue.map((row) => row.student_id)).size + tuition.unmatched.length : 0,
             // People waiting for a chat answer.

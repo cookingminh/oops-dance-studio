@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from '@nextui-org/react';
-import { LuAlertTriangle, LuArrowUpRight, LuBan, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClock, LuListChecks, LuRotateCcw } from 'react-icons/lu';
+import { LuAlertTriangle, LuArrowUpRight, LuBan, LuDoorOpen, LuCalendarCheck, LuCalendarClock, LuCalendarOff, LuCalendarPlus, LuCheck, LuClock, LuListChecks, LuRotateCcw } from 'react-icons/lu';
 import { updateInstructorAttendance } from '@/services/attendance';
 import { classImageUrl } from '@/services/storage';
 import { formatClock, formatTime } from '@/lib/format';
@@ -21,6 +21,7 @@ import RollCall from './RollCall';
 import { CheckStep, InstructorBlock, NoteBox, ProofDialog } from './SessionParts';
 import { OPEN_STATUSES, canReschedule, classColor, isSubstitute, sessionRules, sessionState, teacherOf } from './sessionModel';
 import { useSessionDetail } from './useSessionDetail';
+import SessionPlaceDialog from './SessionPlaceDialog';
 import '../session-changes/sessionChanges.scss';
 import './sessionModal.scss';
 
@@ -46,6 +47,7 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const [proof, setProof] = useState(null);
     const [changing, setChanging] = useState(null); // 'move' (call off / move) | 'makeUp' (make-up of a called-off session)
     const [editingCheck, setEditingCheck] = useState(null); // 'in' | 'out': the tile whose time is being corrected
+    const [placing, setPlacing] = useState(false); // SessionPlaceDialog: this session's room for that day alone
     const rollRef = useRef(null);
 
     const loaded = detail.data !== undefined;
@@ -59,7 +61,10 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
     const reschedule = canReschedule(current, today, readOnly);
     const madeUp = detail.data?.makeUp ?? null;
     const reason = reasonText(row?.cancel_reason, t);
-    const place = placeOf(row, cls);
+    // A session left without a room (the class moved into a room booked that day) has no place until staff place it.
+    const place = row?.needs_place ? placeOf(null, null) : placeOf(row, cls);
+    // A weekly session not started yet can get a room of its own for that day (another free studio room, or none yet).
+    const canPlace = !readOnly && !cancelled && !current.extra && date >= today && (!row || (row.status === 'pending' && !row.checkin_at));
     // A forgotten check-out, a wrong time: staff correct them from the tiles, with a reason (logged).
     const canEditTimes = Boolean(row) && !cancelled && !readOnly && date <= today;
     const toggleCheck = (which) => () => setEditingCheck((open) => (open === which ? null : which));
@@ -141,6 +146,16 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                                         <PlaceIcon place={place} /> {place.name}
                                         <MapLink place={place} compact />
                                     </span>
+                                )}
+                                {row?.needs_place && (
+                                    <span className="smNoRoom">
+                                        <LuAlertTriangle aria-hidden="true" /> {t('No room yet')}
+                                    </span>
+                                )}
+                                {canPlace && (
+                                    <button type="button" className="smPlaceBtn" onClick={() => setPlacing(true)}>
+                                        <LuDoorOpen aria-hidden="true" /> {row?.needs_place ? t('Place it') : t('This session’s room')}
+                                    </button>
                                 )}
                             </span>
                         </span>
@@ -335,6 +350,18 @@ const SessionModal = ({ session, today, instructors = [], readOnly = false, focu
                     onClose={() => setChanging(null)}
                     onDone={() => {
                         setChanging(null);
+                        refresh();
+                    }}
+                />
+            )}
+            {placing && (
+                <SessionPlaceDialog
+                    cls={cls}
+                    date={date}
+                    current={row?.own_place ? row.room_id : null}
+                    onClose={() => setPlacing(false)}
+                    onPlaced={() => {
+                        setPlacing(false);
                         refresh();
                     }}
                 />

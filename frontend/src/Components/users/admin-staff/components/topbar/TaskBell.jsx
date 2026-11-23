@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@nextui-org/react';
 import {
+    LuDoorOpen,
     LuBell,
     LuCalendarPlus,
     LuChevronRight,
@@ -37,6 +38,7 @@ const ICONS = {
     renewals: LuRepeat,
     support: LuMessagesSquare,
     join: LuUserPlus,
+    place: LuDoorOpen,
 };
 
 const GROUPS = [

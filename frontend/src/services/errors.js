@@ -100,6 +100,11 @@ function invalidInputMessage(text) {
 
 // The message for an RPC's `CODE: reason`: a specific one when the reason has its own, else the code's.
 const REASONS = { INVALID_STATE: INVALID_STATE_REASONS, FORBIDDEN: FORBIDDEN_REASONS };
+// A clash with a booking names it: "overlaps a booking on 2026-11-24 (17:30–21:30) [booking 123]" → 123 (else null);
+// clashText drops the tag for the words shown.
+export const clashBookingId = (error) => Number(/\[booking (\d+)\]/.exec(error?.detail ?? '')?.[1]) || null;
+export const clashText = (detail) => String(detail ?? '').replace(/\s*\[booking \d+\]/, '');
+
 function rpcMessage(code, detail) {
     if (code === 'INVALID_INPUT') return invalidInputMessage(detail);
     if (code === 'IN_USE' && /class has history/i.test(detail)) return CLASS_HAS_HISTORY;

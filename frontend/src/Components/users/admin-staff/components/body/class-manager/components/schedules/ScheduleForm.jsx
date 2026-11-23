@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem } from '@nextui-org/react';
 import { createSchedule, updateSchedule } from '@/services/schedules';
+import { clashBookingId, clashText } from '@/services/errors';
 import { TIME_OPTIONS, WEEKDAYS, formatTime, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
@@ -12,6 +14,7 @@ const withCurrent = (options, value) => (value && !options.includes(value) ? [..
 // `defaultClassId` preselects the class when adding a session from a class card.
 const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) => {
     const toast = useToast();
+    const navigate = useNavigate();
     const { t, dayName } = useI18n();
     const isNew = !schedule;
     const [form, setForm] = useState({
@@ -42,8 +45,12 @@ const ScheduleForm = ({ schedule, classes, defaultClassId, onClose, onSaved }) =
             toast.success(isNew ? 'Schedule added.' : 'Schedule updated.');
             onSaved();
         } catch (error) {
-            // The room is shared with bookings and other classes; say what it clashes with.
-            if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That time isn’t free in this class’s room: {detail}.', { detail: error.detail }));
+            // The room is shared with bookings and other classes; say what it clashes with (a booking can be opened).
+            const bookingId = clashBookingId(error);
+            if (error.code === 'SLOT_TAKEN' && error.detail)
+                toast.error(t('That time isn’t free in this class’s room: {detail}.', { detail: clashText(error.detail) }), {
+                    action: bookingId ? { label: 'Open booking', onPress: () => navigate(`/admin/bookings?booking=${bookingId}`) } : undefined,
+                });
             else toast.error(error);
         } finally {
             setSaving(false);

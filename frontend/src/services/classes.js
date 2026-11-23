@@ -315,3 +315,42 @@ export async function deleteClassLesson(routine) {
     unwrap(await supabase.from('class_lessons').delete().eq('id', routine.id ?? routine.lesson_id));
     await removeFiles(PROMO_BUCKET, [routine.promo_path, routine.promo_poster_path]);
 }
+
+// ---------------------------------------------------------------------------
+// A session's own place (20261117003000_class_session_places). `places`: [{ date: 'yyyy-MM-dd', room_id: id | null }],
+// null = no place yet (a to-do for staff).
+// ---------------------------------------------------------------------------
+
+// Staff: the bookings ahead in studio room `roomId` at the class's weekly times, one entry per day:
+// [{ date, bookings: [{ id, start, end, who, status }], free_rooms: [{ id, name }] }].
+export async function classBookingClashes(classId, roomId) {
+    return unwrap(await supabase.rpc('class_booking_clashes', { p_class: classId, p_room: roomId }));
+}
+
+// Staff: moves the class into studio room `roomId`, placing the sessions that clash there first. All or nothing.
+export async function moveClassToRoom(classId, roomId, places) {
+    return unwrap(await supabase.rpc('class_move_room', { p_class: classId, p_room: roomId, p_places: places }));
+}
+
+// Staff: gives sessions a place of their own (or none yet). → how many.
+export async function placeClassSessions(classId, places) {
+    return unwrap(await supabase.rpc('class_place_sessions', { p_class: classId, p_places: places }));
+}
+
+// Staff: the studio rooms free for the class's session on `date` → [{ id, name }].
+export async function classFreeRooms(classId, date) {
+    return unwrap(await supabase.rpc('class_free_rooms', { p_class: classId, p_date: date }));
+}
+
+// Staff: sessions from `from` on that have no room yet (needs_place), soonest first, with their class's name.
+export async function listUnplacedSessions(from) {
+    return unwrap(
+        await supabase
+            .from('instructor_attendance')
+            .select('id, class_id, date, class:classes!class_id(id, name)')
+            .eq('needs_place', true)
+            .neq('status', 'cancelled')
+            .gte('date', from)
+            .order('date')
+    );
+}

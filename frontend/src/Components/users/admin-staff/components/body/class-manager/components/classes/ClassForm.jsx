@@ -9,6 +9,7 @@ import ImagePicker from '@/ui/ImagePicker';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import PlaceField from '../../../../common/PlaceField';
 import LevelField from '../../../../common/LevelField';
+import { clashText } from '@/services/errors';
 
 // Create or edit a class. Schedules are managed separately (each schedule belongs to one class).
 const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved }) => {
@@ -44,7 +45,7 @@ const ClassForm = ({ classRow, instructors, rooms, venues = [], onClose, onSaved
         } catch (error) {
             if (error.code === 'DUPLICATE') toast.error('A class with this name already exists.');
             // Moving a class to another room must not clash with that room's bookings or classes.
-            else if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That room isn’t free at this class’s times: {detail}.', { detail: error.detail }));
+            else if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That room isn’t free at this class’s times: {detail}.', { detail: clashText(error.detail) }));
             else toast.error(error);
         } finally {
             setSaving(false);

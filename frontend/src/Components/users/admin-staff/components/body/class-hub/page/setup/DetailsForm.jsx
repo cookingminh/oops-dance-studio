@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, Button, Input, Select, SelectItem } from '@nextui-org/react';
 import { LuCheck } from 'react-icons/lu';
-import { updateClass } from '@/services/classes';
+import { classBookingClashes, moveClassToRoom, updateClass } from '@/services/classes';
+import { clashBookingId, clashText } from '@/services/errors';
 import { avatarUrl } from '@/services/storage';
 import { placeColumns, placeKeyOf } from '@/lib/place';
 import { useI18n } from '@/i18n/i18nContext';
@@ -11,6 +13,7 @@ import DateField from '@/ui/DateField';
 import PlaceField from '../../../../common/PlaceField';
 import LevelField from '../../../../common/LevelField';
 import { personName } from '../../hubModel';
+import RoomClashDialog from './RoomClashDialog';
 
 const POPOVER = { popoverContent: 'adminPortal' };
 
@@ -24,12 +27,16 @@ const fromClass = (cls) => ({
 });
 
 // The class's details in place. The start date can only move while the class hasn't started. Moving the
-// class to another room or rented studio moves its sessions not started yet (the server does it).
+// class to another room or rented studio moves its sessions not started yet (the server does it). A studio room
+// booked on some of the class's days doesn't block the move: RoomClashDialog places those sessions first (another
+// room that day, or none yet — a to-do), then the class moves; any other clash says what it is, with its booking.
 const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved }) => {
     const { t } = useI18n();
     const toast = useToast();
     const [form, setForm] = useState(() => fromClass(cls));
     const [saving, setSaving] = useState(false);
+    const [clash, setClash] = useState(null); // { room, days } while RoomClashDialog is open
+    const navigate = useNavigate();
     const initial = fromClass(cls);
     const notStarted = cls.starts_on > today;
     const set = (field) => (value) => setForm((old) => ({ ...old, [field]: value }));
@@ -42,24 +49,49 @@ const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved
     const dirty = Object.keys(initial).some((key) => String(initial[key] ?? '') !== String(form[key] ?? ''));
     const valid = !Object.values(problems).some(Boolean) && form.instructorId;
 
+    const fields = () => ({ ...form, ...placeColumns(form.place), startsOn: notStarted ? form.startsOn : undefined });
+    const target = placeColumns(form.place);
+
     const save = async (event) => {
         event?.preventDefault();
         if (!valid || !dirty) return;
         setSaving(true);
         try {
-            await updateClass(cls.id, {
-                ...form,
-                ...placeColumns(form.place),
-                startsOn: notStarted ? form.startsOn : undefined,
-            });
+            await updateClass(cls.id, fields());
             toast.success('Class updated.');
             onSaved();
         } catch (error) {
+            const bookingId = error.code === 'SLOT_TAKEN' ? clashBookingId(error) : null;
+            // Moving into a studio room booked on some of its days: deal with those sessions one by one.
+            if (bookingId && target.roomId && form.place !== initial.place) {
+                const days = await classBookingClashes(cls.id, target.roomId).catch(() => []);
+                if (days.length) {
+                    setClash({ room: rooms.find((room) => room.id === target.roomId), days });
+                    return;
+                }
+            }
             if (error.code === 'DUPLICATE') toast.error('A class with this name already exists.');
-            else if (error.code === 'SLOT_TAKEN' && error.detail) toast.error(t('That room isn’t free at this class’s times: {detail}.', { detail: error.detail }));
+            else if (error.code === 'SLOT_TAKEN' && error.detail)
+                toast.error(t('That room isn’t free at this class’s times: {detail}.', { detail: clashText(error.detail) }), {
+                    action: bookingId ? { label: 'Open booking', onPress: () => navigate(`/admin/bookings?booking=${bookingId}`) } : undefined,
+                });
             else toast.error(error);
         } finally {
             setSaving(false);
+        }
+    };
+
+    // The clashing sessions placed and the class moved (one call), then the rest of the details.
+    const moveWithPlaces = async (places) => {
+        try {
+            await moveClassToRoom(cls.id, target.roomId, places);
+            await updateClass(cls.id, fields());
+            setClash(null);
+            const unplaced = places.filter((place) => place.room_id === null).length;
+            toast.success(unplaced ? t('Class moved. {count} session(s) have no room yet: see the to-do list.', { count: unplaced }) : 'Class updated.');
+            onSaved();
+        } catch (error) {
+            toast.error(error.code === 'SLOT_TAKEN' && error.detail ? t('That room isn’t free at this class’s times: {detail}.', { detail: clashText(error.detail) }) : error);
         }
     };
 
@@ -105,6 +137,7 @@ const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved
                 description={notStarted ? t('Still upcoming: you can move the first day.') : t('The class has started; its first day stays.')}
             />
             <LevelField value={form.level} onChange={set('level')} isDisabled={readOnly} />
+            {clash && <RoomClashDialog cls={cls} room={clash.room} days={clash.days} onClose={() => setClash(null)} onConfirm={moveWithPlaces} />}
             {!readOnly && (
                 <div className="hubFormActions isWide">
                     <Button variant="light" isDisabled={!dirty || saving} onPress={() => setForm(fromClass(cls))}>

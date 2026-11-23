@@ -18,19 +18,21 @@ const hhmm = (time) => (time ? time.slice(0, 5) : '');
 // [{ key, class_id, class_name, instructor_name, room_id, room_name, date, start, end, is_extra, makes_up }]
 // (`makes_up`: the day a make-up replaces, or null).
 // Weekly sessions count while the class runs (starts_on … ended_on) and not on a day whose session
-// was cancelled (that frees the room); make-up sessions come from instructor_attendance.
+// was cancelled (that frees the room) or has a place of its own that day (own_place: in the room it was
+// placed in, or none yet); make-up sessions come from instructor_attendance.
 export async function listRoomSessions({ from, until }) {
     const [classes, changes] = await Promise.all([
         supabase.from('classes').select(CLASS_COLUMNS).or(`ended_on.is.null,ended_on.gte.${from}`),
         supabase
             .from('instructor_attendance')
-            .select('id, class_id, room_id, venue_id, date, status, start_time, end_time, is_extra, makes_up')
+            .select('id, class_id, room_id, venue_id, date, status, start_time, end_time, is_extra, makes_up, own_place, room:rooms!room_id(id, name)')
             .gte('date', from)
             .lte('date', until)
-            .or('is_extra.eq.true,status.eq.cancelled'),
+            .or('is_extra.eq.true,status.eq.cancelled,own_place.eq.true'),
     ]).then(([classRows, changeRows]) => [unwrap(classRows), unwrap(changeRows)]);
 
     const cancelled = new Set(changes.filter((row) => row.status === 'cancelled').map((row) => `${row.class_id}|${row.date}`));
+    const elsewhere = new Set(changes.filter((row) => row.own_place && !row.is_extra).map((row) => `${row.class_id}|${row.date}`));
     const byId = new Map(classes.map((cls) => [cls.id, cls]));
     const describe = (cls) => ({
         class_id: cls.id,
@@ -46,7 +48,7 @@ export async function listRoomSessions({ from, until }) {
             if (!cls.room_id) continue;
             if (cls.starts_on && cls.starts_on > date) continue;
             if (cls.ended_on && cls.ended_on < date) continue;
-            if (cancelled.has(`${cls.id}|${date}`)) continue;
+            if (cancelled.has(`${cls.id}|${date}`) || elsewhere.has(`${cls.id}|${date}`)) continue;
             for (const slot of cls.schedules ?? []) {
                 if (slot.day_of_week !== weekday) continue;
                 sessions.push({
@@ -61,6 +63,27 @@ export async function listRoomSessions({ from, until }) {
                     makes_up: null,
                 });
             }
+        }
+    }
+
+    // A weekly session placed in a room for that day alone: that room, at the weekly times.
+    for (const row of changes) {
+        if (row.is_extra || !row.own_place || !row.room_id || row.status === 'cancelled') continue;
+        const cls = byId.get(row.class_id);
+        if (!cls) continue;
+        for (const slot of cls.schedules ?? []) {
+            if (slot.day_of_week !== getISODay(parseISO(row.date))) continue;
+            sessions.push({
+                key: `p${row.id}-${slot.id}`,
+                ...describe(cls),
+                room_id: row.room_id,
+                room_name: row.room?.name ?? '',
+                date: row.date,
+                start: hhmm(row.start_time ?? slot.start_time),
+                end: hhmm(row.end_time ?? slot.end_time),
+                is_extra: false,
+                makes_up: null,
+            });
         }
     }
 

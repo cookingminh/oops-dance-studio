@@ -2592,3 +2592,80 @@ a.hubWhoName:hover {
         text-decoration-color: currentColor;
     }
 }
+
+// Moving a class into a room booked on some of its days (RoomClashDialog): one card per day — what is booked
+// there (each booking can be opened), and where that day's session goes.
+.adminPortal.roomClashDialog {
+    .rcIntro {
+        color: var(--ad-muted, hsl(20, 8%, 42%));
+        font-size: .88rem;
+        font-weight: 400;
+        line-height: 1.45;
+    }
+
+    .rcDays {
+        display: grid;
+        gap: .75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .rcDay {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem);
+        align-items: center;
+        gap: .75rem;
+        padding: .8rem .9rem;
+        border: 1px solid var(--ad-border, hsl(20, 10%, 88%));
+        border-radius: 14px;
+    }
+
+    .rcWhen {
+        display: grid;
+        gap: .3rem;
+        min-width: 0;
+
+        strong {
+            font-size: .95rem;
+        }
+    }
+
+    .rcBooking {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .15rem .6rem;
+        color: var(--ad-muted, hsl(20, 8%, 42%));
+        font-size: .84rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rcOpen {
+        display: inline-flex;
+        align-items: center;
+        gap: .2rem;
+        color: var(--ad-primary, hsl(0, 66%, 43%));
+        font-weight: 600;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .rcNote {
+        margin: 0;
+        padding: .55rem .8rem;
+        border-radius: 12px;
+        background: hsl(40, 95%, 93%);
+        color: hsl(30, 90%, 30%);
+        font-size: .86rem;
+        font-weight: 600;
+    }
+}
+
+@media screen and (max-width: 640px) {
+    .adminPortal.roomClashDialog .rcDay {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

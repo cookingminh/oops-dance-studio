@@ -122,6 +122,8 @@ export function calendarItem(session, { today, now, roll, t, byState = false, re
     let badge = total ? `${marked}/${total}` : undefined;
     if (late) badge = t('Late check-out');
     if (session.extra) badge = session.row?.makes_up && day ? t('Make-up · {day}', { day: day(session.row.makes_up) }) : t('Make-up');
+    // Left without a room when its class moved into a room booked that day: staff must place it.
+    if (session.row?.needs_place) badge = t('No room yet');
     // The class page already says it in the title.
     if (state.kind === 'review' && !byState) badge = t('Needs review');
     let who = substitute ? `${teacher} · ${t('Substitute')}` : teacher;

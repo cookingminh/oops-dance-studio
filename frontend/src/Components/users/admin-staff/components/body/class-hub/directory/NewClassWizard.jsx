@@ -15,6 +15,7 @@ import ImagePicker from '@/ui/ImagePicker';
 import { EASE_OUT } from '../../../common/motion';
 import { DetailsStep, RoutineStep, SessionsStep } from './WizardSteps';
 import { detailProblems, routineValid } from './wizardModel';
+import { clashText } from '@/services/errors';
 
 const STEPS = ['Details', 'Weekly sessions', 'First routine', 'Image', 'Done'];
 
@@ -80,7 +81,7 @@ const NewClassWizard = ({ today, prices = [], onClose, onCreated, onOpen }) => {
         } catch (error) {
             setSlotError(
                 error.code === 'SLOT_TAKEN' && error.detail
-                    ? t('That time isn’t free in this class’s room: {detail}.', { detail: error.detail })
+                    ? t('That time isn’t free in this class’s room: {detail}.', { detail: clashText(error.detail) })
                     : t(error.message)
             );
             return false;
