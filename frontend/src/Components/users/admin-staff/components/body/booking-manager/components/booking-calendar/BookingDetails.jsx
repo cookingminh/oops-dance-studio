@@ -10,6 +10,7 @@ import BookingReceipt from '@/ui/payment/BookingReceipt';
 import { statusColorMap } from '../../../../../../../Table/utils';
 import { guestName, isPaidAhead, isWalkIn } from '../../bookingsModel';
 import BookingPayment from './BookingPayment';
+import SeriesPanel from './SeriesPanel';
 
 // Buttons for the status changes a booking allows (same choices as the table's ⋮ menu).
 const STATUS_BUTTONS = {
@@ -115,6 +116,7 @@ const BookingDetails = ({ booking, phone, roomColor, actions, settings, sandbox,
                                     <LuStickyNote aria-hidden="true" />
                                     {booking.details ? <p>{booking.details}</p> : <p className="bdMuted">{t('No notes')}</p>}
                                 </div>
+                                {booking.series_id && <SeriesPanel booking={booking} settings={settings} sandbox={sandbox} onChanged={onRefresh} />}
                             </div>
                             <BookingPayment booking={booking} onPay={(choice) => setExtra({ kind: 'pay', choice })} onReceipt={() => setExtra({ kind: 'receipt' })} onChanged={onRefresh} />
                         </div>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem, Textarea } from '@nextui-org/react';
+import { Modal, Input, Button, ModalHeader, ModalBody, ModalFooter, ModalContent, Select, SelectItem, Switch, Textarea } from '@nextui-org/react';
 import { BOOKING_STATUSES, staffCreateBooking, updateBooking } from '@/services/bookings';
+import { createSeries } from '@/services/bookingSeries';
 import { TIME_OPTIONS, formatTime, formatVnd, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
@@ -8,6 +9,7 @@ import PersonAutocomplete from '@/ui/PersonAutocomplete';
 import Segmented from '../../../../common/Segmented';
 import { PHONE_PATTERN, isWalkIn, listPriceFor } from '../../bookingsModel';
 import NewBookingMoney from './NewBookingMoney';
+import RecurringPlan from './RecurringPlan';
 import { ClashLines } from '../booking-calendar/SlotClashNotice';
 
 // `draft` prefills a new booking (a free slot picked on the calendar): { roomId, date, startTime, endTime }.
@@ -41,6 +43,9 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
     const [money, setMoney] = useState(NO_MONEY);
     const [saving, setSaving] = useState(false);
     const isNew = !booking;
+    // A new booking repeated every week (a series, paid by month): RecurringPlan reports its plan.
+    const [repeat, setRepeat] = useState(false);
+    const [plan, setPlan] = useState(null);
 
     const set = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
     const timeError = form.startTime && form.endTime && toMinutes(form.startTime) >= toMinutes(form.endTime)
@@ -67,7 +72,9 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
     const walkIn = form.who === 'walkin';
     const phoneError = walkIn && form.walkInPhone.trim() && !PHONE_PATTERN.test(form.walkInPhone.trim()) ? t('Enter a phone number (6–20 digits).') : '';
     const whoReady = walkIn ? Boolean(form.walkInName.trim() && form.walkInPhone.trim()) && !phoneError : !isNew || Boolean(form.guestId);
-    const canSave = whoReady && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError && clashes.length === 0;
+    const canSave = repeat
+        ? whoReady && Boolean(plan?.ready)
+        : whoReady && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError && clashes.length === 0;
 
     // Edit: what happens to the price when the room or the times move (the server recomputes the list
     // price; the agreed price follows it unless staff changed it by hand).
@@ -77,7 +84,22 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
     const handleSubmit = async () => {
         setSaving(true);
         try {
-            if (isNew) {
+            if (isNew && repeat) {
+                const { first } = await createSeries({
+                    ...(walkIn ? { walkInName: form.walkInName, walkInPhone: form.walkInPhone } : { guestId: form.guestId }),
+                    roomId: form.roomId,
+                    weekdays: plan.weekdays,
+                    start: form.startTime,
+                    end: form.endTime,
+                    from: form.date,
+                    until: plan.until,
+                    days: plan.days,
+                    discount: plan.discount,
+                    details: form.details,
+                });
+                toast.success(t('Booked {count} sessions, paid by month.', { count: plan.count }));
+                onSaved(first, { series: true });
+            } else if (isNew) {
                 const created = await staffCreateBooking({
                     ...(walkIn ? { walkInName: form.walkInName, walkInPhone: form.walkInPhone } : { guestId: form.guestId }),
                     roomId: Number(form.roomId),
@@ -118,6 +140,8 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
 
     const submitLabel = !isNew
         ? t('Update Booking')
+        : repeat
+        ? t('Book {count} sessions', { count: plan?.count ?? 0 })
         : taken > 0
             ? t('Add Booking · {amount} taken in {method}', { amount: formatVnd(taken), method: money.method === 'cash' ? t('cash') : t('transfer') })
             : t('Add Booking');
@@ -209,7 +233,15 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
                             </Select>
                         )}
                     </div>
-                    {clashes.length > 0 && (
+                    {isNew && (
+                        <Switch size="sm" isSelected={repeat} onValueChange={setRepeat} className="bfRepeat">
+                            {t('Repeat every week (a regular rental, paid by month)')}
+                        </Switch>
+                    )}
+                    {repeat && (
+                        <RecurringPlan rooms={rooms} roomId={form.roomId} date={form.date} startTime={form.startTime} endTime={form.endTime} onChange={setPlan} />
+                    )}
+                    {!repeat && clashes.length > 0 && (
                         <div className="bfClash" role="alert">
                             <p>{t('{room} is already taken then:', { room: room?.name ?? t('This room') })}</p>
                             <ClashLines clashes={clashes} onOpen={onOpenBooking} />
@@ -222,7 +254,7 @@ const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking,
                                 : t('The price follows the new times: {amount}.', { amount: formatVnd(list) })}
                         </p>
                     )}
-                    {isNew && <NewBookingMoney room={room} hours={hours} list={list} money={money} set={(patch) => setMoney((prev) => ({ ...prev, ...patch }))} />}
+                    {isNew && !repeat && <NewBookingMoney room={room} hours={hours} list={list} money={money} set={(patch) => setMoney((prev) => ({ ...prev, ...patch }))} />}
                     <Textarea label={t('Details')} placeholder={t('Optional')} value={form.details} onValueChange={set('details')} />
                 </ModalBody>
                 <ModalFooter>

@@ -468,14 +468,15 @@ const BookingsManager = () => {
                         setOpenId(booking.id);
                     }}
                     onClose={() => setEditing(undefined)}
-                    onSaved={(saved, { taken } = {}) => {
+                    onSaved={(saved, { taken, series } = {}) => {
                         const created = !editing;
                         setEditing(undefined);
                         bookings.reload();
                         // A new booking opens right away: on its QR when nothing was taken (to show the guest or
                         // send the transfer content), else on its payment summary with the line just recorded.
                         if (created && saved) {
-                            setOpenOn(taken ? null : 'pay');
+                            // A series opens on its first session, whose dialog has the months to pay.
+                            setOpenOn(taken || series ? null : 'pay');
                             setOpenId(saved.id);
                         }
                     }}

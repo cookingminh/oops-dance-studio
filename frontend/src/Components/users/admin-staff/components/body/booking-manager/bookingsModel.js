@@ -63,6 +63,7 @@ export function bookingItem(booking, { roomColor, t, withRoom = true, today }) {
     if (booking.status === 'pending') badge = t('Awaiting approval');
     else if (paidAhead) badge = t('Paid up');
     else if (owesRefund(booking)) badge = t('Refund due');
+    else if (booking.series_id) badge = t('Regular');
     return {
         id: `b${booking.id}`,
         date: booking.date,
