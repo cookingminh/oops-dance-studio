@@ -13,8 +13,8 @@ import DetailsForm from '../setup/DetailsForm';
 import EndClassPanel from '../setup/EndClassPanel';
 import TimetablePhotoCard from '../setup/TimetablePhotoCard';
 
-// Setup: details, weekly sessions, the pictures on the website (image, timetable photo) — and the danger zone
-// (end / reopen / delete).
+// Setup: details beside the weekly sessions, the pictures on the website (image, timetable photo) — and the
+// danger zone (end / reopen / delete).
 // ?end=1 scrolls to the danger zone (the header's "End class").
 const SetupTab = ({ ctx }) => {
     const { cls, today, badge, instructors, rooms, venues, history, canDelete, changed, params, openImage, reopen, remove } = ctx;
@@ -55,11 +55,11 @@ const SetupTab = ({ ctx }) => {
 
     return (
         <>
-            <SectionCard icon={LuSettings2} title={t('Details')} subtitle={ended ? t('An ended class can’t be edited. Reopen it first.') : t('Name, instructor, where it’s taught, price, start date and level')}>
-                <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.venue_room_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
-            </SectionCard>
+            <div className="hubSetupTop">
+                <SectionCard icon={LuSettings2} title={t('Details')} subtitle={ended ? t('An ended class can’t be edited. Reopen it first.') : t('Name, instructor, where it’s taught, price, start date and level')}>
+                    <DetailsForm key={`${cls.id}-${cls.updated_at ?? ''}-${cls.name}-${cls.price}-${cls.room_id}-${cls.venue_id}-${cls.venue_room_id}-${cls.instructor_id}-${cls.starts_on}`} cls={cls} today={today} instructors={instructors} rooms={rooms} venues={venues} readOnly={ended} onSaved={changed} />
+                </SectionCard>
 
-            <div className="hubTrio">
                 <SectionCard
                     icon={LuCalendarClock}
                     title={t('Weekly sessions')}
@@ -94,7 +94,9 @@ const SetupTab = ({ ctx }) => {
                         {slots.length === 0 && !ended && <li className="hubSlotItem isEmpty">{t('No weekly sessions yet')}</li>}
                     </ul>
                 </SectionCard>
+            </div>
 
+            <div className="hubDuo">
                 <SectionCard
                     icon={LuImage}
                     title={t('Image')}

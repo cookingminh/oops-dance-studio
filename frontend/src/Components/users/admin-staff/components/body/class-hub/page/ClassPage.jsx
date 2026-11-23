@@ -52,7 +52,7 @@ async function loadPage(id) {
     return { cls, today };
 }
 
-// /admin/classes/:id — one class with everything about it: a sticky header and tabs kept in the
+// /admin/classes/:id — one class with everything about it: a header and tabs kept in the
 // URL (?tab=). Tabs load their own data; `version` tells them to reload after a change elsewhere.
 const ClassPage = () => {
     const { id } = useParams();

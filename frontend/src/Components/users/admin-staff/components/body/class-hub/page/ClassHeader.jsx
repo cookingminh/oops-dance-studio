@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar, Button, Dropdown, DropdownItem, DropdownMenu, DropdownTrigger } from '@nextui-org/react';
 import { LuArrowLeft, LuFlag, LuHistory, LuImage, LuListChecks, LuMoreVertical, LuPencil, LuRotateCcw, LuTrash2, LuUserPlus } from 'react-icons/lu';
@@ -13,15 +12,12 @@ import { PlaceDetails, PlaceIcon } from '@/ui/place/PlaceParts';
 import { ClassImage, PhaseBadge, ScheduleChips } from '../HubParts';
 import { HUB_BASE, personName } from '../hubModel';
 import HubTabs from './HubTabs';
-import { useStickyHeader } from './useStickyHeader';
 import { activityPath } from '../../activity/activityLinks';
 
-// The class page's sticky header: who / where (a rented studio with its address and map link) / when at a glance, the two things staff do most
+// The class page's header: who / where (a rented studio with its address and map link) / when at a glance, the two things staff do most
 // (today's roll call, add a student), the rest in ⋮, and the tab row.
 const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, actions }) => {
     const { t } = useI18n();
-    const heroRef = useRef(null);
-    const top = useStickyHeader(heroRef);
     const ended = badge.phase === 'ended';
     const teacher = personName(cls.instructor) || t('No instructor');
     const place = placeOf(cls);
@@ -40,9 +36,9 @@ const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, acti
     ].filter(Boolean);
 
     return (
-        <header className="hubSticky" style={{ top }}>
+        <header className="hubTop">
             <div className="hubHeader adminCard">
-                <div className="hubHero" ref={heroRef}>
+                <div className="hubHero">
                     <ClassImage cls={cls} className="isHero" />
                     <div className="hubHeroText">
                         <Link to={HUB_BASE} className="hubBack">

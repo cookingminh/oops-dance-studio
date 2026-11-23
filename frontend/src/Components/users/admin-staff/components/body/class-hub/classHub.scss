@@ -1281,13 +1281,9 @@ $blue-soft: hsl(217, 85%, 95%);
 
 // Class page header ======================================================================
 
-.adminShell .hubSticky {
-    position: sticky;
-    z-index: 20;
+// Scrolls with the page: a header that stays put took too much of the screen.
+.adminShell .hubTop {
     min-width: 0;
-    margin: -.5rem 0 0;
-    padding-top: .5rem;
-    background: var(--ad-bg);
 }
 
 .adminShell .hubHeader {
@@ -1460,10 +1456,11 @@ $blue-soft: hsl(217, 85%, 95%);
     align-items: start;
 }
 
-// Setup: the weekly sessions, then the two pictures on the website (image, timetable photo) side by side.
-.adminShell .hubTrio {
+// Setup: the details beside the weekly sessions (the form needs the room), then the two pictures on the website
+// (image, timetable photo) side by side (.hubDuo).
+.adminShell .hubSetupTop {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
 }
@@ -2352,21 +2349,13 @@ a.hubWhoName:hover {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    // The weekly sessions across the top, the pictures under them.
-    .adminShell .hubTrio {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-
-        > :first-child {
-            grid-column: 1 / -1;
-        }
+    // The details, then the weekly sessions under them.
+    .adminShell .hubSetupTop {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
 @media screen and (max-width: 767px) {
-    .adminShell .hubTrio {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .adminShell .hubDirectory .hubSearch {
         width: 100%;
     }
