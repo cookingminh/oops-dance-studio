@@ -10,7 +10,7 @@ import { DeskPanel, QrPanel } from '@/ui/payment/QrPanel';
 import CopyRow from '@/ui/payment/CopyRow';
 import { PaidCelebration, SandboxBox, WaitingNote } from '@/ui/payment/PayExtras';
 import Segmented from '../../../../common/Segmented';
-import { capitalized } from '../booking-list/RecurringPlan';
+import { capitalized } from '../../bookingsModel';
 
 const POLL_MS = 3000;
 

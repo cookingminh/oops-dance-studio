@@ -7,15 +7,13 @@ import { discounted, previewSeries } from '@/services/bookingSeries';
 import { TIME_OPTIONS, formatVnd, isoWeekdayOf, toMinutes } from '@/lib/format';
 import { useI18n } from '@/i18n/i18nContext';
 import Segmented from '../../../../common/Segmented';
-import { listPriceFor } from '../../bookingsModel';
+import { capitalized, listPriceFor } from '../../bookingsModel';
 
 const POPOVER = { popoverContent: 'adminPortal' };
 const WEEK = [1, 2, 3, 4, 5, 6, 7];
 const SKIP = 'skip';
 const OTHER_TIME = 'time';
 const plusDays = (iso, days) => format(addDays(parseISO(iso), days), 'yyyy-MM-dd');
-// "tháng 12 năm 2026" starts a line: "Tháng 12 năm 2026".
-export const capitalized = (text) => (text ? text[0].toUpperCase() + text.slice(1) : text);
 
 // What holds a room, as the server words it (room_clash_on), in the viewer's language.
 function clashWords(text, t) {

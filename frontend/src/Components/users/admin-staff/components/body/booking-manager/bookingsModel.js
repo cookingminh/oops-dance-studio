@@ -19,6 +19,8 @@ export const STATUS_FILTERS = ['all', 'pending', 'approved', 'completed', 'rejec
 export const MODES = ['week', 'month', 'list'];
 
 export const capitalize = (text) => text[0].toUpperCase() + text.slice(1);
+// "tháng 12 năm 2026" starts a line: "Tháng 12 năm 2026" (empty stays empty).
+export const capitalized = (text) => (text ? capitalize(text) : text);
 export const byRoomId = (a, b) => String(a.id).localeCompare(String(b.id), undefined, { numeric: true });
 export const soonestFirst = (a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time);
 
