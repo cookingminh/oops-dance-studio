@@ -24,7 +24,7 @@ import AsyncState from '@/ui/feedback/AsyncState';
 import { VerticalDotsIcon } from '../../../../../../../Table/VerticalDotsIcon';
 import { statusColorMap } from '../../../../../../../Table/utils';
 import { DEPOSIT_LABELS } from '../../useBookingActions';
-import { PAGE_SIZE, guestName, isPaidAhead } from '../../bookingsModel';
+import { PAGE_SIZE, guestName, isPaidAhead, isWalkIn } from '../../bookingsModel';
 
 const COLUMNS = [
     { key: 'id', label: 'Booking' },
@@ -58,7 +58,7 @@ const BookingList = ({ state, rows, total, page, onPage, todayIso, roomColor, ac
                     <User
                         avatarProps={{ ...AVATAR_DEFAULTS, radius: 'full', size: 'sm', src: avatarUrl(booking.guest?.avatar_path, booking.guest?.updated_at) ?? undefined, name }}
                         name={name}
-                        description={booking.guest?.email}
+                        description={isWalkIn(booking) ? [t('Walk-in'), booking.walk_in_phone].filter(Boolean).join(' · ') : booking.guest?.email}
                     />
                 );
             }

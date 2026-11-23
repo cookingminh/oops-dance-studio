@@ -360,7 +360,7 @@ export async function loadStaffTasks() {
             kind: 'bookings',
             tone: 'normal',
             title: one
-                ? msg('{guest} still owes for their booking', { guest: personName(one.guest) ?? `#${one.id}` })
+                ? msg('{guest} still owes for their booking', { guest: personName(one.guest) ?? one.walk_in_name ?? one.walk_in_name ?? `#${one.id}` })
                 : count(owing.length, '{count} past booking still owes money', '{count} past bookings still owe money'),
             detail: one
                 ? msg('{amount} left · {room} on {date}', { amount: formatVnd(one.owed), room: one.room?.name ?? '', date: one.date })

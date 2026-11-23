@@ -44,7 +44,7 @@ export async function listRefundsDue() {
     return unwrap(
         await supabase
             .from('bookings')
-            .select('id, date, start_time, end_time, status, refund_due, refund_to, cancelled_at, guest:profiles!guest_id(id, full_name, username), room:rooms!room_id(id, name)')
+            .select('id, date, start_time, end_time, status, refund_due, refund_to, cancelled_at, walk_in_name, walk_in_phone, guest:profiles!guest_id(id, full_name, username), room:rooms!room_id(id, name)')
             .gt('refund_due', 0)
             .order('cancelled_at', { ascending: true })
     );

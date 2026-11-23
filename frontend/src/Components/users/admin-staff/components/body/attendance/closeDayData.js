@@ -11,7 +11,7 @@ import { sessionTimes } from '../class-hub/hubModel';
 // room bookings that day, which the studio cancels with everything paid going back. RLS: staff read every
 // session and booking.
 
-const BOOKING = 'id, status, date, start_time, end_time, bank_transfer, cash, room:rooms!room_id(id, name), guest:profiles!guest_id(id, username, full_name)';
+const BOOKING = 'id, status, date, start_time, end_time, bank_transfer, cash, walk_in_name, room:rooms!room_id(id, name), guest:profiles!guest_id(id, username, full_name)';
 
 const DONE = ['cancelled', 'in_progress', 'completed'];
 

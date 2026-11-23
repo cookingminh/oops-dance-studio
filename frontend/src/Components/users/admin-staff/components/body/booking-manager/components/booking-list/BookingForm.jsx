@@ -5,13 +5,17 @@ import { TIME_OPTIONS, formatTime, formatVnd, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
-import { listPriceFor } from '../../bookingsModel';
+import Segmented from '../../../../common/Segmented';
+import { PHONE_PATTERN, isWalkIn, listPriceFor } from '../../bookingsModel';
 import NewBookingMoney from './NewBookingMoney';
 import { ClashLines } from '../booking-calendar/SlotClashNotice';
 
 // `draft` prefills a new booking (a free slot picked on the calendar): { roomId, date, startTime, endTime }.
 const initialForm = (booking, draft) => ({
+    who: booking && isWalkIn(booking) ? 'walkin' : 'account', // an account, or a walk-in with no account
     guestId: booking?.guest_id ?? null,
+    walkInName: booking?.walk_in_name ?? '',
+    walkInPhone: booking?.walk_in_phone ?? '',
     roomId: booking ? String(booking.room_id) : draft?.roomId ? String(draft.roomId) : '',
     date: booking?.date ?? draft?.date ?? '',
     startTime: booking ? formatTime(booking.start_time) : draft?.startTime ?? '',
@@ -22,14 +26,15 @@ const initialForm = (booking, draft) => ({
 
 const NO_MONEY = { changing: false, price: '', priceNote: '', status: 'approved', paidKind: 'none', other: '', method: 'cash', paymentNote: '' };
 
-// Staff create (for a guest) or edit a booking. `booking` = null means create (prefilled from `draft`).
+// Staff create (for anyone with an account — `people` — or for a walk-in: name and phone, no account) or edit a
+// booking. `booking` = null means create (prefilled from `draft`).
 // Create: the server prices it from the room (or another agreed price with its reason), sets its payment
 // code and records money taken now, all in one go (staffCreateBooking); onSaved(created, { taken }).
 // Edit: guest, room, date, times, status and details only — money changes through the booking dialog's
 // Record payment / Change price, so every amount has a line in its history; onSaved(updated).
 // clashesFor({ roomId, date, start, end, skipId }) lists what already holds the room then (slotClashes): the form
 // says so as soon as the room or the times are picked, and won't save; onOpenBooking(booking) opens one of them.
-const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking, onClose, onSaved }) => {
+const BookingForm = ({ booking, draft, rooms, people, clashesFor, onOpenBooking, onClose, onSaved }) => {
     const toast = useToast();
     const { t } = useI18n();
     const [form, setForm] = useState(() => initialForm(booking, draft));
@@ -59,7 +64,10 @@ const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking,
                 : money.paidKind === 'other' && (!Number.isInteger(Number(money.other)) || Number(money.other) <= 0)
                     ? t('Enter an amount in VND.')
                     : '';
-    const canSave = (!isNew || form.guestId) && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError && clashes.length === 0;
+    const walkIn = form.who === 'walkin';
+    const phoneError = walkIn && form.walkInPhone.trim() && !PHONE_PATTERN.test(form.walkInPhone.trim()) ? t('Enter a phone number (6–20 digits).') : '';
+    const whoReady = walkIn ? Boolean(form.walkInName.trim() && form.walkInPhone.trim()) && !phoneError : !isNew || Boolean(form.guestId);
+    const canSave = whoReady && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError && clashes.length === 0;
 
     // Edit: what happens to the price when the room or the times move (the server recomputes the list
     // price; the agreed price follows it unless staff changed it by hand).
@@ -71,7 +79,7 @@ const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking,
         try {
             if (isNew) {
                 const created = await staffCreateBooking({
-                    guestId: form.guestId,
+                    ...(walkIn ? { walkInName: form.walkInName, walkInPhone: form.walkInPhone } : { guestId: form.guestId }),
                     roomId: Number(form.roomId),
                     date: form.date,
                     startTime: form.startTime,
@@ -87,8 +95,16 @@ const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking,
                 toast.success(t('Booking #{id} created · code {code}', { id: created.id, code: created.payment_code }));
                 onSaved(created, { taken });
             } else {
-                const fields = { ...form, roomId: Number(form.roomId) };
-                delete fields.guestId; // the guest of an existing booking doesn't change
+                // Who it is for doesn't change, but a walk-in's name and phone can be corrected.
+                const fields = {
+                    roomId: Number(form.roomId),
+                    date: form.date,
+                    startTime: form.startTime,
+                    endTime: form.endTime,
+                    status: form.status,
+                    details: form.details,
+                    ...(isWalkIn(booking) ? { walkInName: form.walkInName, walkInPhone: form.walkInPhone } : {}),
+                };
                 const updated = await updateBooking(booking.id, fields);
                 toast.success('Booking updated.');
                 onSaved(updated);
@@ -111,8 +127,37 @@ const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking,
             <ModalContent>
                 <ModalHeader>{isNew ? t('Add Booking') : t('Edit Booking #{id}', { id: booking.id })}</ModalHeader>
                 <ModalBody>
-                    {isNew ? (
-                        <PersonAutocomplete label={t('Guest')} people={guests} value={form.guestId} onChange={set('guestId')} isRequired />
+                    {isNew && (
+                        <div className="bfRow">
+                            <span className="bfLabel">{t('Booking for')}</span>
+                            <Segmented
+                                label={t('Booking for')}
+                                options={[
+                                    { key: 'account', label: t('An account') },
+                                    { key: 'walkin', label: t('A walk-in (no account)') },
+                                ]}
+                                value={form.who}
+                                onChange={set('who')}
+                            />
+                        </div>
+                    )}
+                    {walkIn ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <Input label={t('Walk-in’s name')} isRequired value={form.walkInName} onValueChange={set('walkInName')} maxLength={80} autoFocus={isNew} />
+                            <Input
+                                label={t('Phone')}
+                                type="tel"
+                                isRequired
+                                value={form.walkInPhone}
+                                onValueChange={set('walkInPhone')}
+                                maxLength={20}
+                                isInvalid={Boolean(phoneError)}
+                                errorMessage={phoneError || undefined}
+                                description={t('To reach them about the booking; they have no account.')}
+                            />
+                        </div>
+                    ) : isNew ? (
+                        <PersonAutocomplete label={t('Guest')} people={people} value={form.guestId} onChange={set('guestId')} isRequired showRole />
                     ) : (
                         <p className="text-sm">
                             {t('Guest:')} <strong>{booking.guest?.full_name || booking.guest?.username || booking.guest?.email}</strong>

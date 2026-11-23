@@ -97,7 +97,7 @@ export async function listOwingBookings(today, { days = 60 } = {}) {
     const rows = unwrap(
         await supabase
             .from('bookings')
-            .select('id, date, start_time, end_time, status, payment_code, deposit, deposit_status, full_payment, bank_transfer, cash, guest:profiles!guest_id(id, full_name, username), room:rooms!room_id(id, name)')
+            .select('id, date, start_time, end_time, status, payment_code, deposit, deposit_status, full_payment, bank_transfer, cash, walk_in_name, walk_in_phone, guest:profiles!guest_id(id, full_name, username), room:rooms!room_id(id, name)')
             .in('status', ['approved', 'completed'])
             .lt('date', today)
             .gte('date', from.toISOString().slice(0, 10))
@@ -112,7 +112,7 @@ export async function listOwingBookings(today, { days = 60 } = {}) {
 export async function findBooking(term) {
     const text = String(term ?? '').trim().replace(/^#/, '').toUpperCase();
     if (!text) return null;
-    const query = supabase.from('bookings').select('id, date, start_time, end_time, status, payment_code, deposit, full_payment, bank_transfer, cash, deposit_status, room:rooms!room_id(id, name), guest:profiles!guest_id(id, full_name, username)');
+    const query = supabase.from('bookings').select('id, date, start_time, end_time, status, payment_code, deposit, full_payment, bank_transfer, cash, deposit_status, room:rooms!room_id(id, name), walk_in_name, walk_in_phone, guest:profiles!guest_id(id, full_name, username)');
     const result = /^\d+$/.test(text) ? await query.eq('id', Number(text)).maybeSingle() : await query.eq('payment_code', text).maybeSingle();
     return unwrap(result);
 }

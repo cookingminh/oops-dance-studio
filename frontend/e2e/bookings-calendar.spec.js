@@ -231,6 +231,23 @@ test('letting go over a booking keeps the range in red and says what holds it, i
     await notice.getByRole('button', { name: 'Close' }).click();
     await expect(notice).toHaveCount(0);
     await expect(ghost).toHaveCount(0);
+test('staff book a walk-in with no account: their name and phone, on the calendar and in the dialog', async () => {
+    await lane(roomB.id).locator('.calSlot[data-time="12:00"]').click();
+    await dialog.getByRole('button', { name: 'A walk-in (no account)' }).click();
+    await expect(dialog.getByRole('button', { name: 'Add Booking', exact: true })).toBeDisabled();
+    await dialog.getByLabel('Walk-in’s name').fill('Chị Lan Walk-in');
+    await dialog.getByLabel('Phone').fill('12');
+    await expect(dialog).toContainText('Enter a phone number (6–20 digits).');
+    await dialog.getByLabel('Phone').fill('0912 345 678');
+    await dialog.getByRole('button', { name: 'Add Booking', exact: true }).click();
+    await expectToast(page, 'created · code');
+    await closeDialogs(); // on its QR code, like any new booking with nothing taken
+    const walkIn = lane(roomB.id).getByRole('button', { name: /12:00–13:00 Chị Lan Walk-in/ });
+    await expect(walkIn).toBeVisible();
+    await walkIn.click();
+    await expect(dialog).toContainText('Walk-in, no account');
+    await expect(dialog).toContainText('0912 345 678');
+    await closeDialogs();
 });
 
 test('month view lists the booking on its day; List shows the table', async () => {

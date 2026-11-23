@@ -9,7 +9,7 @@ import { toMinutes } from '@/lib/format';
 import { listBookings } from '@/services/bookings';
 import { listRoomSessions } from '@/services/bookingsExtra';
 import { listRooms } from '@/services/rooms';
-import { getProfile, listGuests } from '@/services/users';
+import { getProfile, listProfiles } from '@/services/users';
 import { getStudioToday } from '@/services/studio';
 import { getTuitionSettings, isPaymentSandbox } from '@/services/tuition';
 import { bookingBalance } from '@/services/bookingPayments';
@@ -49,7 +49,8 @@ const BookingsManager = () => {
     const [params, setParams] = useSearchParams();
     const bookings = useAsync(listBookings, []);
     const rooms = useAsync(listRooms, []);
-    const guests = useAsync(listGuests, []);
+    // Anyone with an account can be booked for (students, instructors, staff); walk-ins need none.
+    const people = useAsync(listProfiles, []);
     const today = useAsync(getStudioToday, []);
     // The bank account for the QR code, and whether simulated transfers work (local stack, demo).
     const payment = useAsync(() => Promise.all([getTuitionSettings(), isPaymentSandbox()]), []);
@@ -172,7 +173,7 @@ const BookingsManager = () => {
             if (today.data && scope === 'upcoming' && booking.date < todayIso) return false;
             if (today.data && scope === 'past' && booking.date >= todayIso) return false;
             if (!term) return true;
-            return [booking.guest?.full_name, booking.guest?.username, booking.guest?.email, booking.room?.name, booking.date, `#${booking.id}`, booking.details]
+            return [booking.guest?.full_name, booking.guest?.username, booking.guest?.email, booking.walk_in_name, booking.walk_in_phone, booking.room?.name, booking.date, `#${booking.id}`, booking.details]
                 .some((value) => String(value ?? '').toLowerCase().includes(term));
         })
         : all.filter(inRange(period));
@@ -286,11 +287,11 @@ const BookingsManager = () => {
 
     const opened = openId ? all.find((booking) => booking.id === openId) : null;
     const openedGuestId = opened?.guest_id;
-    const listedPhone = guests.data?.find((guest) => guest.id === openedGuestId)?.contact_number;
-    // A booking's guest may not be on the guest list (another role): fetch their profile then.
+    const listedPhone = opened?.walk_in_phone ?? people.data?.find((person) => person.id === openedGuestId)?.contact_number;
+    // A profile that isn't in the list yet (an account made after the page loaded): fetch it then.
     const profile = useAsync(
-        () => (openedGuestId && guests.data && !guests.data.some((guest) => guest.id === openedGuestId) ? getProfile(openedGuestId) : Promise.resolve(null)),
-        [openedGuestId, Boolean(guests.data)]
+        () => (openedGuestId && people.data && !people.data.some((person) => person.id === openedGuestId) ? getProfile(openedGuestId) : Promise.resolve(null)),
+        [openedGuestId, Boolean(people.data)]
     );
 
     return (
@@ -460,7 +461,7 @@ const BookingsManager = () => {
                     booking={editing}
                     draft={editing ? undefined : draft}
                     rooms={rooms.data ?? []}
-                    guests={guests.data ?? []}
+                    people={people.data ?? []}
                     clashesFor={(slot) => slotClashes({ bookings: all, sessions: sessions.data ?? [], ...slot })}
                     onOpenBooking={(booking) => {
                         setEditing(undefined);

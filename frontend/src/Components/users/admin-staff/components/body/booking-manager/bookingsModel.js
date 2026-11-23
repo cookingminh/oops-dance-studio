@@ -28,7 +28,11 @@ export function countBy(list, keyOf) {
     return counts;
 }
 
-export const guestName = (booking, t) => booking.guest?.full_name || booking.guest?.username || booking.guest?.email || t('Guest');
+// Who a booking is for: the account, else a walk-in staff booked (no account; name and phone on the booking).
+export const guestName = (booking, t) => booking.guest?.full_name || booking.guest?.username || booking.guest?.email || booking.walk_in_name || t('Guest');
+export const isWalkIn = (booking) => !booking.guest_id && Boolean(booking.walk_in_name);
+// A walk-in's phone is checked like the database does (bookings.walk_in_phone).
+export const PHONE_PATTERN = /^[0-9+ .()-]{6,20}$/;
 
 // The days a header count covers: the shown week, or the month itself (not the grid's spill-over days).
 export function periodOf(view, date) {

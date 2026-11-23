@@ -27,7 +27,7 @@ async function lookUp(lookup) {
 const BookingHit = ({ booking }) => {
     const { t, formatDate } = useI18n();
     const owed = bookingBalance(booking);
-    const guest = booking.guest?.full_name || booking.guest?.username || t('Guest');
+    const guest = booking.guest?.full_name || booking.guest?.username || booking.walk_in_name || t('Guest');
     return (
         <div className="tuBookingHit" data-booking={booking.id}>
             <span className="tuTransferIcon" aria-hidden="true">

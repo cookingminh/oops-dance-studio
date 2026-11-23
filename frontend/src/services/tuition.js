@@ -215,7 +215,7 @@ export async function switchClass(studentId, fromClassId, toClassId, note = null
 export async function listTransfers({ status = null, limit = 100 } = {}) {
     let query = supabase
         .from('bank_transfers')
-        .select('id, provider, provider_ref, amount, content, received_at, status, invoice_id, booking_id, note, invoice:tuition_invoices!invoice_id(id, student_id, student_name, class_name, month, payment_code), booking:bookings!booking_id(id, date, start_time, end_time, payment_code, room:rooms!room_id(id, name), guest:profiles!guest_id(id, full_name, username))')
+        .select('id, provider, provider_ref, amount, content, received_at, status, invoice_id, booking_id, note, invoice:tuition_invoices!invoice_id(id, student_id, student_name, class_name, month, payment_code), booking:bookings!booking_id(id, date, start_time, end_time, payment_code, walk_in_name, room:rooms!room_id(id, name), guest:profiles!guest_id(id, full_name, username))')
         .order('received_at', { ascending: false })
         .limit(limit);
     if (status) query = query.eq('status', status);

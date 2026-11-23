@@ -85,9 +85,11 @@ function toRow(fields) {
         status: 'status',
         depositStatus: 'deposit_status',
         details: 'details',
+        walkInName: 'walk_in_name',
+        walkInPhone: 'walk_in_phone',
     };
     for (const [key, column] of Object.entries(map)) {
-        if (key in fields) row[column] = key === 'details' ? fields[key]?.trim() || null : fields[key];
+        if (key in fields) row[column] = ['details', 'walkInName', 'walkInPhone'].includes(key) ? fields[key]?.trim() || null : fields[key];
     }
     for (const column of ['deposit', 'full_payment', 'real_income', 'bank_transfer', 'cash']) {
         if (column in fields) row[column] = money(fields[column]);
@@ -100,7 +102,8 @@ function toRow(fields) {
 // `priceNote` if given, and money taken now: `paid` (the deposit, the full price or any amount) by `method`
 // ('cash' | 'transfer' seen by hand) with an optional `paymentNote`. Nothing taken → the guest pays later by
 // QR (services/bookingPayments.js). → the booking.
-export async function staffCreateBooking({ guestId, roomId, date, startTime, endTime, details, status = 'approved', price = null, priceNote = null, paid = 0, method = 'cash', paymentNote = null }) {
+// For an account pass guestId; for a walk-in (no account) pass walkInName and walkInPhone instead.
+export async function staffCreateBooking({ guestId = null, walkInName = null, walkInPhone = null, roomId, date, startTime, endTime, details, status = 'approved', price = null, priceNote = null, paid = 0, method = 'cash', paymentNote = null }) {
     return unwrap(
         await supabase.rpc('booking_staff_create', {
             p_guest: guestId,
@@ -115,6 +118,8 @@ export async function staffCreateBooking({ guestId, roomId, date, startTime, end
             p_paid: paid,
             p_method: method,
             p_payment_note: paymentNote,
+            p_walk_in_name: walkInName?.trim() || null,
+            p_walk_in_phone: walkInPhone?.trim() || null,
         })
     );
 }

@@ -76,7 +76,7 @@ const BookingAssignDialog = ({ transfer, busy, onClose, onAssign }) => {
                         <div className="tuBookingCard" data-booking={booking.id}>
                             <div className="tuBookingTop">
                                 <strong>
-                                    {t('Booking #{id}', { id: booking.id })} · {booking.guest?.full_name || booking.guest?.username || t('Guest')}
+                                    {t('Booking #{id}', { id: booking.id })} · {booking.guest?.full_name || booking.guest?.username || booking.walk_in_name || t('Guest')}
                                 </strong>
                                 <span className="tuMono">{booking.payment_code}</span>
                             </div>

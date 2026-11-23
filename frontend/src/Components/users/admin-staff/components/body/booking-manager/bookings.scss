@@ -118,6 +118,17 @@
         background: var(--ad-surface-2);
     }
 
+    // A walk-in staff booked (no account): said under the name, the phone is the way to reach them.
+    .bdWalkIn {
+        justify-self: start;
+        padding: .1rem .5rem;
+        border-radius: 999px;
+        background: hsl(40, 95%, 92%);
+        color: hsl(30, 80%, 28%);
+        font-size: .74rem;
+        font-weight: 700;
+    }
+
     .bdGuestText {
         display: grid;
         gap: .15rem;

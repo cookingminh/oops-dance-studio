@@ -218,7 +218,7 @@ const CloseDayDialog = ({ today, classes, onClose, onChanged }) => {
                                                                             {formatTime(booking.start_time)}–{formatTime(booking.end_time)}
                                                                         </span>
                                                                         <span className="scgName">
-                                                                            {booking.room?.name} · {personName(booking.guest) || t('Guest')}
+                                                                            {booking.room?.name} · {personName(booking.guest) || booking.walk_in_name || t('Guest')}
                                                                         </span>
                                                                         <span className="scgAside">{bookingReceived(booking) ? t('{amount} paid', { amount: formatVnd(bookingReceived(booking)) }) : t('Nothing paid')}</span>
                                                                     </li>

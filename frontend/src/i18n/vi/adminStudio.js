@@ -112,6 +112,15 @@ export default {
 
     // Booking form
     'Add Booking': 'Thêm lượt đặt phòng',
+    // Booking for an account or a walk-in (no account).
+    'Booking for': 'Đặt cho',
+    'An account': 'Người có tài khoản',
+    'A walk-in (no account)': 'Khách vãng lai',
+    'Walk-in’s name': 'Tên khách',
+    'Enter a phone number (6–20 digits).': 'Nhập số điện thoại (6–20 số).',
+    'To reach them about the booking; they have no account.': 'Để liên lạc về lượt đặt phòng, vì khách không có tài khoản.',
+    'Walk-in': 'Khách vãng lai',
+    'Walk-in, no account': 'Khách vãng lai, không có tài khoản',
     'Edit Booking #{id}': 'Sửa lượt đặt phòng #{id}',
     'Update Booking': 'Cập nhật lượt đặt phòng',
     Start: 'Bắt đầu',

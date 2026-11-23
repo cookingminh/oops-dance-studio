@@ -8,7 +8,7 @@ import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import BookingPayDialog from '@/ui/payment/BookingPayDialog';
 import BookingReceipt from '@/ui/payment/BookingReceipt';
 import { statusColorMap } from '../../../../../../../Table/utils';
-import { guestName, isPaidAhead } from '../../bookingsModel';
+import { guestName, isPaidAhead, isWalkIn } from '../../bookingsModel';
 import BookingPayment from './BookingPayment';
 
 // Buttons for the status changes a booking allows (same choices as the table's ⋮ menu).
@@ -70,6 +70,7 @@ const BookingDetails = ({ booking, phone, roomColor, actions, settings, sandbox,
                                     />
                                     <div className="bdGuestText">
                                         <strong>{name}</strong>
+                                        {isWalkIn(booking) && <span className="bdWalkIn">{t('Walk-in, no account')}</span>}
                                         {phone ? (
                                             <a href={`tel:${phone.replace(/\s+/g, '')}`}>
                                                 <LuPhone aria-hidden="true" /> {phone}

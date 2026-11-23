@@ -194,7 +194,7 @@ export const TransferHistory = ({ state, invoices = [], busyId, onRestore, onTak
                                             {transfer.booking && (
                                                 <span>
                                                     {' · '}
-                                                    {t('Booking #{id}', { id: transfer.booking.id })} · {transfer.booking.guest?.full_name || transfer.booking.guest?.username}
+                                                    {t('Booking #{id}', { id: transfer.booking.id })} · {transfer.booking.guest?.full_name || transfer.booking.guest?.username || transfer.booking.walk_in_name}
                                                 </span>
                                             )}
                                         </strong>
