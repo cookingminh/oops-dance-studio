@@ -69,7 +69,7 @@ export default {
                             rows={[
                                 { id: 'a', lead: '18:15', leadSub: '19:30', title: 'Girlstyle 1', sub: 'An Trinh · Studio Thỏ', tag: { label: t('Live now'), tone: 'live' } },
                                 { id: 'b', lead: '18:30', leadSub: '19:45', title: 'Trending', sub: 'Đỗ Linh · Studio Thỏ', tag: { label: t('Pending'), tone: 'pending' } },
-                                { id: 'c', lead: '20:00', leadSub: '21:15', title: 'Choreo BT', sub: 'Soleck · Bà Triệu', tag: { label: t('No record'), tone: 'muted' } },
+                                { id: 'c', lead: '20:00', leadSub: '21:15', title: 'Choreo Bà Triệu', sub: 'Soleck · Bà Triệu', tag: { label: t('No record'), tone: 'muted' } },
                             ]}
                             callout={t('“{label}” means the class has no check-in record yet today; press it to open Attendance.', { label: t('No record') })}
                         />
@@ -89,7 +89,7 @@ export default {
                         <ExList
                             rows={[
                                 { id: 'a', avatar: 'ĐA', title: `Đức Anh ${t('checked in to')} K-pop Dance`, sub: '18:22' },
-                                { id: 'b', avatar: 'S', title: `Soleck ${t('checked out of')} Choreo BT`, sub: '21:31', tag: { label: t('Late check-out'), tone: 'late' } },
+                                { id: 'b', avatar: 'S', title: `Soleck ${t('checked out of')} Choreo Bà Triệu`, sub: '21:31', tag: { label: t('Late check-out'), tone: 'late' } },
                             ]}
                         />
                     ),
@@ -105,7 +105,7 @@ export default {
                                 { id: 'b', dot: 'urgent', title: t('Attendance not taken for {cls}', { cls: 'Girlstyle 2' }), sub: t('Needs attention now') },
                                 { id: 'c', dot: 'normal', title: tn(4, '{count} booking request to review', '{count} booking requests to review'), sub: t('To do today') },
                                 { id: 'd', dot: 'normal', title: tn(2, '{count} student is late with tuition', '{count} students are late with tuition'), sub: t('To do today') },
-                                { id: 'e', dot: 'later', title: t('Take attendance for {cls}', { cls: 'Choreo BT' }), sub: t('Later today') },
+                                { id: 'e', dot: 'later', title: t('Take attendance for {cls}', { cls: 'Choreo Bà Triệu' }), sub: t('Later today') },
                             ]}
                         />
                     ),

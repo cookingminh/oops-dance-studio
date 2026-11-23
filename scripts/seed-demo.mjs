@@ -103,32 +103,35 @@ const ROOMS = [
 ];
 
 // schedules: [ISO weekday 1=Mon…7=Sun, start, end]. The studio's November timetable, as in seed.sql;
-// seed_demo_venues() puts each class at its rented studio. Girlstyle 1 opened this month (`opensThisMonth`:
-// on the month's second Tuesday); the two Newbie classes come from seed_demo_classes().
+// seed_demo_venues() puts each class at its rented studio. Girlstyle 1 opened last month (`opens`: on the
+// second Tuesday, 13/10 in the studio's October posts); the two Newbie classes come from seed_demo_classes().
 const CLASSES = [
   { name: "Trending", instructor: "instructor@demo.oopsdance.test", price: 1000000,
     schedules: [[1, "18:30", "19:45"], [4, "18:30", "19:45"]] },
-  { name: "Choreo CG", instructor: "instructor@demo.oopsdance.test", price: 1200000,
+  { name: "Choreo Cầu Giấy", instructor: "instructor@demo.oopsdance.test", price: 1200000,
     schedules: [[6, "18:30", "19:45"], [7, "18:30", "19:45"]] },
   { name: "K-pop Dance", instructor: "instructor5@demo.oopsdance.test", price: 1000000,
     schedules: [[2, "18:30", "19:45"], [6, "18:30", "19:45"]] },
   { name: "Girlstyle 2", instructor: "instructor4@demo.oopsdance.test", price: 1000000,
     schedules: [[2, "19:00", "20:15"], [4, "19:00", "20:15"]] },
-  { name: "Choreo BT", instructor: "instructor2@demo.oopsdance.test", price: 1200000,
+  { name: "Choreo Bà Triệu", instructor: "instructor2@demo.oopsdance.test", price: 1200000,
     schedules: [[1, "20:00", "21:15"], [4, "20:00", "21:15"]] },
-  { name: "Girlstyle 1", instructor: "instructor3@demo.oopsdance.test", price: 1000000, opensThisMonth: true,
+  { name: "Girlstyle 1", instructor: "instructor3@demo.oopsdance.test", price: 1000000, opens: { monthsAgo: 1, nth: 1 },
     schedules: [[2, "18:15", "19:30"], [4, "18:15", "19:30"]] },
 ];
 
-// Routines: [class, months ago, title, end-of-month video]. Last month's videos are real ones from the studio's
-// YouTube channel. Each course starts ("KG") on the month's first day of the class's first weekly slot.
+// Routines: [class, months ago, title, end-of-month video, nth]. Last month's are the studio's October courses;
+// the two whose class has its video on the studio's YouTube channel (@oopsdancestudio) carry it. The Choreo
+// classes take students week by week, so October has no single song there. Each course starts ("KG") on the
+// month's first day of the class's first weekly slot, `nth` weeks later where the posts say so (Choreo Cầu
+// Giấy's October from the 10th, Girlstyle 1 from the second Tuesday).
 const LESSONS = [
-  ["Trending", 1, "MANTRA (Remix) x HOOTIE FRUITTI", "https://www.youtube.com/watch?v=mxHD5wW5NuY"], ["Trending", 0, "APT. — ROSÉ & Bruno Mars"],
-  ["Choreo CG", 1, "WHISTLE x GOALS", "https://www.youtube.com/watch?v=iG2UbHqhIGg"], ["Choreo CG", 0, "Water — Tyla"],
-  ["K-pop Dance", 1, "HIT ’EM — MEOVV", "https://www.youtube.com/watch?v=tbDUtRdhfUI"], ["K-pop Dance", 0, "Magnetic — ILLIT"],
-  ["Girlstyle 2", 1, "LIES & SUNSET GLOW — BIGBANG", "https://www.youtube.com/watch?v=D_UzYE3U81Y"], ["Girlstyle 2", 0, "Super Shy — NewJeans"],
-  ["Choreo BT", 1, "HANDLEBAR x DRACULA", "https://www.youtube.com/watch?v=tSZuWh-LMb4"], ["Choreo BT", 0, "lovely — Billie Eilish & Khalid"],
-  ["Girlstyle 1", 0, "Supernova — aespa"],
+  ["Trending", 1, "Khắp Chốn Thiên Hà (ATVNCG 2026)", "https://www.youtube.com/watch?v=8zFBv9EfDXw"], ["Trending", 0, "APT. — ROSÉ & Bruno Mars"],
+  ["Choreo Cầu Giấy", 1, "Choreo theo tuần", null, 1], ["Choreo Cầu Giấy", 0, "Water — Tyla"],
+  ["K-pop Dance", 1, "Sawadika — LISA", "https://www.youtube.com/watch?v=58Op__WDuYc"], ["K-pop Dance", 0, "Magnetic — ILLIT"],
+  ["Girlstyle 2", 1, "Beat It x Dracula"], ["Girlstyle 2", 0, "Super Shy — NewJeans"],
+  ["Choreo Bà Triệu", 1, "Choreo theo tuần"], ["Choreo Bà Triệu", 0, "lovely — Billie Eilish & Khalid"],
+  ["Girlstyle 1", 1, "It’s ok I’m ok — Tate McRae", null, 1], ["Girlstyle 1", 0, "Supernova — aespa", null, 1],
 ];
 
 const BUCKETS = ["avatars", "class-images", "attendance-proofs", "site-assets", "receipts", "class-promos", "support-images"];
@@ -239,6 +242,9 @@ async function upsertUsers() {
 
 // 'yyyy-MM-01' of the month `monthsAgo` months before `isoDate`.
 // The `nth` (0 = first) ISO weekday `dow` (1 = Mon … 7 = Sun) on or after a month's first day.
+// The class's first weekly slot (ISO weekday).
+const firstDay = (cls) => Math.min(...cls.schedules.map(([dow]) => dow));
+
 function firstWeekday(monthIso, dow, nth = 0) {
   const d = new Date(`${monthIso}T00:00:00Z`);
   const offset = (dow - (d.getUTCDay() || 7) + 7) % 7 + 7 * nth;
@@ -255,10 +261,10 @@ async function upsertCatalogue(userIds, today) {
   const rooms = await must(db.from("rooms").upsert(ROOMS, { onConflict: "name" }).select("id, name, price"), "rooms");
 
   // They have been running for months (sessions, roll calls and tuition reach back to starts_on); Girlstyle 1
-  // opened this month. No room: seed_demo_venues() puts each class at its rented studio.
+  // opened last month. No room: seed_demo_venues() puts each class at its rented studio.
   const classes = await must(db.from("classes").upsert(CLASSES.map((c) => ({
     name: c.name, instructor_id: userIds[c.instructor], room_id: null,
-    price: c.price, starts_on: c.opensThisMonth ? firstWeekday(monthStart(today, 0), 2, 1) : monthStart(today, 4),
+    price: c.price, starts_on: c.opens ? firstWeekday(monthStart(today, c.opens.monthsAgo), firstDay(c), c.opens.nth) : monthStart(today, 4),
   })), { onConflict: "name" }).select("id, name, room_id, starts_on"), "classes");
   const classByName = Object.fromEntries(classes.map((c) => [c.name, c]));
 
@@ -275,12 +281,13 @@ async function upsertCatalogue(userIds, today) {
     }
     return Math.max(count, 1);
   };
-  await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title, videoUrl]) => {
+  // A course that starts mid-month (nth > 0) is an 8-session one; seedTuition() lets it run to the next.
+  await must(db.from("class_lessons").upsert(LESSONS.map(([name, monthsAgo, title, videoUrl, nth = 0]) => {
     const month = monthStart(today, monthsAgo);
     const cls = CLASSES.find((c) => c.name === name);
-    const kg = cls.opensThisMonth ? classByName[name].starts_on : firstWeekday(month, Math.min(...cls.schedules.map(([dow]) => dow)));
+    const kg = firstWeekday(month, firstDay(cls), nth);
     return { class_id: classByName[name].id, month, starts_on: kg, title, video_url: videoUrl ?? null,
-      session_count: monthsAgo === 0 ? 8 : sessionsIn(name, month) };
+      session_count: monthsAgo === 0 || nth ? 8 : sessionsIn(name, month) };
   }), { onConflict: "class_id,starts_on" }), "class_lessons");
 
   const schedules = CLASSES.flatMap((c) => c.schedules.map(([day_of_week, start_time, end_time]) =>
@@ -295,9 +302,9 @@ async function upsertCatalogue(userIds, today) {
 async function upsertEnrolments(userIds, classes, today) {
   const guests = USERS.filter((u) => u.role === "guest");
   const rows = [];
-  // Classes running for months take the usual mix; Girlstyle 1 (opened this month) five sign-ups the week before.
-  const older = classes.filter((c) => !CLASSES.find((d) => d.name === c.name).opensThisMonth);
-  const fresh = classes.filter((c) => CLASSES.find((d) => d.name === c.name).opensThisMonth);
+  // Classes running for months take the usual mix; Girlstyle 1 (opened last month) five sign-ups the week before.
+  const older = classes.filter((c) => !CLASSES.find((d) => d.name === c.name).opens);
+  const fresh = classes.filter((c) => CLASSES.find((d) => d.name === c.name).opens);
   guests.forEach((g, i) => {
     const picks = new Set([i % older.length, (i * 3 + 1) % older.length]);
     if (i % 3 === 0) picks.add((i + 2) % older.length);
@@ -438,6 +445,37 @@ async function assertDemoInstance() {
 // Tuition: months of invoices, a few leavers, this month part paid, next month's renewal open
 // and a small bank-transfer inbox. seed_demo_tuition() (tuition migration) only runs on a
 // project marked as the demo, which is also what lets visitors simulate a QR payment.
+// seed_demo_fit_routines() ends every past course inside its month. One that started mid-month (Girlstyle 1
+// opened on the second Tuesday, Choreo Cầu Giấy's October began on the 10th) runs on until the class's next
+// course instead: its sessions are the class's days from its start to then, less the cancelled ones (as
+// private.course_dates counts them; seed.sql does the same in SQL).
+async function runOnLateCourses() {
+  const month = monthStart(await must(db.rpc("studio_today"), "studio_today"), 0);
+  const lessons = await must(db.from("class_lessons").select("id, class_id, starts_on, session_count").order("starts_on"), "class_lessons");
+  let changed = 0;
+  for (const l of lessons) {
+    if (l.starts_on >= month || Number(l.starts_on.slice(8, 10)) <= 7) continue;
+    const next = lessons.find((n) => n.class_id === l.class_id && n.starts_on > l.starts_on);
+    if (!next) continue;
+    const days = (await must(db.from("class_schedules").select("day_of_week").eq("class_id", l.class_id), "class_schedules"))
+      .map((x) => x.day_of_week);
+    const sessions = await must(db.from("instructor_attendance").select("date, status").eq("class_id", l.class_id)
+      .gte("date", l.starts_on).lt("date", next.starts_on), "instructor_attendance");
+    const cancelled = new Set(sessions.filter((x) => x.status === "cancelled").map((x) => x.date));
+    const dates = new Set(sessions.filter((x) => x.status !== "cancelled").map((x) => x.date));
+    for (let d = l.starts_on; d < next.starts_on; d = addDays(d, 1)) {
+      const dow = new Date(`${d}T00:00:00Z`).getUTCDay() || 7;
+      if (days.includes(dow) && !cancelled.has(d)) dates.add(d);
+    }
+    const count = Math.max(1, dates.size);
+    if (count === l.session_count) continue;
+    await must(db.from("class_lessons").update({ session_count: count }).eq("id", l.id), "class_lessons run on");
+    await must(db.from("tuition_invoices").update({ sessions: count }).eq("lesson_id", l.id), "invoices run on");
+    changed += 1;
+  }
+  return changed;
+}
+
 async function seedTuition() {
   const { data: sandbox } = await db.rpc("tuition_sandbox");
   if (!sandbox) {
@@ -449,7 +487,8 @@ async function seedTuition() {
   // Past routines (and the older ones the tuition seed added) end inside their month: cancelled
   // sessions (attendance history) don't count.
   const fitted = await must(db.rpc("seed_demo_fit_routines"), "seed_demo_fit_routines");
-  console.log(`✓ routines: ${fitted} past routine(s) fitted to the sessions held`);
+  const runOn = await runOnLateCourses();
+  console.log(`✓ routines: ${fitted} past routine(s) fitted to the sessions held, ${runOn} run on to the next course`);
   const bookingTransfers = await must(db.rpc("seed_demo_booking_payments"), "seed_demo_booking_payments");
   console.log(`✓ bookings: ${bookingTransfers} transfers with their payment code`);
   const finance = await must(db.rpc("seed_demo_finance"), "seed_demo_finance");
@@ -484,7 +523,7 @@ async function seedPayroll(userIds, classes, today) {
   const monthStartOf = (monthsAgo) => monthStart(today, monthsAgo);
   await must(db.from("payroll_settings").update({ default_session_rate: 300000 }).eq("id", 1), "payroll_settings");
   await must(db.from("staff_salaries").upsert({ profile_id: userIds["staff@demo.oopsdance.test"], monthly_salary: 8000000 }), "staff_salaries");
-  const advanced = classes.filter((c) => ["Choreo BT", "Choreo CG"].includes(c.name));
+  const advanced = classes.filter((c) => ["Choreo Bà Triệu", "Choreo Cầu Giấy"].includes(c.name));
   await must(db.from("class_pay_rates").upsert(advanced.map((c) => ({ class_id: c.id, session_rate: 350000 }))), "class_pay_rates");
   const admin = userIds["admin@demo.oopsdance.test"];
   await must(db.from("payroll_adjustments").insert([

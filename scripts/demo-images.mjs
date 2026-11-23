@@ -40,24 +40,24 @@ const AVATARS = [
 // Each class's timetable poster; the first file becomes the class image.
 const CLASS_IMAGES = [
   ["Trending", ["class_trending.webp"]],
-  ["Choreo CG", ["class_choreo_cg.webp"]],
+  ["Choreo Cầu Giấy", ["class_choreo_cg.webp"]],
   ["K-pop Dance", ["class_kpop_dance.webp"]],
   ["Girlstyle 2", ["class_girlstyle_2.webp"]],
-  ["Choreo BT", ["class_choreo_bt.webp"]],
+  ["Choreo Bà Triệu", ["class_choreo_bt.webp"]],
   ["Girlstyle 1", ["class_girlstyle_1.webp"]],
   ["Newbie 1", ["class_newbie.webp"]],
   ["Newbie 2", ["class_newbie.webp"]],
 ];
 // Each class's photo on the poster timetable: cut-outs, square, the face in the middle (as on the printed
-// schedule, Đỗ Linh smiles for Trending and wears the white jacket for Newbie 1 and Choreo CG).
+// schedule, Đỗ Linh smiles for Trending and wears the white jacket for Newbie 1 and Choreo Cầu Giấy).
 const TIMETABLE_PHOTOS = [
   ["Trending", "timetable_dolinh_smile.webp"],
-  ["Choreo CG", "timetable_dolinh.webp"],
+  ["Choreo Cầu Giấy", "timetable_dolinh.webp"],
   ["Newbie 1", "timetable_dolinh.webp"],
   ["K-pop Dance", "timetable_ducanh.webp"],
   ["Girlstyle 1", "timetable_antrinh.webp"],
   ["Girlstyle 2", "timetable_vananh.webp"],
-  ["Choreo BT", "timetable_soleck.webp"],
+  ["Choreo Bà Triệu", "timetable_soleck.webp"],
   ["Newbie 2", "timetable_soleck.webp"],
 ];
 // Demo room → prefix of its bundled photo set (the frontend's old position rule).

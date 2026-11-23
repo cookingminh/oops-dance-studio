@@ -85,30 +85,32 @@ select setval(pg_get_serial_sequence('public.rooms', 'id'), 2);
 -- Classes (price = VND per course of 8 sessions) and weekly schedules (ISO 1 = Mon … 7 = Sun):
 -- the studio's November timetable. Classes are taught at rented studios (seed_demo_venues() places
 -- them, below); levels: Newbie, Cơ bản (basic), Nâng cao (advanced).
---   Trending      Cơ bản    Đỗ Linh   Mon & Thu 18:30–19:45   Studio Thỏ (Đê La Thành nhỏ)
---   Choreo CG     Nâng cao  Đỗ Linh   Sat & Sun 18:30–19:45   Hoàng Quốc Việt
---   K-pop Dance   Cơ bản    Đức Anh   Tue & Sat 18:30–19:45   Studio Baladi Vũ Thạnh
---   Girlstyle 2   Cơ bản    Vân Anh   Tue & Thu 19:00–20:15   Quan Hoa
---   Choreo BT     Nâng cao  Soleck    Mon & Thu 20:00–21:15   Bà Triệu
---   Girlstyle 1   Cơ bản    An Trinh  Tue & Thu 18:15–19:30   Studio Thỏ (opened this month,
---                                     on the second Tuesday)
---   Newbie 1 / 2  Newbie    Đỗ Linh / Soleck, Wed & Fri, open next month (seed_demo_classes()).
--- Each month's course starts on the class's first day of the month ("KG 2/11", "KG 3/11", "KG 7/11").
+--   Trending         Cơ bản    Đỗ Linh   Mon & Thu 18:30–19:45   Studio Thỏ (204 Đê La Thành nhỏ)
+--   Choreo Cầu Giấy  Nâng cao  Đỗ Linh   Sat & Sun 18:30–19:45   Hoàng Quốc Việt
+--   K-pop Dance      Cơ bản    Đức Anh   Tue & Sat 18:30–19:45   Studio Baladi Vũ Thạnh
+--   Girlstyle 2      Cơ bản    Vân Anh   Tue & Thu 19:00–20:15   Quan Hoa
+--   Choreo Bà Triệu  Nâng cao  Soleck    Mon & Thu 20:00–21:15   Bà Triệu
+--   Girlstyle 1      Cơ bản    An Trinh  Tue & Thu 18:15–19:30   300 Đê La Thành nhỏ (opened last month,
+--                                        on the second Tuesday: 13/10)
+--   Newbie 1 / 2     Newbie    Đỗ Linh / Soleck, Wed & Fri, open next month (seed_demo_classes()).
+-- Each month's course starts on the class's first day of the month ("KG 5/10", "KG 6/10"), except where
+-- the studio's October posts say otherwise: Choreo Cầu Giấy started October on the second Saturday (10/10)
+-- and Girlstyle 1 opened on the second Tuesday (13/10). Last month's courses are the real October ones.
 -- -----------------------------------------------------------------------------
 -- They have been running for months (starts_on: sessions, roll calls and tuition reach back that far);
--- Girlstyle 1 opened this month.
+-- Girlstyle 1 opened last month, on the second Tuesday.
 insert into public.classes (id, name, instructor_id, price, starts_on)
 select v.id, v.name, v.instructor_id::uuid, v.price,
        case when v.id = 6
-            then date_trunc('month', public.studio_today())::date
-                 + ((2 - extract(isodow from date_trunc('month', public.studio_today()))::int + 7) % 7) + 7
+            then (date_trunc('month', public.studio_today()) - interval '1 month')::date
+                 + ((2 - extract(isodow from date_trunc('month', public.studio_today()) - interval '1 month')::int + 7) % 7) + 7
             else public.studio_today() - 120 end
   from (values
     (1, 'Trending',    '00000000-0000-4000-a000-000000000011', 1000000),
-    (2, 'Choreo CG',   '00000000-0000-4000-a000-000000000011', 1200000),
+    (2, 'Choreo Cầu Giấy', '00000000-0000-4000-a000-000000000011', 1200000),
     (3, 'K-pop Dance', '00000000-0000-4000-a000-000000000015', 1000000),
     (4, 'Girlstyle 2', '00000000-0000-4000-a000-000000000014', 1000000),
-    (5, 'Choreo BT',   '00000000-0000-4000-a000-000000000012', 1200000),
+    (5, 'Choreo Bà Triệu', '00000000-0000-4000-a000-000000000012', 1200000),
     (6, 'Girlstyle 1', '00000000-0000-4000-a000-000000000013', 1000000)
   ) as v (id, name, instructor_id, price);
 select setval(pg_get_serial_sequence('public.classes', 'id'), 6);
@@ -121,38 +123,38 @@ insert into public.class_schedules (class_id, day_of_week, start_time, end_time)
   (5, 1, '20:00', '21:15'), (5, 4, '20:00', '21:15'),
   (6, 2, '18:15', '19:30'), (6, 4, '18:15', '19:30');
 
--- Routines (the piece each course learns). Last month's carry the end-of-month class video (real videos from
--- the studio's YouTube channel). A course starts ("KG") on the month's first day of the class's first weekly
--- slot: Trending and Choreo BT on the first Monday, K-pop Dance and Girlstyle 2 on the first Tuesday, Choreo CG
--- on the first Saturday. A trigger copies the latest title into classes.lesson.
+-- Routines (the piece each course learns). Last month's are the studio's October courses; the two whose class
+-- has its video on the studio's YouTube channel (@oopsdancestudio) carry it. The Choreo classes take students
+-- week by week, so October has no single song there. A course starts ("KG") on the month's first day of the
+-- class's first weekly slot, `nth` weeks later where the posts say so. A trigger copies the latest title into
+-- classes.lesson.
 insert into public.class_lessons (class_id, month, starts_on, title, video_url)
-select v.class_id, m.month, m.month + ((f.dow - extract(isodow from m.month)::int + 7) % 7), v.title, v.video_url
+select v.class_id, m.month, m.month + ((f.dow - extract(isodow from m.month)::int + 7) % 7) + 7 * v.nth, v.title, v.video_url
   from (values
-    (1, 1, 'MANTRA (Remix) x HOOTIE FRUITTI', 'https://www.youtube.com/watch?v=mxHD5wW5NuY'),
-    (1, 0, 'APT. — ROSÉ & Bruno Mars', null),
-    (2, 1, 'WHISTLE x GOALS', 'https://www.youtube.com/watch?v=iG2UbHqhIGg'),
-    (2, 0, 'Water — Tyla', null),
-    (3, 1, 'HIT ’EM — MEOVV', 'https://www.youtube.com/watch?v=tbDUtRdhfUI'),
-    (3, 0, 'Magnetic — ILLIT', null),
-    (4, 1, 'LIES & SUNSET GLOW — BIGBANG', 'https://www.youtube.com/watch?v=D_UzYE3U81Y'),
-    (4, 0, 'Super Shy — NewJeans', null),
-    (5, 1, 'HANDLEBAR x DRACULA', 'https://www.youtube.com/watch?v=tSZuWh-LMb4'),
-    (5, 0, 'lovely — Billie Eilish & Khalid', null)
-  ) as v (class_id, months_ago, title, video_url)
+    (1, 1, 0, 'Khắp Chốn Thiên Hà (ATVNCG 2026)', 'https://www.youtube.com/watch?v=8zFBv9EfDXw'),
+    (1, 0, 0, 'APT. — ROSÉ & Bruno Mars', null),
+    (2, 1, 1, 'Choreo theo tuần', null),
+    (2, 0, 0, 'Water — Tyla', null),
+    (3, 1, 0, 'Sawadika — LISA', 'https://www.youtube.com/watch?v=58Op__WDuYc'),
+    (3, 0, 0, 'Magnetic — ILLIT', null),
+    (4, 1, 0, 'Beat It x Dracula', null),
+    (4, 0, 0, 'Super Shy — NewJeans', null),
+    (5, 1, 0, 'Choreo theo tuần', null),
+    (5, 0, 0, 'lovely — Billie Eilish & Khalid', null),
+    (6, 1, 1, 'It’s ok I’m ok — Tate McRae', null),
+    (6, 0, 1, 'Supernova — aespa', null)
+  ) as v (class_id, months_ago, nth, title, video_url)
   cross join lateral (select (date_trunc('month', public.studio_today()) - make_interval(months => v.months_ago))::date as month) m
   cross join lateral (select min(s.day_of_week)::int as dow from public.class_schedules s where s.class_id = v.class_id) f;
--- Girlstyle 1's first course starts with the class.
-insert into public.class_lessons (class_id, month, starts_on, title)
-select c.id, date_trunc('month', c.starts_on)::date, c.starts_on, 'Supernova — aespa' from public.classes c where c.id = 6;
 
 -- Routines last a number of sessions: last month's ran the whole month; this month's are 8-session
--- routines (so some finish mid-month and ask for the next one).
+-- routines (so some finish mid-month and ask for the next one). A course that started mid-month keeps its 8.
 update public.class_lessons l
    set session_count = greatest(1, (
          select count(*)::int
            from generate_series(l.month, (l.month + interval '1 month' - interval '1 day')::date, interval '1 day') d
            join public.class_schedules s on s.class_id = l.class_id and s.day_of_week = extract(isodow from d)))
- where l.month < date_trunc('month', public.studio_today())::date;
+ where l.month < date_trunc('month', public.studio_today())::date and extract(day from l.starts_on) <= 7;
 
 -- Enrolments: each guest in 1–3 of the classes running for months, joined 60–100 days ago.
 insert into public.class_students (class_id, student_id, joined_at)
@@ -169,7 +171,7 @@ cross join lateral (
 ) c
 where u.role = 'guest';
 
--- Girlstyle 1 opened this month: five students signed up the week before.
+-- Girlstyle 1 opened last month: five students signed up the week before.
 insert into public.class_students (class_id, student_id, joined_at)
 select 6, u.id, (select starts_on from public.classes where id = 6) - 3
   from seed_users u
@@ -339,7 +341,7 @@ insert into public.staff_salaries (profile_id, monthly_salary) values
   ('00000000-0000-4000-a000-000000000002', 8000000);
 
 insert into public.class_pay_rates (class_id, session_rate)
-select c.id, 350000 from public.classes c where c.name in ('Choreo BT', 'Choreo CG');
+select c.id, 350000 from public.classes c where c.name in ('Choreo Bà Triệu', 'Choreo Cầu Giấy');
 
 insert into public.payroll_adjustments (profile_id, month, amount, reason, created_by)
 select v.pid, (date_trunc('month', public.studio_today()) - make_interval(months => v.months_ago))::date, v.amount, v.reason,
@@ -366,6 +368,19 @@ select public.seed_demo_tuition();
 -- Past routines (and the older ones the tuition seed added) last as many sessions as their month held
 -- (cancelled ones don't count), so each ends inside its month and the next one starts after it.
 select public.seed_demo_fit_routines();
+-- ...but a course that started mid-month (Girlstyle 1 opened on 13/10, Choreo Cầu Giấy's October began on the
+-- 10th) runs on into the next month, until the class's next course.
+update public.class_lessons l
+   set session_count = greatest(1, (select count(*)::int from private.course_dates(l.id) cd
+                                     where cd.d < (select min(n.starts_on) from public.class_lessons n
+                                                    where n.class_id = l.class_id and n.starts_on > l.starts_on)))
+ where l.month < date_trunc('month', public.studio_today())::date and extract(day from l.starts_on) > 7
+   and exists (select 1 from public.class_lessons n where n.class_id = l.class_id and n.starts_on > l.starts_on);
+update public.tuition_invoices i
+   set sessions = l.session_count
+  from public.class_lessons l
+ where l.id = i.lesson_id and l.month < date_trunc('month', public.studio_today())::date
+   and extract(day from l.starts_on) > 7 and i.sessions is distinct from l.session_count;
 -- Expenses (recurring rent, internet, ads; the monthly shoot; a few one-offs) and one class switch.
 select public.seed_demo_finance();
 -- Newbie 1 and Newbie 2 open on the first Wednesday of next month, a few students already in.

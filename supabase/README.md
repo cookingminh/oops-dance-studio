@@ -49,6 +49,7 @@ contract (and its Changelog) whenever the behaviour here changes.
 | `migrations/20261117001700_session_catch_up.sql` | sessions and roll calls follow changes made after the jobs ran: a weekly session added / moved / removed or a class's first / last day changed makes or removes this week's sessions from now on (untouched ones only); a student joining today is put on today's roll call; not logged on their own |
 | `migrations/20261117001800_venue_rooms.sql` | rented studios' rooms and public names: `venues.public_name` (what the website and students see — visitors can't read the studio's own name), `venue_rooms` (every studio has at least one, each with its rent per hour), `classes.venue_room_id` / `instructor_attendance.venue_room_id`, a session's rent from its room; `venue_save` takes the public name and the rooms, `venue_rooms_list()`, `session_set_venue_room()`; demo `seed_demo_venue_rooms()` |
 | `migrations/20261117000700_routine_promos.sql` | a routine's promo: the instructor's clip (bucket `class-promos`) or a YouTube link, set with `lesson_set_promo` |
+| `migrations/20261117002800_demo_october.sql` | the demo follows the studio's October posts: Choreo Cầu Giấy / Choreo Bà Triệu, the studios' real addresses, Đê La Thành nhỏ as two buildings |
 | `functions/bank-webhook/` | Edge Function: SePay webhook → `tuition_record_transfer` (API key in `BANK_WEBHOOK_KEY`). `handler_test.ts` unit-tests it |
 | `functions/admin-users/` | Edge Function: admin creates / re-emails / deletes auth users (and names the admin in the activity log). `handler.ts` holds the logic, `index.ts` serves it, `handler_test.ts` unit-tests it |
 | `tests/*.test.sql` | pgTAP tests (RLS matrix, slots, bookings, attendance/admin/stats, timetable clashes, demo marker, monthly lessons, payroll, class videos, tuition, class switches and expenses, class lifecycle, routines, tuition per course, routine order and the activity log, booking payments, routine promos, booking refunds, session changes, paid = completed, check-in window, tuition extra money, rented studios, website timetable looks and class levels, session catch-up between the jobs, rented studios' rooms and public names) |
@@ -123,7 +124,7 @@ Password for every demo account: **`OopsDemo@2026`** (local only — never reuse
 |---|---|
 | `admin@demo.oopsdance.test` | admin |
 | `staff@demo.oopsdance.test` | staff |
-| `instructor@demo.oopsdance.test` | instructor **Đỗ Linh** — Trending, Choreo CG (and Newbie 1 from next month) |
+| `instructor@demo.oopsdance.test` | instructor **Đỗ Linh** — Trending, Choreo Cầu Giấy (and Newbie 1 from next month) |
 | `guest@demo.oopsdance.test` | guest — has enrolments, past and upcoming bookings |
 | `instructor2@` Soleck · `instructor3@` An Trinh · `instructor4@` Vân Anh · `instructor5@` Đức Anh | instructors |
 | `guest02@…` … `guest15@demo.oopsdance.test` | guests |

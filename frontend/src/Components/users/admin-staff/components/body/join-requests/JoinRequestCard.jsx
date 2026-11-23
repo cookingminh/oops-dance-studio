@@ -14,7 +14,7 @@ import { START_LABELS, STATUS, askedText, isLate, lateText, personName, studioDa
 
 const tel = (number) => `tel:${number.replace(/[^\d+]/g, '')}`;
 
-// "New to the studio", "Also in Kpop 1, Hiphop Kids" or "Took Choreo BT before" — from their places and invoices.
+// "New to the studio", "Also in Kpop 1, Hiphop Kids" or "Took Choreo Bà Triệu before" — from their places and invoices.
 export const StudentHistory = ({ classes }) => {
     const { t } = useI18n();
     const names = (list) => list.map((cls) => cls.name).join(', ');

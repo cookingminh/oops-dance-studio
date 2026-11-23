@@ -99,7 +99,7 @@ export default {
                     example: (
                         <ExBars
                             rows={[
-                                { label: 'Choreo CG', value: 8 },
+                                { label: 'Choreo Cầu Giấy', value: 8 },
                                 { label: 'Trending', value: 7 },
                                 { label: 'K-pop Dance', value: 6 },
                                 { label: 'Girlstyle 1', value: 2, tone: 'low' },

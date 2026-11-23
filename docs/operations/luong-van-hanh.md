@@ -51,7 +51,7 @@ Mọi thứ của một lớp nằm ở **một trang**: bấm vào lớp trong 
      staff thấy các khoản mình nhập.
   7. **Thiết lập**: thông tin, lịch tuần, ảnh, kết thúc / mở lại / xoá lớp.
 - **Nơi học**: mỗi lớp học ở **một phòng của studio** (Phòng A, Phòng B) **hoặc một studio thuê ngoài** (ví dụ Studio
-  Baladi Vũ Thạnh, Studio Thỏ, Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân) — và nếu studio đó có nhiều phòng thì
+  Baladi Vũ Thạnh, Studio Thỏ, 300 Đê La Thành nhỏ, Quan Hoa, Hoàng Quốc Việt, Bà Triệu, Hoàng Ngân) — và nếu studio đó có nhiều phòng thì
   **một phòng của nó** (ví dụ Studio Thỏ · Phòng lớn; studio chỉ có một phòng thì tự vào phòng đó), chọn ở *Thiết lập*. Đổi nơi học thì các buổi chưa diễn ra đi theo.
 - **Tên studio thuê không hiện ra ngoài** (đó là thương hiệu của studio khác): website và học viên chỉ thấy **tên hiển
   thị** — vị trí, ví dụ "Bà Triệu", "Đê La Thành nhỏ" — kèm địa chỉ và link bản đồ. Staff, giáo viên, admin thấy tên thật
