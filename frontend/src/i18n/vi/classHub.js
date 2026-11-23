@@ -400,7 +400,6 @@ export default {
     '{count} sessions will have no room yet: they go on the to-do list.': '{count} buổi sẽ chưa có phòng và được thêm vào việc cần làm.',
     'Move the class to {room}': 'Chuyển lớp sang {room}',
     'Class moved. {count} session(s) have no room yet: see the to-do list.': 'Đã chuyển lớp. {count} buổi chưa có phòng, xem trong việc cần làm.',
-    'Room for this session': 'Phòng cho buổi này',
     'Free at the class’s time that day': 'Phòng trống vào giờ học hôm đó',
     'It stays on the to-do list until someone places it.': 'Buổi này nằm trong việc cần làm cho tới khi có người xếp phòng.',
     'No room yet': 'Chưa có phòng',
