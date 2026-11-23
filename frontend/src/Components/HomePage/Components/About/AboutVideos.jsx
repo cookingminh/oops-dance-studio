@@ -14,19 +14,23 @@ const COPY = sections.videos;
 const COUNT = Math.max(0, COPY.count ?? 4);
 const loadNewest = () => listChannelVideos(COPY.channelId);
 
-// Grey shapes of the player and the cards while the channel's videos load.
+// Grey shapes of the player and the list while the channel's videos load.
 const Loading = () => (
-    <div aria-busy="true">
-        <div className="abStage abSkeleton" aria-hidden="true" />
-        <div className="abStageMeta" aria-hidden="true">
-            <i className="abSkeleton abSkeletonLine" />
+    <div className="abVideosBody" aria-busy="true">
+        <div aria-hidden="true">
+            <div className="abStage abSkeleton" />
+            <div className="abStageMeta">
+                <i className="abSkeleton abSkeletonLine" />
+            </div>
         </div>
-        <ul className="abVideoRow abVideoGrid" aria-hidden="true">
+        <ul className="abVideoRow" aria-hidden="true">
             {Array.from({ length: COUNT }, (_, index) => (
                 <li key={index} className="abVideoSkeleton">
                     <span className="abSkeleton" />
-                    <i className="abSkeleton" />
-                    <i className="abSkeleton" />
+                    <div>
+                        <i className="abSkeleton" />
+                        <i className="abSkeleton" />
+                    </div>
                 </li>
             ))}
         </ul>
@@ -34,10 +38,10 @@ const Loading = () => (
 );
 
 // The crew's newest videos, straight from its YouTube channel: the newest one in the big player, the
-// next ones under it. A "lite" embed: thumbnails only, and nothing from YouTube's player loads until
-// someone presses play; then the big player swaps in the privacy-enhanced iframe. A video from the
-// cards plays in that one player (and leaves the cards while it's there). If the channel can't be
-// read, fallbackVideos from the content file stand in.
+// next ones listed beside it (under it on phones). A "lite" embed: thumbnails only, and nothing from
+// YouTube's player loads until someone presses play; then the big player swaps in the privacy-enhanced
+// iframe. A video from the list plays in that one player (and leaves the list while it's there). If
+// the channel can't be read, fallbackVideos from the content file stand in.
 const AboutVideos = () => {
     const L = useLocalize();
     const { t, intl } = useI18n();
@@ -68,7 +72,7 @@ const AboutVideos = () => {
     const play = (video) => {
         setActiveId(video.youtubeId);
         setPlaying(true);
-        // Bring the player into view when it's off screen (it sits above the cards).
+        // Bring the player into view when it's off screen (phones: it sits above the list).
         const box = stageRef.current?.getBoundingClientRect();
         if (box && (box.top < 80 || box.bottom > window.innerHeight)) {
             stageRef.current.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
@@ -79,62 +83,72 @@ const AboutVideos = () => {
         <section className="abSection abVideos" aria-labelledby="videos-title">
             <div className="abWrap">
                 <motion.div className="abVideosCard" {...reveal(reduce, { y: 40, duration: 0.7 })}>
-                    <h2 id="videos-title" className="abTitle">
-                        {L(COPY.title)}
-                    </h2>
+                    <div className="abVideosHead">
+                        <h2 id="videos-title" className="abTitle">
+                            {L(COPY.title)}
+                        </h2>
+                        <a className="abBtn isWhite" href={COPY.moreUrl} target="_blank" rel="noopener noreferrer">
+                            <SiYoutube className="abYoutubeIcon" aria-hidden="true" />
+                            {L(COPY.more)}
+                            <LuArrowUpRight aria-hidden="true" />
+                            <span className="sr-only"> {t('(opens in a new tab)')}</span>
+                        </a>
+                    </div>
 
                     {loading ? (
                         <Loading />
                     ) : (
-                        <>
-                            <div className="abStage" ref={stageRef}>
-                                <AnimatePresence mode="wait" initial={false}>
-                                    <motion.div
-                                        key={`${active.youtubeId}-${playing}`}
-                                        className="abStageFrame"
-                                        initial={{ opacity: 0, scale: reduce ? 1 : 1.02 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0 }}
-                                        transition={{ duration: 0.3, ease: EASE_OUT }}
-                                    >
-                                        {playing ? (
-                                            <iframe
-                                                src={youtubeEmbed(active.youtubeId)}
-                                                title={active.title}
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                                referrerPolicy="strict-origin-when-cross-origin"
-                                                allowFullScreen
-                                            />
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                className="abStagePoster"
-                                                onClick={() => setPlaying(true)}
-                                                aria-label={t('Play video: {title}', { title: active.title })}
-                                            >
-                                                <VideoThumb id={active.youtubeId} size="max" />
-                                                <span className="abPlay" aria-hidden="true">
-                                                    <LuPlay />
-                                                </span>
-                                            </button>
-                                        )}
-                                    </motion.div>
-                                </AnimatePresence>
-                            </div>
+                        <div className="abVideosBody">
+                            <div>
+                                <div className="abStage" ref={stageRef}>
+                                    <AnimatePresence mode="wait" initial={false}>
+                                        <motion.div
+                                            key={`${active.youtubeId}-${playing}`}
+                                            className="abStageFrame"
+                                            initial={{ opacity: 0, scale: reduce ? 1 : 1.02 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3, ease: EASE_OUT }}
+                                        >
+                                            {playing ? (
+                                                <iframe
+                                                    src={youtubeEmbed(active.youtubeId)}
+                                                    title={active.title}
+                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                    referrerPolicy="strict-origin-when-cross-origin"
+                                                    allowFullScreen
+                                                />
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    className="abStagePoster"
+                                                    onClick={() => setPlaying(true)}
+                                                    aria-label={t('Play video: {title}', { title: active.title })}
+                                                >
+                                                    <VideoThumb id={active.youtubeId} size="max" />
+                                                    <span className="abPlay" aria-hidden="true">
+                                                        <LuPlay />
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
 
-                            <div className="abStageMeta">
-                                <h3>{active.title}</h3>
-                                <p>
-                                    {isNewest && <span className="abNewest">{L(COPY.newest)}</span>}
-                                    {meta(active)}
+                                <div className="abStageMeta">
+                                    <h3>{active.title}</h3>
+                                    <p>
+                                        {isNewest && <span className="abNewest">{L(COPY.newest)}</span>}
+                                        {meta(active)}
+                                    </p>
+                                </div>
+                                <p className="sr-only" aria-live="polite">
+                                    {playing ? t('Now playing: {title}', { title: active.title }) : ''}
                                 </p>
                             </div>
-                            <p className="sr-only" aria-live="polite">
-                                {playing ? t('Now playing: {title}', { title: active.title }) : ''}
-                            </p>
 
                             {rest.length > 0 && (
-                                <motion.ul className="abVideoRow abVideoGrid" {...stagger(reduce, 0.07)}>
+                                <motion.ul className="abVideoRow" {...stagger(reduce, 0.07)}>
                                     {rest.map((video, slot) => (
                                         // Keyed by slot: playing a video keeps keyboard focus where it was.
                                         <motion.li key={slot} {...(reduce ? {} : staggerItem)}>
@@ -159,17 +173,8 @@ const AboutVideos = () => {
                                     ))}
                                 </motion.ul>
                             )}
-                        </>
+                        </div>
                     )}
-
-                    <div className="abVideosMore">
-                        <a className="abBtn isWhite" href={COPY.moreUrl} target="_blank" rel="noopener noreferrer">
-                            <SiYoutube className="abYoutubeIcon" aria-hidden="true" />
-                            {L(COPY.more)}
-                            <LuArrowUpRight aria-hidden="true" />
-                            <span className="sr-only"> {t('(opens in a new tab)')}</span>
-                        </a>
-                    </div>
                 </motion.div>
             </div>
         </section>
