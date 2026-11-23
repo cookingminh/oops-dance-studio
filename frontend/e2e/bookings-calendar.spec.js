@@ -217,6 +217,22 @@ test('dragging over a booking warns; Esc cancels the drag', async () => {
     await expect(dialog).toHaveCount(0);
 });
 
+test('letting go over a booking keeps the range in red and says what holds it, instead of the form', async () => {
+    await dragInLane(roomB.id, '13:00', '14:30');
+    await page.mouse.up();
+    const ghost = lane(roomB.id).locator('.calGhost');
+    await expect(ghost).toHaveClass(/isHeld/);
+    await expect(ghost).toHaveClass(/isClash/);
+    await expect(dialog).toHaveCount(0);
+    const notice = page.locator('.bookingClash');
+    await expect(notice).toContainText('The slot you picked is already taken');
+    await expect(notice).toContainText(guest2.full_name);
+    await expect(notice).toContainText('14:00–16:00');
+    await notice.getByRole('button', { name: 'Close' }).click();
+    await expect(notice).toHaveCount(0);
+    await expect(ghost).toHaveCount(0);
+});
+
 test('month view lists the booking on its day; List shows the table', async () => {
     await page.getByRole('button', { name: 'Month', exact: true }).click();
     const day = calendar().locator('.calCell').filter({ has: page.getByRole('button', { name: new RegExp(guest.full_name) }) });
