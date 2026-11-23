@@ -84,9 +84,11 @@ insert into public.class_lessons (class_id, starts_on, title, session_count) val
   (900301, tests.today() - 5, 'Join Now', 8),
   (900301, tests.today() + 3, 'Join Next', 4),
   (900302, tests.today() - 5, 'Join Running Now', 8);
--- Today's session of Join Daily, not held yet (the roll call a student joining now is put on).
+-- Today's session of Join Daily, not held yet (the roll call a student joining now is put on). Before 10:00 the
+-- weekly sessions above have already made it (session catch-up), so this only fills in later in the day.
 insert into public.instructor_attendance (class_id, instructor_id, date, status)
-values (900301, '00000000-0000-4000-b000-000000000303', tests.today(), 'pending');
+values (900301, '00000000-0000-4000-b000-000000000303', tests.today(), 'pending')
+on conflict (class_id, date) do nothing;
 -- Join A is already in Join Running.
 insert into public.class_students (class_id, student_id) values (900302, '00000000-0000-4000-b000-000000000304');
 -- New students pay the full course by default; pro-rata is turned on here to check the sessions-left amount, then
