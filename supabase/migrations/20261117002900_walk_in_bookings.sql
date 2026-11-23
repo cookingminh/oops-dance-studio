@@ -9,6 +9,7 @@
 --   * booking_staff_create(…, p_walk_in_name, p_walk_in_phone): p_guest null + a name books a walk-in.
 --   * private.booking_who(bookings): who a booking is for (the account's name, else the walk-in's), for the activity
 --     log lines of the booking's money; log_activity labels a walk-in's booking with their name.
+--   * private.booking_for_caller: a walk-in's booking (no guest) is staff's only.
 -- A walk-in has nobody to notify and no "My bookings": staff show its QR (or take cash), and a refund is given back
 -- in person. Guests' own pages are unchanged (their bookings always have their account).
 
@@ -201,6 +202,26 @@ begin
   end if;
   if coalesce(p_paid, 0) > 0 then
     b := public.booking_record_payment(b.id, p_paid, coalesce(p_method, 'cash'), p_payment_note);
+  end if;
+  return b;
+end;
+$$;
+
+-- A booking for its guest or staff; NOT_FOUND otherwise (existence isn't revealed). A walk-in's booking has no
+-- guest: only staff see it (a null guest never matches the caller).
+create or replace function private.booking_for_caller(p_booking bigint)
+returns public.bookings
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  b public.bookings;
+begin
+  select * into b from public.bookings where id = p_booking;
+  if not found or not (public.is_staff() or private.is_service_context() or (b.guest_id is not null and b.guest_id = auth.uid())) then
+    raise exception 'NOT_FOUND: no such booking';
   end if;
   return b;
 end;

@@ -4,7 +4,7 @@
 --   * the activity log names the walk-in; guests still book for themselves (pending)
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(14);
+select plan(16);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -83,6 +83,10 @@ select is((select status::text || ' ' || (guest_id = '00000000-0000-4000-b000-00
           'pending true', 'a guest still books for themselves, waiting for approval');
 select is((select count(*)::int from public.bookings where room_id = 900311 and walk_in_name is not null), 0,
           'and doesn''t see walk-ins'' bookings');
+select throws_like(format('select public.booking_payments(%s)', (select id from walk_in)), '%NOT_FOUND%',
+                   'nor their payments');
+select throws_like(format('select public.booking_cancel_quote(%s)', (select id from walk_in)), '%NOT_FOUND%',
+                   'nor can cancel one');
 select tests.logout();
 
 -- ---------------------------------------------------------------------------
