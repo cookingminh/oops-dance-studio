@@ -24,7 +24,7 @@ create temporary table seed_users (
 );
 
 insert into seed_users values
-  ('00000000-0000-4000-a000-000000000001', 'admin@demo.oopsdance.test',       'admin',      'admin',      'Trần Thị Thu Hà',  '0903111001', '1990-04-12'),
+  ('00000000-0000-4000-a000-000000000001', 'admin@demo.oopsdance.test',       'admin',      'admin',      'Đào Minh Hoàng',   '0903111001', '1990-04-12'),
   ('00000000-0000-4000-a000-000000000002', 'staff@demo.oopsdance.test',       'staff',      'staff',      'Lê Hoàng Nam',     '0903111002', '1996-09-03'),
   ('00000000-0000-4000-a000-000000000011', 'instructor@demo.oopsdance.test',  'instructor', 'dolinh',     'Đỗ Linh',          null,         null),
   ('00000000-0000-4000-a000-000000000012', 'instructor2@demo.oopsdance.test', 'instructor', 'soleck',     'Soleck',           null,         null),

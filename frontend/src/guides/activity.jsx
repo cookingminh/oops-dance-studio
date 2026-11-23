@@ -44,15 +44,15 @@ export default {
                             rows={[
                                 {
                                     id: 'a',
-                                    avatar: 'TH',
-                                    title: t('{actor} changed {name}’s booking price {from} → {to}', { actor: 'Thu Hà', name: 'Vũ Đức Anh', from: formatVnd(400000), to: formatVnd(360000) }),
+                                    avatar: 'ĐH',
+                                    title: t('{actor} changed {name}’s booking price {from} → {to}', { actor: 'Minh Hoàng', name: 'Vũ Đức Anh', from: formatVnd(400000), to: formatVnd(360000) }),
                                     sub: '17:23',
                                     tag: admin,
                                 },
                                 {
                                     id: 'b',
-                                    avatar: 'TH',
-                                    title: t('{actor} approved {name}’s booking', { actor: 'Thu Hà', name: 'Vũ Đức Anh' }),
+                                    avatar: 'ĐH',
+                                    title: t('{actor} approved {name}’s booking', { actor: 'Minh Hoàng', name: 'Vũ Đức Anh' }),
                                     sub: '17:22',
                                     tag: admin,
                                     more: t('Show all {count}', { count: 3 }),

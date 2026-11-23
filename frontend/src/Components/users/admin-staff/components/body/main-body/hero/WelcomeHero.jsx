@@ -10,7 +10,7 @@ import poster from '@/assets/images/studio.webp';
 
 const greeting = (hour) => (hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
 
-// "Trần Thị Thu Hà" → "Hà" (Vietnamese given name comes last).
+// "Đào Minh Hoàng" → "Hoàng" (Vietnamese given name comes last).
 const givenName = (fullName) => fullName?.trim().split(/\s+/).pop();
 
 function summaryOf(stats, pendingTotal, { t, tn }) {

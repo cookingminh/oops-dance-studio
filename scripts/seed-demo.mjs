@@ -70,7 +70,7 @@ async function must(promise, what) {
 // Demo definition (same people, rooms and classes as supabase/seed.sql)
 // ---------------------------------------------------------------------------
 const USERS = [
-  ["admin@demo.oopsdance.test",       "admin",      "admin",      "Trần Thị Thu Hà", "0903111001", "1990-04-12"],
+  ["admin@demo.oopsdance.test",       "admin",      "admin",      "Đào Minh Hoàng",  "0903111001", "1990-04-12"],
   ["staff@demo.oopsdance.test",       "staff",      "staff",      "Lê Hoàng Nam",    "0903111002", "1996-09-03"],
   // The studio's teachers as named on the November timetable; no made-up personal details.
   // Đỗ Linh is instructor@ (she teaches the most days).

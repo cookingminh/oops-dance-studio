@@ -102,8 +102,8 @@ test('a new message from the student arrives while the chat is open', async () =
 
 test('handing over, then asking to close', async () => {
     await thread().getByRole('button', { name: 'Hand over' }).click();
-    await page.getByRole('menuitem', { name: /Trần Thị Thu Hà/ }).click();
-    await expect(thread().locator('.inboxOwner')).toContainText('Trần Thị Thu Hà');
+    await page.getByRole('menuitem', { name: /Đào Minh Hoàng/ }).click();
+    await expect(thread().locator('.inboxOwner')).toContainText('Đào Minh Hoàng');
 
     await thread().getByRole('button', { name: 'Ask to close' }).click();
     await expect(thread().locator('.inboxBanner.is-closing')).toContainText(`Waiting for ${student.name}`);
