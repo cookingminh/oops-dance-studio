@@ -101,7 +101,7 @@ test('creates a booking for a guest (create_booking with p_guest_id)', async () 
     }
 });
 
-test('an overlapping booking shows the SLOT_TAKEN message', async () => {
+test('an overlapping booking is flagged as soon as its times are picked, and can’t be saved', async () => {
     await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[2]));
     await page.getByRole('option').first().click();
@@ -109,8 +109,12 @@ test('an overlapping booking shows the SLOT_TAKEN message', async () => {
     await dialog.getByLabel('Date').fill(bookingDate);
     await pickOption(page, dialog, 'Start', '21:00');
     await pickOption(page, dialog, 'End', '22:00');
-    await dialog.getByRole('button', { name: 'Add Booking' }).click();
-    await expect(page.getByRole('alert').filter({ hasText: 'already taken' }).first()).toBeVisible();
+    // The booking made above (20:30–21:30) holds the room: the form names it before anything is sent.
+    const clash = dialog.getByRole('alert').filter({ hasText: 'is already taken then' });
+    await expect(clash).toBeVisible();
+    await expect(clash).toContainText(guests[1].full_name);
+    await expect(clash).toContainText('20:30–21:30');
+    await expect(dialog.getByRole('button', { name: 'Add Booking' })).toBeDisabled();
     await dialog.getByRole('button', { name: 'Close' }).last().click();
 });
 
