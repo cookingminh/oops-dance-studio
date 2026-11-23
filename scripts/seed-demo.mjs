@@ -144,7 +144,8 @@ const APP_TABLES = [
   ["bank_transfers", "id"], ["tuition_invoices", "id"],
   ["payslips", "profile_id"], ["payroll_adjustments", "id"], ["staff_salaries", "profile_id"], ["class_pay_rates", "class_id"],
   ["student_attendance", "id"], ["instructor_attendance", "id"], ["class_students", "class_id"],
-  ["bookings", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"], ["venues", "id"],
+  // Regular rentals after their bookings and before rooms (a series names its room; its monthly bills go with it).
+  ["bookings", "id"], ["booking_series", "id"], ["class_lessons", "id"], ["class_schedules", "id"], ["classes", "id"], ["rooms", "id"], ["venues", "id"],
   // Last: the wipe itself is logged (students leaving, accounts removed).
   ["activity_log", "id"],
 ];
