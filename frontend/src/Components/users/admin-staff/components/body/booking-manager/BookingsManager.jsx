@@ -5,6 +5,7 @@ import { LuPlus, LuTicket } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { ROLES } from '@/auth/roles';
 import { useAsync } from '@/hooks/useAsync';
+import { toMinutes } from '@/lib/format';
 import { listBookings } from '@/services/bookings';
 import { listRoomSessions } from '@/services/bookingsExtra';
 import { listRooms } from '@/services/rooms';
@@ -25,10 +26,11 @@ import BookingList from './components/booking-list/BookingList';
 import BookingForm from './components/booking-list/BookingForm';
 import BookingCalendar from './components/booking-calendar/BookingCalendar';
 import BookingDetails from './components/booking-calendar/BookingDetails';
+import SlotClashNotice from './components/booking-calendar/SlotClashNotice';
 import CompleteDialog from './components/booking-calendar/CompleteDialog';
 import StaffCancelDialog from './components/refunds/StaffCancelDialog';
 import RefundPolicyDialog from './components/refunds/RefundPolicyDialog';
-import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, isOwing, owesRefund, periodOf, roomLanes, slotDraft, soonestFirst } from './bookingsModel';
+import { PAGE_SIZE, STATUS_FILTERS, byRoomId, capitalize, countBy, isOwing, owesRefund, periodOf, roomLanes, slotClashes, slotDraft, soonestFirst } from './bookingsModel';
 import { useBookingActions } from './useBookingActions';
 import './bookings.scss';
 
@@ -94,6 +96,9 @@ const BookingsManager = () => {
     const [openId, setOpenId] = useState(() => Number(params.get('booking')) || null); // booking in the details dialog (?booking=<id> opens it)
     const [openOn, setOpenOn] = useState(null); // 'pay': the dialog opens on its QR (a new booking with nothing taken)
     const [completing, setCompleting] = useState(null); // booking id waiting for the "still unpaid" prompt
+    // A taken slot picked on the calendar: { date, startTime, endTime, roomId, lane, roomName, clashes } — it stays
+    // selected (in red) with what holds it, until another pick, Close, or the calendar moves on.
+    const [clashPick, setClashPick] = useState(null);
 
     const setOwing = (on) => {
         setPage(1);
@@ -148,6 +153,7 @@ const BookingsManager = () => {
 
     const roomList = [...(rooms.data ?? [])].sort(byRoomId);
     const roomColor = roomColorMap(roomList);
+    const hasLanes = roomFilter === 'all' && roomList.length > 1;
     const roomMatches = (item) => roomFilter === 'all' || String(item.room_id) === roomFilter;
     const statusMatches = (booking) => statusFilter === 'all' || booking.status === statusFilter;
 
@@ -258,14 +264,25 @@ const BookingsManager = () => {
         setCalDate(asDate(todayIso));
         setView(lastCalendar.current);
     };
-    // A free slot (click) or a dragged range, in a room lane or the selected room.
+    // A free slot (click) or a dragged range, in a room lane, the selected room, or the studio's only room.
+    // A slot that is already taken doesn't open a form that can't be saved: it stays selected, with what holds it.
     const pickSlot = (date, time, { end, lane } = {}) => {
         if (date < todayIso) {
             toast.error('That date is in the past. Please choose today or a later date.');
             return;
         }
-        newBooking(slotDraft({ date, time, end, roomId: lane ?? (roomFilter === 'all' ? null : roomFilter) }));
+        const roomId = lane ?? (roomFilter !== 'all' ? roomFilter : roomList.length === 1 ? String(roomList[0].id) : null);
+        const draft = slotDraft({ date, time, end, roomId });
+        const clashes = slotClashes({ bookings: all, sessions: sessions.data ?? [], roomId: draft.roomId, date, start: draft.startTime, end: draft.endTime });
+        if (clashes.length) {
+            setClashPick({ ...draft, lane, clashes, roomName: roomList.find((room) => String(room.id) === String(draft.roomId))?.name });
+            return;
+        }
+        setClashPick(null);
+        newBooking(draft);
     };
+    // The selection only means something on the calendar it was made on.
+    useEffect(() => setClashPick(null), [calView, calDate, roomFilter, statusFilter, isCalendar]);
 
     const opened = openId ? all.find((booking) => booking.id === openId) : null;
     const openedGuestId = opened?.guest_id;
@@ -360,20 +377,24 @@ const BookingsManager = () => {
                     onClearFilters={clearFilters}
                 />
             ) : (
-                <BookingCalendar
-                    bookings={calendarBookings}
-                    sessions={calendarSessions}
-                    roomColor={roomColor}
-                    lanes={roomFilter === 'all' && roomList.length > 1 ? roomLanes(roomList, roomColor) : undefined}
-                    view={calView}
-                    date={calDate}
-                    onViewChange={setView}
-                    onDateChange={setCalDate}
-                    today={todayIso}
-                    loading={bookings.loading || sessions.loading}
-                    onOpen={(booking) => setOpenId(booking.id)}
-                    onSlot={pickSlot}
-                />
+                <>
+                    {clashPick && <SlotClashNotice pick={clashPick} onOpen={(booking) => setOpenId(booking.id)} onClose={() => setClashPick(null)} />}
+                    <BookingCalendar
+                        bookings={calendarBookings}
+                        sessions={calendarSessions}
+                        roomColor={roomColor}
+                        lanes={hasLanes ? roomLanes(roomList, roomColor) : undefined}
+                        view={calView}
+                        date={calDate}
+                        onViewChange={setView}
+                        onDateChange={setCalDate}
+                        today={todayIso}
+                        loading={bookings.loading || sessions.loading}
+                        onOpen={(booking) => setOpenId(booking.id)}
+                        onSlot={pickSlot}
+                        held={clashPick && clashPick.startTime ? { date: clashPick.date, lane: hasLanes ? String(clashPick.roomId) : undefined, from: toMinutes(clashPick.startTime), to: toMinutes(clashPick.endTime) } : null}
+                    />
+                </>
             )}
 
             {opened && (
@@ -440,6 +461,11 @@ const BookingsManager = () => {
                     draft={editing ? undefined : draft}
                     rooms={rooms.data ?? []}
                     guests={guests.data ?? []}
+                    clashesFor={(slot) => slotClashes({ bookings: all, sessions: sessions.data ?? [], ...slot })}
+                    onOpenBooking={(booking) => {
+                        setEditing(undefined);
+                        setOpenId(booking.id);
+                    }}
                     onClose={() => setEditing(undefined)}
                     onSaved={(saved, { taken } = {}) => {
                         const created = !editing;

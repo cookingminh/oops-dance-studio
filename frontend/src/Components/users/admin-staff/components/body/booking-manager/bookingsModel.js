@@ -98,6 +98,28 @@ export function sessionItem(session, { roomColor, t, withRoom = true, day }) {
     };
 }
 
+// What already holds a room between `start` and `end` ('HH:mm') on `date`, soonest first: bookings that still
+// hold it (waiting, approved, or paid up — the database checks the same three) and class sessions (rows of
+// listRoomSessions). `skipId` leaves out the booking being edited. Each: { kind: 'booking' | 'class', start, end,
+// booking | session }.
+const HOLDS_ROOM = new Set(['pending', 'approved', 'completed']);
+export function slotClashes({ bookings = [], sessions = [], roomId, date, start, end, skipId }) {
+    if (!roomId || !date || !start || !end) return [];
+    const from = toMinutes(start);
+    const to = toMinutes(end);
+    const overlaps = (a, b) => toMinutes(a) < to && toMinutes(b) > from;
+    const room = String(roomId);
+    return [
+        ...bookings
+            .filter((booking) => String(booking.room_id) === room && booking.date === date && booking.id !== skipId && HOLDS_ROOM.has(booking.status))
+            .filter((booking) => overlaps(formatTime(booking.start_time), formatTime(booking.end_time)))
+            .map((booking) => ({ kind: 'booking', start: formatTime(booking.start_time), end: formatTime(booking.end_time), booking })),
+        ...sessions
+            .filter((session) => String(session.room_id) === room && session.date === date && overlaps(session.start, session.end))
+            .map((session) => ({ kind: 'class', start: session.start, end: session.end, session })),
+    ].sort((a, b) => a.start.localeCompare(b.start));
+}
+
 // "New booking" from a free slot: the dragged range, or one hour from the picked start (within
 // opening hours); the room of the lane, else the selected room tab.
 export function slotDraft({ date, time, end, roomId }) {

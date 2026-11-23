@@ -1066,3 +1066,105 @@
         color: var(--ad-subtle);
     }
 }
+
+// A taken slot picked on the calendar: what holds it, above the grid (the selection stays there in red). The
+// same lines show in the new-booking form when its room and times clash.
+.adminShell .bookingClash {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: 1rem;
+    padding: .85rem 1rem;
+    border: 1px solid hsl(0, 70%, 85%);
+    border-radius: 16px;
+    background: hsl(0, 90%, 97%);
+    color: hsl(0, 60%, 28%);
+}
+
+.adminShell .bookingClashIcon {
+    flex: none;
+    margin-top: .15rem;
+    color: hsl(0, 72%, 46%);
+    font-size: 1.15rem;
+}
+
+.adminShell .bookingClashBody {
+    display: grid;
+    flex: 1;
+    gap: .45rem;
+    min-width: 0;
+}
+
+.adminShell .bookingClashTitle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .15rem .6rem;
+    margin: 0;
+
+    strong {
+        color: hsl(0, 65%, 30%);
+    }
+
+    span {
+        color: hsl(0, 30%, 38%);
+        font-size: .86rem;
+    }
+}
+
+.adminShell .bookingClashHint {
+    margin: 0;
+    color: hsl(0, 30%, 38%);
+    font-size: .82rem;
+}
+
+.adminShell .bookingClashList,
+.adminPortal .bookingClashList {
+    display: grid;
+    gap: .35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: .75rem;
+        padding: .45rem .65rem;
+        border-radius: 12px;
+        background: hsla(0, 0%, 100%, .75);
+    }
+}
+
+.adminShell .bookingClashWhat,
+.adminPortal .bookingClashWhat {
+    display: grid;
+    min-width: 0;
+
+    strong {
+        font-size: .9rem;
+    }
+
+    span {
+        color: var(--ad-subtle, hsl(0, 0%, 40%));
+        font-size: .8rem;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+// The new-booking form: the room and times picked are taken.
+.adminPortal .bfClash {
+    display: grid;
+    gap: .45rem;
+    padding: .7rem .8rem;
+    border-radius: 12px;
+    background: hsl(0, 90%, 97%);
+    color: hsl(0, 60%, 28%);
+    font-size: .86rem;
+
+    > p {
+        margin: 0;
+        font-weight: 600;
+    }
+}

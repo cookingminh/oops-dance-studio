@@ -9,7 +9,7 @@ import { useSlotDrag } from './useSlotDrag';
 // slots (absolutely placed). With `lanes` every day is split into one sub-column per lane (rooms),
 // in a fixed order, and each item goes to the lane named by `item.lane`. A press-and-drag (or a click)
 // on free slots calls onSlotClick(date, 'HH:mm', { lane, end? }).
-const WeekGrid = ({ days, byDate, today, now, minHour, maxHour, lanes, onSelect, onSlotClick, slotLabel }) => {
+const WeekGrid = ({ days, byDate, today, now, minHour, maxHour, lanes, onSelect, onSlotClick, heldSlot, slotLabel }) => {
     const { t, dayName, formatDate } = useI18n();
     const scrollRef = useRef(null);
     const range = { start: minHour * 60, end: maxHour * 60 };
@@ -53,7 +53,8 @@ const WeekGrid = ({ days, byDate, today, now, minHour, maxHour, lanes, onSelect,
                 {nowOutside && <span className="calNowTime">{t('Now {time}', { time: now })}</span>}
             </span>
         );
-    const trackProps = { slots, range, onSelect, selectable: Boolean(onSlotClick), slotLabel, drag };
+    // While dragging, the live range; else a range the page keeps (heldSlot).
+    const trackProps = { slots, range, onSelect, selectable: Boolean(onSlotClick), slotLabel, drag: drag ?? heldSlot, held: !drag && Boolean(heldSlot) };
 
     return (
         <div className="calWeekScroll" ref={scrollRef}>

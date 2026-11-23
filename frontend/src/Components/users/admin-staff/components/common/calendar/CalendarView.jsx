@@ -26,6 +26,8 @@ import './calendar.scss';
 // onSlotClick(date, 'HH:mm', { lane, end? }): a click on a free slot, or a press-and-drag over several
 // (week view, mouse / pen; touch taps). `end` comes only with a dragged range longer than one slot;
 // `lane` is the lane's id (undefined without lanes). The phone agenda's "+" passes a null time.
+// `heldSlot` ({ date, lane?, from, to } in minutes): a picked range that stays drawn on the week grid after the
+// pick, e.g. a taken slot the page is warning about (red when it overlaps an item).
 // Also off by default, for a calendar of one fixed period (e.g. a payslip's month):
 // `fixed` hides ‹ Today ›, and month cells list every item with a plain day number (no week to
 // open); `detailedChips` makes month chips show start–end, the title on up to two lines, the
@@ -39,6 +41,7 @@ const CalendarView = ({
     items = [],
     onSelect,
     onSlotClick,
+    heldSlot = null,
     minHour = 8,
     maxHour = 22,
     toolbarExtra,
@@ -140,6 +143,7 @@ const CalendarView = ({
                 lanes={lanes}
                 onSelect={onSelect}
                 onSlotClick={onSlotClick}
+                heldSlot={heldSlot}
                 slotLabel={slotLabel}
             />
         );

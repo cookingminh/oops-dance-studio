@@ -7,6 +7,7 @@ import { useI18n } from '@/i18n/i18nContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
 import { listPriceFor } from '../../bookingsModel';
 import NewBookingMoney from './NewBookingMoney';
+import { ClashLines } from '../booking-calendar/SlotClashNotice';
 
 // `draft` prefills a new booking (a free slot picked on the calendar): { roomId, date, startTime, endTime }.
 const initialForm = (booking, draft) => ({
@@ -26,7 +27,9 @@ const NO_MONEY = { changing: false, price: '', priceNote: '', status: 'approved'
 // code and records money taken now, all in one go (staffCreateBooking); onSaved(created, { taken }).
 // Edit: guest, room, date, times, status and details only — money changes through the booking dialog's
 // Record payment / Change price, so every amount has a line in its history; onSaved(updated).
-const BookingForm = ({ booking, draft, rooms, guests, onClose, onSaved }) => {
+// clashesFor({ roomId, date, start, end, skipId }) lists what already holds the room then (slotClashes): the form
+// says so as soon as the room or the times are picked, and won't save; onOpenBooking(booking) opens one of them.
+const BookingForm = ({ booking, draft, rooms, guests, clashesFor, onOpenBooking, onClose, onSaved }) => {
     const toast = useToast();
     const { t } = useI18n();
     const [form, setForm] = useState(() => initialForm(booking, draft));
@@ -41,6 +44,7 @@ const BookingForm = ({ booking, draft, rooms, guests, onClose, onSaved }) => {
     const room = rooms.find((item) => String(item.id) === form.roomId);
     const hours = form.startTime && form.endTime && !timeError ? (toMinutes(form.endTime) - toMinutes(form.startTime)) / 60 : null;
     const list = timeError ? null : listPriceFor(room, form.startTime, form.endTime);
+    const clashes = timeError || !clashesFor ? [] : clashesFor({ roomId: form.roomId, date: form.date, start: form.startTime, end: form.endTime, skipId: booking?.id });
 
     // New booking: the agreed total, and what is taken now.
     const total = money.changing && money.price !== '' ? Number(money.price) : list;
@@ -55,7 +59,7 @@ const BookingForm = ({ booking, draft, rooms, guests, onClose, onSaved }) => {
                 : money.paidKind === 'other' && (!Number.isInteger(Number(money.other)) || Number(money.other) <= 0)
                     ? t('Enter an amount in VND.')
                     : '';
-    const canSave = (!isNew || form.guestId) && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError;
+    const canSave = (!isNew || form.guestId) && form.roomId && form.date && form.startTime && form.endTime && !timeError && !moneyError && clashes.length === 0;
 
     // Edit: what happens to the price when the room or the times move (the server recomputes the list
     // price; the agreed price follows it unless staff changed it by hand).
@@ -160,6 +164,12 @@ const BookingForm = ({ booking, draft, rooms, guests, onClose, onSaved }) => {
                             </Select>
                         )}
                     </div>
+                    {clashes.length > 0 && (
+                        <div className="bfClash" role="alert">
+                            <p>{t('{room} is already taken then:', { room: room?.name ?? t('This room') })}</p>
+                            <ClashLines clashes={clashes} onOpen={onOpenBooking} />
+                        </div>
+                    )}
                     {moved && list !== null && (
                         <p className="bfHint" role="status">
                             {byHand

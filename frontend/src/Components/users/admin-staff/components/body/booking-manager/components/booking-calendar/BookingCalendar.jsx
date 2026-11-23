@@ -6,8 +6,9 @@ import { bookingItem, sessionItem } from '../../bookingsModel';
 // Bookings on the shared calendar, in their room's colour, with the rooms' class sessions behind
 // them (context, not clickable). With `lanes` (All rooms) each day is split into one column per room.
 // A booking paid in full ahead stays solid with a "Paid up" badge (bookingItem).
-// A click on a booking opens it; a click or a press-and-drag on free slots starts a new one.
-const BookingCalendar = ({ bookings, sessions, roomColor, lanes, view, date, onViewChange, onDateChange, today, loading, onOpen, onSlot }) => {
+// A click on a booking opens it; a click or a press-and-drag on free slots starts a new one. `held` keeps a
+// picked range on the grid (a taken slot, shown in red while the page says what holds it).
+const BookingCalendar = ({ bookings, sessions, roomColor, lanes, view, date, onViewChange, onDateChange, today, loading, onOpen, onSlot, held }) => {
     const i18n = useI18n();
     const { t } = i18n;
     const withRoom = !lanes;
@@ -27,6 +28,7 @@ const BookingCalendar = ({ bookings, sessions, roomColor, lanes, view, date, onV
             lanes={lanes}
             onSelect={(item) => onOpen(item.data)}
             onSlotClick={onSlot}
+            heldSlot={held}
             today={today}
             loading={loading}
             label={t('Bookings calendar')}

@@ -9,6 +9,11 @@ export default {
     'Open the week of {date}': 'Xem tuần có ngày {date}',
     '+{count} more': '+{count} khác',
     'Overlaps {name}': 'Trùng với {name}',
+    // Bookings: a taken slot picked on the calendar, and the new-booking form's clash lines.
+    'The slot you picked is already taken': 'Khung giờ bạn chọn đã có lịch',
+    'Pick another time or room on the calendar.': 'Chọn giờ hoặc phòng khác trên lịch nhé.',
+    '{room} is already taken then:': '{room} đã có lịch vào giờ này:',
+    'This room': 'Phòng này',
     '{count} item': '{count} mục',
     '{count} items': '{count} mục',
 

@@ -432,6 +432,12 @@
             hsla(0, 90%, 97%, .95);
         color: hsl(0, 72%, 36%);
     }
+
+    // Kept after the pick (the page says what holds it): drawn above the items so it reads as the selection.
+    &.isHeld {
+        z-index: 7;
+        box-shadow: 0 0 0 3px hsla(0, 72%, 46%, .18), 0 8px 18px -10px hsla(20, 30%, 20%, .45);
+    }
 }
 
 // Items (week blocks)
