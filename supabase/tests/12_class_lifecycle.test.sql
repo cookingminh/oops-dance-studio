@@ -52,9 +52,10 @@ insert into public.class_schedules (class_id, day_of_week, start_time, end_time)
   (900121, 1, '10:00', '11:00'),
   (900122, 1, '12:00', '13:00');
 -- Courses (tuition is per course): the running class has this month's and next month's, the
--- upcoming class its first one.
+-- upcoming class its first one. This month's runs for 6 Mondays, so it is never over before the
+-- month is: a finished course bills nobody who joins, and a 4-Monday one is over by the 29th.
 insert into public.class_lessons (class_id, starts_on, title, session_count) values
-  (900121, tests.month(0), 'Life This Month', 4),
+  (900121, tests.month(0), 'Life This Month', 6),
   (900121, tests.month(1), 'Life Next Month', 4),
   (900122, tests.month(1), 'Life First', 4);
 insert into public.class_students (class_id, student_id) values
