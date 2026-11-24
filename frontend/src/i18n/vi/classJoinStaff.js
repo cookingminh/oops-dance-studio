@@ -112,4 +112,10 @@ export default {
     'Request cancelled': 'Đã huỷ yêu cầu',
     'Request approved': 'Đã duyệt yêu cầu',
     'Request declined': 'Đã từ chối yêu cầu',
+
+    // Approving into a class with a maximum number of students.
+    'The class is full ({taken} of {max} places). Raise its maximum to approve.': 'Lớp đã đủ ({taken}/{max} chỗ). Tăng sĩ số tối đa để duyệt.',
+    'Open its setup': 'Mở tab Setting của lớp',
+    '{left} of {max} places left before approving.': 'Trước khi duyệt còn {left}/{max} chỗ.',
+    'Full · {taken}/{max}': 'Đã đủ · {taken}/{max}',
 };

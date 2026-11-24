@@ -19,7 +19,7 @@ const JoinProvider = ({ classes, children }) => {
     const [viewing, setViewing] = useState(null); // { item, request }
     const [params, setParams] = useSearchParams();
     const wanted = Number(params.get('join')) || null;
-    const { stateOf, pendingOf, viewer } = join;
+    const { stateOf, seatsOf, pendingOf, viewer } = join;
 
     useEffect(() => {
         if (!wanted || !classes) return;
@@ -43,13 +43,14 @@ const JoinProvider = ({ classes, children }) => {
         () => ({
             viewer,
             stateOf,
+            seatsOf,
             open: (item) => setAsking(item),
             show: (item) => {
                 const request = pendingOf(item.id);
                 if (request) setViewing({ item, request });
             },
         }),
-        [viewer, stateOf, pendingOf]
+        [viewer, stateOf, seatsOf, pendingOf]
     );
 
     return (

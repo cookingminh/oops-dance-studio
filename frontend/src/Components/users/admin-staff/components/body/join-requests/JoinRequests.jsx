@@ -5,6 +5,7 @@ import { Button } from '@nextui-org/react';
 import { LuFilterX, LuInbox, LuPartyPopper, LuUserPlus } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { listJoinClasses, listJoinRequests } from '@/services/classJoinStaff';
+import { listClassSeats } from '@/services/classJoin';
 import { levelOf } from '@/lib/classLevel';
 import { useI18n } from '@/i18n/i18nContext';
 import { ErrorMessage } from '@/ui/feedback/AsyncState';
@@ -83,6 +84,8 @@ const JoinRequests = () => {
     const waiting = useAsync(() => listJoinRequests({ status: 'pending' }), []);
     const answered = useAsync(() => (tab === 'answered' ? listJoinRequests({ status: 'answered' }) : nothing()), [tab]);
     const classes = useAsync(listJoinClasses, []);
+    // Places left in the classes with a maximum: a full class can't take a request until its maximum goes up.
+    const seats = useAsync(() => listClassSeats().catch(() => new Map()), []);
 
     // "Asked 3 hours ago" moves on, and new requests come in while the page is open.
     const reloads = useRef({});
@@ -136,6 +139,7 @@ const JoinRequests = () => {
     const done = () => {
         setDialog(null);
         waiting.reload();
+        seats.reload();
         if (answered.data !== undefined || tab === 'answered') answered.reload();
         tasks.refresh();
     };
@@ -175,6 +179,7 @@ const JoinRequests = () => {
                             <JoinRequestCard
                                 key={request.id}
                                 request={request}
+                                seats={seats.data?.get(request.class_id) ?? null}
                                 now={now}
                                 onApprove={(item) => setDialog({ kind: 'approve', request: item })}
                                 onDecline={(item) => setDialog({ kind: 'decline', request: item })}

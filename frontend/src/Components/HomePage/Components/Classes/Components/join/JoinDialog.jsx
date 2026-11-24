@@ -186,6 +186,11 @@ const JoinDialog = ({ item, pendingCount = 0, onClose, onSent }) => {
             onSent?.();
         } catch (error) {
             toast.error(error);
+            // The last place went meanwhile: the card says the class is full now.
+            if (/class is full/i.test(error?.message ?? '')) {
+                onSent?.();
+                onClose();
+            }
         } finally {
             setSending(false);
         }

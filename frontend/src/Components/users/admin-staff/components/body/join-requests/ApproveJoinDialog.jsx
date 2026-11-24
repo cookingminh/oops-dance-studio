@@ -1,29 +1,35 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Avatar, Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Spinner } from '@nextui-org/react';
 import { LuAlertTriangle, LuCheck } from 'react-icons/lu';
 import { useAsync } from '@/hooks/useAsync';
 import { listLessonProgress } from '@/services/classes';
 import { approveJoinRequest } from '@/services/classJoinStaff';
+import { listClassSeats } from '@/services/classJoin';
 import { getTuitionSettings } from '@/services/tuition';
 import { avatarUrl } from '@/services/storage';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
-import { routineNow } from '../class-hub/hubModel';
+import { classPath, routineNow } from '../class-hub/hubModel';
 import { START_ASKED, START_LABELS, personName } from './joinModel';
 
 // Approve a request: where the student starts, as "Add a student" (class-hub/page/EnrolDialog.jsx) offers it — the
 // running course (in full by default, only the sessions left when Tuition → Settings pro-rates late joins) or the next
 // one (paid in full) — preselected on what they asked for.
 // With one way only, a line says what happens. class_join_approve adds them; the class's triggers bill the course and
-// put them on the roll call. onDone() after it worked.
+// put them on the roll call. A class at its maximum takes nobody new: the dialog says so and can't approve until the
+// maximum goes up (the class's Setup). onDone() after it worked.
 const ApproveJoinDialog = ({ request, onClose, onDone }) => {
     const { t, formatDate } = useI18n();
     const toast = useToast();
     // The class's courses, and when the next course's renewal opens (its invoices go out then: someone joining after
     // that is billed for it too, private.bill_class).
     const progress = useAsync(
-        () => Promise.all([listLessonProgress([request.class_id]), getTuitionSettings().catch(() => null)]).then(([rows, settings]) => ({ rows, settings })),
+        () =>
+            Promise.all([listLessonProgress([request.class_id]), getTuitionSettings().catch(() => null), listClassSeats().catch(() => new Map())]).then(
+                ([rows, settings, seats]) => ({ rows, settings, seats: seats.get(request.class_id) ?? null })
+            ),
         [request.class_id]
     );
     const [picked, setPicked] = useState(null); // null = what the student asked for
@@ -87,6 +93,7 @@ const ApproveJoinDialog = ({ request, onClose, onDone }) => {
     else if (!choices) hint = t('This class has no course yet: they are billed when its first routine is planned.');
     // They asked for the next course and none is planned: approving starts them now.
     const noNext = !choices && current && request.start_pref === 'next';
+    const seats = progress.data?.seats ?? null;
 
     return (
         <Modal isOpen onOpenChange={(open) => !open && !saving && onClose()} placement="center" scrollBehavior="inside" classNames={{ base: 'hubDialog jrDialog adminPortal' }}>
@@ -104,6 +111,18 @@ const ApproveJoinDialog = ({ request, onClose, onDone }) => {
                         </span>
                     </div>
                     {request.note && <blockquote className="jrQuote">“{request.note}”</blockquote>}
+                    {seats?.full && (
+                        <p className="jrWarn" role="alert">
+                            <LuAlertTriangle aria-hidden="true" />
+                            <span>
+                                {t('The class is full ({taken} of {max} places). Raise its maximum to approve.', seats)}{' '}
+                                <Link to={classPath(request.class_id, { tab: 'setup' })} onClick={onClose}>
+                                    {t('Open its setup')}
+                                </Link>
+                            </span>
+                        </p>
+                    )}
+                    {seats && !seats.full && <p className="hubHint">{t('{left} of {max} places left before approving.', seats)}</p>}
 
                     {progress.loading && !progress.data ? (
                         <div className="jrDialogLoading">
@@ -147,7 +166,7 @@ const ApproveJoinDialog = ({ request, onClose, onDone }) => {
                     <Button variant="light" onPress={onClose} isDisabled={saving}>
                         {t('Close')}
                     </Button>
-                    <Button color="danger" startContent={saving ? null : <LuCheck aria-hidden="true" />} onPress={submit} isLoading={saving} isDisabled={progress.loading && !progress.data}>
+                    <Button color="danger" startContent={saving ? null : <LuCheck aria-hidden="true" />} onPress={submit} isLoading={saving} isDisabled={(progress.loading && !progress.data) || Boolean(seats?.full)}>
                         {t('Approve')}
                     </Button>
                 </ModalFooter>

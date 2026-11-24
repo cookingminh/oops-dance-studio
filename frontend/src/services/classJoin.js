@@ -45,6 +45,13 @@ export async function listClosedClassIds() {
     return new Set(rows.map((row) => row.id));
 }
 
+// Classes with a maximum number of students (class_seats, 20261117003200_class_capacity; public, counts only):
+// Map(class id → { max, taken, left, full }). A class that isn't listed has no limit.
+export async function listClassSeats() {
+    const rows = unwrap(await supabase.rpc('class_seats'));
+    return new Map(rows.map((row) => [row.class_id, { max: row.max_students, taken: row.taken, left: row.seats_left, full: row.seats_left <= 0 }]));
+}
+
 // What the join dialog says about one class's courses and fees, in one round trip:
 //   { today, progress (lesson_progress rows; null if it failed), prices Map(course id → its own price or null =
 //     the class price), settings (tuition_settings, null if unreadable), history (true when the student already has

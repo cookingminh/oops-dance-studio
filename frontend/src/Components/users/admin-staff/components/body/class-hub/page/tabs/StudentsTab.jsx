@@ -10,6 +10,7 @@ import { markPaid } from '@/services/tuition';
 import { avatarUrl } from '@/services/storage';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
+import { seatsOf } from '@/lib/classSeats';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import SectionCard from '../../../../common/SectionCard';
 import { fadeUp, stagger } from '../../../../common/motion';
@@ -46,6 +47,9 @@ const StudentsTab = ({ ctx }) => {
     const nextCourse = current ? planned : null;
     const invoiceOf = (studentId, lesson) => (lesson ? (invoices.data ?? []).find((row) => row.student_id === studentId && row.lesson_id === lesson.lesson_id) : null);
     const members = [...(cls.students ?? [])].filter((row) => row.student).sort((a, b) => personName(a.student).localeCompare(personName(b.student)));
+    // A class with a maximum: places taken and left; full = nobody new (raise the maximum in Setup).
+    const seats = seatsOf(cls, today);
+    const seatLine = seats ? (seats.full ? t('Full: {taken} of {max} places', seats) : t('{taken} of {max} places · {left} left', seats)) : null;
 
     const remove = async (student) => {
         const name = personName(student);
@@ -83,11 +87,17 @@ const StudentsTab = ({ ctx }) => {
                 title={t('Students')}
                 subtitle={
                     members.length
-                        ? `${tn(members.length, '{count} student', '{count} students')}${course ? ` · ${t('course: {title}', { title: course.title })}` : ''}`
-                        : t('Nobody is in this class yet.')
+                        ? [tn(members.length, '{count} student', '{count} students'), seatLine, course ? t('course: {title}', { title: course.title }) : null].filter(Boolean).join(' · ')
+                        : [t('Nobody is in this class yet.'), seatLine].filter(Boolean).join(' · ')
                 }
                 actions={
-                    <Button color="danger" startContent={<LuUserPlus aria-hidden="true" />} onPress={openEnrol}>
+                    <Button
+                        color="danger"
+                        startContent={<LuUserPlus aria-hidden="true" />}
+                        onPress={openEnrol}
+                        isDisabled={Boolean(seats?.full)}
+                        title={seats?.full ? t('The class is full: raise its maximum in Setup to add more.') : undefined}
+                    >
                         {t('Add student')}
                     </Button>
                 }

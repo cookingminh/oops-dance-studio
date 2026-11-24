@@ -97,7 +97,9 @@ select set_eq(
     where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'execute')$$,
   -- support_status: whether the studio is answering chat now (the bubble on public pages).
   -- home_banners_live: the banners the homepage shows today.
-  array['get_available_slots', 'list_public_classes', 'is_username_available', 'studio_today', 'support_status', 'home_banners_live'],
+  -- class_seats: places left in the classes that have a maximum (the class cards).
+  array['get_available_slots', 'list_public_classes', 'is_username_available', 'studio_today', 'support_status', 'home_banners_live',
+        'class_seats'],
   'anon can execute only the public lookup functions');
 
 select is_empty(

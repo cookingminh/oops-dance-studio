@@ -70,9 +70,10 @@ const Who = ({ student, classes }) => {
     );
 };
 
-// The class asked for: its picture, name and level, teacher and weekly times; opens its Students tab.
-const ClassBlock = ({ cls, start }) => {
-    const { t } = useI18n();
+// The class asked for: its picture, name and level, teacher and weekly times, its places left when it has a maximum
+// (`seats`); opens its Students tab.
+const ClassBlock = ({ cls, start, seats }) => {
+    const { t, tn } = useI18n();
     if (!cls) return null;
     const teacher = personName(cls.instructor) || t('No instructor');
     return (
@@ -87,6 +88,11 @@ const ClassBlock = ({ cls, start }) => {
                         <span className="hubTag hubLevelTag">
                             <LevelDot value={cls.level} />
                             {t(levelOf(cls.level).label)}
+                        </span>
+                    )}
+                    {seats && (
+                        <span className={`hubTag jrSeatsTag${seats.full ? ' isFull' : ''}`}>
+                            {seats.full ? t('Full · {taken}/{max}', seats) : tn(seats.left, '{count} place left', '{count} places left')}
                         </span>
                     )}
                 </span>
@@ -129,7 +135,7 @@ const Decision = ({ request }) => {
 };
 
 // One request on the Join requests page. Waiting: actions to approve or decline it; answered: how it ended.
-const JoinRequestCard = ({ request, now, onApprove, onDecline }) => {
+const JoinRequestCard = ({ request, seats = null, now, onApprove, onDecline }) => {
     const i18n = useI18n();
     const { t } = i18n;
     const waiting = request.status === 'pending';
@@ -137,7 +143,7 @@ const JoinRequestCard = ({ request, now, onApprove, onDecline }) => {
     return (
         <motion.li variants={fadeUp} layout="position" className={`jrCard${late ? ' isLate' : ''}${waiting ? '' : ` is-${request.status}`}`}>
             <Who student={request.student} classes={request.classes} />
-            <ClassBlock cls={request.class} start={request.start_pref} />
+            <ClassBlock cls={request.class} start={request.start_pref} seats={request.status === 'pending' ? seats : null} />
 
             <div className="jrSide">
                 {!waiting && <Decision request={request} />}

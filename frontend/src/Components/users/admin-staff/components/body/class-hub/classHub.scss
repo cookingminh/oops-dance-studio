@@ -15,6 +15,15 @@ $blue-soft: hsl(217, 85%, 95%);
         color: var(--ad-muted);
         font-size: .9rem;
         line-height: 1.45;
+
+        // Something that blocks the action (a full class).
+        &.isWarn {
+            padding: .55rem .8rem;
+            border-radius: 12px;
+            background: hsl(0, 90%, 97%);
+            color: hsl(0, 60%, 32%);
+            font-weight: 600;
+        }
     }
 
     .hubFootnote {

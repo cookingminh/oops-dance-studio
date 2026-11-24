@@ -29,6 +29,7 @@ import TuitionTab from './tabs/TuitionTab';
 import RoutinesTab from './tabs/RoutinesTab';
 import MoneyTab from './tabs/MoneyTab';
 import SetupTab from './tabs/SetupTab';
+import { seatsOf } from '@/lib/classSeats';
 
 const PANELS = {
     overview: OverviewTab,
@@ -191,6 +192,8 @@ const ClassPage = () => {
                 actions={{
                     rollCall: () => setTab('sessions', { day: today }),
                     enrol: () => setDialog('enrol'),
+                    // Every place taken: nobody new until the maximum goes up (Setup).
+                    full: Boolean(seatsOf(cls, today)?.full),
                     edit: () => setDialog('edit'),
                     image: () => setDialog('image'),
                     end: () => setTab('setup', { end: '1' }),
@@ -217,6 +220,7 @@ const ClassPage = () => {
             {dialog === 'enrol' && guests.data && (
                 <EnrolDialog
                     cls={cls}
+                    today={today}
                     guests={guests.data}
                     progress={progress.data ?? []}
                     onClose={() => setDialog(null)}

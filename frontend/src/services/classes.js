@@ -16,7 +16,7 @@ const LESSON_COLUMNS = `id, class_id, month, starts_on, session_count, price, ti
 // with its frame (null path = the instructor's avatar).
 const PICTURE_COLUMNS = `image_path, image_pos_x, image_pos_y,
     timetable_photo_path, timetable_photo_x, timetable_photo_y, timetable_photo_zoom`;
-const CLASS_SELECT = `id, name, price, lesson, ${PICTURE_COLUMNS}, instructor_id, room_id, venue_id, venue_room_id, level,
+const CLASS_SELECT = `id, name, price, lesson, ${PICTURE_COLUMNS}, instructor_id, room_id, venue_id, venue_room_id, level, max_students,
     created_at, starts_on, ended_on, end_reason, final_schedule,
     instructor:profiles!instructor_id(${PERSON}),
     room:rooms!room_id(id, name, size),
@@ -32,7 +32,8 @@ const STUDENTS_SELECT = `students:class_students(joined_at, leaves_after,
 // The place (lib/place.js placeColumns) is a room, a venue or a room of a venue: every column is written, so moving
 // to one clears the others. For a venue's room only the room is written: the server sets its venue from it (and
 // moving to another venue drops the room). `venueRoomId` is written only when the form gives a place.
-// `level` ('newbie' | 'basic' | 'advanced' | '' = none, lib/classLevel.js) is written only when the form has it.
+// `level` ('newbie' | 'basic' | 'advanced' | '' = none, lib/classLevel.js) is written only when the form has it, and so is
+// `maxStudents` (the most students at once, '' = no limit; lib/classSeats.js).
 const placeFields = ({ roomId, venueId, venueRoomId }) => {
     if (venueRoomId) return { room_id: null, venue_room_id: venueRoomId };
     return {
@@ -41,13 +42,14 @@ const placeFields = ({ roomId, venueId, venueRoomId }) => {
         ...(venueRoomId !== undefined ? { venue_room_id: null } : {}),
     };
 };
-const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, venueRoomId, price, startsOn, level }) => ({
+const CLASS_FIELDS = ({ name, instructorId, roomId, venueId, venueRoomId, price, startsOn, level, maxStudents }) => ({
     name: name.trim(),
     instructor_id: instructorId,
     ...placeFields({ roomId, venueId, venueRoomId }),
     price: Number(price),
     ...(startsOn ? { starts_on: startsOn } : {}),
     ...(level !== undefined ? { level: level || null } : {}),
+    ...(maxStudents !== undefined ? { max_students: maxStudents === '' || maxStudents === null ? null : Number(maxStudents) } : {}),
 });
 
 // Class lifecycle (supabase/migrations/20261114000100_class_lifecycle.sql): a class runs from

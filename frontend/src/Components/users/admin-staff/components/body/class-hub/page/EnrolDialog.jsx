@@ -7,13 +7,14 @@ import { getTuitionSettings } from '@/services/tuition';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
+import { seatsOf } from '@/lib/classSeats';
 import { routineNow } from '../hubModel';
 
 // Add a student. With a course running and the next one planned, staff choose where they start:
 // now (the running course: in full by default, only the sessions left when Tuition → Settings
 // pro-rates late joins) or from the next course (paid in full, no roll calls before it). Guests
-// already in the class aren't offered.
-const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
+// already in the class aren't offered. A class at its maximum takes nobody new (raise it in Setup first).
+const EnrolDialog = ({ cls, today, guests, progress, onClose, onSaved }) => {
     const { t, formatDate } = useI18n();
     const toast = useToast();
     const { current, planned } = routineNow(progress);
@@ -23,6 +24,7 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
     const [saving, setSaving] = useState(false);
     const enrolled = new Set((cls.students ?? []).map((row) => row.student?.id));
     const candidates = guests.filter((guest) => !enrolled.has(guest.id));
+    const seats = seatsOf(cls, today);
     const left = current ? current.session_count - current.sessions_held : 0;
     // Joining after sessions were held: the fee depends on tuition_settings.prorate_late_join (off by default),
     // so that wording waits for the setting (a failed load counts as the default).
@@ -78,6 +80,13 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
                 <ModalBody>
                     <PersonAutocomplete label={t('Student')} people={candidates} value={studentId} onChange={setStudentId} isRequired />
                     {candidates.length === 0 && <p className="hubHint">{t('Every guest is already enrolled.')}</p>}
+                    {seats && (
+                        <p className={`hubHint${seats.full ? ' isWarn' : ''}`} role={seats.full ? 'alert' : undefined}>
+                            {seats.full
+                                ? t('The class is full ({taken} of {max} places): raise its maximum in Setup to add more.', seats)
+                                : t('{left} of {max} places left.', seats)}
+                        </p>
+                    )}
                     {choices ? (
                         <div className="hubChoices" role="radiogroup" aria-label={t('Starts')}>
                             {options.map((option) => (
@@ -105,7 +114,7 @@ const EnrolDialog = ({ cls, guests, progress, onClose, onSaved }) => {
                     <Button variant="light" onPress={onClose} isDisabled={saving}>
                         {t('Close')}
                     </Button>
-                    <Button color="danger" startContent={saving ? null : <LuUserPlus aria-hidden="true" />} onPress={submit} isLoading={saving} isDisabled={!studentId}>
+                    <Button color="danger" startContent={saving ? null : <LuUserPlus aria-hidden="true" />} onPress={submit} isLoading={saving} isDisabled={!studentId || Boolean(seats?.full)}>
                         {t('Add Student')}
                     </Button>
                 </ModalFooter>

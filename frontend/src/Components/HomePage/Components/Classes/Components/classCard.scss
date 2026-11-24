@@ -274,6 +274,42 @@
     color: var(--hp-muted);
     font-size: .84rem;
     font-weight: 500;
+
+    // Every place taken (a class with a maximum): a grey pill, nothing to press.
+    &.isFull {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        height: 2.5rem;
+        padding: 0 1.05rem;
+        border: 1px solid var(--hp-border);
+        border-radius: 999px;
+        background: hsl(20, 14%, 95%);
+        color: var(--hp-ink, hsl(0, 0%, 20%));
+        font-weight: 600;
+    }
+}
+
+// Places left in a class with a maximum, over the way in; three or fewer stand out.
+.hpJoinStack {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .35rem;
+}
+
+.hpSeats {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    color: var(--hp-muted);
+    font-size: .8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+
+    &.isFew {
+        color: var(--hp-red);
+    }
 }
 
 .hpClassPrice {

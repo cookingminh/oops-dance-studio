@@ -77,4 +77,9 @@ export default {
     'Almost there!': 'Sắp xong rồi!',
     'Your class shows up here as soon as the studio approves your request.': 'Lớp của bạn sẽ hiện ở đây ngay khi studio duyệt yêu cầu.',
     'Find a class and ask to join': 'Tìm lớp và xin vào học',
+
+    // A class with a maximum number of students (class cards).
+    'Class is full': 'Lớp đã đủ học viên',
+    '{count} place left': 'Còn {count} chỗ',
+    '{count} places left': 'Còn {count} chỗ',
 };

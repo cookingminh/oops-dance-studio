@@ -40,6 +40,9 @@ const INVALID_STATE_REASONS = [
     [/already asked to join this class/i, 'You’ve already asked to join this class. The studio will get back to you soon.'],
     [/too many open requests/i, 'You have 3 requests waiting already. Wait for an answer, or cancel one, before asking again.'],
     [/not taking new students/i, 'This class isn’t taking new students.'],
+    // A class at its maximum number of students (class_join_request; any new place: guard_class_full).
+    [/raise its maximum/i, 'This class is full. Raise its maximum number of students to add more.'],
+    [/class is full/i, 'This class is full.'],
     [/request is no longer waiting/i, 'This request has already been answered or cancelled. Refresh to see it.'],
 ];
 
@@ -57,6 +60,8 @@ const INVALID_INPUT_REASONS = [
     [/check-out comes after check-in/i, 'The check-out time must be after the check-in time.'],
     [/a check-in time is needed/i, 'Enter the check-in time.'],
     [/^say why/i, 'Please give a reason.'],
+    // A class's maximum below the students already in it (guard_class_max).
+    [/maximum can.t be lower/i, 'More students already hold a place in this class than that maximum.'],
     // Rented studios and their rooms (venue_save) and a class's place (classes_one_place).
     [/give the studio a name/i, 'Give the studio a name (up to 100 characters).'],
     [/already a studio called/i, 'There is already a rented studio with this name.'],

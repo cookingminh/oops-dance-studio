@@ -6,6 +6,7 @@ import { classBookingClashes, moveClassToRoom, updateClass } from '@/services/cl
 import { clashBookingId, clashText } from '@/services/errors';
 import { avatarUrl } from '@/services/storage';
 import { placeColumns, placeKeyOf } from '@/lib/place';
+import { MAX_STUDENTS_LIMIT, maxStudentsProblem, placesTaken } from '@/lib/classSeats';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
@@ -24,6 +25,7 @@ const fromClass = (cls) => ({
     price: String(cls.price),
     startsOn: cls.starts_on,
     level: cls.level ?? '',
+    maxStudents: cls.max_students ? String(cls.max_students) : '',
 });
 
 // The class's details in place. The start date can only move while the class hasn't started. Moving the
@@ -41,7 +43,11 @@ const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved
     const notStarted = cls.starts_on > today;
     const set = (field) => (value) => setForm((old) => ({ ...old, [field]: value }));
     const price = Number(form.price);
+    // Places held now: the maximum can't go below them (guard_class_max).
+    const taken = placesTaken(cls.students ?? [], today);
+    const maxProblem = maxStudentsProblem(form.maxStudents, taken);
     const problems = {
+        maxStudents: Boolean(maxProblem),
         name: !form.name.trim(),
         price: form.price === '' || Number.isNaN(price) || price < 0,
         startsOn: notStarted && (!form.startsOn || form.startsOn < today),
@@ -137,6 +143,26 @@ const DetailsForm = ({ cls, today, instructors, rooms, venues, readOnly, onSaved
                 description={notStarted ? t('Still upcoming: you can move the first day.') : t('The class has started; its first day stays.')}
             />
             <LevelField value={form.level} onChange={set('level')} isDisabled={readOnly} />
+            <Input
+                label={t('Max students')}
+                type="number"
+                min={Math.max(1, taken)}
+                max={MAX_STUDENTS_LIMIT}
+                step={1}
+                placeholder={t('No limit')}
+                value={form.maxStudents}
+                onValueChange={set('maxStudents')}
+                isReadOnly={readOnly}
+                isInvalid={problems.maxStudents}
+                errorMessage={
+                    maxProblem === 'below'
+                        ? t('{count} students already hold a place: the maximum can’t be lower.', { count: taken })
+                        : maxProblem
+                          ? t('A whole number from 1 to {max}, or empty for no limit.', { max: MAX_STUDENTS_LIMIT })
+                          : undefined
+                }
+                description={t('{count} in the class now. When it is full, nobody can ask to join and nobody new can be added.', { count: taken })}
+            />
             {clash && <RoomClashDialog cls={cls} room={clash.room} days={clash.days} onClose={() => setClash(null)} onConfirm={moveWithPlaces} />}
             {!readOnly && (
                 <div className="hubFormActions isWide">

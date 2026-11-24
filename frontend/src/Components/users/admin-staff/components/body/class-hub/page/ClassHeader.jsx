@@ -70,7 +70,13 @@ const ClassHeader = ({ cls, badge, tabs, tab, onTab, meetsToday, canDelete, acti
                             </Button>
                         )}
                         {!ended && (
-                            <Button color="danger" startContent={<LuUserPlus aria-hidden="true" />} onPress={actions.enrol}>
+                            <Button
+                                color="danger"
+                                startContent={<LuUserPlus aria-hidden="true" />}
+                                onPress={actions.enrol}
+                                isDisabled={Boolean(actions.full)}
+                                title={actions.full ? t('The class is full: raise its maximum in Setup to add more.') : undefined}
+                            >
                                 {t('Add student')}
                             </Button>
                         )}

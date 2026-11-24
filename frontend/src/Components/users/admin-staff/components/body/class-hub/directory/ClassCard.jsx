@@ -30,7 +30,7 @@ const CardStats = ({ item, view, isAdmin }) => {
         return (
             <div className="hubStats">
                 <Stat label={t('Opens')} value={formatDate(cls.starts_on, 'dayMonth')} />
-                <Stat label={t('Signed up')} value={item.students} />
+                <Stat label={t('Signed up')} value={item.maxStudents ? `${item.students}/${item.maxStudents}` : item.students} hint={item.maxStudents && item.students >= item.maxStudents ? t('full') : undefined} />
                 <Stat label={t('Price')} value={formatVnd(cls.price)} />
             </div>
         );
@@ -50,7 +50,7 @@ const CardStats = ({ item, view, isAdmin }) => {
     }
     return (
         <div className="hubStats">
-            <Stat label={t('Students')} value={item.students} />
+            <Stat label={t('Students')} value={item.maxStudents ? `${item.students}/${item.maxStudents}` : item.students} hint={item.maxStudents && item.students >= item.maxStudents ? t('full') : undefined} />
             <Stat label={t('Paid')} value={tuition.count ? `${tuition.settled}/${tuition.count}` : '—'} hint={item.course ? t('this course') : undefined} />
             <Stat label={t('Sessions')} value={`${item.held}/${item.planned}`} hint={t('this month')} />
             <Stat label={t('Attendance')} value={percent(item.attendance)} />

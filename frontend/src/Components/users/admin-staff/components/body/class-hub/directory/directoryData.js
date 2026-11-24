@@ -82,6 +82,8 @@ export function buildDirectory(data, now) {
             badge,
             phase: badge.phase,
             students: cls.students?.length ?? 0,
+            // The most students at once (null = no limit): the card shows "12/20".
+            maxStudents: cls.max_students ?? null,
             routine,
             course,
             tuition,

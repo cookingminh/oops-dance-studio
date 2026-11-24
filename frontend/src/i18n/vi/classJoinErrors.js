@@ -19,4 +19,9 @@ export default {
 
     // The reason the database gives when the class ends (class_join_requests.decline_reason)
     'The class has ended.': 'Lớp đã kết thúc.',
+
+    // A class at its maximum number of students.
+    'This class is full.': 'Lớp này đã đủ học viên.',
+    'This class is full. Raise its maximum number of students to add more.': 'Lớp này đã đủ học viên. Tăng sĩ số tối đa để thêm người.',
+    'More students already hold a place in this class than that maximum.': 'Số học viên đang có trong lớp nhiều hơn sĩ số tối đa này.',
 };

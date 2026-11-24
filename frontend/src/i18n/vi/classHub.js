@@ -410,4 +410,17 @@ export default {
     'This session’s room': 'Đổi phòng buổi này',
     '{class}’s session has no room yet': 'Buổi học lớp {class} chưa có phòng',
     'On {date} · pick a room for it': 'Ngày {date} · chọn phòng cho buổi này',
+
+    // A class's maximum number of students.
+    'Max students': 'Sĩ số tối đa',
+    'No limit': 'Không giới hạn',
+    '{count} students already hold a place: the maximum can’t be lower.': 'Đang có {count} học viên trong lớp: sĩ số tối đa không thể thấp hơn.',
+    'A whole number from 1 to {max}, or empty for no limit.': 'Nhập số nguyên từ 1 đến {max}, hoặc để trống nếu không giới hạn.',
+    '{count} in the class now. When it is full, nobody can ask to join and nobody new can be added.': 'Hiện có {count} học viên. Khi lớp đủ, không ai xin vào được và không thêm được học viên mới.',
+    'Full: {taken} of {max} places': 'Đã đủ: {taken}/{max} chỗ',
+    '{taken} of {max} places · {left} left': '{taken}/{max} chỗ · còn {left}',
+    'The class is full: raise its maximum in Setup to add more.': 'Lớp đã đủ: tăng sĩ số tối đa trong tab Setting để thêm học viên.',
+    'The class is full ({taken} of {max} places): raise its maximum in Setup to add more.': 'Lớp đã đủ ({taken}/{max} chỗ): tăng sĩ số tối đa trong tab Setting để thêm học viên.',
+    '{left} of {max} places left.': 'Còn {left}/{max} chỗ.',
+    full: 'đã đủ',
 };

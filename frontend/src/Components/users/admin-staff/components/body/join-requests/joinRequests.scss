@@ -766,3 +766,14 @@ $blue-soft: hsl(217, 85%, 95%);
         flex: 1;
     }
 }
+
+// A class with a maximum: places left on a waiting request (full: red, approving waits for a higher maximum).
+:is(.adminShell, .adminPortal) .jrSeatsTag {
+    font-variant-numeric: tabular-nums;
+
+    &.isFull {
+        background: hsl(0, 90%, 96%);
+        color: hsl(0, 60%, 36%);
+        font-weight: 700;
+    }
+}
