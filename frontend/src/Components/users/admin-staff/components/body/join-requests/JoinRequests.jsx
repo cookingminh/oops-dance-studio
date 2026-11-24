@@ -15,6 +15,7 @@ import StatusSelect from '../../common/StatusSelect';
 import { stagger } from '../../common/motion';
 import { useStaffTasks } from '../../../tasks/staffTasks';
 import JoinRequestCard from './JoinRequestCard';
+import SeatsAlert from './SeatsAlert';
 import JoinDialogs from './JoinDialogs';
 import { JOIN_PAGE, TABS, agoText, countByClass } from './joinModel';
 import './joinRequests.scss';
@@ -145,6 +146,9 @@ const JoinRequests = () => {
     };
 
     const oldest = waiting.data?.[0];
+    // Waiting requests per class, oldest first (all of them, whatever the filter): "3 places left · 5 asking".
+    const waitingByClass = new Map();
+    for (const request of waiting.data ?? []) waitingByClass.set(request.class_id, [...(waitingByClass.get(request.class_id) ?? []), request]);
     const subtitle =
         tab === 'answered'
             ? t('Answered in the last 30 days')
@@ -174,18 +178,34 @@ const JoinRequests = () => {
                 ) : rows.length === 0 ? (
                     <EmptyState tab={tab} filtered={Boolean(classId)} onClear={() => setParam({ class: null })} />
                 ) : (
-                    <motion.ul key={tab} className="jrList" variants={stagger} initial="hidden" animate="show" aria-label={tab === 'waiting' ? t('Waiting') : t('Answered')}>
-                        {rows.map((request) => (
-                            <JoinRequestCard
-                                key={request.id}
-                                request={request}
-                                seats={seats.data?.get(request.class_id) ?? null}
-                                now={now}
-                                onApprove={(item) => setDialog({ kind: 'approve', request: item })}
-                                onDecline={(item) => setDialog({ kind: 'decline', request: item })}
-                            />
-                        ))}
-                    </motion.ul>
+                    <>
+                        {/* Classes whose waiting requests don't all fit (full, or more asking than places). */}
+                        {tab === 'waiting' &&
+                            [...waitingByClass.entries()]
+                                .filter(([id]) => !classId || id === classId)
+                                .map(([id, list]) => (
+                                    <SeatsAlert
+                                        key={id}
+                                        name={list[0].class?.name}
+                                        seats={seats.data?.get(id) ?? null}
+                                        waiting={list}
+                                        onDeclineRest={(requests) => setDialog({ kind: 'declineRest', className: list[0].class?.name ?? '', requests })}
+                                    />
+                                ))}
+                        <motion.ul key={tab} className="jrList" variants={stagger} initial="hidden" animate="show" aria-label={tab === 'waiting' ? t('Waiting') : t('Answered')}>
+                            {rows.map((request) => (
+                                <JoinRequestCard
+                                    key={request.id}
+                                    request={request}
+                                    seats={seats.data?.get(request.class_id) ?? null}
+                                    asking={waitingByClass.get(request.class_id)?.length ?? 0}
+                                    now={now}
+                                    onApprove={(item) => setDialog({ kind: 'approve', request: item })}
+                                    onDecline={(item) => setDialog({ kind: 'decline', request: item })}
+                                />
+                            ))}
+                        </motion.ul>
+                    </>
                 )}
             </SectionCard>
 

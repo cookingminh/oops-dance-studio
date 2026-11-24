@@ -7,26 +7,30 @@ import { useAsync } from '@/hooks/useAsync';
 import { listJoinRequests } from '@/services/classJoinStaff';
 import { avatarUrl } from '@/services/storage';
 import { useI18n } from '@/i18n/i18nContext';
+import { seatsOf } from '@/lib/classSeats';
 import { AVATAR_DEFAULTS } from '@/ui/avatar';
 import SectionCard from '../../common/SectionCard';
 import { fadeUp, stagger } from '../../common/motion';
 import { StudentHistory } from './JoinRequestCard';
 import JoinDialogs from './JoinDialogs';
+import SeatsAlert from './SeatsAlert';
 import { JOIN_PAGE, START_LABELS, askedText, isLate, lateText, personName } from './joinModel';
 import './joinRequests.scss';
 
 // The class page's Students tab: students waiting to join this class, above the list, with Approve / Decline (the
 // Join requests page's dialogs). Hidden when nobody is waiting. After an answer the class reloads (ctx.changed), so
-// an approved student shows up in the list right away.
+// an approved student shows up in the list right away. A class with a maximum says how many places are left for how
+// many asking; once full, the rest can be declined at once.
 const ClassJoinBlock = ({ ctx }) => {
-    const { cls, version, changed } = ctx;
+    const { cls, today, version, changed } = ctx;
     const i18n = useI18n();
-    const { t } = i18n;
+    const { t, tn } = i18n;
     const requests = useAsync(() => listJoinRequests({ status: 'pending', classId: cls.id }), [cls.id, version]);
     const [dialog, setDialog] = useState(null);
     const rows = requests.data ?? [];
     if (rows.length === 0) return null;
     const now = Date.now();
+    const seats = seatsOf(cls, today);
 
     return (
         <>
@@ -34,7 +38,11 @@ const ClassJoinBlock = ({ ctx }) => {
                 icon={LuUserPlus}
                 className="jrHubBlock"
                 title={t('Waiting to join ({count})', { count: rows.length })}
-                subtitle={t('They asked on the website. Approve to add them to the class: they are billed as usual.')}
+                subtitle={
+                    seats
+                        ? `${seats.full ? t('Full: {taken} of {max} places', seats) : tn(seats.left, '{count} place left', '{count} places left')} · ${t('They asked on the website. Approve to add them to the class: they are billed as usual.')}`
+                        : t('They asked on the website. Approve to add them to the class: they are billed as usual.')
+                }
                 actions={
                     <Link to={`${JOIN_PAGE}?class=${cls.id}`} className="cardLink">
                         {t('All join requests')}
@@ -42,6 +50,7 @@ const ClassJoinBlock = ({ ctx }) => {
                     </Link>
                 }
             >
+                <SeatsAlert seats={seats} waiting={rows} onDeclineRest={(requests) => setDialog({ kind: 'declineRest', className: cls.name, requests })} />
                 <motion.ul className="jrHubRows" variants={stagger} initial="hidden" animate="show" aria-label={t('Waiting to join')}>
                     {rows.map((request) => {
                         const name = personName(request.student);

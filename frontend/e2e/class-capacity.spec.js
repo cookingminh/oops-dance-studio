@@ -93,3 +93,20 @@ test('a full class says so: no way to ask, and staff can’t add anyone', async 
     for (const button of await add.all()) await expect(button).toBeDisabled();
     await staff.close();
 });
+
+test('staff decline the requests still waiting for a full class at once, with one reason', async ({ page }) => {
+    // Still full (the test above); guest05 had asked before the last place went.
+    const asked = await rest(key, 'class_join_requests', { method: 'POST', body: { class_id: cls.id, student_id: me.id, start_pref: 'now' }, prefer: 'return=representation' });
+    expect(asked.status, JSON.stringify(asked.data)).toBe(201);
+    await login(page, 'staff@demo.oopsdance.test');
+    await page.goto(`/admin/join-requests?class=${cls.id}`);
+    const alert = page.locator('.jrSeatsAlert.isFull');
+    await expect(alert).toContainText(`${cls.name} is full (${taken} of ${taken} places)`);
+    await alert.getByRole('button', { name: /^Decline the \d+ still waiting$/ }).click();
+    const dialog = page.getByRole('dialog').filter({ hasText: 'still waiting for' });
+    await expect(dialog.getByLabel('Reason')).toHaveValue('The class is full');
+    await dialog.getByRole('button', { name: /^Decline \d+ requests?$/ }).click();
+    await expectToast(page, 'declined');
+    const row = (await rest(key, `class_join_requests?select=status,decline_reason&id=eq.${asked.data[0].id}`)).data[0];
+    expect(row).toEqual({ status: 'declined', decline_reason: 'The class is full' });
+});

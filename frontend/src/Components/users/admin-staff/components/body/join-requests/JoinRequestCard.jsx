@@ -71,8 +71,8 @@ const Who = ({ student, classes }) => {
 };
 
 // The class asked for: its picture, name and level, teacher and weekly times, its places left when it has a maximum
-// (`seats`); opens its Students tab.
-const ClassBlock = ({ cls, start, seats }) => {
+// (`seats`) and how many ask for them (`asking`, staff only); opens its Students tab.
+const ClassBlock = ({ cls, start, seats, asking = 0 }) => {
     const { t, tn } = useI18n();
     if (!cls) return null;
     const teacher = personName(cls.instructor) || t('No instructor');
@@ -92,7 +92,9 @@ const ClassBlock = ({ cls, start, seats }) => {
                     )}
                     {seats && (
                         <span className={`hubTag jrSeatsTag${seats.full ? ' isFull' : ''}`}>
-                            {seats.full ? t('Full · {taken}/{max}', seats) : tn(seats.left, '{count} place left', '{count} places left')}
+                            {seats.full
+                                ? t('Full · {taken}/{max}', seats)
+                                : [tn(seats.left, '{count} place left', '{count} places left'), asking ? tn(asking, '{count} asking', '{count} asking') : null].filter(Boolean).join(' · ')}
                         </span>
                     )}
                 </span>
@@ -135,7 +137,7 @@ const Decision = ({ request }) => {
 };
 
 // One request on the Join requests page. Waiting: actions to approve or decline it; answered: how it ended.
-const JoinRequestCard = ({ request, seats = null, now, onApprove, onDecline }) => {
+const JoinRequestCard = ({ request, seats = null, asking = 0, now, onApprove, onDecline }) => {
     const i18n = useI18n();
     const { t } = i18n;
     const waiting = request.status === 'pending';
@@ -143,7 +145,7 @@ const JoinRequestCard = ({ request, seats = null, now, onApprove, onDecline }) =
     return (
         <motion.li variants={fadeUp} layout="position" className={`jrCard${late ? ' isLate' : ''}${waiting ? '' : ` is-${request.status}`}`}>
             <Who student={request.student} classes={request.classes} />
-            <ClassBlock cls={request.class} start={request.start_pref} seats={request.status === 'pending' ? seats : null} />
+            <ClassBlock cls={request.class} start={request.start_pref} seats={request.status === 'pending' ? seats : null} asking={asking} />
 
             <div className="jrSide">
                 {!waiting && <Decision request={request} />}
