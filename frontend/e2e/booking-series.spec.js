@@ -8,6 +8,7 @@ import { addDays, expectToast, isoWeekday, login, pickOption, rest, roomRadio, r
 test.describe.configure({ mode: 'serial' });
 
 const NAME = 'E2E Weekly Crew';
+const TWO_TIMES = 'E2E Two Times Crew';
 let page;
 let jwt;
 let roomA;
@@ -39,7 +40,7 @@ test.beforeAll(async ({ browser }) => {
 
 test.afterAll(async () => {
     const key = await serviceKey();
-    const series = (await rest(key, `booking_series?select=id&walk_in_name=eq.${encodeURIComponent(NAME)}`)).data ?? [];
+    const series = (await rest(key, `booking_series?select=id&walk_in_name=in.(${[NAME, TWO_TIMES].map((name) => `"${encodeURIComponent(name)}"`).join(',')})`)).data ?? [];
     for (const { id } of series) {
         await rest(key, `bank_transfers?series_id=eq.${id}`, { method: 'DELETE' });
         await rest(key, `bookings?series_id=eq.${id}`, { method: 'DELETE' });
@@ -100,4 +101,36 @@ test('the first session opens with the series, and a month is paid by one transf
     await expect(pay).toContainText('of the rental');
     await pay.getByRole('button', { name: 'Simulate the transfer' }).click();
     await expect(pay).toContainText('Paid in full. Thank you!');
+});
+
+// 20261117003110_series_weekday_times: Thursdays 10:00–11:00 and Saturdays 15:00–17:00 in one series.
+test('each weekday can have its own times', async () => {
+    const thursday = addDays(first, 1);
+    await page.goto(`/admin/bookings?date=${thursday}`);
+    await page.getByRole('button', { name: 'New booking' }).click();
+    const form = page.locator('.bookingForm');
+    await form.getByRole('button', { name: 'A walk-in (no account)' }).click();
+    await form.getByLabel('Walk-in’s name').fill(TWO_TIMES);
+    await form.getByLabel('Phone').fill('0977 000 222');
+    await roomRadio(form, roomA.name).click();
+    await form.getByLabel('Date').first().fill(thursday);
+    await pickOption(page, form, 'Start', '10:00');
+    await pickOption(page, form, 'End', '11:00');
+    await form.getByText('Every week', { exact: true }).click();
+    await form.getByRole('group', { name: 'Weekdays' }).getByRole('button', { name: 'Sat', exact: true }).click();
+    await form.getByRole('button', { name: 'Each weekday its own', exact: true }).click();
+    const saturday = form.locator('.rfTimes li[data-weekday="6"]');
+    await pickOption(page, saturday, 'Saturday starts', '15:00');
+    await pickOption(page, saturday, 'Saturday ends', '17:00');
+    await form.getByRole('button', { name: '4 weeks', exact: true }).click();
+    await expect(form.locator('.bfCheck.is-good')).toContainText('All 8 days are free');
+    await expect(form.locator('.bfSummary')).toContainText('Thu 10:00–11:00, Sat 15:00–17:00');
+    await form.getByRole('button', { name: 'Book 8 sessions' }).click();
+    await expectToast(page, 'Booked 8 sessions, paid by month.');
+
+    const sessions = (await rest(jwt, `bookings?select=date,start_time,end_time&walk_in_name=eq.${encodeURIComponent(TWO_TIMES)}&order=date`)).data;
+    expect(sessions.map((row) => `${isoWeekday(row.date)} ${row.start_time.slice(0, 5)}–${row.end_time.slice(0, 5)}`)).toEqual(
+        [0, 1, 2, 3].flatMap(() => ['4 10:00–11:00', '6 15:00–17:00'])
+    );
+    await expect(page.locator('.bookingDetails .bdSeries')).toContainText('Thu 10:00–11:00, Sat 15:00–17:00');
 });

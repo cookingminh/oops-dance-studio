@@ -71,7 +71,8 @@ const SeriesDays = ({ series, roomId, bookings, selected, onSelect }) => {
 
     // What holds the room that day: the booking itself when the page has it, else the server's words.
     const holder = (day) => {
-        const clash = slotClashes({ bookings, roomId, date: day.date, start: series.startTime, end: series.endTime }).find((row) => row.kind === 'booking');
+        const usual = series.timesOf(isoWeekdayOf(day.date)); // the times that clashed
+        const clash = slotClashes({ bookings, roomId, date: day.date, start: usual.start, end: usual.end }).find((row) => row.kind === 'booking');
         return clash ? t('{name}’s booking {time}', { name: guestName(clash.booking, t), time: `${clash.start}–${clash.end}` }) : clashWords(day.clash, t);
     };
 
@@ -149,7 +150,7 @@ const SeriesDays = ({ series, roomId, bookings, selected, onSelect }) => {
                                         selectedKeys={[choice.mode]}
                                         onChange={(event) => {
                                             if (!event.target.value) return;
-                                            series.setChoice(day.date, { mode: event.target.value, start: choice.start ?? series.startTime, end: choice.end ?? series.endTime });
+                                            series.setChoice(day.date, { mode: event.target.value, start: choice.start, end: choice.end });
                                             onSelect(day.date);
                                         }}
                                         className="sdChoice"

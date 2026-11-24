@@ -49,9 +49,9 @@ export const SingleCheck = ({ ready, checking, past, room, date, start, end, cla
     return <CheckBanner tone="good" title={t('{room} is free then', { room: room?.name ?? '' })} detail={`${when} · ${t('No booking or class overlaps it.')}`} />;
 };
 
-// A weekly series: every day checked (useSeriesPlan). Green when every day is free, amber when some days were
+// A weekly series: every day checked (useSeriesPlan); `times` names each weekday's times when they differ. Green when every day is free, amber when some days were
 // taken but each has an answer (another room, other free times, or skipped), red while one still clashes.
-export const SeriesCheck = ({ series, room, date, start, end }) => {
+export const SeriesCheck = ({ series, room, date, start, end, times }) => {
     const { t, tn, dayName, formatDate } = useI18n();
     if (!series.ready) {
         return <CheckBanner tone="idle" title={t('Pick the weekdays and how long it runs')} detail={t('Every day of the series is checked against bookings and classes.')} />;
@@ -74,7 +74,7 @@ export const SeriesCheck = ({ series, room, date, start, end }) => {
     }
     const taken = series.days.filter((day) => day.clash);
     const open = series.days.filter((day) => day.status === 'clash');
-    const every = `${weekdays} · ${start}–${end} · ${room?.name ?? ''}`;
+    const every = times ? `${times} · ${room?.name ?? ''}` : `${weekdays} · ${start}–${end} · ${room?.name ?? ''}`;
     if (taken.length === 0) {
         return <CheckBanner tone="good" title={tn(series.days.length, 'The {count} day is free', 'All {count} days are free')} detail={every} />;
     }

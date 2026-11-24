@@ -4,9 +4,10 @@ import { unwrap } from './errors';
 // Recurring room rentals, paid by month (20261117003100_booking_series; api-contract §5). Staff plan and book a
 // series; each session is an ordinary booking (bookings.series_id); each month of it has a payment code.
 
-// Every day of the series to be, with what holds the room then and the rooms still free on a clashing day:
-// [{ date, clash: text | null, free_rooms: [{ id, name }] }]. `weekdays`: ISO (1 = Monday).
-export async function previewSeries({ roomId, weekdays, start, end, from, until }) {
+// Every day of the series to be, at its weekday's times (`dayTimes`, else start–end), with what holds the room then
+// and the rooms still free on a clashing day: [{ date, start, end, clash: text | null, free_rooms: [{ id, name }] }].
+// `weekdays`: ISO (1 = Monday).
+export async function previewSeries({ roomId, weekdays, start, end, from, until, dayTimes = null }) {
     return unwrap(
         await supabase.rpc('booking_series_preview', {
             p_room: Number(roomId),
@@ -15,14 +16,17 @@ export async function previewSeries({ roomId, weekdays, start, end, from, until 
             p_end: end,
             p_from: from,
             p_until: until,
+            p_day_times: dayTimes,
         })
     );
 }
 
 // Books the series. `days`: the days kept, [{ date, room_id?, start?, end? }] (another room or other times for a day
 // that clashed). `discount`: null, or { kind: 'percent' | 'amount', value, note }. For an account pass guestId, for a
-// walk-in walkInName + walkInPhone. → { series, first } (the series row, and its first booking).
-export async function createSeries({ guestId = null, walkInName = null, walkInPhone = null, roomId, weekdays, start, end, from, until, days, status = 'approved', discount = null, details = null }) {
+// walk-in walkInName + walkInPhone. `dayTimes`: null when every weekday is at start–end, else the times of each weekday,
+// { 2: { start: '18:00', end: '20:00' }, 4: { … } } (20261117003110_series_weekday_times). → { series, first } (the
+// series row, and its first booking).
+export async function createSeries({ guestId = null, walkInName = null, walkInPhone = null, roomId, weekdays, start, end, from, until, days, status = 'approved', discount = null, details = null, dayTimes = null }) {
     const series = unwrap(
         await supabase.rpc('booking_series_create', {
             p_guest: guestId,
@@ -40,6 +44,7 @@ export async function createSeries({ guestId = null, walkInName = null, walkInPh
             p_details: details?.trim() || null,
             p_walk_in_name: walkInName?.trim() || null,
             p_walk_in_phone: walkInPhone?.trim() || null,
+            p_day_times: dayTimes,
         })
     );
     const first = unwrap(await supabase.from('bookings').select('id').eq('series_id', series.id).order('date').order('start_time').limit(1).maybeSingle());

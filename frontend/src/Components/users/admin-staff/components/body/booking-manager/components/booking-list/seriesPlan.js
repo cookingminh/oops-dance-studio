@@ -29,11 +29,12 @@ export function clashWords(text, t) {
 // A new booking repeated every week (staff): which weekdays, until when, what happens on each day the room is
 // taken (another free room, other times, or skip it), a discount for the series (a percentage or an amount off
 // each session, with its reason), and what each month comes to — the renter pays by month, one QR code per month.
-// The form's room, first day and times are the weekly slot. Every day of the series is checked on the server
-// (booking_series_preview: what holds the room, which rooms are free instead).
+// The form's room, first day and times are the weekly slot; with `perDay` each weekday has its own times (the first
+// day's weekday keeps the form's: onMainTimes({ start?, end? }) changes them). Every day of the series is checked on
+// the server at its times (booking_series_preview: what holds the room, which rooms are free instead).
 // Each day's `status`: 'free', 'moved' (another room, or other times that are free), 'clash' (other times that
 // aren't free, or not checked yet) or 'skipped'. `plan` is what booking_series_create takes, `problem` why not yet.
-export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime, t }) {
+export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime, onMainTimes, t }) {
     // The weekdays follow the first day's until staff pick some; it runs n weeks from the first day (8 at first, still
     // n weeks when the first day moves) or up to a day staff typed.
     const [pickedDays, setPickedDays] = useState(null);
@@ -43,27 +44,47 @@ export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime,
     const ownDay = date ? [isoWeekdayOf(date)] : [];
     const weekdays = pickedDays ?? ownDay;
     const until = !date ? '' : run.weeks ? untilFor(date, run.weeks) : run.until;
-
     const sorted = [...weekdays].sort();
     const weekKey = sorted.join(',');
-    const ready = Boolean(active && roomId && date && startTime && endTime && toMinutes(endTime) > toMinutes(startTime) && weekdays.length && until && until >= date);
+
+    // Times per weekday: the same for all (the form's), or each weekday its own (only with two weekdays or more).
+    const [perDay, setPerDay] = useState(false);
+    const [ownTimes, setOwnTimes] = useState({}); // weekday → { start, end }, the first day's weekday aside
+    const firstWeekday = date ? isoWeekdayOf(date) : null;
+    const main = { start: startTime, end: endTime };
+    const byWeekday = perDay && sorted.length > 1;
+    const timesOf = (weekday) => (!byWeekday || weekday === firstWeekday ? main : { ...main, ...ownTimes[weekday] });
+    const setTimesOf = (weekday, patch) =>
+        weekday === firstWeekday ? onMainTimes(patch) : setOwnTimes((old) => ({ ...old, [weekday]: { ...main, ...old[weekday], ...patch } }));
+    const timesValid = sorted.every((weekday) => {
+        const times = timesOf(weekday);
+        return times.start && times.end && toMinutes(times.end) > toMinutes(times.start);
+    });
+    // What the server takes: null when every weekday is at the form's times.
+    const dayTimes = byWeekday && sorted.some((weekday) => timesOf(weekday).start !== startTime || timesOf(weekday).end !== endTime)
+        ? Object.fromEntries(sorted.map((weekday) => [weekday, timesOf(weekday)]))
+        : null;
+    const timesKey = JSON.stringify(dayTimes);
+
+    const ready = Boolean(active && roomId && date && startTime && endTime && toMinutes(endTime) > toMinutes(startTime) && weekdays.length && until && until >= date && timesValid);
     const preview = useAsync(
-        () => (ready ? previewSeries({ roomId, weekdays: sorted, start: startTime, end: endTime, from: date, until }) : Promise.resolve([])),
-        [ready, roomId, weekKey, startTime, endTime, date, until] // weekKey stands for the weekdays
+        () => (ready ? previewSeries({ roomId, weekdays: sorted, start: startTime, end: endTime, from: date, until, dayTimes }) : Promise.resolve([])),
+        [ready, roomId, weekKey, startTime, endTime, date, until, timesKey] // weekKey and timesKey stand for the weekdays and their times
     );
     const days = useMemo(() => (ready ? preview.data ?? [] : []), [ready, preview.data]);
 
     // A taken day starts on the first free room, else skipped.
-    const choiceOf = (day) => choices[day.date] ?? { mode: day.free_rooms[0] ? String(day.free_rooms[0].id) : SKIP, start: startTime, end: endTime, ok: false };
+    const choiceOf = (day) => choices[day.date] ?? { mode: day.free_rooms[0] ? String(day.free_rooms[0].id) : SKIP, start: day.start, end: day.end, ok: false };
     const setChoice = (dayDate, patch) => setChoices((old) => ({ ...old, [dayDate]: { ...(old[dayDate] ?? {}), ...patch } }));
 
-    // Where and when each day happens.
+    // Where and when each day happens (the server gives each day its weekday's times).
     const slotOf = (day) => {
-        if (!day.clash) return { status: 'free', roomId: String(roomId), start: startTime, end: endTime };
+        const usual = { roomId: String(roomId), start: day.start, end: day.end };
+        if (!day.clash) return { status: 'free', ...usual };
         const choice = choiceOf(day);
-        if (choice.mode === SKIP) return { status: 'skipped', roomId: String(roomId), start: startTime, end: endTime };
-        if (choice.mode === OTHER_TIME) return { status: choice.ok ? 'moved' : 'clash', roomId: String(roomId), start: choice.start, end: choice.end, otherTime: true };
-        return { status: 'moved', roomId: String(choice.mode), start: startTime, end: endTime, otherRoom: true };
+        if (choice.mode === SKIP) return { status: 'skipped', ...usual };
+        if (choice.mode === OTHER_TIME) return { status: choice.ok ? 'moved' : 'clash', ...usual, start: choice.start, end: choice.end, otherTime: true };
+        return { status: 'moved', ...usual, roomId: String(choice.mode), otherRoom: true };
     };
     const slots = days.map((day) => ({ ...day, ...slotOf(day) }));
     const kept = slots.filter((day) => day.status !== 'skipped');
@@ -94,7 +115,9 @@ export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime,
     const total = [...months.values()].reduce((sum, row) => sum + row.total, 0);
 
     const problem = !ready
-        ? t('Pick the room, the first day and the times, then the weekdays and the last day.')
+        ? timesValid
+            ? t('Pick the room, the first day and the times, then the weekdays and the last day.')
+            : t('Each weekday’s end time must be after its start.')
         : preview.loading
             ? t('Checking the days…')
             : kept.length === 0
@@ -112,6 +135,13 @@ export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime,
         loading: ready && preview.loading,
         error: preview.error,
         weekdays: sorted,
+        timesValid,
+        perDay,
+        setPerDay,
+        byWeekday,
+        firstWeekday,
+        timesOf,
+        setTimesOf,
         toggleDay: (day) =>
             setPickedDays((old) => {
                 const base = old ?? ownDay;
@@ -138,6 +168,7 @@ export function useSeriesPlan({ active, rooms, roomId, date, startTime, endTime,
                 day.otherTime ? { date: day.date, start: day.start, end: day.end } : day.otherRoom ? { date: day.date, room_id: Number(day.roomId) } : { date: day.date }
             ),
             discount: discountOut,
+            dayTimes,
             count: kept.length,
         },
     };

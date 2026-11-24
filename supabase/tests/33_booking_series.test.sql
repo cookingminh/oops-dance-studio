@@ -4,10 +4,11 @@
 --     discount, with one payment code per month
 --   * a transfer with a month's code pays that month's sessions in date order; staff record cash for a month
 --   * the rest can be cancelled; staff only
+--   * each weekday can have its own times (20261117003110_series_weekday_times): checked and booked at them
 -- The series spans the end of the month after next: two days in one month, two in the next.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(22);
+select plan(27);
 
 create schema tests;
 create function tests.create_user(p_id uuid, p_email text, p_role public.app_role, p_name text)
@@ -125,6 +126,41 @@ select tests.logout();
 
 select tests.login_as('00000000-0000-4000-b000-000000000332');
 select throws_like($$select public.booking_series_summary((tests.series()).id)$$, '%NOT_FOUND%', 'someone else''s rental isn''t found');
+select tests.logout();
+
+-- ---------------------------------------------------------------------------
+-- Its own times per weekday: m + 2 at 09:00–10:00, m + 3 at 10:00–12:00 (Room 2)
+-- ---------------------------------------------------------------------------
+create function tests.dow(p_offset int) returns text language sql stable as $$
+  select extract(isodow from tests.m(p_offset))::int::text;
+$$;
+create function tests.day_times() returns jsonb language sql stable as $$
+  select jsonb_build_object(tests.dow(2), jsonb_build_object('start', '09:00', 'end', '10:00'),
+                            tests.dow(3), jsonb_build_object('start', '10:00', 'end', '12:00'));
+$$;
+create function tests.weekdays() returns smallint[] language sql stable as $$
+  select array[tests.dow(2)::smallint, tests.dow(3)::smallint];
+$$;
+grant execute on all functions in schema tests to anon, authenticated;
+select tests.login_as('00000000-0000-4000-b000-000000000331');
+select is((select string_agg((d ->> 'start') || '–' || (d ->> 'end'), ', ' order by d ->> 'date')
+             from jsonb_array_elements(public.booking_series_preview(900332, tests.weekdays(), '09:00', '10:00', tests.m(2), tests.m(3),
+                                                                    tests.day_times())) d),
+          '09:00–10:00, 10:00–12:00', 'the preview checks each day at its weekday''s times');
+select throws_like($$select public.booking_series_preview(900332, array[tests.dow(2)::smallint], '09:00', '10:00', tests.m(2), tests.m(3),
+                     tests.day_times())$$,
+                   '%INVALID_INPUT%', 'times for a weekday the series doesn''t have are refused');
+select throws_like($$select public.booking_series_preview(900332, tests.weekdays(), '09:00', '10:00', tests.m(2), tests.m(3),
+                     tests.day_times() || jsonb_build_object(tests.dow(3), jsonb_build_object('start', '12:00', 'end', '11:00')))$$,
+                   '%INVALID_INPUT%', 'so are times that end before they start');
+select public.booking_series_create('00000000-0000-4000-b000-000000000332', 900332, tests.weekdays(), '09:00', '10:00', tests.m(2), tests.m(3),
+         jsonb_build_array(jsonb_build_object('date', tests.m(2)), jsonb_build_object('date', tests.m(3), 'start', '14:00', 'end', '15:00')),
+         p_day_times => tests.day_times());
+select is((select string_agg(to_char(start_time, 'HH24:MI') || '–' || to_char(end_time, 'HH24:MI'), ', ' order by date)
+             from public.bookings where series_id = (select max(id) from public.booking_series where room_id = 900332)),
+          '09:00–10:00, 14:00–15:00', 'each day is booked at its weekday''s times, unless kept at other times');
+select is((select day_times from public.booking_series where room_id = 900332 order by id desc limit 1), tests.day_times(),
+          'the series keeps its times per weekday');
 select tests.logout();
 
 select * from finish();

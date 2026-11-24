@@ -255,8 +255,10 @@ const SeriesPanel = ({ booking, settings, sandbox, onChanged }) => {
                 <strong>{t('Regular rental')}</strong>
                 <span>
                     {[
-                        s.weekdays.map((day) => dayName(day, 'short')).join(', '),
-                        `${formatTime(s.start_time)}–${formatTime(s.end_time)}`,
+                        // Each weekday with its own times (day_times), else the weekdays and the series' times.
+                        ...(s.day_times
+                            ? [s.weekdays.map((day) => `${dayName(day, 'short')} ${s.day_times[day]?.start ?? formatTime(s.start_time)}–${s.day_times[day]?.end ?? formatTime(s.end_time)}`).join(', ')]
+                            : [s.weekdays.map((day) => dayName(day, 'short')).join(', '), `${formatTime(s.start_time)}–${formatTime(s.end_time)}`]),
                         `${formatDate(s.starts_on, 'dayMonth')} → ${formatDate(s.ends_on, 'dayMonth')}`,
                         tn(data.sessions, '{count} session', '{count} sessions'),
                     ].join(' · ')}

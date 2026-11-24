@@ -5,7 +5,7 @@ import { BOOKING_STATUSES, staffCreateBooking, updateBooking } from '@/services/
 import { createSeries } from '@/services/bookingSeries';
 import { listRoomSessions } from '@/services/bookingsExtra';
 import { useAsync } from '@/hooks/useAsync';
-import { TIME_OPTIONS, formatTime, formatVnd, toMinutes } from '@/lib/format';
+import { TIME_OPTIONS, formatTime, formatVnd, isoWeekdayOf, toMinutes } from '@/lib/format';
 import { useToast } from '@/ui/feedback/toastContext';
 import { useI18n } from '@/i18n/i18nContext';
 import PersonAutocomplete from '@/ui/PersonAutocomplete';
@@ -71,7 +71,7 @@ const Section = ({ icon: Icon, title, aside, children }) => (
 // onOpenBooking(booking) opens a booking that holds the slot.
 const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor = new Map(), today: todayProp, onOpenBooking, onClose, onSaved }) => {
     const toast = useToast();
-    const { t, tn, formatDate } = useI18n();
+    const { t, tn, dayName, formatDate } = useI18n();
     const today = todayProp ?? studioTodayIso();
     const now = studioNow();
     const isNew = !booking;
@@ -93,7 +93,18 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
     const list = timeError ? null : listPriceFor(room, form.startTime, form.endTime);
     const slotReady = Boolean(form.roomId && form.date && form.startTime && form.endTime && !timeError);
 
-    const series = useSeriesPlan({ active: isNew && repeat, rooms: roomList, roomId: form.roomId, date: form.date, startTime: form.startTime, endTime: form.endTime, t });
+    const series = useSeriesPlan({
+        active: isNew && repeat,
+        rooms: roomList,
+        roomId: form.roomId,
+        date: form.date,
+        startTime: form.startTime,
+        endTime: form.endTime,
+        onMainTimes: ({ start, end }) => setForm((prev) => ({ ...prev, ...(start ? { startTime: start } : {}), ...(end ? { endTime: end } : {}) })),
+        t,
+    });
+    // "Tue 18:00–20:00, Thu 19:00–21:00" when each weekday has its own times.
+    const weekdayTimes = series.byWeekday ? series.weekdays.map((weekday) => `${dayName(weekday, 'short')} ${series.timesOf(weekday).start}–${series.timesOf(weekday).end}`).join(', ') : null;
     // The day on the preview: the booking's; for a series the day picked on its month (the first taken day at first).
     const seriesDay = repeat ? series.days.find((day) => day.date === pickedDay) ?? series.days.find((day) => day.clash) ?? series.days[0] ?? null : null;
     const shownDay = seriesDay?.date ?? form.date;
@@ -132,12 +143,21 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
     const moved = !isNew && (form.roomId !== String(booking.room_id) || form.startTime !== formatTime(booking.start_time) || form.endTime !== formatTime(booking.end_time));
     const byHand = !isNew && booking.list_price !== null && booking.list_price !== undefined && Number(booking.full_payment) !== Number(booking.list_price);
 
-    // The preview picks the room and the times (a drag), or the room alone (its name); a click keeps the length.
-    const pickSlot = ({ roomId, start, end }) =>
-        setForm((prev) => {
-            const kept = prev.startTime && prev.endTime && toMinutes(prev.endTime) > toMinutes(prev.startTime) ? toMinutes(prev.endTime) - toMinutes(prev.startTime) : 60;
-            return { ...prev, roomId: String(roomId), startTime: start, endTime: end ?? timeOf(Math.min(toMinutes(start) + kept, CLOSING)) };
-        });
+    // The preview picks the room and the times (a drag), or the room alone (its name); a click keeps the length. On a
+    // day of a series whose weekday has its own times, the times are that weekday's.
+    const pickSlot = ({ roomId, start, end }) => {
+        const weekday = series.byWeekday && shownDay ? isoWeekdayOf(shownDay) : null;
+        const own = weekday !== null && weekday !== series.firstWeekday && series.weekdays.includes(weekday);
+        const current = own ? series.timesOf(weekday) : { start: form.startTime, end: form.endTime };
+        const kept = current.start && current.end && toMinutes(current.end) > toMinutes(current.start) ? toMinutes(current.end) - toMinutes(current.start) : 60;
+        const times = { start, end: end ?? timeOf(Math.min(toMinutes(start) + kept, CLOSING)) };
+        if (own) {
+            series.setTimesOf(weekday, times);
+            set('roomId')(String(roomId));
+            return;
+        }
+        setForm((prev) => ({ ...prev, roomId: String(roomId), startTime: times.start, endTime: times.end }));
+    };
     // The rooms are one radio group: arrows move the choice (and the focus) to the next or previous room.
     const roomKeys = (event) => {
         const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[event.key];
@@ -164,6 +184,7 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
                     until: series.plan.until,
                     days: series.plan.days,
                     discount: series.plan.discount,
+                    dayTimes: series.plan.dayTimes,
                     details: form.details,
                 });
                 toast.success(t('Booked {count} sessions, paid by month.', { count: series.plan.count }));
@@ -218,7 +239,7 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
     // The footer says what is about to be booked.
     const summary = repeat
         ? series.kept.length
-            ? [tn(series.kept.length, '{count} session', '{count} sessions'), room?.name, `${form.startTime}–${form.endTime}`, formatVnd(series.total)].filter(Boolean).join(' · ')
+            ? [tn(series.kept.length, '{count} session', '{count} sessions'), room?.name, weekdayTimes ?? `${form.startTime}–${form.endTime}`, formatVnd(series.total)].filter(Boolean).join(' · ')
             : ''
         : slotReady
             ? [room?.name, formatDate(form.date, 'short'), `${form.startTime}–${form.endTime}`, isNew && total !== null ? formatVnd(total) : null].filter(Boolean).join(' · ')
@@ -371,6 +392,9 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
                                     </div>
                                 </div>
                             )}
+                            {series.byWeekday && (
+                                <p className="bfMuted">{t('These are {day}’s times (the first day); the other weekdays have theirs under Repeat.', { day: dayName(series.firstWeekday, 'long') })}</p>
+                            )}
                             {!isNew && (
                                 <Select
                                     label={t('Status')}
@@ -403,7 +427,7 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
                                 }
                             >
                                 {repeat ? (
-                                    <RepeatFields series={series} date={form.date} />
+                                    <RepeatFields series={series} date={form.date} room={room} />
                                 ) : (
                                     <p className="bfMuted">{t('A regular rental: the same room every week, with a discount if agreed, paid by month.')}</p>
                                 )}
@@ -423,7 +447,7 @@ const BookingForm = ({ booking, draft, rooms, people, bookings = [], roomColor =
 
                     <aside className="bfSide" aria-label={t('Is it free?')}>
                         {repeat ? (
-                            <SeriesCheck series={series} room={room} date={form.date} start={form.startTime} end={form.endTime} />
+                            <SeriesCheck series={series} room={room} date={form.date} start={form.startTime} end={form.endTime} times={weekdayTimes} />
                         ) : (
                             <SingleCheck
                                 ready={slotReady}

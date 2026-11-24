@@ -342,6 +342,72 @@
         }
     }
 
+    // Each weekday its own times: one row per weekday.
+    .rfTimes {
+        display: grid;
+        gap: .4rem;
+        margin: .2rem 0 0;
+        padding: 0;
+        list-style: none;
+
+        li {
+            display: grid;
+            grid-template-columns: minmax(5.5rem, 1fr) 6.5rem auto 6.5rem;
+            grid-template-areas: 'day start dash end' 'day note note note';
+            align-items: center;
+            gap: .15rem .4rem;
+            padding: .45rem .6rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 12px;
+            background: var(--ad-surface-2);
+
+            &.isInvalid {
+                border-color: var(--bf-bad-line);
+                background: var(--bf-bad-soft);
+            }
+
+            > span[aria-hidden] {
+                grid-area: dash;
+                color: var(--ad-muted);
+            }
+        }
+    }
+
+    .rfTimesDay {
+        display: grid;
+        grid-area: day;
+        line-height: 1.2;
+
+        strong {
+            font-size: .86rem;
+        }
+
+        small {
+            color: var(--ad-muted);
+            font-size: .72rem;
+        }
+    }
+
+    .rfTimesStart {
+        grid-area: start;
+    }
+
+    .rfTimesEnd {
+        grid-area: end;
+    }
+
+    .rfTimesNote {
+        grid-area: note;
+        color: var(--ad-muted);
+        font-size: .76rem;
+        font-variant-numeric: tabular-nums;
+
+        .isInvalid & {
+            color: var(--bf-bad);
+            font-weight: 600;
+        }
+    }
+
     .rfRun {
         display: flex;
         flex-wrap: wrap;
