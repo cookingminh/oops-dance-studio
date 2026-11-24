@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test';
-import { addDays, expectToast, isoWeekday, login, pickOption, rest, rooms, rpc, serviceKey, staffJwt, studioToday } from './support.js';
+import { addDays, expectToast, isoWeekday, login, pickOption, rest, roomRadio, rooms, rpc, serviceKey, staffJwt, studioToday } from './support.js';
 
 // A regular rental (20261117003100_booking_series): staff book a walk-in every Wednesday 08:00–09:00 for four weeks;
-// the second Wednesday's room is taken, so that day goes to the other room; 10 % off; the first session opens with
-// the series, and a month is paid by one transfer with its code (the demo's pretend transfer). Works ≥ 60 days ahead
-// and deletes everything it made afterwards.
+// the second Wednesday's room is taken (the form's month calendar marks it and names the booking), so that day goes
+// to the other room; 10 % off; the first session opens with the series, and a month is paid by one transfer with its
+// code (the demo's pretend transfer). Works ≥ 60 days ahead and deletes everything it made afterwards.
 test.describe.configure({ mode: 'serial' });
 
 const NAME = 'E2E Weekly Crew';
@@ -56,17 +56,25 @@ test('staff book a weekly rental: the taken day goes to the other room, with 10 
     await form.getByRole('button', { name: 'A walk-in (no account)' }).click();
     await form.getByLabel('Walk-in’s name').fill(NAME);
     await form.getByLabel('Phone').fill('0977 000 111');
-    await pickOption(page, form, 'Room', roomA.name);
+    await roomRadio(form, roomA.name).click();
     await form.getByLabel('Date').first().fill(first);
     await pickOption(page, form, 'Start', '08:00');
     await pickOption(page, form, 'End', '09:00');
+    await expect(form.locator('.bfCheck.is-good')).toContainText(`${roomA.name} is free then`);
 
-    await form.getByText('Repeat every week').click();
-    await form.getByLabel('Until').fill(addDays(first, 21));
-    await expect(form.locator('.rpCount')).toContainText('4 days · 1 is taken');
-    const taken = form.locator('.rpDays li.isClash');
-    await expect(taken).toContainText('Taken: a booking 08:00–09:00');
-    await expect(taken.getByRole('button', { name: /That day/ })).toContainText(roomB.name); // the first free room
+    await form.getByText('Every week', { exact: true }).click();
+    await form.getByRole('button', { name: '4 weeks', exact: true }).click();
+    // The taken Wednesday goes to the first free room by default: the series can be booked, with that day moved.
+    const check = form.locator('.bfCheck.is-warn');
+    await expect(check).toContainText('4 sessions can be booked');
+    await expect(check).toContainText('1 day was taken · 1 moved');
+    await expect(form.locator('.sdCell.isDay.is-moved')).toHaveCount(1); // on the month calendar (it opens on that day)
+    const taken = form.locator('.sdTaken li');
+    await expect(taken).toHaveCount(1);
+    await expect(taken).toContainText('Taken: E2E Series Clash’s booking 08:00–09:00');
+    await expect(taken.getByRole('button', { name: /That day/ })).toContainText(roomB.name);
+    // The day preview shows that Wednesday: the session in the other room, free (green).
+    await expect(form.locator(`.bfDay .calLane[data-lane="${roomB.id}"] .calGhost.isHeld:not(.isClash)`)).toBeVisible();
 
     await form.getByRole('button', { name: '%', exact: true }).click();
     await form.getByLabel('Percent off').fill('10');

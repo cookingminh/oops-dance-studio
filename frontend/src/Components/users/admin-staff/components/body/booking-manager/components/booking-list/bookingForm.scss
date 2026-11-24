@@ -1,0 +1,952 @@
+// The booking form (BookingForm): a wide dialog — what is booked on the left (sections: who, room and time, repeat,
+// payment, notes), "is it free?" on the right (the answer, a series' month, the day of every room). The dialog
+// renders outside the shell: .adminPortal carries the --ad-* tokens; the day preview also sits in .calendarView
+// for the --cal-* ones. Below 900px the two sides stack and scroll together.
+
+.bookingForm {
+    --bf-good: hsl(145, 55%, 32%);
+    --bf-good-soft: hsl(145, 60%, 95%);
+    --bf-good-line: hsl(145, 45%, 76%);
+    --bf-warn: hsl(32, 85%, 32%);
+    --bf-warn-soft: hsl(45, 95%, 94%);
+    --bf-warn-line: hsl(40, 80%, 74%);
+    --bf-bad: hsl(0, 65%, 36%);
+    --bf-bad-soft: hsl(0, 90%, 97%);
+    --bf-bad-line: hsl(0, 70%, 86%);
+
+    // Header: an icon, the title and one line of help.
+    .bfHead {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        padding: 1.05rem 3.5rem .95rem 1.5rem;
+        border-bottom: 1px solid var(--ad-border);
+    }
+
+    .bfHeadIcon {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 13px;
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+        font-size: 1.25rem;
+    }
+
+    .bfHeadText {
+        min-width: 0;
+
+        h2 {
+            margin: 0;
+            font-family: var(--ad-display);
+            font-size: 1.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        p {
+            margin: .2rem 0 0;
+            color: var(--ad-muted);
+            font-size: .86rem;
+            font-weight: 400;
+        }
+    }
+
+    // Two sides, each scrolling on its own.
+    .bfBody {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr);
+        gap: 0;
+        min-height: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .bfMain,
+    .bfSide {
+        display: grid;
+        align-content: start;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .bfMain {
+        gap: .85rem;
+        padding: 1.1rem 1.1rem 1.25rem 1.5rem;
+    }
+
+    .bfSide {
+        gap: .8rem;
+        padding: 1.1rem 1.5rem 1.25rem 1.1rem;
+        border-left: 1px solid var(--ad-border);
+        background: var(--ad-bg);
+    }
+
+    @media (max-width: 900px) {
+        .bfBody {
+            display: block;
+            overflow-y: auto;
+        }
+
+        .bfMain,
+        .bfSide {
+            overflow: visible;
+            padding: 1rem 1.1rem;
+        }
+
+        .bfSide {
+            border-top: 1px solid var(--ad-border);
+            border-left: 0;
+        }
+    }
+
+    // Sections of the form.
+    .bfSection {
+        display: grid;
+        gap: .75rem;
+        padding: .9rem 1rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface);
+    }
+
+    .bfSectionHead {
+        display: flex;
+        align-items: center;
+        gap: .55rem;
+        min-height: 1.75rem;
+
+        h3 {
+            flex: 1;
+            margin: 0;
+            font-size: .95rem;
+            font-weight: 700;
+        }
+    }
+
+    .bfSectionIcon {
+        display: grid;
+        flex: none;
+        place-items: center;
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: 9px;
+        background: var(--ad-surface-2);
+        color: var(--ad-muted);
+        font-size: .95rem;
+    }
+
+    .bfGrid2,
+    .bfGrid3 {
+        display: grid;
+        gap: .6rem;
+    }
+
+    .bfGrid2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .bfGrid3 {
+        grid-template-columns: minmax(0, 1.25fr) repeat(2, minmax(0, 1fr));
+    }
+
+    @media (max-width: 560px) {
+        .bfGrid2,
+        .bfGrid3 {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .bfWho {
+        justify-self: start;
+    }
+
+    .bfGuest {
+        margin: 0;
+        font-size: .92rem;
+    }
+
+    .bfField {
+        display: grid;
+        gap: .4rem;
+    }
+
+    .bfError {
+        grid-column: 1 / -1;
+        margin: 0;
+        color: var(--bf-bad);
+        font-size: .8rem;
+        font-weight: 600;
+    }
+
+    // The rooms, as cards in their calendar colour, with the price per hour.
+    .bfRooms {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .bfRoom {
+        display: flex;
+        flex: 1 1 9rem;
+        align-items: center;
+        gap: .65rem;
+        max-width: 14rem;
+        padding: .6rem .85rem;
+        border: 1.5px solid var(--ad-border);
+        border-radius: 12px;
+        background: var(--ad-surface);
+        text-align: left;
+        cursor: pointer;
+        transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease;
+
+        span {
+            display: grid;
+            min-width: 0;
+            line-height: 1.25;
+        }
+
+        strong {
+            overflow: hidden;
+            font-size: .92rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        small {
+            color: var(--ad-muted);
+            font-size: .76rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &:hover {
+            border-color: color-mix(in srgb, var(--room) 45%, white);
+        }
+
+        &[aria-checked='true'] {
+            border-color: var(--room);
+            background: color-mix(in srgb, var(--room) 8%, white);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--room) 16%, transparent);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 2px;
+        }
+    }
+
+    .bfRoomDot {
+        flex: none;
+        width: .75rem;
+        height: .75rem;
+        border-radius: 50%;
+        background: var(--room);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--room) 18%, transparent);
+    }
+
+    // Small toggles: the length of a booking, how long a series runs.
+    .bfChips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+
+        button {
+            padding: .3rem .75rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 999px;
+            background: var(--ad-surface);
+            color: var(--ad-muted);
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+
+            &:hover:not(:disabled, [aria-pressed='true']) {
+                border-color: hsl(20, 10%, 78%);
+                color: var(--ad-text);
+            }
+
+            &[aria-pressed='true'] {
+                border-color: var(--ad-text);
+                background: var(--ad-text);
+                color: #fff;
+            }
+
+            &:disabled {
+                opacity: .45;
+                cursor: not-allowed;
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--ad-primary);
+                outline-offset: 2px;
+            }
+        }
+    }
+
+    .bfLengthRow {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem .75rem;
+    }
+
+    .bfStatus {
+        max-width: 16rem;
+    }
+
+    // The money sits in its section: no second frame.
+    .bfSection .bfMoney {
+        padding: 0;
+        border: 0;
+        background: none;
+    }
+
+    // Repeat every week (RepeatFields).
+    .rfBox {
+        display: grid;
+        gap: .9rem;
+    }
+
+    .rfWeekdays {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .25rem;
+
+        button {
+            min-width: 2.5rem;
+            height: 2.15rem;
+            padding: 0 .45rem;
+            border: 1px solid var(--ad-border);
+            border-radius: 10px;
+            background: var(--ad-surface);
+            font-size: .8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color .15s ease, color .15s ease;
+
+            &[aria-pressed='true'] {
+                border-color: var(--ad-primary);
+                background: var(--ad-primary);
+                color: #fff;
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--ad-primary);
+                outline-offset: 2px;
+            }
+        }
+    }
+
+    .rfRun {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .6rem;
+    }
+
+    .rfUntil {
+        max-width: 11rem;
+    }
+
+    .rfDiscount {
+        display: grid;
+        grid-template-columns: minmax(0, 10rem) minmax(0, 1fr);
+        gap: .6rem;
+    }
+
+    .rfMonths {
+        display: grid;
+        gap: .4rem;
+        padding: .75rem .85rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+
+        ul {
+            display: grid;
+            gap: .3rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto auto;
+            gap: .75rem;
+            font-size: .88rem;
+            font-variant-numeric: tabular-nums;
+        }
+
+        s {
+            color: var(--ad-subtle);
+        }
+    }
+
+    .rfMoney {
+        font-weight: 700;
+    }
+
+    // Footer: what is about to be booked, then the buttons.
+    .bfFoot {
+        align-items: center;
+        padding: .85rem 1.5rem;
+        border-top: 1px solid var(--ad-border);
+    }
+
+    .bfSummary {
+        flex: 1;
+        min-width: 0;
+        margin: 0;
+        overflow: hidden;
+        color: var(--ad-muted);
+        font-size: .88rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    // The answer: idle / checking (grey), free (green), handled (amber), taken or past (red).
+    .bfCheck {
+        display: flex;
+        gap: .75rem;
+        padding: .85rem 1rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 14px;
+        background: var(--ad-surface);
+        color: var(--ad-muted);
+
+        &.is-good {
+            border-color: var(--bf-good-line);
+            background: var(--bf-good-soft);
+            color: var(--bf-good);
+        }
+
+        &.is-warn {
+            border-color: var(--bf-warn-line);
+            background: var(--bf-warn-soft);
+            color: var(--bf-warn);
+        }
+
+        &:is(.is-bad, .is-past) {
+            border-color: var(--bf-bad-line);
+            background: var(--bf-bad-soft);
+            color: var(--bf-bad);
+        }
+
+        .bookingClashList li {
+            color: var(--ad-text);
+        }
+    }
+
+    .bfCheckIcon {
+        flex: none;
+        margin-top: .05rem;
+        font-size: 1.3rem;
+    }
+
+    .bfCheck.is-busy .bfCheckIcon {
+        animation: bfSpin 1s linear infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .bfCheck.is-busy .bfCheckIcon {
+            animation: none;
+        }
+    }
+
+    .bfCheckBody {
+        display: grid;
+        flex: 1;
+        gap: .4rem;
+        min-width: 0;
+    }
+
+    .bfCheckTitle {
+        margin: 0;
+        font-size: .98rem;
+        font-weight: 700;
+    }
+
+    .bfCheckDetail {
+        margin: 0;
+        font-size: .84rem;
+        font-variant-numeric: tabular-nums;
+        opacity: .9;
+    }
+
+    .bfCheckFix {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .4rem;
+        font-size: .82rem;
+        font-weight: 600;
+
+        button {
+            padding: .25rem .75rem;
+            border: 1px solid var(--bf-good-line);
+            border-radius: 999px;
+            background: var(--bf-good-soft);
+            color: var(--bf-good);
+            font-weight: 700;
+            cursor: pointer;
+
+            &:hover {
+                border-color: var(--bf-good);
+            }
+        }
+    }
+
+    // A series: its days on a month calendar (SeriesDays), then the taken days with a choice for each.
+    .sdBox {
+        display: grid;
+        gap: .65rem;
+        padding: .75rem .85rem .85rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface);
+    }
+
+    .sdMonthBar {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+
+        p {
+            display: flex;
+            flex: 1;
+            align-items: baseline;
+            justify-content: center;
+            gap: .5rem;
+            margin: 0;
+        }
+
+        strong {
+            font-size: .92rem;
+        }
+
+        span {
+            color: var(--ad-muted);
+            font-size: .78rem;
+        }
+    }
+
+    .sdGrid {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: .25rem;
+    }
+
+    .sdWeekday {
+        padding-bottom: .1rem;
+        color: var(--ad-subtle);
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .sdCell {
+        display: grid;
+        place-items: center;
+        height: 2.05rem;
+        border: 1.5px solid transparent;
+        border-radius: 9px;
+        color: var(--ad-subtle);
+        font-size: .82rem;
+        font-variant-numeric: tabular-nums;
+
+        &.isOutside {
+            visibility: hidden;
+        }
+
+        &.isDay {
+            font-weight: 700;
+            cursor: pointer;
+            transition: box-shadow .15s ease;
+        }
+
+        &[aria-pressed='true'] {
+            border-color: var(--ad-text);
+            box-shadow: 0 0 0 3px hsla(0, 0%, 12%, .1);
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: 1px;
+        }
+    }
+
+    // Day states, on the calendar and its legend.
+    :is(.sdCell, .sdLegend i).is-free {
+        background: hsl(145, 55%, 91%);
+        color: var(--bf-good);
+    }
+
+    :is(.sdCell, .sdLegend i).is-moved {
+        background: hsl(42, 95%, 86%);
+        color: var(--bf-warn);
+    }
+
+    :is(.sdCell, .sdLegend i).is-clash {
+        background: hsl(0, 85%, 92%);
+        color: var(--bf-bad);
+    }
+
+    :is(.sdCell, .sdLegend i).is-skipped {
+        background: var(--ad-surface-2);
+        color: var(--ad-subtle);
+        text-decoration: line-through;
+    }
+
+    .sdLegend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .3rem .85rem;
+        margin: 0;
+        padding: 0;
+        color: var(--ad-muted);
+        font-size: .74rem;
+        list-style: none;
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+        }
+
+        i {
+            width: .7rem;
+            height: .7rem;
+            border-radius: 4px;
+
+            &.is-skipped {
+                border: 1px solid var(--ad-border);
+            }
+        }
+    }
+
+    .sdTaken {
+        display: grid;
+        gap: .45rem;
+        padding-top: .65rem;
+        border-top: 1px dashed var(--ad-border);
+
+        ul {
+            display: grid;
+            gap: .4rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: .4rem .6rem;
+            padding: .5rem .6rem;
+            border: 1.5px solid transparent;
+            border-radius: 12px;
+            background: var(--bf-warn-soft);
+
+            &.is-clash {
+                background: var(--bf-bad-soft);
+            }
+
+            &.is-skipped {
+                background: var(--ad-surface-2);
+            }
+
+            &.isSelected {
+                border-color: hsl(20, 10%, 72%);
+            }
+        }
+    }
+
+    .sdTakenTitle {
+        margin: 0;
+        font-size: .82rem;
+        font-weight: 700;
+    }
+
+    .sdTakenDay {
+        display: grid;
+        min-width: 0;
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+
+        strong {
+            font-size: .86rem;
+        }
+
+        small {
+            color: var(--bf-bad);
+            font-size: .76rem;
+        }
+    }
+
+    .sdChoice {
+        width: 13rem;
+        max-width: 100%;
+    }
+
+    .sdTimeFix {
+        display: flex;
+        flex-basis: 100%;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .5rem;
+
+        > div {
+            width: 6.75rem;
+        }
+    }
+
+    .sdFixState {
+        color: var(--bf-bad);
+        font-size: .8rem;
+        font-weight: 600;
+
+        &.isOk {
+            color: var(--bf-good);
+        }
+    }
+
+    // The day of every room (DayPreview): the whole opening day at a glance, no scrolling.
+    .bfDay.calendarView {
+        --cal-slot: 1rem;
+        --cal-gutter: 2.7rem;
+
+        gap: .55rem;
+        padding: .7rem .75rem .65rem;
+        border: 1px solid var(--ad-border);
+        border-radius: 16px;
+        background: var(--ad-surface);
+    }
+
+    .bfDayBar {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+    }
+
+    .bfDayTitle {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: center;
+        gap: .15rem .5rem;
+        margin: 0;
+        text-align: center;
+
+        strong {
+            font-size: .92rem;
+        }
+    }
+
+    .bfDayTag {
+        padding: .05rem .5rem;
+        border-radius: 999px;
+        background: var(--ad-primary);
+        color: #fff;
+        font-size: .7rem;
+        font-weight: 700;
+    }
+
+    .bfDayCaption {
+        color: var(--ad-muted);
+        font-size: .78rem;
+        font-weight: 600;
+    }
+
+    .bfDayHead {
+        display: grid;
+        grid-template-columns: var(--cal-gutter) repeat(var(--cal-lanes), minmax(0, 1fr));
+        gap: 0;
+        padding-bottom: .35rem;
+    }
+
+    // 08:00 sits on the grid's top line like the other hours (the gutter above it is empty).
+    .bfDay .calTimes span:first-child {
+        transform: translateY(-50%);
+    }
+
+    .bfDayBody {
+        display: grid;
+        grid-template-columns: var(--cal-gutter) minmax(0, 1fr);
+        border-top: 1px solid var(--cal-border);
+        border-bottom: 1px solid var(--cal-border);
+    }
+
+    .bfLaneHead {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+        min-width: 0;
+        padding: .35rem .3rem;
+        border-radius: 10px 10px 0 0;
+        color: var(--cal-muted);
+        font-size: .8rem;
+        cursor: pointer;
+
+        b {
+            overflow: hidden;
+            font-weight: 700;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .calDot {
+            flex: none;
+            width: .55rem;
+            height: .55rem;
+            border-radius: 50%;
+            background: var(--cal-accent);
+        }
+
+        &.isPicked {
+            background: color-mix(in srgb, var(--cal-accent) 12%, white);
+            color: var(--cal-text);
+        }
+
+        &:hover:not(:disabled) {
+            color: var(--cal-text);
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--ad-primary);
+            outline-offset: -2px;
+        }
+    }
+
+    .bfLanes {
+        position: relative;
+        display: grid;
+        grid-template-columns: repeat(var(--cal-lanes), minmax(0, 1fr));
+        border-left: 1px solid var(--cal-border);
+
+        &.isPast {
+            background: hsla(20, 14%, 95.5%, .7);
+        }
+    }
+
+    // Blocks are short at this scale: an hour reads on one line (time, then the name).
+    .bfDay .calItem {
+        padding: .1rem .35rem;
+
+        &.isShort {
+            flex-direction: row;
+            align-items: center;
+            gap: .3rem;
+            white-space: nowrap;
+
+            .calBadge {
+                display: none;
+            }
+        }
+
+        .calItemEnd {
+            display: none;
+        }
+    }
+
+    .bfDay .calGhost {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0 .35rem;
+        padding: .1rem .4rem;
+        font-size: .7rem;
+
+        // Free then: the booking being made, in green.
+        &.isHeld:not(.isClash) {
+            border: 2px solid var(--bf-good);
+            background:
+                repeating-linear-gradient(135deg, hsla(145, 60%, 40%, .12) 0 6px, transparent 6px 12px),
+                hsla(145, 60%, 97%, .95);
+            box-shadow: 0 0 0 3px hsla(145, 55%, 38%, .18);
+            color: var(--bf-good);
+        }
+    }
+
+    .bfDayGrid.isDragging {
+        cursor: ns-resize;
+        user-select: none;
+
+        .calSlot.isOpen:hover {
+            background: none;
+
+            &::after {
+                content: none;
+            }
+        }
+    }
+
+    .bfDayLegend {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: .3rem .9rem;
+        margin: 0;
+        padding: 0;
+        color: var(--cal-muted);
+        font-size: .76rem;
+        list-style: none;
+
+        li {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+        }
+
+        i {
+            width: .95rem;
+            height: .7rem;
+            border-radius: 3px;
+        }
+
+        .isBooking {
+            border-left: 3px solid hsl(240, 4%, 55%);
+            background: hsl(240, 4%, 90%);
+        }
+
+        .isClass {
+            border-left: 3px solid hsl(20, 10%, 72%);
+            background:
+                repeating-linear-gradient(135deg, hsla(20, 10%, 60%, .25) 0 3px, transparent 3px 6px),
+                hsl(20, 14%, 95.5%);
+        }
+
+        .isYours {
+            border: 1.5px solid var(--bf-good);
+            background: var(--bf-good-soft);
+        }
+
+        .bfDayTip {
+            flex-basis: 100%;
+            color: var(--cal-subtle);
+        }
+    }
+}
+
+@keyframes bfSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}

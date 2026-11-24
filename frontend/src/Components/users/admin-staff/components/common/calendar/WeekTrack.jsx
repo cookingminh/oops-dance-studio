@@ -3,8 +3,9 @@ import { ItemBlock } from './CalendarItem';
 import { layoutDay, minutesOf, timeOf, toneOf } from './calendarModel';
 
 // One vertical track of the week grid: a day, or one lane of a day. Half-hour slots underneath,
-// the items on top (overlaps side by side), and the ghost of a range being dragged (or `held` after the pick).
-const WeekTrack = ({ className, date, lane, items, slots, range, onSelect, selectable, slotLabel, drag, held, handlers, children, ...attributes }) => {
+// the items on top (overlaps side by side), and the ghost of a range being dragged (or `held` after the pick);
+// `ghostLabel` names a ghost that overlaps nothing (e.g. the booking being made).
+const WeekTrack = ({ className, date, lane, items, slots, range, onSelect, selectable, slotLabel, drag, held, ghostLabel, handlers, children, ...attributes }) => {
     const { t, formatDate } = useI18n();
     const placed = layoutDay(items);
     const ghost = drag && drag.date === date && drag.lane === lane?.id ? drag : null;
@@ -36,7 +37,7 @@ const WeekTrack = ({ className, date, lane, items, slots, range, onSelect, selec
                     <strong>
                         {timeOf(ghost.from)}–{timeOf(ghost.to)}
                     </strong>
-                    {clash && <span>{t('Overlaps {name}', { name: clash.title })}</span>}
+                    {clash ? <span>{t('Overlaps {name}', { name: clash.title })}</span> : ghostLabel && <span>{ghostLabel}</span>}
                 </div>
             )}
             {children}

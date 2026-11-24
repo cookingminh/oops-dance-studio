@@ -53,6 +53,9 @@ export async function pickOption(page, scope, label, option) {
     await page.getByRole('option', { name: option, exact: true }).click();
 }
 
+// The booking form's rooms: one radio per room (named after it, with its price per hour).
+export const roomRadio = (scope, name) => scope.getByRole('radiogroup', { name: 'Room' }).getByRole('radio', { name: new RegExp(name) });
+
 // Homepage room search: date picker (dd/MM/yyyy) + time range.
 export async function searchRooms(page, isoDate, start, end) {
     const search = page.locator('.search');

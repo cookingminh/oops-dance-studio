@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
     PROOF, addDays, deleteBookingsOn, dropSessionToday, ensureProofToday, expectToast, freeDate, isoWeekday, login, pathname, people, pickOption,
-    rest, rooms, rpc, staffJwt, studioToday, token,
+    rest, roomRadio, rooms, rpc, staffJwt, studioToday, token,
 } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
@@ -87,7 +87,7 @@ test('creates a booking for a guest (create_booking with p_guest_id)', async () 
     await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[1]));
     await page.getByRole('option').first().click();
-    await pickOption(page, dialog, 'Room', roomB.name);
+    await roomRadio(dialog, roomB.name).click();
     await dialog.getByLabel('Date').fill(bookingDate);
     await pickOption(page, dialog, 'Start', '20:30');
     await pickOption(page, dialog, 'End', '21:30');
@@ -105,7 +105,7 @@ test('an overlapping booking is flagged as soon as its times are picked, and can
     await page.getByRole('button', { name: 'New booking' }).click();
     await dialog.getByLabel('Guest').fill(lastName(guests[2]));
     await page.getByRole('option').first().click();
-    await pickOption(page, dialog, 'Room', roomB.name);
+    await roomRadio(dialog, roomB.name).click();
     await dialog.getByLabel('Date').fill(bookingDate);
     await pickOption(page, dialog, 'Start', '21:00');
     await pickOption(page, dialog, 'End', '22:00');

@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { addDays, expectToast, isoWeekday, login, pickOption, rest, rooms, rpc, staffJwt, studioToday, token } from './support.js';
+import { addDays, expectToast, isoWeekday, login, pickOption, rest, roomRadio, rooms, rpc, staffJwt, studioToday, token } from './support.js';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -333,7 +333,7 @@ async function startNewBooking(start, end) {
     const form = page.locator('.bookingForm');
     await form.getByLabel('Guest').fill('Thảo Vy');
     await page.getByRole('option').first().click();
-    await pickOption(page, form, 'Room', roomA.name);
+    await roomRadio(form, roomA.name).click();
     await form.getByLabel('Date').fill(date);
     await pickOption(page, form, 'Start', start);
     await pickOption(page, form, 'End', end);

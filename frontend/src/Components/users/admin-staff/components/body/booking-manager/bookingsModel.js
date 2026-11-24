@@ -110,6 +110,7 @@ export function sessionItem(session, { roomColor, t, withRoom = true, day }) {
 // listRoomSessions). `skipId` leaves out the booking being edited. Each: { kind: 'booking' | 'class', start, end,
 // booking | session }.
 const HOLDS_ROOM = new Set(['pending', 'approved', 'completed']);
+export const holdsRoom = (booking) => HOLDS_ROOM.has(booking.status);
 export function slotClashes({ bookings = [], sessions = [], roomId, date, start, end, skipId }) {
     if (!roomId || !date || !start || !end) return [];
     const from = toMinutes(start);
@@ -118,7 +119,7 @@ export function slotClashes({ bookings = [], sessions = [], roomId, date, start,
     const room = String(roomId);
     return [
         ...bookings
-            .filter((booking) => String(booking.room_id) === room && booking.date === date && booking.id !== skipId && HOLDS_ROOM.has(booking.status))
+            .filter((booking) => String(booking.room_id) === room && booking.date === date && booking.id !== skipId && holdsRoom(booking))
             .filter((booking) => overlaps(formatTime(booking.start_time), formatTime(booking.end_time)))
             .map((booking) => ({ kind: 'booking', start: formatTime(booking.start_time), end: formatTime(booking.end_time), booking })),
         ...sessions

@@ -462,7 +462,9 @@ const BookingsManager = () => {
                     draft={editing ? undefined : draft}
                     rooms={rooms.data ?? []}
                     people={people.data ?? []}
-                    clashesFor={(slot) => slotClashes({ bookings: all, sessions: sessions.data ?? [], ...slot })}
+                    bookings={all}
+                    roomColor={roomColor}
+                    today={todayIso}
                     onOpenBooking={(booking) => {
                         setEditing(undefined);
                         setOpenId(booking.id);

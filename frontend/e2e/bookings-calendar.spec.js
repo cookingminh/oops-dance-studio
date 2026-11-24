@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, putClassBack, putClassInRoom, rest, rooms, staffJwt, studioToday } from './support.js';
+import { addDays, deleteBookingsOn, expectToast, isoWeekday, login, people, putClassBack, putClassInRoom, rest, roomRadio, rooms, staffJwt, studioToday } from './support.js';
 
 // /admin/bookings as a calendar: class sessions as context, a free slot opens "New booking"
 // prefilled, a booking opens its dialog (approve / cancel), room lanes with "All rooms", a
@@ -106,7 +106,7 @@ test('a free slot opens "New booking" with the room, date and time filled in', a
     await calendar().locator(`.calDay[data-date="${bookingDate}"] .calSlot[data-time="20:30"]`).click();
     await expect(dialog.getByText('Add Booking').first()).toBeVisible();
     await expect(dialog.getByLabel('Date')).toHaveValue(bookingDate);
-    await expect(dialog.getByRole('button', { name: /Room/ })).toContainText(roomB.name);
+    await expect(roomRadio(dialog, roomB.name)).toHaveAttribute('aria-checked', 'true');
     await expect(dialog.getByRole('button', { name: /Start/ })).toContainText('20:30');
     await expect(dialog.getByRole('button', { name: /End/ })).toContainText('21:30');
 
@@ -178,7 +178,7 @@ test('with All rooms each day has a lane per room, and a Phòng B booking sits i
 
 test('a single click in a lane gives that room, the time and one hour', async () => {
     await lane(roomB.id).locator('.calSlot[data-time="12:00"]').click();
-    await expect(dialog.getByRole('button', { name: /Room/ })).toContainText(roomB.name);
+    await expect(roomRadio(dialog, roomB.name)).toHaveAttribute('aria-checked', 'true');
     await expect(dialog.getByLabel('Date')).toHaveValue(bookingDate);
     await expect(dialog.getByRole('button', { name: /Start/ })).toContainText('12:00');
     await expect(dialog.getByRole('button', { name: /End/ })).toContainText('13:00');
@@ -190,7 +190,7 @@ test('a drag from 14:00 to 16:00 in the B lane opens the form with that range; s
     await dragInLane(roomB.id, '14:00', '15:30');
     await expect(lane(roomB.id).locator('.calGhost')).toContainText('14:00–16:00');
     await page.mouse.up();
-    await expect(dialog.getByRole('button', { name: /Room/ })).toContainText(roomB.name);
+    await expect(roomRadio(dialog, roomB.name)).toHaveAttribute('aria-checked', 'true');
     await expect(dialog.getByLabel('Date')).toHaveValue(bookingDate);
     await expect(dialog.getByRole('button', { name: /Start/ })).toContainText('14:00');
     await expect(dialog.getByRole('button', { name: /End/ })).toContainText('16:00');
