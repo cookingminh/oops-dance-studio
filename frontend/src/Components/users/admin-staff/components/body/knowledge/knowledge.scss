@@ -1,0 +1,491 @@
+// AI knowledge (/admin/knowledge): the list and the editor. Tokens --ad-* come from admin.scss (.adminShell; dialogs
+// carry .adminPortal).
+
+$green-soft: hsl(145, 50%, 92%);
+$green: hsl(145, 55%, 26%);
+$amber-soft: hsl(40, 100%, 96%);
+$amber-line: hsl(40, 80%, 80%);
+$amber: hsl(28, 60%, 26%);
+
+// main.scss gives every <p> a small grey font; here paragraphs take their container's text style.
+:where(.kbList, .kbEditor, .kbDialog) p {
+    font-size: inherit;
+    line-height: 1.5;
+    color: inherit;
+}
+
+// ---- Shared ----------------------------------------------------------------------------------------------------
+
+.adminShell .kbPill {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .22rem .65rem .22rem .5rem;
+    border-radius: 999px;
+    background: var(--ad-surface-2);
+    color: var(--ad-muted);
+    font-size: .78rem;
+    font-weight: 700;
+    white-space: nowrap;
+
+    &.is-published {
+        background: $green-soft;
+        color: $green;
+    }
+}
+
+.adminShell .kbIcon {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex-shrink: 0;
+    border-radius: 12px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.15rem;
+}
+
+.adminShell .kbEmpty {
+    display: grid;
+    justify-items: center;
+    gap: .6rem;
+    padding: 2rem 1rem;
+    text-align: center;
+
+    strong {
+        font-family: var(--ad-display);
+        font-size: 1.2rem;
+    }
+
+    p {
+        max-width: 34rem;
+        color: var(--ad-muted);
+    }
+}
+
+.adminShell .kbEmptyIcon {
+    display: grid;
+    place-items: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 16px;
+    background: var(--ad-primary-soft);
+    color: var(--ad-primary);
+    font-size: 1.5rem;
+}
+
+// ---- The list --------------------------------------------------------------------------------------------------
+
+.adminShell .kbSoon {
+    padding: .05rem .45rem;
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-muted);
+    font-size: .7rem;
+    font-weight: 700;
+}
+
+.adminShell .kbToolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+}
+
+.adminShell .kbSearch {
+    flex: 1 1 16rem;
+    max-width: 26rem;
+}
+
+.adminShell .kbSummary {
+    margin: .9rem 0 .55rem;
+    color: var(--ad-muted);
+    font-size: .9rem;
+}
+
+.adminShell .kbRows {
+    display: grid;
+    gap: .5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.adminShell .kbRow {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: .9rem;
+    padding: .75rem .9rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    transition: border-color .2s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+        outline-offset: 2px;
+    }
+
+    &.is-draft {
+        border-style: dashed;
+
+        .kbIcon {
+            background: var(--ad-surface-2);
+            color: var(--ad-muted);
+        }
+    }
+}
+
+.adminShell .kbRowText {
+    display: grid;
+    gap: .15rem;
+    min-width: 0;
+
+    strong {
+        overflow: hidden;
+        font-size: 1rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    small {
+        color: var(--ad-muted);
+        font-size: .84rem;
+    }
+}
+
+.adminShell .kbChevron {
+    color: var(--ad-subtle);
+}
+
+@media (max-width: 640px) {
+    .adminShell .kbRow {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .adminShell .kbRow .kbPill {
+        grid-column: 2;
+        justify-self: start;
+    }
+
+    .adminShell .kbChevron {
+        display: none;
+    }
+
+    .adminShell .kbRowText strong {
+        white-space: normal;
+    }
+}
+
+// ---- The editor ------------------------------------------------------------------------------------------------
+
+.adminShell .kbEditor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    min-width: 0;
+}
+
+.adminShell .kbEditorTop {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+}
+
+.adminShell .kbEditorTitle {
+    display: flex;
+    flex: 1 1 18rem;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .3rem .7rem;
+    min-width: 0;
+
+    h2 {
+        overflow: hidden;
+        max-width: 100%;
+        font-family: var(--ad-display);
+        font-size: 1.45rem;
+        font-weight: 700;
+        line-height: 1.25;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    small {
+        flex-basis: 100%;
+        color: var(--ad-muted);
+        font-size: .84rem;
+    }
+}
+
+.adminShell .kbUnsaved {
+    color: hsl(28, 70%, 36%);
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.adminShell .kbEditorActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .6rem;
+}
+
+.adminShell .kbMissing,
+.adminShell .kbNotice {
+    padding: .8rem 1rem;
+    border: 1px solid $amber-line;
+    border-radius: var(--ad-radius);
+    background: $amber-soft;
+    color: $amber;
+    font-size: .88rem;
+}
+
+.adminShell .kbMissing ul {
+    margin: .3rem 0 0;
+    padding-left: 1.1rem;
+}
+
+.adminShell .kbMissing li {
+    list-style: disc;
+}
+
+.adminShell .kbTips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .4rem 1.1rem;
+    padding: .75rem 1rem;
+    border: 1px solid var(--ad-border);
+    border-radius: var(--ad-radius);
+    background: var(--ad-surface);
+    font-size: .88rem;
+
+    strong {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+
+        svg {
+            color: var(--ad-primary);
+        }
+    }
+
+    ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .2rem 1.4rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        color: var(--ad-muted);
+    }
+
+    li {
+        position: relative;
+        padding-left: .8rem;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: .55em;
+            left: 0;
+            width: .32rem;
+            height: .32rem;
+            border-radius: 50%;
+            background: var(--ad-primary);
+        }
+    }
+}
+
+.adminShell .kbGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.adminShell .kbForm {
+    display: grid;
+    gap: .9rem;
+}
+
+.adminShell .kbPreviewCol {
+    position: sticky;
+    top: 1rem;
+}
+
+// Wide screens show both; narrow ones the one picked.
+.adminShell .kbPanes.segmented {
+    display: none;
+}
+
+@media (max-width: 1080px) {
+    .adminShell .kbPanes.segmented {
+        display: inline-flex;
+        justify-self: start;
+    }
+
+    .adminShell .kbGrid {
+        grid-template-columns: minmax(0, 1fr);
+
+        &[data-pane='text'] .kbPreviewCol,
+        &[data-pane='preview'] .kbTextCol {
+            display: none;
+        }
+    }
+
+    .adminShell .kbPreviewCol {
+        position: static;
+    }
+}
+
+.adminShell .kbHint {
+    color: var(--ad-muted);
+    font-size: .9rem;
+}
+
+// ---- The preview -----------------------------------------------------------------------------------------------
+
+.adminShell .kbPreviewCategory {
+    color: var(--ad-primary);
+    font-size: .8rem;
+    font-weight: 700;
+}
+
+.adminShell .kbPreviewTitle {
+    margin: .15rem 0 .8rem;
+    font-family: var(--ad-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+// Tailwind resets lists, headings and tables; the text gets its own.
+.adminShell .kbMarkdown {
+    font-size: .96rem;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+
+    > * + * {
+        margin-top: .8rem;
+    }
+
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: var(--ad-display);
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    h4 {
+        font-size: 1.12rem;
+    }
+
+    h5,
+    h6 {
+        font-size: 1rem;
+    }
+
+    ul,
+    ol {
+        padding-left: 1.4rem;
+    }
+
+    // (main.scss takes the marker off every <li>.)
+    ul > li {
+        list-style: disc;
+    }
+
+    ol > li {
+        list-style: decimal;
+    }
+
+    ul > .task-list-item {
+        list-style: none;
+    }
+
+    li + li {
+        margin-top: .25rem;
+    }
+
+    .contains-task-list {
+        padding-left: .2rem;
+    }
+
+    a {
+        color: var(--ad-primary);
+        text-decoration: underline;
+    }
+
+    blockquote {
+        padding: .4rem .9rem;
+        border-left: 3px solid var(--ad-primary-tint);
+        color: var(--ad-muted);
+    }
+
+    code {
+        padding: .1rem .3rem;
+        border-radius: 6px;
+        background: var(--ad-surface-2);
+        font-size: .88em;
+    }
+
+    pre {
+        overflow-x: auto;
+        padding: .8rem 1rem;
+        border-radius: 12px;
+        background: var(--ad-surface-2);
+
+        code {
+            padding: 0;
+            background: none;
+        }
+    }
+
+    hr {
+        border-color: var(--ad-border);
+    }
+
+    .kbTableScroll {
+        overflow-x: auto;
+    }
+
+    table {
+        border-collapse: collapse;
+        font-size: .92rem;
+    }
+
+    th,
+    td {
+        padding: .4rem .7rem;
+        border: 1px solid var(--ad-border);
+        text-align: left;
+    }
+
+    th {
+        background: var(--ad-surface-2);
+        font-weight: 700;
+    }
+
+    .kbNoImage {
+        color: var(--ad-muted);
+    }
+}

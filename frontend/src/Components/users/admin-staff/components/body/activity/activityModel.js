@@ -180,6 +180,11 @@ export const ACTIONS = {
         banner_shown: 'Banner shown',
         banner_hidden: 'Banner hidden',
         banners_reordered: 'Banners reordered',
+        knowledge_created: 'Knowledge article added',
+        knowledge_updated: 'Knowledge article edited',
+        knowledge_published: 'Knowledge article published',
+        knowledge_unpublished: 'Knowledge article unpublished',
+        knowledge_deleted: 'Knowledge article deleted',
     },
     support: { claimed: 'Taken', handed_over: 'Handed over', close_asked: 'Asked to close', closed: 'Closed' },
 };

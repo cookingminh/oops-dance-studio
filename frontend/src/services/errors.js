@@ -92,6 +92,10 @@ const INVALID_INPUT_REASONS = [
     [/link starts with https/i, 'A button’s own link starts with https://'],
     [/must sit on the .*poster/i, 'Keep each button on the poster.'],
     [/size is between 60/i, 'A button’s size is between 60% and 200%.'],
+    // AI knowledge (knowledge_articles' checks).
+    [/knowledge_articles_published_body/i, 'Write the article’s text before publishing it.'],
+    [/knowledge_articles_title_check/i, 'Give the article a title (up to 120 characters).'],
+    [/knowledge_articles_body_check/i, 'The text is up to 20,000 characters.'],
     [/classes_one_place|instructor_attendance_one_place/i, 'A class is taught in one place: a room or a rented studio.'],
     // Asking to join a class (class_join_request / class_join_approve / class_join_decline).
     [/no next course planned/i, 'This class has no next course planned yet. Start them now, or plan the next routine first.'],

@@ -1,6 +1,7 @@
 import { formatTime, formatVnd } from '@/lib/format';
 import { categoryOf, expenseTitle } from '@/lib/expenseCategories';
 import { refundPolicyLines } from '@/services/bookingRefunds';
+import { categoryLabel } from '@/services/knowledge';
 import { VOID_REASONS } from '../tuition/tuitionModel';
 import { reasonText } from '../../common/session-changes/changeText';
 import { checkReasonText } from '../../common/checkins/checkEdit';
@@ -441,9 +442,28 @@ function bannerSentence(row, fmt) {
     };
 }
 
+// AI knowledge (entity knowledge_articles; label = the article's title): meta category, status.
+const KNOWLEDGE_KEYS = {
+    knowledge_created: '{actor} wrote the knowledge article “{name}”',
+    knowledge_updated: '{actor} edited the knowledge article “{name}”',
+    knowledge_published: '{actor} published the knowledge article “{name}”',
+    knowledge_unpublished: '{actor} unpublished the knowledge article “{name}”',
+    knowledge_deleted: '{actor} deleted the knowledge article “{name}”',
+};
+function knowledgeSentence(row, fmt) {
+    const m = row.meta ?? {};
+    // Publishing says so itself; the other lines say whether the article was published.
+    const published = m.status === 'published' && row.action !== 'knowledge_published';
+    return KNOWLEDGE_KEYS[row.action] && {
+        key: KNOWLEDGE_KEYS[row.action],
+        facts: [m.category && fmt.t(categoryLabel(m.category)), published && fmt.t('Published')],
+    };
+}
+
 const SETTINGS = (row, fmt) => {
     const m = row.meta ?? {};
     if (row.entity === 'home_banners') return bannerSentence(row, fmt);
+    if (row.entity === 'knowledge_articles') return knowledgeSentence(row, fmt);
     // The website timetable's look (site_set_timetable_template): 'poster' | 'brush', and the one before.
     if (row.action === 'timetable_template') {
         const look = (value) => fmt.t(timetableLookLabel(value));
@@ -545,6 +565,14 @@ const PLURALS = {
             : { key: '{actor} changed {count} homepage banners' },
     'settings.banner_created': () => ({ key: '{actor} added {count} homepage banners' }),
     'settings.banners_reordered': () => ({ key: '{actor} changed the order of the homepage banners' }),
+    'settings.knowledge_created': () => ({ key: '{actor} wrote {count} knowledge articles' }),
+    'settings.knowledge_updated': (rows) =>
+        rows.every((row) => row.label === rows[0].label)
+            ? { key: '{actor} edited the knowledge article “{name}” {count} times' }
+            : { key: '{actor} edited {count} knowledge articles' },
+    'settings.knowledge_published': () => ({ key: '{actor} published {count} knowledge articles' }),
+    'settings.knowledge_unpublished': () => ({ key: '{actor} unpublished {count} knowledge articles' }),
+    'settings.knowledge_deleted': () => ({ key: '{actor} deleted {count} knowledge articles' }),
     // Switched back and forth: where it ended up (the newest row), how often, and what it was before the first switch.
     'settings.timetable_template': (rows, fmt) => ({
         key: '{actor} switched the website timetable to {template}',

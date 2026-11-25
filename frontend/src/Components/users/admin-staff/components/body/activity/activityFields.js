@@ -254,6 +254,9 @@ export function recordLink(row, lookups) {
             // The banner's editor (gone once deleted); a new order is on the list.
             if (row.action === 'banner_deleted') return null;
             return { to: row.action === 'banners_reordered' || !row.entity_id ? '/admin/banners' : `/admin/banners/${row.entity_id}`, page: 'Homepage banners' };
+        case 'knowledge_articles':
+            // The article's editor (gone once deleted).
+            return row.action === 'knowledge_deleted' || !row.entity_id ? null : { to: `/admin/knowledge/${row.entity_id}`, page: 'AI knowledge' };
         case 'support_threads':
             // The chat in the Inbox (also once closed: the Closed tab keeps it).
             return row.entity_id ? { to: `/admin/inbox?thread=${row.entity_id}`, page: 'Inbox' } : null;

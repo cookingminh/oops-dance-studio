@@ -17,6 +17,7 @@ import Reports from './reports/Reports';
 import Activity from './activity/Activity';
 import Inbox from './inbox/Inbox';
 import Banners from './banners/Banners';
+import Knowledge from './knowledge/Knowledge';
 import JoinRequests from './join-requests/JoinRequests';
 
 // Admin and staff share these pages; user management is admin-only.
@@ -34,6 +35,7 @@ const Body = () => {
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="inbox" element={<Inbox />} />
                     <Route path="banners/*" element={<Banners />} />
+                    <Route path="knowledge/*" element={<Knowledge />} />
                     {/* Rooms and their prices live in the bookings page now ("Rooms & prices"). */}
                     <Route path="rooms" element={<Navigate to="/admin/bookings?view=rooms" replace />} />
                     <Route path="attendance" element={<Attendance />} />

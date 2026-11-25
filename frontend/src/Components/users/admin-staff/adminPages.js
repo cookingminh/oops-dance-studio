@@ -1,5 +1,6 @@
 import {
     LuBanknote,
+    LuBookOpenCheck,
     LuCalendarDays,
     LuClipboardCheck,
     LuGalleryHorizontal,
@@ -39,6 +40,7 @@ export const ADMIN_NAV = [
         group: 'Website',
         items: [
             { to: '/admin/banners', label: 'Homepage banners', icon: LuGalleryHorizontal, description: 'The posters the homepage slides through, their buttons and when they show.' },
+            { to: '/admin/knowledge', label: 'AI knowledge', icon: LuBookOpenCheck, description: 'The facts the assistant may tell customers.' },
         ],
     },
     {

@@ -44,6 +44,8 @@ import { unwrap } from './errors';
 //              profile_edited [email, role]
 //   settings   updated (label 'Payroll' | 'Tuition'; see changes)
 //              timetable_template (entity site_settings, label 'Website') [template, from]
+//              knowledge_created · knowledge_updated · knowledge_published · knowledge_unpublished · knowledge_deleted
+//              (entity knowledge_articles, label = the article's title; never its text) [category, status]
 //   support    claimed [category, auto (by answering first), to] · handed_over [category, to, from] ·
 //              close_asked [category] · closed [category, by: 'customer' | 'system'] (entity support_threads, label and
 //              subject the person who asked; actor null = the system; never the message text)
