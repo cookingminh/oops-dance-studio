@@ -30,3 +30,9 @@ dist/
 
 # Deno lockfiles from local `deno test` runs (the edge runtime resolves deno.json itself)
 supabase/functions/**/deno.lock
+
+# Python (agent/)
+.venv/
+__pycache__/
+*.pyc
+*.zip

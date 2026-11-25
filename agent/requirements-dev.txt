@@ -1,0 +1,4 @@
+# Local development only. The Lambda runtime already ships boto3,
+# and lambda_src uses only the standard library + boto3.
+boto3
+botocore[crt]
