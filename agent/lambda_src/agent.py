@@ -22,6 +22,13 @@ def system_prompt() -> str:
         "enrolled classes. Never guess. "
         "Room bookings (renting a room by the hour) and classes (courses the customer is enrolled in) are different "
         "things. Never answer with data from an unrelated tool. "
+        "For how things work, studio rules and advice (booking steps, deposits, joining classes, beginners, what to "
+        "bring, house rules, parking, support chat), call search_studio_info and answer only from the passages it "
+        "returns. If the passages do not answer the question, say you are not sure and suggest asking the studio. "
+        "Passages marked 'Nội dung mẫu' are sample content: mention that the information is not confirmed yet. "
+        "For refund rules always call get_cancellation_policy; never take refund numbers from passages. "
+        "Only offer what your tools can do. For actions you cannot do (booking a room, joining a class, cancelling), "
+        "tell the customer how to do it on the Oops website or suggest the support chat. "
         "If no tool can answer, say so honestly and suggest contacting the studio. "
         "If the customer refers to something not in this conversation, ask them to clarify. "
         "Copy weekday_vi, date_vi and status_vi exactly; never compute dates or weekdays yourself. "
@@ -63,7 +70,9 @@ def ask(question: str, jwt: str) -> str:
         for block in message["content"]:
             if "toolUse" in block:
                 call = block["toolUse"]
-                print(json.dumps({"tool": call["name"], "input": call["input"]}, ensure_ascii=False))
+                # Free-text queries may hold personal details: log their length, not their words
+                safe_input = {k: (f"<{len(v)} chars>" if k == "query" else v) for k, v in call["input"].items()}
+                print(json.dumps({"tool": call["name"], "input": safe_input}, ensure_ascii=False))
                 result = run_tool(call["name"], call["input"], jwt)
                 results.append({"toolResult": {"toolUseId": call["toolUseId"],
                                                "content": [{"json": {"result": result}}]}})

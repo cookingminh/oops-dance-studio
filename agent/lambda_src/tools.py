@@ -2,7 +2,14 @@
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+
+import config
 from supabase_client import rpc, select
+
+kb_client = boto3.client("bedrock-agent-runtime", region_name="ap-southeast-2")  # created once, reused while warm
+KB_RESULTS = 3  # passages per search: enough context, little noise
 
 STUDIO_TZ = ZoneInfo("Asia/Ho_Chi_Minh")
 DAY_NAMES = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]  # ISO 1..7
@@ -113,6 +120,46 @@ def get_my_classes(jwt: str) -> dict:
     return {"classes": classes}
 
 
+def search_studio_info(query: str) -> dict:
+    """RAG: find the most relevant passages in the studio's knowledge base (Bedrock Knowledge Base)."""
+    resp = kb_client.retrieve(
+        knowledgeBaseId=config.get("KNOWLEDGE_BASE_ID"),
+        retrievalQuery={"text": query},
+        retrievalConfiguration={"vectorSearchConfiguration": {"numberOfResults": KB_RESULTS}},
+    )
+    passages = []
+    for r in resp["retrievalResults"]:
+        uri = ((r.get("location") or {}).get("s3Location") or {}).get("uri", "")
+        passages.append({
+            "source": uri.rsplit("/", 1)[-1],  # file name, e.g. thue-phong-tap.md
+            "score": round(r.get("score", 0.0), 3),
+            "text": r["content"]["text"],
+        })
+    return {"passages": passages}
+
+
+def get_cancellation_policy(jwt: str) -> dict:
+    """Live refund policy from booking_settings: admins change it in the app, so it never lives in the docs."""
+    rows = select("booking_settings",
+                  "select=refund_full_hours,refund_partial_hours,refund_partial_percent", jwt)
+    s = rows[0]
+    full, partial, percent = s["refund_full_hours"], s["refund_partial_hours"], s["refund_partial_percent"]
+    rules = [
+        "Booking chưa được studio duyệt: hủy được hoàn 100% số tiền đã trả.",
+        "Studio hủy hoặc từ chối booking: hoàn 100% số tiền đã trả.",
+    ]
+    if full:
+        rules.append(f"Hủy trước giờ bắt đầu từ {full} giờ trở lên: hoàn 100% số tiền đã trả.")
+        rules.append(f"Hủy trước từ {partial} đến dưới {full} giờ: hoàn {percent}% số tiền đã trả.")
+    else:
+        rules.append(f"Hủy trước giờ bắt đầu từ {partial} giờ trở lên: hoàn {percent}% số tiền đã trả.")
+    rules.append(f"Hủy khi còn dưới {partial} giờ: không hoàn tiền.")
+    return {
+        "rules_vi": rules,
+        "how_to_cancel_vi": "Khách tự hủy trong mục Booking của tôi; app hiện số tiền hoàn cụ thể trước khi xác nhận.",
+    }
+
+
 # ---------------- Tool specs ----------------
 
 def _spec(name: str, description: str, properties: dict | None = None, required: list | None = None) -> dict:
@@ -136,6 +183,17 @@ TOOL_CONFIG = {"tools": [
     _spec("get_my_classes",
           "Get the dance classes (courses) the signed-in customer is enrolled in, with weekly sessions. "
           "This is NOT room bookings. Use is_today to answer questions about today's classes."),
+    _spec("search_studio_info",
+          "Search the studio's knowledge base for how things work and rules: how to book a room, deposits, "
+          "how to join a class, trial sessions, which class suits a beginner, dance styles, what to bring, house "
+          "rules, parking, support chat. Returns the most relevant passages with their source file. "
+          "Not for prices, schedules, free rooms, refund percentages or the customer's own data.",
+          {"query": {"type": "string",
+                     "description": "The customer's question rewritten as a short search query in Vietnamese."}},
+          ["query"]),
+    _spec("get_cancellation_policy",
+          "Get the studio's current refund policy for cancelling a room booking (how many hours before the start "
+          "gives a full or partial refund). Always use this for refund numbers; never take them from other sources."),
 ]}
 
 
@@ -149,7 +207,11 @@ def run_tool(name: str, tool_input: dict, jwt: str):
             return get_my_bookings(jwt)
         if name == "get_my_classes":
             return get_my_classes(jwt)
+        if name == "search_studio_info":
+            return search_studio_info(tool_input["query"])
+        if name == "get_cancellation_policy":
+            return get_cancellation_policy(jwt)
         return {"error": f"Unknown tool: {name}"}
-    except (RuntimeError, KeyError, ValueError, IndexError, TypeError) as e:
+    except (RuntimeError, KeyError, ValueError, IndexError, TypeError, ClientError, BotoCoreError) as e:
         print(f"TOOL_ERROR {name}: {type(e).__name__}: {e}")
         return {"error": "The tool failed. Tell the customer you could not check this right now."}

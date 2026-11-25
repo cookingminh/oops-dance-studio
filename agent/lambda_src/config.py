@@ -23,6 +23,7 @@ _load_env_file()
 SSM_PARAMS = {
     "SUPABASE_URL": "/oops/supabase-url",
     "SUPABASE_ANON_KEY": "/oops/supabase-anon-key",
+    "KNOWLEDGE_BASE_ID": "/oops/knowledge-base-id",
 }
 _cache: dict[str, str] = {}  # survives between warm invocations
 
