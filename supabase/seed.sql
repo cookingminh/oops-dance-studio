@@ -414,4 +414,43 @@ select public.seed_demo_activity();
 -- own lines).
 select public.seed_demo_class_join_requests();
 
+-- AI knowledge (/admin/knowledge): made-up example articles, so the page isn't empty. Local only (hosted projects get
+-- none): every number below is fake, and each title and text says so. Three published, one draft.
+insert into public.knowledge_articles (title, category, body, status, updated_by)
+select a.title, a.category, a.body, a.status, p.id
+  from (values
+    (1, '[Ví dụ] Huỷ phòng thì được hoàn bao nhiêu?', 'policy', 'published', 'staff@demo.oopsdance.test',
+     $md$> Bài mẫu, số liệu không có thật.
+
+- Huỷ trước **99 giờ**: hoàn 100% tiền cọc.
+- Huỷ sau 99 giờ: hoàn 11% tiền cọc.
+- Không đến: không hoàn.
+
+Tiền hoàn về tài khoản đã chuyển trong 9 ngày làm việc.$md$),
+    (2, '[Ví dụ] Học thử có mất phí không?', 'faq', 'published', 'admin@demo.oopsdance.test',
+     $md$> Bài mẫu, số liệu không có thật.
+
+Buổi học thử giá **111.111đ** mỗi người, trả khi đến lớp. Mỗi người học thử một lần.
+
+Muốn học thử: vào trang Lớp học, chọn lớp, bấm đăng ký.$md$),
+    (3, '[Ví dụ] Người mới nên học lớp nào?', 'class', 'published', 'staff@demo.oopsdance.test',
+     $md$> Bài mẫu, số liệu không có thật.
+
+| Đã học nhảy | Nên học |
+|---|---|
+| Chưa bao giờ | Lớp Ví Dụ A |
+| Dưới 99 buổi | Lớp Ví Dụ B |
+| Trên 99 buổi | Lớp Ví Dụ C |
+
+Mang giày đế mềm và nước uống.$md$),
+    (4, '[Ví dụ] Nội quy phòng tập', 'house_rules', 'draft', 'staff@demo.oopsdance.test',
+     $md$> Bài mẫu, số liệu không có thật.
+
+1. Không mang giày đi ngoài đường vào phòng tập.
+2. Không ăn trong phòng tập.
+3. Ra khỏi phòng trước giờ kết thúc 99 phút.$md$)
+  ) as a (ord, title, category, status, email, body)
+  join public.profiles p on p.email = a.email
+ order by a.ord;
+
 drop table seed_users;
