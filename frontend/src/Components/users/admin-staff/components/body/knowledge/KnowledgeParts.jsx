@@ -2,6 +2,7 @@ import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from
 import { LuBadgeCheck, LuFileEdit, LuFileText, LuLightbulb } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { CATEGORY_ICONS, STATUSES } from './knowledgeModel';
+import { TEMPLATES } from './templates';
 
 export const CategoryIcon = ({ category }) => {
     const Icon = CATEGORY_ICONS[category] ?? LuFileText;
@@ -43,6 +44,28 @@ export const DiscardDialog = ({ isNew, onClose, onDiscard }) => {
                 </ModalFooter>
             </ModalContent>
         </Modal>
+    );
+};
+
+// An empty text starts from a template (its kind of article, its blanks to fill), or from nothing.
+export const TemplatePicker = ({ onPick }) => {
+    const { t } = useI18n();
+    return (
+        <section className="kbTemplates" aria-label={t('Start from a template')}>
+            <strong>{t('Start from a template')}</strong>
+            <div>
+                {TEMPLATES.map((template) => (
+                    <button key={template.key} type="button" className="kbTemplate" onClick={() => onPick(template)}>
+                        <CategoryIcon category={template.category} />
+                        <span>
+                            <b>{t(template.label)}</b>
+                            <small>{t(template.hint)}</small>
+                        </span>
+                    </button>
+                ))}
+            </div>
+            <small className="kbTemplatesNote">{t('Or just start writing below. Highlighted blanks are yours to fill in; a click selects one.')}</small>
+        </section>
     );
 };
 

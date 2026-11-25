@@ -576,6 +576,82 @@ $amber: hsl(28, 60%, 26%);
     }
 }
 
+// ---- Templates -------------------------------------------------------------------------------------------------
+
+.adminShell .kbTemplates {
+    display: grid;
+    gap: .55rem;
+    padding: .9rem;
+    border: 1px dashed var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface-2);
+
+    > strong {
+        font-size: .92rem;
+    }
+
+    > div {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+        gap: .5rem;
+    }
+}
+
+.adminShell .kbTemplate {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .6rem .7rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 12px;
+    background: var(--ad-surface);
+    text-align: left;
+    transition: border-color .2s ease, box-shadow .25s ease;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        box-shadow: var(--ad-shadow);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+    }
+
+    .kbIcon {
+        width: 2.2rem;
+        height: 2.2rem;
+        font-size: 1rem;
+    }
+
+    b,
+    small {
+        display: block;
+    }
+
+    b {
+        font-size: .9rem;
+    }
+
+    small {
+        color: var(--ad-muted);
+        font-size: .78rem;
+    }
+}
+
+.adminShell .kbTemplatesNote {
+    color: var(--ad-muted);
+    font-size: .8rem;
+}
+
+// A blank to fill in ({{…}}).
+.adminShell .kbProse .kbBlank {
+    padding: .05rem .15rem;
+    border-radius: 5px;
+    background: hsl(48, 100%, 88%);
+    color: hsl(32, 70%, 28%);
+    cursor: text;
+}
+
 // ---- The visual editor -----------------------------------------------------------------------------------------
 
 .adminShell .kbVisual {

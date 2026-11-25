@@ -2,6 +2,7 @@ import { LuFileText, LuHelpCircle, LuMusic2, LuScale, LuScrollText } from 'react
 import { ARTICLE_CATEGORIES, BODY_MAX, TITLE_MAX } from '@/services/knowledge';
 import { fold, studioDateOf } from '../user-manager/peopleModel';
 import { agoText, hoursSince } from '../join-requests/joinModel';
+import { blanksIn } from './templates';
 
 // The AI knowledge pages' plain logic. Labels are English i18n keys.
 
@@ -65,6 +66,8 @@ export function missingOf(draft, { published }) {
     if (draft.title.trim().length > TITLE_MAX) missing.push('The title is up to 120 characters.');
     if (!draft.category) missing.push('Pick the article’s category.');
     if (published && !draft.body.trim()) missing.push('Write the article’s text.');
+    // A template's blanks ({{…}}) are filled in before customers can read it.
+    if (published && blanksIn(draft.body)) missing.push('Fill in the blanks left in {{…}}.');
     if (draft.body.length > BODY_MAX) missing.push('The text is up to 20,000 characters.');
     return missing;
 }

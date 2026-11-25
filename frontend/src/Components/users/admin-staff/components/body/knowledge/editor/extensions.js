@@ -1,8 +1,11 @@
 import { Extension } from '@tiptap/core';
+import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import StarterKit from '@tiptap/starter-kit';
 import { Table, TableCell, TableHeader, TableRow } from '@tiptap/extension-table';
 import { Placeholder } from '@tiptap/extensions';
 import Suggestion from '@tiptap/suggestion';
+import { BLANK } from '../templates';
 
 // A cell is one line of text: all a Markdown table can hold.
 const OneLine = { content: 'paragraph' };
@@ -47,6 +50,33 @@ const SlashCommands = Extension.create({
     },
 });
 
+// The blanks of a template ({{…}}): highlighted, and a click selects the whole of one, so typing replaces it.
+const blanksOf = (doc) => {
+    const found = [];
+    doc.descendants((node, pos) => {
+        if (node.isText) for (const match of node.text.matchAll(BLANK)) found.push({ from: pos + match.index, to: pos + match.index + match[0].length });
+    });
+    return found;
+};
+export const firstBlank = (doc) => blanksOf(doc)[0] ?? null;
+const Blanks = Extension.create({
+    name: 'blanks',
+    addProseMirrorPlugins: () => [
+        new Plugin({
+            key: new PluginKey('blanks'),
+            props: {
+                decorations: (state) => DecorationSet.create(state.doc, blanksOf(state.doc).map(({ from, to }) => Decoration.inline(from, to, { class: 'kbBlank' }))),
+                handleClick: (view, pos) => {
+                    const blank = blanksOf(view.state.doc).find(({ from, to }) => pos >= from && pos <= to);
+                    if (!blank) return false;
+                    view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, blank.from, blank.to)));
+                    return true;
+                },
+            },
+        }),
+    ],
+});
+
 export const editorExtensions = ({ placeholder, slash, onLink }) => [
     StarterKit.configure({
         underline: false,
@@ -58,6 +88,7 @@ export const editorExtensions = ({ placeholder, slash, onLink }) => [
     TableCell.extend(OneLine),
     Placeholder.configure({ placeholder }),
     TableKeys,
+    Blanks,
     SlashCommands.configure(slash),
     Extension.create({
         name: 'linkKey',

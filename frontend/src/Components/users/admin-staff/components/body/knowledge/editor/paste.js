@@ -91,6 +91,12 @@ export function cleanPastedHtml(html) {
     return doc.body.innerHTML.replace(/\u00a0|&nbsp;/g, ' ');
 }
 
+// HTML that is only the plain text with colours: what a code editor (VS Code…) or a chat puts next to it. Pasted Markdown
+// from there is read as Markdown, not as its colours (bold headings with "#" still in them).
+const SAYS_SOMETHING = /<(h[1-6]|p|ul|ol|li|table|blockquote|a|strong|em|i|u)\b/i;
+export const isColouredText = (html) =>
+    /white-space:\s*pre|<pre\b|font-family:[^;">]*(menlo|monaco|consolas|courier|mono)/i.test(html) || !SAYS_SOMETHING.test(html.replace(/<b\b[^>]*docs-internal-guid[^>]*>/gi, ''));
+
 // Plain text that is written in Markdown (copied from a .md file, a chat…).
 export const looksLikeMarkdown = (text) =>
     /^(#{1,6} |> |[-*+] |\d+[.)] |\|.+\|\s*$)/m.test(text) || /\*\*[^*\n]+\*\*/.test(text) || /\[[^\]\n]+\]\(https?:[^)\s]+\)/.test(text);

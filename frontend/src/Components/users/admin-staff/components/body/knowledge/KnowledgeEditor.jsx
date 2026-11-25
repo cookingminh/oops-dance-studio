@@ -14,7 +14,7 @@ import SectionCard from '../../common/SectionCard';
 import Segmented from '../../common/Segmented';
 import { fadeUp } from '../../common/motion';
 import { draftKey, editedText, excerptOf, fieldsOf, missingOf, payloadOf, whenText } from './knowledgeModel';
-import { DiscardDialog, StatusPill, WritingTips } from './KnowledgeParts';
+import { DiscardDialog, StatusPill, TemplatePicker, WritingTips } from './KnowledgeParts';
 
 const VisualEditor = lazy(() => import('./editor/VisualEditor'));
 const KnowledgePreview = lazy(() => import('./KnowledgePreview'));
@@ -62,6 +62,8 @@ const KnowledgeEditor = ({ id = null }) => {
     const [busy, setBusy] = useState(null); // 'save' | 'publish' | 'unpublish' | 'delete'
     const [mode, setMode] = useState('visual'); // 'visual' | 'markdown'
     const [whyMarkdown, setWhyMarkdown] = useState(null); // why the visual editor isn't used: what the text has in it (English labels), or 'broken'
+    const [template, setTemplate] = useState(null); // the one picked: { key, titleHint, … }
+    const [fillToken, setFillToken] = useState(0); // a template went in: its first blank is selected
     const [pane, setPane] = useState('text'); // Markdown on a narrow screen: the text or its preview
     const [asking, setAsking] = useState(null); // 'leave' | 'discard' | 'delete'
     const latest = useRef(draft);
@@ -121,6 +123,17 @@ const KnowledgeEditor = ({ id = null }) => {
         setWhyMarkdown(why);
         setMode('markdown');
     }, []);
+    // A .md file pasted in: its "# …" becomes the title, unless there is one.
+    const takeTitle = useCallback((title) => {
+        if (latest.current.title.trim()) return false;
+        setDraft((current) => ({ ...current, title: title.slice(0, TITLE_MAX) }));
+        return true;
+    }, []);
+    const pickTemplate = (picked) => {
+        setTemplate(picked);
+        setDraft((current) => ({ ...current, category: picked.category, body: picked.body }));
+        setFillToken((token) => token + 1);
+    };
     const switchMode = () => {
         setWhyMarkdown(null);
         setMode(mode === 'visual' ? 'markdown' : 'visual');
@@ -308,7 +321,7 @@ const KnowledgeEditor = ({ id = null }) => {
                         <div className="kbFormTop">
                             <Input
                                 label={t('Article title')}
-                                description={t('As a customer would ask it: “How much back if I cancel?”')}
+                                description={t(template?.titleHint ?? 'As a customer would ask it: “How much back if I cancel?”')}
                                 value={draft.title}
                                 onValueChange={(title) => change({ title })}
                                 maxLength={TITLE_MAX}
@@ -335,12 +348,13 @@ const KnowledgeEditor = ({ id = null }) => {
                                     : t('This text has things only Markdown can show ({things}), so it is edited as Markdown: nothing is lost.', { things: whyMarkdown.map((label) => t(label)).join(', ') })}
                             </p>
                         )}
+                        {!draft.body.trim() && <TemplatePicker onPick={pickTemplate} />}
                         {mode === 'visual' ? (
                             <>
                                 {ready && (
                                     <EditorBoundary onBroken={() => toMarkdown('broken')}>
                                         <Suspense fallback={<Loading />}>
-                                            <VisualEditor label={t('Article text')} value={draft.body} saved={article?.body ?? ''} onChange={changeBody} onUnsupported={toMarkdown} />
+                                            <VisualEditor label={t('Article text')} value={draft.body} saved={article?.body ?? ''} onChange={changeBody} onUnsupported={toMarkdown} onTitle={takeTitle} fillToken={fillToken} />
                                         </Suspense>
                                     </EditorBoundary>
                                 )}

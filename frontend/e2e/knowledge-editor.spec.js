@@ -14,6 +14,7 @@ let page;
 let jwt;
 const errors = [];
 let count = 0;
+const made = []; // ids of the articles written here (a pasted "# …" can rename one)
 
 const text = () => page.getByLabel('Article text');
 const tool = (name) => page.getByRole('toolbar', { name: 'Formatting' }).getByRole('button', { name, exact: true });
@@ -28,6 +29,7 @@ const make = async (body) => {
     count += 1;
     const res = await rest(jwt, 'knowledge_articles', { method: 'POST', body: { title: `E2E editor ${RUN} ${count}`, category: 'other', body }, prefer: 'return=representation' });
     expect(res.status, JSON.stringify(res.data)).toBe(201);
+    made.push(res.data[0].id);
     return res.data[0].id;
 };
 const open = async (body) => {
@@ -55,7 +57,10 @@ const paste = (data) =>
         box.focus();
         box.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true, cancelable: true }));
     }, data);
-const cleanUp = async () => expect((await rest(jwt, `knowledge_articles?title=like.${encodeURIComponent('E2E editor *')}`, { method: 'DELETE' })).status).toBe(204);
+const cleanUp = async () => {
+    expect((await rest(jwt, `knowledge_articles?title=like.${encodeURIComponent('E2E editor *')}`, { method: 'DELETE' })).status).toBe(204);
+    if (made.length) expect((await rest(jwt, `knowledge_articles?id=in.(${made.join(',')})`, { method: 'DELETE' })).status).toBe(204);
+};
 
 test.beforeAll(async ({ browser }) => {
     jwt = await staffJwt();
@@ -318,6 +323,86 @@ test('pasted Markdown becomes what it says; plain words stay plain; a cell takes
     await press('End');
     await paste({ 'text/html': '<p>một</p><ul><li>hai</li><li>ba</li></ul>', 'text/plain': 'một\nhai\nba' });
     await expectStored(cell, '| A | B |\n| - | - |\n| xmột hai ba | y |');
+});
+
+test('Markdown copied from VS Code (coloured HTML next to it) is read as Markdown; its "# …" becomes the title when there is none', async () => {
+    const file = '# Chọn lớp cho người mới\n\n_Nội dung mẫu._\n\n## Các phong cách\n- **K-pop Dance**: dễ theo.\n- **Choreo**: cho người đã học.\n\n| Lớp | Trình độ |\n| --- | --- |\n| K-pop | Cơ bản |';
+    // What VS Code puts next to the text: a div per line, coloured spans, headings in bold.
+    const coloured = (markdown) =>
+        `<meta charset="utf-8"><div style="color: #cccccc;background-color: #1f1f1f;font-family: Menlo, Monaco, 'Courier New', monospace;white-space: pre;">${markdown
+            .split('\n')
+            .map((line) => (line ? `<div><span style="color: ${line.startsWith('#') ? '#569cd6;font-weight: bold' : '#cccccc'};">${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span></div>` : '<br>'))
+            .join('')}</div>`;
+    const id = await make('');
+    await page.goto(`/admin/knowledge/${id}`);
+    await page.getByLabel('Article title').fill('');
+    await text().click();
+    await paste({ 'text/html': coloured(file), 'text/plain': file });
+    await expect(page.getByLabel('Article title')).toHaveValue('Chọn lớp cho người mới');
+    await expect(text().locator('h2')).toHaveText('Các phong cách');
+    await expect(text().locator('strong')).toHaveText(['K-pop Dance', 'Choreo']);
+    await expect(text()).not.toContainText('#');
+    await expectStored(id, '*Nội dung mẫu.*\n\n## Các phong cách\n\n- **K-pop Dance**: dễ theo.\n- **Choreo**: cho người đã học.\n\n| Lớp | Trình độ |\n| - | - |\n| K-pop | Cơ bản |');
+    expect((await rest(jwt, `knowledge_articles?select=title&id=eq.${id}`)).data[0].title).toBe('Chọn lớp cho người mới');
+
+    // A title already there stays; the "# …" is a heading below it. Rich text (a web page) is pasted as such, where
+    // "**…**" typed in it still turns bold.
+    const titled = await open('');
+    await paste({ 'text/html': coloured('# Một\n\n- hai'), 'text/plain': '# Một\n\n- hai' });
+    await expect(page.getByLabel('Article title')).toHaveValue(`E2E editor ${RUN} ${count}`);
+    await expectStored(titled, '## Một\n\n- hai');
+    const page2 = await open('');
+    await paste({ 'text/html': '<p>Giá <b>**200k**</b></p>', 'text/plain': 'Giá **200k**' });
+    await expectStored(page2, 'Giá **200k**');
+});
+
+test('templates: pick one, fill its highlighted blanks (a click selects one); publishing waits until none is left', async () => {
+    await page.goto('/admin/knowledge/new');
+    const picker = page.getByRole('region', { name: 'Start from a template' });
+    await expect(picker.getByRole('button')).toHaveCount(4);
+    await picker.getByRole('button', { name: /A question customers ask/ }).click();
+    await expect(picker).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Article category/ })).toContainText('FAQ');
+    await expect(page.getByText('The question, as customers ask it: “Can I park my motorbike?”')).toBeVisible();
+    const blanks = text().locator('.kbBlank');
+    await expect(blanks).toHaveCount(4);
+    // The first blank is selected: typing replaces it.
+    await type('Có, gửi xe máy miễn phí ở tầng hầm.');
+    await expect(blanks).toHaveCount(3);
+    await expect(text().locator('p').first()).toHaveText('Có, gửi xe máy miễn phí ở tầng hầm.');
+
+    await page.getByLabel('Article title').fill(`E2E editor ${RUN} template`);
+    await page.locator('.kbEditorActions').getByRole('button', { name: 'Publish' }).click();
+    await expect(page.locator('.kbMissing')).toContainText('Fill in the blanks left in {{…}}.');
+    // A draft may keep them.
+    await page.locator('.kbEditorActions').getByRole('button', { name: 'Save draft' }).click();
+    await expect(page).toHaveURL(/\/admin\/knowledge\/\d+$/);
+    const id = Number(page.url().split('/').pop());
+    made.push(id);
+    expect(await bodyOf(id)).toContain('{{Ý thứ nhất}}');
+
+    for (const words of ['Xe máy: tầng hầm', 'Ô tô: không có chỗ', 'Hỏi lễ tân.']) {
+        await blanks.first().click();
+        await type(words);
+    }
+    await expect(blanks).toHaveCount(0);
+    await page.locator('.kbEditorActions').getByRole('button', { name: 'Publish' }).click();
+    await expect(page.locator('.kbEditorTitle .kbPill')).toHaveText('Published');
+    expect(await bodyOf(id)).toBe('Có, gửi xe máy miễn phí ở tầng hầm.\n\n## Chi tiết\n\n- Xe máy: tầng hầm\n- Ô tô: không có chỗ\n\n## Cần hỏi thêm\n\nHỏi lễ tân.');
+
+    // Every template opens as it looks, with nothing only Markdown can show.
+    for (const name of ['A rule with money in it', 'About a class', 'House rules']) {
+        await page.goto('/admin/knowledge/new');
+        // The template picked the time before is an unsaved draft: asked about, and thrown away.
+        await expect(page.locator('.kbTemplates, [role="dialog"]').first()).toBeVisible();
+        if (await page.getByRole('dialog').count()) await page.getByRole('dialog').getByRole('button', { name: 'Discard it' }).click();
+        await page.getByRole('region', { name: 'Start from a template' }).getByRole('button', { name: new RegExp(name) }).click();
+        await expect(text().locator('.kbBlank').first()).toBeVisible();
+        await expect(page.locator('.kbForm .kbNotice')).toHaveCount(0);
+    }
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Discard it' }).click();
+    await expect(page).toHaveURL(/\/admin\/knowledge$/);
 });
 
 test('Vietnamese: composed by an input method, or retyped letter by letter as Unikey does', async () => {

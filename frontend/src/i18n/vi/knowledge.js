@@ -103,6 +103,21 @@ export default {
     checklists: 'danh sách có ô tick',
     'other formatting': 'định dạng khác',
 
+    // Templates
+    'Start from a template': 'Bắt đầu từ mẫu',
+    'Or just start writing below. Highlighted blanks are yours to fill in; a click selects one.': 'Hoặc cứ viết luôn bên dưới. Chỗ tô vàng là chỗ cần điền: bấm vào là chọn cả chỗ đó.',
+    'A rule with money in it': 'Quy định có tiền',
+    'Cancelling, refunds, deposits': 'Huỷ, hoàn tiền, đặt cọc',
+    'A question customers ask': 'Câu khách hay hỏi',
+    'A short answer, then the details': 'Trả lời ngắn, rồi chi tiết',
+    'About a class': 'Giới thiệu một lớp',
+    'Who it is for, times, price, what to bring': 'Dành cho ai, lịch, học phí, cần mang gì',
+    'Before, during and after a session': 'Trước, trong và sau buổi tập',
+    'The question, as customers ask it: “Can I park my motorbike?”': 'Ghi đúng câu khách hỏi: “Có chỗ gửi xe máy không?”',
+    'For example: “What does the K-pop Dance class learn?”': 'Ví dụ: “Lớp K-pop Dance học gì?”',
+    'For example: “House rules of the practice rooms”': 'Ví dụ: “Nội quy phòng tập”',
+    'Fill in the blanks left in {{…}}.': 'Điền nốt các chỗ tô vàng {{…}}.',
+
     // What is missing, errors
     'Before publishing:': 'Trước khi đăng, cần:',
     'Give the article a title.': 'Đặt tiêu đề.',

@@ -6,17 +6,17 @@ import { useI18n } from '@/i18n/i18nContext';
 import { fold } from '../../user-manager/peopleModel';
 import { INSERTS, MARKS } from './actions';
 import EditorToolbar, { ToolButton } from './EditorToolbar';
-import { editorExtensions } from './extensions';
+import { editorExtensions, firstBlank } from './extensions';
 import LinkBar from './LinkBar';
 import { readMarkdown, sameAsDoc, writeMarkdown } from './markdown';
-import { cleanPastedHtml, looksLikeMarkdown } from './paste';
+import { cleanPastedHtml, isColouredText, looksLikeMarkdown } from './paste';
 import SlashMenu from './SlashMenu';
 
 // Loaded on demand (KnowledgeEditor). Writing as it will look: a toolbar, "/" to insert, a small bar over selected words.
 // The text goes in and comes out as Markdown; a change that says the same as `saved` gives `saved` back, so opening an
 // article or undoing a change isn't an edit. A text with things the editor can't show isn't touched: onUnsupported
 // ([English labels]) and the Markdown box takes over.
-const VisualEditor = ({ value, saved, onChange, onUnsupported, label }) => {
+const VisualEditor = ({ value, saved, onChange, onUnsupported, onTitle, label, fillToken = 0 }) => {
     const { t, lang } = useI18n();
     const [start] = useState(() => readMarkdown(value));
     const [checked, setChecked] = useState(false);
@@ -26,7 +26,7 @@ const VisualEditor = ({ value, saved, onChange, onUnsupported, label }) => {
     const given = useRef(value); // the text the parent has from here
     const whole = useRef(false); // everything in that text is in the editor: until then, nothing is given back
     const live = useRef({});
-    live.current = { t, label, saved, onChange, onUnsupported };
+    live.current = { t, label, saved, onChange, onUnsupported, onTitle };
 
     // Made once: they read what changes through `live` (a new array each time would set the editor up again).
     const [extensions] = useState(() =>
@@ -49,7 +49,7 @@ const VisualEditor = ({ value, saved, onChange, onUnsupported, label }) => {
     const [editorProps] = useState(() => ({
         attributes: () => ({ role: 'textbox', 'aria-multiline': 'true', 'aria-label': live.current.label, class: 'kbMarkdown kbProse' }),
         transformPastedHTML: cleanPastedHtml,
-        handlePaste: (view, event, slice) => pasteInto(editorRef.current, event, slice),
+        handlePaste: (view, event, slice) => pasteInto(editorRef.current, event, slice, (title) => live.current.onTitle?.(title)),
     }));
     const editor = useEditor({
         extensions,
@@ -89,6 +89,13 @@ const VisualEditor = ({ value, saved, onChange, onUnsupported, label }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps -- only when the text is another one
     }, [editor, value]);
 
+    // A template was picked: its first blank is selected, ready to be typed over.
+    useEffect(() => {
+        if (!editor || !fillToken) return;
+        const blank = firstBlank(editor.state.doc);
+        if (blank) editor.chain().focus().setTextSelection(blank).scrollIntoView().run();
+    }, [editor, fillToken]);
+
     // Another language: drawn again, for its label and its placeholder. (Never touch view.dom here: the view may not be
     // on the page yet, or any more.)
     useEffect(() => {
@@ -117,8 +124,10 @@ const VisualEditor = ({ value, saved, onChange, onUnsupported, label }) => {
     );
 };
 
-// Markdown copied as plain text becomes what it says; in a table cell everything is one line. → true when it did.
-function pasteInto(editor, event, slice) {
+// Markdown copied as text (from a .md file, VS Code, a chat) becomes what it says: its "# …" heading the article's title
+// when there is none yet (takeTitle → true when taken), the others below it; images and HTML in it are left out, as
+// they are from any paste. In a table cell everything is one line. → true when handled here.
+function pasteInto(editor, event, slice, takeTitle) {
     const data = event.clipboardData;
     if (!editor || !data) return false;
     if (editor.isActive('table')) {
@@ -130,11 +139,17 @@ function pasteInto(editor, event, slice) {
     }
     if (editor.isActive('codeBlock')) return false;
     const text = data.getData('text/plain');
-    const fromCode = Array.from(data.types ?? []).includes('vscode-editor-data');
-    if ((data.getData('text/html') && !fromCode) || !looksLikeMarkdown(text)) return false;
-    const { doc, unsupported } = readMarkdown(text);
-    if (unsupported.length) return false;
-    return editor.chain().insertContent(doc.content).run();
+    const html = data.getData('text/html');
+    if (!looksLikeMarkdown(text) || (html && (html.includes('data-pm-slice') || !isColouredText(html)))) return false;
+    const blocks = readMarkdown(text).doc.content;
+    const [first] = blocks;
+    // The title is the page's heading: the text's headings start below it.
+    const content = blocks.map((node) => (node.type === 'heading' && node.attrs?.level === 1 ? { ...node, attrs: { ...node.attrs, level: 2 } } : node));
+    if (first?.type === 'heading' && first.attrs?.level === 1) {
+        const title = (first.content ?? []).map((child) => child.text ?? '').join('').trim();
+        if (title && takeTitle(title)) content.shift();
+    }
+    return content.length ? editor.chain().insertContent(content).run() : true;
 }
 
 export default VisualEditor;
