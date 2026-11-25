@@ -1,7 +1,8 @@
-// AI knowledge (/admin/knowledge; supabase/migrations/20261117003300_knowledge_articles.sql): staff write an article with
-// a live Markdown preview, save it as a draft, publish it, change it while published, unpublish and delete it; what isn't
-// saved is kept in the browser and offered again; the list's filters and search stay in the URL; visitors, guests and instructors get neither the page nor the rows (their own
-// JWTs); slug, editor and times are the server's. Works on articles of its own (titles "E2E …", deleted afterwards).
+// AI knowledge (/admin/knowledge; supabase/migrations/20261117003300_knowledge_articles.sql): staff write an article as it
+// will look (the editor itself: knowledge-editor.spec.js) or in Markdown with a live preview, save it as a draft, publish
+// it, change it while published, unpublish and delete it; what isn't saved is kept in the browser and offered again; the
+// list's filters and search stay in the URL; visitors, guests and instructors get neither the page nor the rows (their
+// own JWTs); slug, editor and times are the server's. Works on articles of its own (titles "E2E …", deleted afterwards).
 import { test, expect } from '@playwright/test';
 import { expectToast, login, pathname, pickOption, rest, token } from './support.js';
 
@@ -19,11 +20,13 @@ let page;
 let staff; // { jwt, id }
 let admin;
 let names; // id → full name
+const errors = []; // on the staff's page: none expected
 
 const saved = async (title = TITLE) => (await rest(staff.jwt, `knowledge_articles?select=${FIELDS}&title=eq.${encodeURIComponent(title)}`)).data[0];
 const row = (title = TITLE) => page.locator('.kbRows li').filter({ hasText: title });
 const pill = () => page.locator('.kbEditorTitle .kbPill');
 const preview = () => page.locator('.kbPreviewCol');
+const text = () => page.getByLabel('Article text');
 const button = (name) => page.locator('.kbEditorActions').getByRole('button', { name, exact: true });
 const openArticle = async (title = TITLE) => {
     await page.goto('/admin/knowledge');
@@ -43,12 +46,14 @@ test.beforeAll(async ({ browser }) => {
     const other = await rest(staff.jwt, 'knowledge_articles', { method: 'POST', body: { title: OTHER, category: 'house_rules', body: 'Published.', status: 'published' } });
     expect(other.status, JSON.stringify(other.data)).toBe(201);
     page = await browser.newPage();
+    page.on('pageerror', (error) => errors.push(error.message));
     await login(page, 'staff@demo.oopsdance.test');
 });
 
 test.afterAll(async () => {
     await page?.close();
     await cleanUp();
+    expect(errors, 'errors on the page').toEqual([]);
 });
 
 // ---------------------------------------------------------------------------
@@ -126,7 +131,7 @@ test('staff open it from the sidebar; "Ask the assistant" waits for later', asyn
     await expect(row(OTHER)).toContainText(`Edited by ${names.get(staff.id)} · just now`);
 });
 
-test('a new article: tips, what is missing, a live preview, saved as a draft', async () => {
+test('a new article: tips, what is missing, written as it looks, saved as a draft', async () => {
     await page.getByRole('button', { name: 'New article' }).click();
     await expect(page).toHaveURL(/\/admin\/knowledge\/new$/);
     await expect(page.locator('.kbTips li')).toHaveText([
@@ -146,37 +151,57 @@ test('a new article: tips, what is missing, a live preview, saved as a draft', a
     await page.getByLabel('Article title').fill(TITLE);
     await pickOption(page, page.locator('.kbForm'), 'Article category', 'Policy');
     await expect(missing).toHaveCount(0);
-    await expect(preview()).toContainText(TITLE);
-    await expect(preview()).toContainText('The text shows here as you write.');
 
-    const images = [];
-    page.on('request', (request) => request.url().includes('example.com') && images.push(request.url()));
-    await page.getByLabel('Article text').fill(
-        '# Refunds\n\n- Before **24 hours**: 100%\n- After: [ask us](https://example.com/ask)\n\n| When | Back |\n|---|---|\n| Late | 0% |\n\n<img src=x onerror="window.hacked = true">\n\n![photo](https://example.com/photo.png)'
-    );
-    const text = preview().locator('.kbMarkdown');
-    await expect(text.getByRole('heading', { name: 'Refunds' })).toBeVisible();
-    await expect(text.locator('li strong')).toHaveText('24 hours');
-    await expect(text.locator('td').first()).toHaveText('Late');
-    await expect(text.getByRole('link', { name: 'ask us' })).toHaveAttribute('rel', /noopener/);
-    // Raw HTML is shown, not run; images aren't loaded.
-    await expect(text).toContainText('<img src=x');
-    await expect(text.locator('img')).toHaveCount(0);
-    expect(await page.evaluate(() => window.hacked)).toBeUndefined();
-    expect(images).toEqual([]);
-    // Typing goes on showing.
-    await page.getByLabel('Article text').fill('Cancel before **24 hours**: 100% back.');
-    await expect(text).toHaveText('Cancel before 24 hours: 100% back.');
+    // Written as it looks, stored as Markdown.
+    await text().click();
+    await page.keyboard.type('Cancel before ');
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.type('24 hours');
+    await page.keyboard.press('ControlOrMeta+b');
+    await page.keyboard.type(': 100% back.');
+    await expect(text().locator('strong')).toHaveText('24 hours');
+    await expect(page.locator('.kbCount')).toHaveText('38 of 20,000 characters');
 
     await button('Save draft').click();
     await expectToast(page, 'Draft saved');
     await expect(page).toHaveURL(/\/admin\/knowledge\/\d+$/);
     await expect(pill()).toHaveText('In draft');
+    await expect(text()).toHaveText('Cancel before 24 hours: 100% back.');
     await expect(button('Save draft')).toBeDisabled();
 
     const article = await saved();
     expect(article).toMatchObject({ category: 'policy', body: 'Cancel before **24 hours**: 100% back.', status: 'draft', updated_by: staff.id, published_at: null });
     expect(article.slug).toBe(`e2e-huy-phong-${RUN}`);
+});
+
+test('the Markdown itself is a button away, with a live preview; raw HTML isn’t run, images aren’t loaded', async () => {
+    await page.goto('/admin/knowledge/new');
+    await page.getByRole('button', { name: 'Write in Markdown' }).click();
+    await expect(preview()).toContainText('The text shows here as you write.');
+    await page.getByLabel('Article title').fill('E2E preview');
+    await expect(preview()).toContainText('E2E preview');
+
+    const images = [];
+    page.on('request', (request) => request.url().includes('example.com') && images.push(request.url()));
+    await text().fill(
+        '# Refunds\n\n- Before **24 hours**: 100%\n- After: [ask us](https://example.com/ask)\n\n| When | Back |\n|---|---|\n| Late | 0% |\n\n<img src=x onerror="window.hacked = true">\n\n![photo](https://example.com/photo.png)'
+    );
+    const shown = preview().locator('.kbMarkdown');
+    await expect(shown.getByRole('heading', { name: 'Refunds' })).toBeVisible();
+    await expect(shown.locator('li strong')).toHaveText('24 hours');
+    await expect(shown.locator('td').first()).toHaveText('Late');
+    await expect(shown.getByRole('link', { name: 'ask us' })).toHaveAttribute('rel', /noopener/);
+    await expect(shown).toContainText('<img src=x');
+    await expect(shown.locator('img')).toHaveCount(0);
+    expect(await page.evaluate(() => window.hacked)).toBeUndefined();
+    expect(images).toEqual([]);
+    // Typing goes on showing.
+    await text().fill('Cancel before **24 hours**: 100% back.');
+    await expect(shown).toHaveText('Cancel before 24 hours: 100% back.');
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Discard it' }).click();
+    await expect(page).toHaveURL(/\/admin\/knowledge$/);
+    expect(await unsavedKeys(page)).toEqual([]);
 });
 
 test('publish it: the server notes when', async () => {
@@ -268,12 +293,11 @@ test('unpublish it: back to a draft', async () => {
 
 test('what isn’t saved survives leaving: menu, Back and reload, no questions asked', async () => {
     const before = await saved();
-    const text = page.getByLabel('Article text');
     const dialog = page.getByRole('dialog');
 
     // The sidebar, right after typing.
     await openArticle();
-    await text.fill('Not saved: menu');
+    await text().fill('Not saved: menu');
     await page.locator('.adminSidebar').getByRole('link', { name: 'Expenses' }).click();
     await expect(page).toHaveURL(/\/admin\/expenses$/);
     expect(await saved()).toEqual(before);
@@ -289,22 +313,22 @@ test('what isn’t saved survives leaving: menu, Back and reload, no questions a
     await page.keyboard.press('Escape');
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: 'Carry on writing' }).click();
-    await expect(text).toHaveValue('Not saved: menu');
+    await expect(text()).toHaveText('Not saved: menu');
     await expect(page.locator('.kbUnsaved')).toContainText('Not saved yet, kept on this device');
 
     // A reload.
-    await text.fill('Not saved: reload');
+    await text().fill('Not saved: reload');
     await page.reload();
     await dialog.getByRole('button', { name: 'Carry on writing' }).click();
-    await expect(text).toHaveValue('Not saved: reload');
+    await expect(text()).toHaveText('Not saved: reload');
 
     // The browser's Back button, then the arrow of the page.
-    await text.fill('Not saved: back');
+    await text().fill('Not saved: back');
     await page.goBack();
     await expect(page.locator('.kbEditor')).toHaveCount(0);
     await row().getByRole('link').click();
     await dialog.getByRole('button', { name: 'Carry on writing' }).click();
-    await expect(text).toHaveValue('Not saved: back');
+    await expect(text()).toHaveText('Not saved: back');
     await page.getByRole('button', { name: 'Back to the articles' }).click();
     await expect(page).toHaveURL(/\/admin\/knowledge$/);
     await expect(dialog).toHaveCount(0);
@@ -314,21 +338,21 @@ test('what isn’t saved survives leaving: menu, Back and reload, no questions a
     await row().getByRole('link').click();
     await expect(dialog).toContainText(`The saved article has changed since then (Edited by ${names.get(admin.id)} · just now).`);
     await dialog.getByRole('button', { name: 'Discard it' }).click();
-    await expect(text).toHaveValue('Changed by the admin.');
+    await expect(text()).toHaveText('Changed by the admin.');
     await expect(page.locator('.kbUnsaved')).toHaveCount(0);
     await page.reload();
-    await expect(text).toHaveValue('Changed by the admin.');
+    await expect(text()).toHaveText('Changed by the admin.');
     await expect(dialog).toHaveCount(0);
 
     // Discarding while writing, and saving, leave nothing behind.
-    await text.fill('Not saved: discard');
+    await text().fill('Not saved: discard');
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await dialog.getByRole('button', { name: 'Keep it' }).click();
-    await expect(text).toHaveValue('Not saved: discard');
+    await expect(text()).toHaveText('Not saved: discard');
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await dialog.getByRole('button', { name: 'Discard it' }).click();
-    await expect(text).toHaveValue('Changed by the admin.');
-    await text.fill('Saved after all.');
+    await expect(text()).toHaveText('Changed by the admin.');
+    await text().fill('Saved after all.');
     await button('Save draft').click();
     await expectToast(page, 'Draft saved');
     expect(await unsavedKeys(page)).toEqual([]);
@@ -359,13 +383,13 @@ test('a new article left unsaved is a draft in the list, on this device and for 
     await expect(theirs.locator('.kbRows li').first()).toBeVisible();
     await expect(theirs.locator('.kbUnsavedRow')).toHaveCount(0);
     await theirs.getByRole('button', { name: 'New article' }).click();
-    await expect(theirs.getByLabel('Article text')).toHaveValue('');
+    await expect(theirs.getByLabel('Article text')).toHaveText('');
     await expect(theirs.getByRole('dialog')).toHaveCount(0);
     await theirs.close();
 
     // From the list it carries on right away; from "New article" it asks.
     await draft.getByRole('link').click();
-    await expect(page.getByLabel('Article text')).toHaveValue('Half a sentence');
+    await expect(page.getByLabel('Article text')).toHaveText('Half a sentence');
     await expect(page.getByLabel('Article title')).toHaveValue(UNSAVED);
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await page.getByRole('button', { name: 'Back to the articles' }).click();
@@ -409,7 +433,7 @@ test('what is typed while a new article is being saved isn’t lost', async () =
     await page.getByLabel('Article text').fill('First and second');
     await expect(page).toHaveURL(/\/admin\/knowledge\/\d+$/);
     await page.unroute('**/rest/v1/knowledge_articles*');
-    await expect(page.getByLabel('Article text')).toHaveValue('First and second');
+    await expect(page.getByLabel('Article text')).toHaveText('First and second');
     await expect(page.locator('.kbUnsaved')).toBeVisible();
     expect((await saved(TYPED_ON)).body).toBe('First');
     await button('Save draft').click();
@@ -445,7 +469,7 @@ test('a browser that can’t keep it: going back asks first', async ({ browser }
     await expect(mine.locator('.kbUnsaved')).toContainText('Unsaved changes');
     await mine.getByRole('button', { name: 'Back to the articles' }).click();
     await mine.getByRole('button', { name: 'Keep editing' }).click();
-    await expect(mine.getByLabel('Article text')).toHaveValue('At risk');
+    await expect(mine.getByLabel('Article text')).toHaveText('At risk');
     await mine.getByRole('button', { name: 'Back to the articles' }).click();
     await mine.getByRole('button', { name: 'Leave without saving' }).click();
     await expect(mine).toHaveURL(/\/admin\/knowledge$/);

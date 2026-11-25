@@ -15,6 +15,13 @@
     "@internationalized/date": "^3.5.4",
     "@nextui-org/react": "^2.4.2",
     "@supabase/supabase-js": "^2.119.0",
+    "@tiptap/core": "3.33.1",
+    "@tiptap/extension-table": "3.33.1",
+    "@tiptap/extensions": "3.33.1",
+    "@tiptap/pm": "3.33.1",
+    "@tiptap/react": "3.33.1",
+    "@tiptap/starter-kit": "3.33.1",
+    "@tiptap/suggestion": "3.33.1",
     "aos": "^2.3.4",
     "chart.js": "^4.4.3",
     "date-fns": "^3.6.0",
@@ -28,7 +35,10 @@
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.22.3",
     "remark-gfm": "^4.0.1",
-    "swiper": "^11.1.0"
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
+    "swiper": "^11.1.0",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

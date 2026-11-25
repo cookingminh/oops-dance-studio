@@ -374,7 +374,30 @@ $amber: hsl(28, 60%, 26%);
 
 .adminShell .kbForm {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: .9rem;
+}
+
+.adminShell .kbFormTop {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .9rem;
+    align-items: start;
+}
+
+// Writing as it looks: one column.
+.adminShell .kbGrid.is-visual {
+    grid-template-columns: minmax(0, 1fr);
+
+    .kbFormTop {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    }
+}
+
+.adminShell .kbCount {
+    color: var(--ad-subtle);
+    font-size: .8rem;
+    text-align: right;
 }
 
 .adminShell .kbPreviewCol {
@@ -404,6 +427,12 @@ $amber: hsl(28, 60%, 26%);
 
     .adminShell .kbPreviewCol {
         position: static;
+    }
+}
+
+@media (max-width: 720px) {
+    .adminShell .kbGrid.is-visual .kbFormTop {
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -544,5 +573,318 @@ $amber: hsl(28, 60%, 26%);
 
     .kbNoImage {
         color: var(--ad-muted);
+    }
+}
+
+// ---- The visual editor -----------------------------------------------------------------------------------------
+
+.adminShell .kbVisual {
+    border: 1px solid var(--ad-border);
+    border-radius: 16px;
+    background: var(--ad-surface);
+    transition: border-color .2s ease;
+
+    &:focus-within {
+        border-color: var(--ad-primary);
+    }
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// Stays in reach while a long text scrolls (under the workspace's sticky top bar).
+.adminShell .kbFormat {
+    position: sticky;
+    top: 6rem;
+    z-index: 5;
+    border-bottom: 1px solid var(--ad-border);
+    border-radius: 16px 16px 0 0;
+    background: var(--ad-surface);
+}
+
+.adminShell .kbTools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .2rem .35rem;
+    padding: .45rem .6rem;
+
+    // The table the cursor is in.
+    &.isTable {
+        padding-block: .35rem;
+        border-top: 1px solid var(--ad-border);
+        background: var(--ad-surface-2);
+        font-size: .84rem;
+
+        strong {
+            padding: 0 .4rem;
+        }
+    }
+}
+
+.adminShell .kbTableTool {
+    padding: .25rem .6rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 999px;
+    background: var(--ad-surface);
+    color: var(--ad-text);
+    font-weight: 600;
+
+    &:hover {
+        border-color: var(--ad-primary-tint);
+        color: var(--ad-primary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+    }
+
+    &.isDelete {
+        color: var(--ad-muted);
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+    }
+}
+
+.adminShell .kbToolGroup {
+    display: flex;
+    align-items: center;
+    gap: .1rem;
+
+    & + .kbToolGroup {
+        padding-left: .4rem;
+        border-left: 1px solid var(--ad-border);
+    }
+
+    &.isEnd {
+        margin-left: auto;
+    }
+}
+
+.adminShell .kbTool {
+    display: grid;
+    place-items: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 9px;
+    color: var(--ad-text);
+    font-size: 1.05rem;
+    transition: background-color .15s ease, color .15s ease;
+
+    &:hover:not(:disabled) {
+        background: var(--ad-surface-2);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--ad-primary);
+    }
+
+    &[aria-pressed='true'] {
+        background: var(--ad-primary-soft);
+        color: var(--ad-primary);
+    }
+
+    &:disabled {
+        color: var(--ad-subtle);
+        opacity: .5;
+        cursor: not-allowed;
+    }
+
+    &.isWords {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        width: auto;
+        padding: 0 .6rem;
+
+        span {
+            font-size: .88rem;
+            font-weight: 600;
+        }
+    }
+}
+
+.adminShell .kbLinkBar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: .5rem;
+    padding: .6rem;
+    border-bottom: 1px solid var(--ad-border);
+    background: var(--ad-surface-2);
+
+    > :first-child {
+        flex: 1 1 16rem;
+    }
+}
+
+.adminShell .kbBubble {
+    z-index: 20;
+    display: flex;
+    gap: .1rem;
+    padding: .25rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 12px;
+    background: var(--ad-surface);
+    box-shadow: var(--ad-shadow-hover);
+}
+
+.adminShell .kbProse {
+    min-height: 22rem;
+    padding: 1.1rem 1.3rem 1.6rem;
+    white-space: break-spaces;
+
+    // (the box around it shows the focus)
+    &,
+    &:focus-visible {
+        outline: none;
+    }
+
+    > * + * {
+        margin-top: .8rem;
+    }
+
+    p {
+        font-size: inherit;
+        line-height: inherit;
+        color: inherit;
+    }
+
+    // The same sizes as the preview, one level up: "##" is the first heading staff use.
+    h1,
+    h2 {
+        font-family: var(--ad-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.3;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    h2,
+    h3 {
+        margin-top: 1.3rem;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    li p {
+        margin: 0;
+    }
+
+    li > p + p,
+    li > ul,
+    li > ol {
+        margin-top: .25rem;
+    }
+
+    .tableWrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        min-width: 24rem;
+        table-layout: fixed;
+    }
+
+    th p,
+    td p {
+        margin: 0;
+    }
+
+    .selectedCell {
+        background: var(--ad-primary-soft);
+    }
+
+    hr {
+        margin: 1.2rem 0;
+        border-top: 2px solid var(--ad-border);
+
+        &.ProseMirror-selectednode {
+            border-color: var(--ad-primary);
+        }
+    }
+
+    p.is-editor-empty:first-child::before {
+        content: attr(data-placeholder);
+        float: left;
+        height: 0;
+        color: var(--ad-subtle);
+        pointer-events: none;
+    }
+}
+
+// The "/" menu (in a portal).
+.kbSlash {
+    position: fixed;
+    z-index: 60;
+    display: grid;
+    gap: .1rem;
+    width: 17rem;
+    max-height: 24rem;
+    overflow-y: auto;
+    padding: .35rem;
+    border: 1px solid var(--ad-border);
+    border-radius: 14px;
+    background: var(--ad-surface);
+    box-shadow: var(--ad-shadow-hover);
+
+    button {
+        display: flex;
+        align-items: center;
+        gap: .7rem;
+        padding: .45rem .55rem;
+        border-radius: 10px;
+        text-align: left;
+
+        &[aria-selected='true'] {
+            background: var(--ad-primary-soft);
+        }
+    }
+
+    strong,
+    small {
+        display: block;
+    }
+
+    strong {
+        color: var(--ad-text);
+        font-size: .92rem;
+        font-weight: 600;
+    }
+
+    small {
+        color: var(--ad-muted);
+        font-size: .78rem;
+    }
+}
+
+.kbSlashIcon {
+    display: grid;
+    place-items: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--ad-border);
+    border-radius: 9px;
+    background: var(--ad-surface);
+    color: var(--ad-primary);
+}
+
+@media (max-width: 720px) {
+    .adminShell .kbFormat {
+        top: 5.3rem;
+    }
+
+    .adminShell .kbToolGroup.isEnd {
+        margin-left: 0;
     }
 }

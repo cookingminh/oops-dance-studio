@@ -1,8 +1,8 @@
-import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Textarea } from '@nextui-org/react';
-import { LuArrowLeft, LuEye, LuPenLine, LuTrash2 } from 'react-icons/lu';
+import { LuArrowLeft, LuCode2, LuEye, LuPenLine, LuTrash2, LuType } from 'react-icons/lu';
 import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
@@ -16,10 +16,30 @@ import { fadeUp } from '../../common/motion';
 import { draftKey, editedText, excerptOf, fieldsOf, missingOf, payloadOf, whenText } from './knowledgeModel';
 import { DiscardDialog, StatusPill, WritingTips } from './KnowledgeParts';
 
+const VisualEditor = lazy(() => import('./editor/VisualEditor'));
 const KnowledgePreview = lazy(() => import('./KnowledgePreview'));
 const LIST = '/admin/knowledge';
 
-// /admin/knowledge/new and /admin/knowledge/:id: the article's title, category and Markdown text with a live preview.
+// The visual editor didn't load or broke: the Markdown box takes over (the text is the page's, nothing is lost).
+class EditorBoundary extends Component {
+    state = { broken: false };
+
+    static getDerivedStateFromError() {
+        return { broken: true };
+    }
+
+    componentDidCatch() {
+        this.props.onBroken();
+    }
+
+    render() {
+        return this.state.broken ? null : this.props.children;
+    }
+}
+
+// /admin/knowledge/new and /admin/knowledge/:id: the article's title, category and text. The text is written as it will
+// look (editor/VisualEditor.jsx) and stored as Markdown; the Markdown itself, with a live preview, is a button away, and
+// opens by itself for a text the visual editor can't show.
 // A draft is saved, published or deleted; a published one is changed (at once), unpublished or deleted.
 // What isn't saved is kept in this browser (lib/unsavedArticles.js): leaving loses nothing, and coming back asks whether
 // to carry on with it (or carries on right away, from the list's unsaved draft: location.state.restore).
@@ -40,7 +60,9 @@ const KnowledgeEditor = ({ id = null }) => {
     const [kept, setKept] = useState(true); // what isn't saved is kept in this browser
     const [attempted, setAttempted] = useState(null); // what was pressed last: 'save' | 'publish'
     const [busy, setBusy] = useState(null); // 'save' | 'publish' | 'unpublish' | 'delete'
-    const [pane, setPane] = useState('text'); // narrow screens show the text or its preview
+    const [mode, setMode] = useState('visual'); // 'visual' | 'markdown'
+    const [whyMarkdown, setWhyMarkdown] = useState(null); // why the visual editor isn't used: what the text has in it (English labels), or 'broken'
+    const [pane, setPane] = useState('text'); // Markdown on a narrow screen: the text or its preview
     const [asking, setAsking] = useState(null); // 'leave' | 'discard' | 'delete'
     const latest = useRef(draft);
     latest.current = draft;
@@ -94,6 +116,15 @@ const KnowledgeEditor = ({ id = null }) => {
     }, [atRisk]);
 
     const change = (patch) => setDraft((current) => ({ ...current, ...patch }));
+    const changeBody = useCallback((body) => setDraft((current) => ({ ...current, body })), []);
+    const toMarkdown = useCallback((why) => {
+        setWhyMarkdown(why);
+        setMode('markdown');
+    }, []);
+    const switchMode = () => {
+        setWhyMarkdown(null);
+        setMode(mode === 'visual' ? 'markdown' : 'visual');
+    };
 
     // Saves the fields, and publishes when asked to. What is typed meanwhile stays (and counts as unsaved).
     const save = async (action) => {
@@ -179,6 +210,8 @@ const KnowledgeEditor = ({ id = null }) => {
         );
     }
 
+    const counted = t('{count} of {max} characters', { count: draft.body.length.toLocaleString(i18n.intl), max: BODY_MAX.toLocaleString(i18n.intl) });
+
     return (
         <motion.div variants={fadeUp} className="kbEditor">
             <header className="kbEditorTop">
@@ -247,67 +280,99 @@ const KnowledgeEditor = ({ id = null }) => {
 
             <WritingTips />
 
-            <Segmented
-                className="kbPanes"
-                label={t('Show the text or its preview')}
-                value={pane}
-                onChange={setPane}
-                options={[
-                    { key: 'text', label: t('Edit text') },
-                    { key: 'preview', label: t('Preview') },
-                ]}
-            />
+            {mode === 'markdown' && (
+                <Segmented
+                    className="kbPanes"
+                    label={t('Show the text or its preview')}
+                    value={pane}
+                    onChange={setPane}
+                    options={[
+                        { key: 'text', label: t('Edit text') },
+                        { key: 'preview', label: t('Preview') },
+                    ]}
+                />
+            )}
 
-            <div className="kbGrid" data-pane={pane}>
-                <SectionCard icon={LuPenLine} title={t('The article')} className="kbTextCol">
+            <div className={`kbGrid is-${mode}`} data-pane={pane}>
+                <SectionCard
+                    icon={LuPenLine}
+                    title={t('The article')}
+                    className="kbTextCol"
+                    actions={
+                        <Button size="sm" variant="light" startContent={mode === 'visual' ? <LuCode2 aria-hidden="true" /> : <LuType aria-hidden="true" />} onPress={switchMode}>
+                            {mode === 'visual' ? t('Write in Markdown') : t('Write as it looks')}
+                        </Button>
+                    }
+                >
                     <div className="kbForm">
-                        <Input
-                            label={t('Article title')}
-                            description={t('As a customer would ask it: “How much back if I cancel?”')}
-                            value={draft.title}
-                            onValueChange={(title) => change({ title })}
-                            maxLength={TITLE_MAX}
-                            isRequired
-                        />
-                        <Select
-                            label={t('Article category')}
-                            selectedKeys={draft.category ? [draft.category] : []}
-                            onChange={(event) => change({ category: event.target.value })}
-                            classNames={{ popoverContent: 'adminPortal' }}
-                            isRequired
-                        >
-                            {ARTICLE_CATEGORIES.map((category) => (
-                                <SelectItem key={category.key} textValue={t(category.label)}>
-                                    {t(category.label)}
-                                </SelectItem>
-                            ))}
-                        </Select>
-                        <Textarea
-                            label={t('Article text')}
-                            description={t('Markdown: # heading, **bold**, - list, | table |, [link](https://…). {count} of {max} characters.', {
-                                count: draft.body.length.toLocaleString(i18n.intl),
-                                max: BODY_MAX.toLocaleString(i18n.intl),
-                            })}
-                            value={draft.body}
-                            onValueChange={(body) => change({ body })}
-                            maxLength={BODY_MAX}
-                            minRows={16}
-                            maxRows={32}
-                        />
+                        <div className="kbFormTop">
+                            <Input
+                                label={t('Article title')}
+                                description={t('As a customer would ask it: “How much back if I cancel?”')}
+                                value={draft.title}
+                                onValueChange={(title) => change({ title })}
+                                maxLength={TITLE_MAX}
+                                isRequired
+                            />
+                            <Select
+                                label={t('Article category')}
+                                selectedKeys={draft.category ? [draft.category] : []}
+                                onChange={(event) => change({ category: event.target.value })}
+                                classNames={{ popoverContent: 'adminPortal' }}
+                                isRequired
+                            >
+                                {ARTICLE_CATEGORIES.map((category) => (
+                                    <SelectItem key={category.key} textValue={t(category.label)}>
+                                        {t(category.label)}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </div>
+                        {whyMarkdown && (
+                            <p className="kbNotice" role="status">
+                                {whyMarkdown === 'broken'
+                                    ? t('The visual editor didn’t open, so the text is edited as Markdown: nothing is lost. Reload the page to try again.')
+                                    : t('This text has things only Markdown can show ({things}), so it is edited as Markdown: nothing is lost.', { things: whyMarkdown.map((label) => t(label)).join(', ') })}
+                            </p>
+                        )}
+                        {mode === 'visual' ? (
+                            <>
+                                {ready && (
+                                    <EditorBoundary onBroken={() => toMarkdown('broken')}>
+                                        <Suspense fallback={<Loading />}>
+                                            <VisualEditor label={t('Article text')} value={draft.body} saved={article?.body ?? ''} onChange={changeBody} onUnsupported={toMarkdown} />
+                                        </Suspense>
+                                    </EditorBoundary>
+                                )}
+                                <p className="kbCount">{counted}</p>
+                            </>
+                        ) : (
+                            <Textarea
+                                label={t('Article text')}
+                                description={`${t('Markdown: ## heading, **bold**, - list, | table |, [link](https://…).')} ${counted}`}
+                                value={draft.body}
+                                onValueChange={changeBody}
+                                maxLength={BODY_MAX}
+                                minRows={16}
+                                maxRows={32}
+                            />
+                        )}
                     </div>
                 </SectionCard>
 
-                <SectionCard icon={LuEye} title={t('Preview')} className="kbPreviewCol">
-                    {draft.category && <span className="kbPreviewCategory">{t(categoryLabel(draft.category))}</span>}
-                    {draft.title.trim() && <h2 className="kbPreviewTitle">{draft.title.trim()}</h2>}
-                    {draft.body.trim() ? (
-                        <Suspense fallback={<Loading />}>
-                            <KnowledgePreview text={draft.body} />
-                        </Suspense>
-                    ) : (
-                        <p className="kbHint">{t('The text shows here as you write.')}</p>
-                    )}
-                </SectionCard>
+                {mode === 'markdown' && (
+                    <SectionCard icon={LuEye} title={t('Preview')} className="kbPreviewCol">
+                        {draft.category && <span className="kbPreviewCategory">{t(categoryLabel(draft.category))}</span>}
+                        {draft.title.trim() && <h2 className="kbPreviewTitle">{draft.title.trim()}</h2>}
+                        {draft.body.trim() ? (
+                            <Suspense fallback={<Loading />}>
+                                <KnowledgePreview text={draft.body} />
+                            </Suspense>
+                        ) : (
+                            <p className="kbHint">{t('The text shows here as you write.')}</p>
+                        )}
+                    </SectionCard>
+                )}
             </div>
 
             {offer && (
