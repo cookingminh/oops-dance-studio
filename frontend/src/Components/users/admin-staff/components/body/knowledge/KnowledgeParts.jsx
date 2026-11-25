@@ -1,3 +1,4 @@
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@nextui-org/react';
 import { LuBadgeCheck, LuFileEdit, LuFileText, LuLightbulb } from 'react-icons/lu';
 import { useI18n } from '@/i18n/i18nContext';
 import { CATEGORY_ICONS, STATUSES } from './knowledgeModel';
@@ -19,6 +20,29 @@ export const StatusPill = ({ status }) => {
             <Icon aria-hidden="true" />
             {t(STATUSES[status]?.pill ?? status)}
         </span>
+    );
+};
+
+// Throwing away text that isn't saved anywhere else.
+export const DiscardDialog = ({ isNew, onClose, onDiscard }) => {
+    const { t } = useI18n();
+    return (
+        <Modal isOpen onOpenChange={(open) => !open && onClose()} placement="center" classNames={{ base: 'adminPortal kbDialog' }}>
+            <ModalContent>
+                <ModalHeader>{t('Discard what isn’t saved?')}</ModalHeader>
+                <ModalBody>
+                    <p>{isNew ? t('This unsaved draft is gone for good.') : t('The article goes back to what is saved.')}</p>
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="flat" onPress={onClose}>
+                        {t('Keep it')}
+                    </Button>
+                    <Button color="danger" onPress={onDiscard}>
+                        {t('Discard it')}
+                    </Button>
+                </ModalFooter>
+            </ModalContent>
+        </Modal>
     );
 };
 

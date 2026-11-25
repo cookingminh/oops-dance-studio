@@ -1,50 +1,65 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, Select, SelectItem, Textarea } from '@nextui-org/react';
 import { LuArrowLeft, LuEye, LuPenLine, LuTrash2 } from 'react-icons/lu';
+import { useAuth } from '@/auth/useAuth';
 import { useI18n } from '@/i18n/i18nContext';
 import { useToast } from '@/ui/feedback/toastContext';
 import { ErrorMessage, Loading } from '@/ui/feedback/AsyncState';
 import { ARTICLE_CATEGORIES, BODY_MAX, TITLE_MAX, categoryLabel, createArticle, deleteArticle, getArticle, updateArticle } from '@/services/knowledge';
 import { toAppError } from '@/services/errors';
+import { dropUnsaved, keepUnsaved, readUnsaved } from '@/lib/unsavedArticles';
 import SectionCard from '../../common/SectionCard';
 import Segmented from '../../common/Segmented';
 import { fadeUp } from '../../common/motion';
-import { draftKey, editedText, fieldsOf, missingOf, payloadOf, whenText } from './knowledgeModel';
-import { StatusPill, WritingTips } from './KnowledgeParts';
+import { draftKey, editedText, excerptOf, fieldsOf, missingOf, payloadOf, whenText } from './knowledgeModel';
+import { DiscardDialog, StatusPill, WritingTips } from './KnowledgeParts';
 
 const KnowledgePreview = lazy(() => import('./KnowledgePreview'));
 const LIST = '/admin/knowledge';
 
 // /admin/knowledge/new and /admin/knowledge/:id: the article's title, category and Markdown text with a live preview.
 // A draft is saved, published or deleted; a published one is changed (at once), unpublished or deleted.
+// What isn't saved is kept in this browser (lib/unsavedArticles.js): leaving loses nothing, and coming back asks whether
+// to carry on with it (or carries on right away, from the list's unsaved draft: location.state.restore).
 const KnowledgeEditor = ({ id = null }) => {
     const i18n = useI18n();
     const { t } = i18n;
+    const { user } = useAuth();
+    const userId = user.id;
     const toast = useToast();
     const navigate = useNavigate();
+    const restore = useLocation().state?.restore === true;
+    const [unsavedNew] = useState(() => (id === null ? readUnsaved(userId, null) : null));
 
     const [load, setLoad] = useState({ loading: id !== null, error: null, missing: false });
     const [article, setArticle] = useState(null); // as saved; null = a new one
-    const [draft, setDraft] = useState(() => fieldsOf(null));
+    const [draft, setDraft] = useState(() => fieldsOf(restore ? unsavedNew : null));
+    const [offer, setOffer] = useState(restore ? null : unsavedNew); // unsaved text from before, waiting for an answer
+    const [kept, setKept] = useState(true); // what isn't saved is kept in this browser
     const [attempted, setAttempted] = useState(null); // what was pressed last: 'save' | 'publish'
     const [busy, setBusy] = useState(null); // 'save' | 'publish' | 'unpublish' | 'delete'
     const [pane, setPane] = useState('text'); // narrow screens show the text or its preview
-    const [asking, setAsking] = useState(null); // 'leave' | 'delete'
+    const [asking, setAsking] = useState(null); // 'leave' | 'discard' | 'delete'
+    const latest = useRef(draft);
+    latest.current = draft;
 
     const loadArticle = useCallback(async () => {
         if (id === null) return;
         setLoad({ loading: true, error: null, missing: false });
         try {
             const row = Number.isSafeInteger(id) ? await getArticle(id) : null;
+            const unsaved = row && readUnsaved(userId, row.id);
+            const differs = Boolean(unsaved) && draftKey(unsaved) !== draftKey(fieldsOf(row));
             setArticle(row);
-            setDraft(fieldsOf(row));
+            setDraft(fieldsOf(differs && restore ? unsaved : row));
+            setOffer(differs && !restore ? unsaved : null);
             setLoad({ loading: false, error: null, missing: !row });
         } catch (error) {
             setLoad({ loading: false, error: toAppError(error), missing: false });
         }
-    }, [id]);
+    }, [id, userId, restore]);
     useEffect(() => {
         loadArticle();
     }, [loadArticle]);
@@ -53,16 +68,30 @@ const KnowledgeEditor = ({ id = null }) => {
     const dirty = draftKey(draft) !== draftKey(fieldsOf(article));
     const missing = missingOf(draft, { published: published || attempted === 'publish' });
 
-    // Closing the tab with unsaved changes asks the browser's own question.
+    // Every change is kept at once; nothing is written while the text from before waits for an answer.
+    const ready = !load.loading && !load.error && !load.missing && !offer;
+    const base = article?.updated_at ?? null;
+    useEffect(() => {
+        if (!ready) return;
+        if (dirty) {
+            setKept(keepUnsaved(userId, id, draft, base));
+        } else {
+            dropUnsaved(userId, id);
+            setKept(true);
+        }
+    }, [ready, dirty, draft, base, userId, id]);
+
+    // Only when the browser can't keep it: closing the tab asks the browser's own question, going back asks ours.
+    const atRisk = dirty && !kept;
     useEffect(() => {
         const warn = (event) => {
-            if (!dirty) return;
+            if (!atRisk) return;
             event.preventDefault();
             event.returnValue = '';
         };
         window.addEventListener('beforeunload', warn);
         return () => window.removeEventListener('beforeunload', warn);
-    }, [dirty]);
+    }, [atRisk]);
 
     const change = (patch) => setDraft((current) => ({ ...current, ...patch }));
 
@@ -76,9 +105,16 @@ const KnowledgeEditor = ({ id = null }) => {
             const fields = { ...payloadOf(draft), ...(publishing && { status: 'published' }) };
             const row = article ? await updateArticle(article.id, fields) : await createArticle(fields);
             setAttempted(null);
-            setArticle(row);
             toast.success(publishing ? 'Article published' : published ? 'Changes published' : 'Draft saved');
-            if (!article) navigate(`${LIST}/${row.id}`, { replace: true });
+            if (article) {
+                setArticle(row);
+                return;
+            }
+            // The new article's own page takes over, with what was typed while it was saved.
+            dropUnsaved(userId, null);
+            const typedOn = latest.current !== draft;
+            if (typedOn) keepUnsaved(userId, row.id, latest.current, row.updated_at);
+            navigate(`${LIST}/${row.id}`, { replace: true, state: typedOn ? { restore: true } : null });
         } catch (error) {
             toast.error(error);
         } finally {
@@ -103,6 +139,7 @@ const KnowledgeEditor = ({ id = null }) => {
         setBusy('delete');
         try {
             await deleteArticle(article.id);
+            dropUnsaved(userId, article.id);
             toast.success('Article deleted');
             navigate(LIST);
         } catch (error) {
@@ -111,7 +148,24 @@ const KnowledgeEditor = ({ id = null }) => {
         }
     };
 
-    const back = () => (dirty ? setAsking('leave') : navigate(LIST));
+    const back = () => (atRisk ? setAsking('leave') : navigate(LIST));
+
+    // Back to what is saved (a new article: to the list).
+    const discard = () => {
+        dropUnsaved(userId, id);
+        setAsking(null);
+        setAttempted(null);
+        if (article) setDraft(fieldsOf(article));
+        else navigate(LIST);
+    };
+    const carryOn = () => {
+        setDraft(fieldsOf(offer));
+        setOffer(null);
+    };
+    const discardOffer = () => {
+        dropUnsaved(userId, id);
+        setOffer(null);
+    };
 
     if (load.loading) return <Loading />;
     if (load.error) return <ErrorMessage error={load.error} onRetry={loadArticle} />;
@@ -134,7 +188,14 @@ const KnowledgeEditor = ({ id = null }) => {
                 <div className="kbEditorTitle">
                     <h2>{article ? article.title : t('New article')}</h2>
                     {article && <StatusPill status={article.status} />}
-                    {dirty && <span className="kbUnsaved">{t('Unsaved changes')}</span>}
+                    {dirty && (
+                        <span className="kbUnsaved">
+                            {kept ? t('Not saved yet, kept on this device') : t('Unsaved changes')}
+                            <button type="button" onClick={() => setAsking('discard')} disabled={Boolean(busy)}>
+                                {t('Discard changes')}
+                            </button>
+                        </span>
+                    )}
                     {article && (
                         <small>
                             {editedText(article, i18n)}
@@ -249,6 +310,29 @@ const KnowledgeEditor = ({ id = null }) => {
                 </SectionCard>
             </div>
 
+            {offer && (
+                <Modal isOpen hideCloseButton isDismissable={false} isKeyboardDismissDisabled placement="center" classNames={{ base: 'adminPortal kbDialog' }}>
+                    <ModalContent>
+                        <ModalHeader>{t('Carry on with your unsaved text?')}</ModalHeader>
+                        <ModalBody>
+                            <p>{t('You left “{name}” without saving ({time}). The text is kept on this device.', { name: offer.title.trim() || t('Untitled article'), time: whenText(offer.at, i18n) })}</p>
+                            {offer.body.trim() && <blockquote className="kbExcerpt">{excerptOf(offer.body)}</blockquote>}
+                            {article && offer.base !== article.updated_at && (
+                                <p className="kbChanged">{t('The saved article has changed since then ({edited}). Saving your text replaces it.', { edited: editedText(article, i18n) })}</p>
+                            )}
+                        </ModalBody>
+                        <ModalFooter>
+                            <Button variant="flat" onPress={discardOffer}>
+                                {t('Discard it')}
+                            </Button>
+                            <Button color="danger" onPress={carryOn}>
+                                {t('Carry on writing')}
+                            </Button>
+                        </ModalFooter>
+                    </ModalContent>
+                </Modal>
+            )}
+            {asking === 'discard' && <DiscardDialog isNew={!article} onClose={() => setAsking(null)} onDiscard={discard} />}
             {asking === 'leave' && (
                 <Modal isOpen onOpenChange={(open) => !open && setAsking(null)} placement="center" classNames={{ base: 'adminPortal kbDialog' }}>
                     <ModalContent>

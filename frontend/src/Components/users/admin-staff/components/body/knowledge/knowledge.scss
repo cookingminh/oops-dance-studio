@@ -163,6 +163,35 @@ $amber: hsl(28, 60%, 26%);
     }
 }
 
+// A new article not saved yet (kept in this browser), above the list.
+.adminShell .kbUnsavedRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: .4rem;
+    margin-bottom: 1rem;
+}
+
+.adminShell .kbRow.is-unsaved {
+    border: 1px dashed $amber-line;
+    background: $amber-soft;
+
+    .kbIcon {
+        background: var(--ad-surface);
+        color: $amber;
+    }
+}
+
+.adminShell .kbPill.is-unsaved {
+    padding-left: .65rem;
+    background: var(--ad-surface);
+    color: $amber;
+}
+
+.adminShell .kbRowText .kbUnsaved {
+    margin-left: .6rem;
+}
+
 .adminShell .kbChevron {
     color: var(--ad-subtle);
 }
@@ -232,6 +261,34 @@ $amber: hsl(28, 60%, 26%);
     color: hsl(28, 70%, 36%);
     font-size: .82rem;
     font-weight: 600;
+
+    button {
+        margin-left: .6rem;
+        color: var(--ad-muted);
+        font-weight: 600;
+        text-decoration: underline;
+
+        &:hover {
+            color: var(--ad-primary);
+        }
+    }
+}
+
+.adminPortal.kbDialog .kbExcerpt {
+    padding: .4rem .9rem;
+    border-left: 3px solid var(--ad-primary-tint);
+    color: var(--ad-muted);
+    font-size: .92rem;
+    overflow-wrap: anywhere;
+}
+
+.adminPortal.kbDialog .kbChanged {
+    padding: .6rem .8rem;
+    border: 1px solid $amber-line;
+    border-radius: 12px;
+    background: $amber-soft;
+    color: $amber;
+    font-size: .9rem;
 }
 
 .adminShell .kbEditorActions {

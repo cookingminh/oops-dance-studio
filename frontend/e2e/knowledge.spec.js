@@ -1,6 +1,6 @@
 // AI knowledge (/admin/knowledge; supabase/migrations/20261117003300_knowledge_articles.sql): staff write an article with
-// a live Markdown preview, save it as a draft, publish it, change it while published, unpublish and delete it; the list's
-// filters and search stay in the URL; visitors, guests and instructors get neither the page nor the rows (their own
+// a live Markdown preview, save it as a draft, publish it, change it while published, unpublish and delete it; what isn't
+// saved is kept in the browser and offered again; the list's filters and search stay in the URL; visitors, guests and instructors get neither the page nor the rows (their own
 // JWTs); slug, editor and times are the server's. Works on articles of its own (titles "E2E …", deleted afterwards).
 import { test, expect } from '@playwright/test';
 import { expectToast, login, pathname, pickOption, rest, token } from './support.js';
@@ -10,6 +10,8 @@ test.describe.configure({ mode: 'serial' });
 const RUN = Date.now();
 const TITLE = `E2E Huỷ phòng ${RUN}`;
 const OTHER = `E2E Nội quy ${RUN}`;
+const UNSAVED = `E2E Chưa lưu ${RUN}`;
+const TYPED_ON = `E2E Gõ tiếp ${RUN}`;
 const FIELDS = 'id,slug,title,category,body,status,updated_by,created_at,updated_at,published_at';
 const LIKE_E2E = `like.${encodeURIComponent('E2E *')}`;
 
@@ -28,6 +30,8 @@ const openArticle = async (title = TITLE) => {
     await row(title).getByRole('link').click();
     await expect(page.locator('.kbEditorTitle h2')).toHaveText(title);
 };
+// The unsaved texts this browser keeps (lib/unsavedArticles.js).
+const unsavedKeys = (where) => where.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('oops-article-draft')));
 const cleanUp = async () => expect((await rest(staff.jwt, `knowledge_articles?title=${LIKE_E2E}`, { method: 'DELETE' })).status).toBe(204);
 
 test.beforeAll(async ({ browser }) => {
@@ -262,17 +266,190 @@ test('unpublish it: back to a draft', async () => {
     expect(await saved()).toMatchObject({ status: 'draft', published_at: null, updated_by: staff.id });
 });
 
-test('leaving with unsaved changes asks first', async () => {
+test('what isn’t saved survives leaving: menu, Back and reload, no questions asked', async () => {
     const before = await saved();
+    const text = page.getByLabel('Article text');
+    const dialog = page.getByRole('dialog');
+
+    // The sidebar, right after typing.
     await openArticle();
-    await page.getByLabel('Article text').fill('Not saved');
-    await page.getByRole('button', { name: 'Back to the articles' }).click();
-    await page.getByRole('button', { name: 'Keep editing' }).click();
-    await expect(page.getByLabel('Article text')).toHaveValue('Not saved');
-    await page.getByRole('button', { name: 'Back to the articles' }).click();
-    await page.getByRole('button', { name: 'Leave without saving' }).click();
-    await expect(page).toHaveURL(/\/admin\/knowledge$/);
+    await text.fill('Not saved: menu');
+    await page.locator('.adminSidebar').getByRole('link', { name: 'Expenses' }).click();
+    await expect(page).toHaveURL(/\/admin\/expenses$/);
     expect(await saved()).toEqual(before);
+    await page.goto('/admin/knowledge');
+    await expect(row()).toContainText('Unsaved changes on this device');
+    await expect(row(OTHER)).not.toContainText('Unsaved changes');
+
+    // Coming back asks; nothing changes until it is answered.
+    await row().getByRole('link').click();
+    await expect(dialog).toContainText(`You left “${TITLE}” without saving (just now).`);
+    await expect(dialog).toContainText('Not saved: menu');
+    await expect(dialog).not.toContainText('has changed since then');
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Carry on writing' }).click();
+    await expect(text).toHaveValue('Not saved: menu');
+    await expect(page.locator('.kbUnsaved')).toContainText('Not saved yet, kept on this device');
+
+    // A reload.
+    await text.fill('Not saved: reload');
+    await page.reload();
+    await dialog.getByRole('button', { name: 'Carry on writing' }).click();
+    await expect(text).toHaveValue('Not saved: reload');
+
+    // The browser's Back button, then the arrow of the page.
+    await text.fill('Not saved: back');
+    await page.goBack();
+    await expect(page.locator('.kbEditor')).toHaveCount(0);
+    await row().getByRole('link').click();
+    await dialog.getByRole('button', { name: 'Carry on writing' }).click();
+    await expect(text).toHaveValue('Not saved: back');
+    await page.getByRole('button', { name: 'Back to the articles' }).click();
+    await expect(page).toHaveURL(/\/admin\/knowledge$/);
+    await expect(dialog).toHaveCount(0);
+
+    // Someone else saved it meanwhile: the question says so. Discarding shows what is saved.
+    expect((await rest(admin.jwt, `knowledge_articles?id=eq.${before.id}`, { method: 'PATCH', body: { body: 'Changed by the admin.' } })).status).toBe(204);
+    await row().getByRole('link').click();
+    await expect(dialog).toContainText(`The saved article has changed since then (Edited by ${names.get(admin.id)} · just now).`);
+    await dialog.getByRole('button', { name: 'Discard it' }).click();
+    await expect(text).toHaveValue('Changed by the admin.');
+    await expect(page.locator('.kbUnsaved')).toHaveCount(0);
+    await page.reload();
+    await expect(text).toHaveValue('Changed by the admin.');
+    await expect(dialog).toHaveCount(0);
+
+    // Discarding while writing, and saving, leave nothing behind.
+    await text.fill('Not saved: discard');
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await dialog.getByRole('button', { name: 'Keep it' }).click();
+    await expect(text).toHaveValue('Not saved: discard');
+    await page.getByRole('button', { name: 'Discard changes' }).click();
+    await dialog.getByRole('button', { name: 'Discard it' }).click();
+    await expect(text).toHaveValue('Changed by the admin.');
+    await text.fill('Saved after all.');
+    await button('Save draft').click();
+    await expectToast(page, 'Draft saved');
+    expect(await unsavedKeys(page)).toEqual([]);
+    expect((await saved()).body).toBe('Saved after all.');
+});
+
+test('a new article left unsaved is a draft in the list, on this device and for this account only', async ({ browser }) => {
+    await page.goto('/admin/knowledge/new');
+    await page.getByLabel('Article title').fill(UNSAVED);
+    await pickOption(page, page.locator('.kbForm'), 'Article category', 'FAQ');
+    await page.getByLabel('Article text').fill('Half a sentence');
+    await page.locator('.adminSidebar').getByRole('link', { name: 'Dashboard' }).click();
+    await page.locator('.adminSidebar').getByRole('link', { name: 'AI knowledge' }).click();
+
+    const draft = page.locator('.kbUnsavedRow');
+    await expect(draft).toContainText(UNSAVED);
+    await expect(draft).toContainText('Unsaved draft');
+    await expect(draft).toContainText('Only on this device · just now');
+    expect(await saved(UNSAVED)).toBeUndefined();
+    // Another account using this same browser doesn't get it.
+    const theirs = await browser.newPage();
+    await login(theirs, 'admin@demo.oopsdance.test');
+    await theirs.evaluate(([key, value]) => localStorage.setItem(key, value), [
+        `oops-article-draft:${staff.id}:new`,
+        await page.evaluate((key) => localStorage.getItem(key), `oops-article-draft:${staff.id}:new`),
+    ]);
+    await theirs.goto('/admin/knowledge');
+    await expect(theirs.locator('.kbRows li').first()).toBeVisible();
+    await expect(theirs.locator('.kbUnsavedRow')).toHaveCount(0);
+    await theirs.getByRole('button', { name: 'New article' }).click();
+    await expect(theirs.getByLabel('Article text')).toHaveValue('');
+    await expect(theirs.getByRole('dialog')).toHaveCount(0);
+    await theirs.close();
+
+    // From the list it carries on right away; from "New article" it asks.
+    await draft.getByRole('link').click();
+    await expect(page.getByLabel('Article text')).toHaveValue('Half a sentence');
+    await expect(page.getByLabel('Article title')).toHaveValue(UNSAVED);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Back to the articles' }).click();
+    await page.getByRole('button', { name: 'New article' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Carry on writing' }).click();
+
+    // Saved: an ordinary draft, the unsaved one is gone.
+    await button('Save draft').click();
+    await expectToast(page, 'Draft saved');
+    await expect(page).toHaveURL(/\/admin\/knowledge\/\d+$/);
+    expect(await saved(UNSAVED)).toMatchObject({ category: 'faq', body: 'Half a sentence', status: 'draft' });
+    expect(await unsavedKeys(page)).toEqual([]);
+    await page.goto('/admin/knowledge');
+    await expect(row(UNSAVED)).toContainText('In draft');
+    await expect(draft).toHaveCount(0);
+
+    // Discarded from the list.
+    await page.goto('/admin/knowledge/new');
+    await page.getByLabel('Article text').fill('Never mind');
+    await page.getByRole('button', { name: 'Back to the articles' }).click();
+    await expect(draft).toContainText('Untitled article');
+    await page.getByRole('button', { name: 'Discard the unsaved draft' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Keep it' }).click();
+    await expect(draft).toBeVisible();
+    await page.getByRole('button', { name: 'Discard the unsaved draft' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Discard it' }).click();
+    await expect(draft).toHaveCount(0);
+    expect(await unsavedKeys(page)).toEqual([]);
+});
+
+test('what is typed while a new article is being saved isn’t lost', async () => {
+    await page.goto('/admin/knowledge/new');
+    await page.getByLabel('Article title').fill(TYPED_ON);
+    await pickOption(page, page.locator('.kbForm'), 'Article category', 'FAQ');
+    await page.getByLabel('Article text').fill('First');
+    await page.route('**/rest/v1/knowledge_articles*', async (route) => {
+        if (route.request().method() === 'POST') await new Promise((resolve) => setTimeout(resolve, 1500));
+        await route.continue();
+    });
+    await button('Save draft').click();
+    await page.getByLabel('Article text').fill('First and second');
+    await expect(page).toHaveURL(/\/admin\/knowledge\/\d+$/);
+    await page.unroute('**/rest/v1/knowledge_articles*');
+    await expect(page.getByLabel('Article text')).toHaveValue('First and second');
+    await expect(page.locator('.kbUnsaved')).toBeVisible();
+    expect((await saved(TYPED_ON)).body).toBe('First');
+    await button('Save draft').click();
+    await expect(page.locator('.kbUnsaved')).toHaveCount(0);
+    expect((await saved(TYPED_ON)).body).toBe('First and second');
+    expect(await unsavedKeys(page)).toEqual([]);
+});
+
+test('signing out takes the unsaved text off the computer', async ({ browser }) => {
+    const mine = await browser.newPage();
+    await login(mine, 'staff@demo.oopsdance.test');
+    await mine.goto('/admin/knowledge/new');
+    await mine.getByLabel('Article text').fill('Shared computer');
+    expect(await unsavedKeys(mine)).toEqual([`oops-article-draft:${staff.id}:new`]);
+    await mine.locator('.adminSidebar').getByRole('button', { name: 'Log Out' }).click();
+    await mine.waitForURL((url) => url.pathname === '/home');
+    await expect.poll(() => unsavedKeys(mine)).toEqual([]);
+    await mine.close();
+});
+
+test('a browser that can’t keep it: going back asks first', async ({ browser }) => {
+    const mine = await browser.newPage();
+    await login(mine, 'staff@demo.oopsdance.test');
+    await mine.addInitScript(() => {
+        const set = Storage.prototype.setItem;
+        Storage.prototype.setItem = function setItem(key, value) {
+            if (key.startsWith('oops-article-draft')) throw new DOMException('full', 'QuotaExceededError');
+            return set.call(this, key, value);
+        };
+    });
+    await mine.goto('/admin/knowledge/new');
+    await mine.getByLabel('Article text').fill('At risk');
+    await expect(mine.locator('.kbUnsaved')).toContainText('Unsaved changes');
+    await mine.getByRole('button', { name: 'Back to the articles' }).click();
+    await mine.getByRole('button', { name: 'Keep editing' }).click();
+    await expect(mine.getByLabel('Article text')).toHaveValue('At risk');
+    await mine.getByRole('button', { name: 'Back to the articles' }).click();
+    await mine.getByRole('button', { name: 'Leave without saving' }).click();
+    await expect(mine).toHaveURL(/\/admin\/knowledge$/);
+    await mine.close();
 });
 
 test('delete it: asked first, then gone', async () => {
@@ -305,14 +482,18 @@ test('delete it: asked first, then gone', async () => {
 test('every step is on the admin’s Activity page, never the text', async ({ browser }) => {
     const log = (await rest(admin.jwt, `activity_log?select=action,actor_id,label,meta,changes&entity=eq.knowledge_articles&label=eq.${encodeURIComponent(TITLE)}&order=id`)).data;
     expect(log.map((entry) => entry.action)).toEqual([
-        'knowledge_created', 'knowledge_published', 'knowledge_updated', 'knowledge_updated', 'knowledge_unpublished', 'knowledge_deleted',
+        'knowledge_created', 'knowledge_published', 'knowledge_updated', 'knowledge_updated', 'knowledge_unpublished',
+        'knowledge_updated', 'knowledge_updated', 'knowledge_deleted',
     ]);
     expect(JSON.stringify(log)).not.toContain('24 hours');
 
     const theirs = await browser.newPage();
     await login(theirs, 'admin@demo.oopsdance.test');
-    await theirs.goto('/admin/activity');
-    await expect(theirs.locator('.alogFeed').getByText(`published the knowledge article “${TITLE}”`).first()).toBeVisible();
+    // Searched for, so earlier runs' lines don't fold into the same row ("published 2 knowledge articles").
+    await theirs.goto(`/admin/activity?q=${RUN}`);
+    const lines = theirs.locator('.alogFeed .alogSentence');
+    await expect(lines.filter({ hasText: `${names.get(staff.id)} published the knowledge article “${TITLE}”` })).toHaveCount(1);
+    await expect(lines.filter({ hasText: `${names.get(staff.id)} unpublished the knowledge article “${TITLE}”` })).toHaveCount(1);
     // Admins have the page too.
     await theirs.goto('/admin/knowledge');
     await expect(theirs.locator('.kbRows li').filter({ hasText: OTHER })).toBeVisible();

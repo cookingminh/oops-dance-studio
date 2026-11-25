@@ -48,6 +48,12 @@ export function editedText(article, i18n) {
 
 export const fieldsOf = (article) => ({ title: article?.title ?? '', category: article?.category ?? '', body: article?.body ?? '' });
 
+// The first words of a text, to recognise it by.
+export const excerptOf = (body) => {
+    const words = body.replace(/\s+/g, ' ').trim();
+    return words.length > 140 ? `${words.slice(0, 140).trim()}…` : words;
+};
+
 // What is saved (and what tells whether anything changed).
 export const payloadOf = (draft) => ({ title: draft.title.trim(), category: draft.category, body: draft.body });
 export const draftKey = (draft) => JSON.stringify(payloadOf(draft));

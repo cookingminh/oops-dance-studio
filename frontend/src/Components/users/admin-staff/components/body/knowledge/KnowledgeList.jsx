@@ -1,27 +1,33 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Input } from '@nextui-org/react';
-import { LuBookOpenCheck, LuChevronRight, LuFilterX, LuPlus, LuSearch, LuSearchX, LuSparkles } from 'react-icons/lu';
+import { LuBookOpenCheck, LuChevronRight, LuFilterX, LuPlus, LuSearch, LuSearchX, LuSparkles, LuTrash2 } from 'react-icons/lu';
+import { useAuth } from '@/auth/useAuth';
 import { useAsync } from '@/hooks/useAsync';
 import { useI18n } from '@/i18n/i18nContext';
 import { formatDateTime } from '@/lib/format';
+import { dropUnsaved, listUnsaved } from '@/lib/unsavedArticles';
 import { ErrorMessage, Loading } from '@/ui/feedback/AsyncState';
 import { ARTICLE_CATEGORIES, categoryLabel, listArticles } from '@/services/knowledge';
 import SectionCard from '../../common/SectionCard';
 import Segmented from '../../common/Segmented';
 import StatusSelect from '../../common/StatusSelect';
-import { CATEGORY_KEYS, STATUSES, countBy, editedText, filterArticles } from './knowledgeModel';
-import { CategoryIcon, StatusPill } from './KnowledgeParts';
+import { CATEGORY_KEYS, STATUSES, countBy, editedText, filterArticles, whenText } from './knowledgeModel';
+import { CategoryIcon, DiscardDialog, StatusPill } from './KnowledgeParts';
 
 const NO_ARTICLES = [];
 
 // /admin/knowledge: every article, the last edited first, filtered by category and status (?category=, ?status=) and
-// searched by title (?q=), so a filtered list can be shared and comes back with the Back button.
+// searched by title (?q=), so a filtered list can be shared and comes back with the Back button. Text this person hasn't
+// saved yet (kept in this browser) shows too: a new article as an unsaved draft on top, a saved one with a note.
 const KnowledgeList = () => {
     const i18n = useI18n();
     const { t, tn } = i18n;
+    const { user } = useAuth();
     const navigate = useNavigate();
     const list = useAsync(listArticles, []);
+    const [unsaved, setUnsaved] = useState(() => listUnsaved(user.id));
+    const [discarding, setDiscarding] = useState(false);
     const [params, setParams] = useSearchParams();
     const category = CATEGORY_KEYS.includes(params.get('category')) ? params.get('category') : 'all';
     const status = params.get('status') in STATUSES ? params.get('status') : 'all';
@@ -52,6 +58,14 @@ const KnowledgeList = () => {
     const visible = filterArticles(articles, { category, status, query });
     const filtered = category !== 'all' || status !== 'all' || query.trim() !== '';
 
+    const unsavedNew = unsaved.find((entry) => entry.articleId === null);
+    const unsavedIds = new Set(unsaved.map((entry) => entry.articleId));
+    const discard = () => {
+        dropUnsaved(user.id, null);
+        setUnsaved(listUnsaved(user.id));
+        setDiscarding(false);
+    };
+
     const newButton = (
         <Button color="danger" startContent={<LuPlus aria-hidden="true" />} onPress={() => navigate('/admin/knowledge/new')}>
             {t('New article')}
@@ -74,6 +88,23 @@ const KnowledgeList = () => {
                 </>
             }
         >
+            {unsavedNew && (
+                <div className="kbUnsavedRow">
+                    <Link to="/admin/knowledge/new" state={{ restore: true }} className="kbRow is-unsaved">
+                        <CategoryIcon category={unsavedNew.category} />
+                        <span className="kbRowText">
+                            <strong>{unsavedNew.title.trim() || t('Untitled article')}</strong>
+                            <small>{t('Only on this device · {time}', { time: whenText(unsavedNew.at, i18n) })}</small>
+                        </span>
+                        <span className="kbPill is-unsaved">{t('Unsaved draft')}</span>
+                        <LuChevronRight className="kbChevron" aria-hidden="true" />
+                    </Link>
+                    <Button isIconOnly variant="light" color="danger" onPress={() => setDiscarding(true)} aria-label={t('Discard the unsaved draft')}>
+                        <LuTrash2 aria-hidden="true" />
+                    </Button>
+                </div>
+            )}
+
             {list.error && !list.data && <ErrorMessage error={list.error} onRetry={list.reload} />}
             {list.loading && !list.data && <Loading />}
 
@@ -149,6 +180,7 @@ const KnowledgeList = () => {
                                                 {t(categoryLabel(article.category))}
                                                 {' · '}
                                                 <span title={formatDateTime(article.updated_at)}>{editedText(article, i18n)}</span>
+                                                {unsavedIds.has(article.id) && <span className="kbUnsaved">{t('Unsaved changes on this device')}</span>}
                                             </small>
                                         </span>
                                         <StatusPill status={article.status} />
@@ -160,6 +192,8 @@ const KnowledgeList = () => {
                     )}
                 </>
             )}
+
+            {discarding && <DiscardDialog isNew onClose={() => setDiscarding(false)} onDiscard={discard} />}
         </SectionCard>
     );
 };

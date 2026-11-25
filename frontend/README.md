@@ -95,7 +95,7 @@ auth and timetable clashes, and checks RLS with each role's own JWT:
 | `booking-rooms.spec.js` | rooms inside Bookings: `/admin/rooms` → Rooms & prices (no Rooms item in the menu), each room's price and booking facts, the cancellation policy card, change a room's price and put it back, "See this room's calendar"; a booking ahead paid in full is completed by itself (solid, "Paid up", no Mark completed) and still cancellable by the guest and the studio |
 | `checkin-window.spec.js` | the instructor check-in window and late check-out: a session in 30 minutes says "Check-in opens at …" (and the server refuses), one that is over says to ask the studio, a check-out more than 10 minutes after the end warns and is marked late; staff correct a forgotten check-out with a reason in the session dialog (late mark from the times, then excused), today's board badge, the activity log entries with before → after |
 | `timetable-templates.spec.js` | the website timetable's look: staff pick the Red card above the directory's weekly timetable and /classes shows it, the arrow keys go back to the Poster, the switch on the Activity page; a class's level set in its details form (shown on its card) and cleared (the look ends on Poster, the level is put back) |
-| `knowledge.spec.js` | AI knowledge (staff): write an article with a live Markdown preview (raw HTML shown as text, images not loaded), save it as a draft, publish, change it while published, unpublish, delete (asked first), leaving with unsaved changes; category / status filters and the title search in the URL; last edited by; "Ask the assistant" disabled; visitors, guests and instructors get neither the page nor the rows; nobody can send slug, editor or times; the Activity page's lines; Vietnamese |
+| `knowledge.spec.js` | AI knowledge (staff): write an article with a live Markdown preview (raw HTML shown as text, images not loaded), save it as a draft, publish, change it while published, unpublish, delete (asked first); text not saved yet is kept in the browser (menu, Back, reload, while saving), shown in the list as an unsaved draft and offered again, gone once saved, discarded or signed out, and another account never gets it; category / status filters and the title search in the URL; last edited by; "Ask the assistant" disabled; visitors, guests and instructors get neither the page nor the rows; nobody can send slug, editor or times; the Activity page's lines; Vietnamese |
 | `class-photos.spec.js` | framing a class's pictures in its Setup tab: the image dialog previews the real Classes card, the up–down slider moves the picture and Save shows it on /classes; the timetable photo dialog zooms the round photo and the poster follows (the frames are put back) |
 
 ```bash
@@ -118,7 +118,8 @@ src/
   lib/                    supabase client, image preparation (HEIC → JPEG, resize, WebP), formatting,
                           place.js (a class's or session's place: room or rented studio), classLevel.js (a
                           class's level — Newbie / Basic / Advanced — and its colour on the website timetable),
-                          classImage.js (the part of a class image every crop shows, as staff framed it)
+                          classImage.js (the part of a class image every crop shows, as staff framed it),
+                          unsavedArticles.js (AI knowledge text not saved yet, kept in the browser per account)
   services/               the only code that talks to Supabase: auth, users, rooms, classes,
                           schedules, bookings, attendance, stats, storage, studio, errors, site (the
                           website's choices: which look the public timetable uses, `site_settings`), knowledge

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { openedFromRecoveryLink } from '@/lib/supabase';
+import { dropAllUnsaved } from '@/lib/unsavedArticles';
 import { getSession, onAuthChange, signOut as signOutRequest } from '@/services/auth';
 import { getProfile } from '@/services/users';
 import { avatarUrl } from '@/services/storage';
@@ -56,8 +57,9 @@ export function AuthProvider({ children }) {
 
     const signOut = useCallback(async () => {
         await signOutRequest();
+        if (userId) dropAllUnsaved(userId);
         setProfile(null);
-    }, []);
+    }, [userId]);
 
     const value = useMemo(() => {
         const user = profile && profile.id === userId

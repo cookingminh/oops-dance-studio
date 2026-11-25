@@ -69,6 +69,23 @@ export default {
     'Give the article a title (up to 120 characters).': 'Đặt tiêu đề (tối đa 120 ký tự).',
     'Write the article’s text before publishing it.': 'Viết nội dung rồi mới đăng được.',
 
+    // Text not saved yet, kept in this browser
+    'Unsaved draft': 'Nháp chưa lưu',
+    'Untitled article': 'Tài liệu chưa có tiêu đề',
+    'Only on this device · {time}': 'Chỉ có trên máy này · {time}',
+    'Unsaved changes on this device': 'Có thay đổi chưa lưu trên máy này',
+    'Not saved yet, kept on this device': 'Chưa lưu, đang giữ trên máy này',
+    'Discard changes': 'Bỏ thay đổi',
+    'Discard the unsaved draft': 'Bỏ bản nháp chưa lưu',
+    'Discard what isn’t saved?': 'Bỏ phần chưa lưu?',
+    'This unsaved draft is gone for good.': 'Bản nháp chưa lưu này sẽ mất hẳn.',
+    'The article goes back to what is saved.': 'Tài liệu trở về bản đã lưu.',
+    'Discard it': 'Bỏ đi',
+    'Carry on with your unsaved text?': 'Viết tiếp phần chưa lưu?',
+    'You left “{name}” without saving ({time}). The text is kept on this device.': 'Bạn rời “{name}” khi chưa lưu ({time}). Phần đang viết được giữ trên máy này.',
+    'The saved article has changed since then ({edited}). Saving your text replaces it.': 'Bản đã lưu vừa thay đổi sau đó ({edited}). Lưu phần của bạn sẽ đè lên.',
+    'Carry on writing': 'Viết tiếp',
+
     // Saving, deleting, leaving
     'Draft saved': 'Đã lưu nháp',
     'Article published': 'Đã đăng tài liệu',
